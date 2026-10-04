@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestor Financeiro</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b1120">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; overscroll-behavior-y: none; }
+    .card-glass { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    .tab-btn-global { transition: all 0.2s ease; cursor: grab; user-select: none; }
+    .tab-btn-global.active { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .sortable-ghost { opacity: 0.4; background-color: #334155 !important; border-radius: 0.5rem; }
+    .sortable-drag { cursor: grabbing !important; }
+    .main-content { padding-bottom: 90px; }
+    @media (min-width: 640px) { .main-content { padding-bottom: 24px; } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col relative">
+  
+  <!-- CABEÇALHO -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-sm">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20">💳</div>
+      <div class="flex items-center">
+        <div>
+          <h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1>
+          <p class="text-[10px] text-slate-400 hidden sm:block">Pressione e arraste para organizar</p>
+        </div>
+        <!-- INDICADOR OFFLINE -->
+        <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">
+          📶 Sincronizar (1)
+        </button>
+      </div>
+    </div>
+    <nav id="barraNavegacaoDesktop" class="hidden sm:flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 text-sm overflow-x-auto hide-scrollbar"></nav>
+  </header>
+
+  <main class="main-content flex-1 px-4 sm:p-6 pt-6 max-w-7xl w-full mx-auto space-y-6">
+    
+    <!-- ABA 1: NOVO LANÇAMENTO -->
+    <div id="view-novo" class="max-w-xl mx-auto">
+      <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
+        <h2 class="text-base font-bold text-white mb-5 flex items-center gap-2"><span>➕</span> Novo Registro</h2>
+        <form id="formGasto" onsubmit="enviarGasto(event)" class="space-y-4"> 
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Data</label>
+              <input type="text" id="inpData" oninput="mascaraData(this)" onblur="atualizarRegrasForma()" placeholder="DD/MM/AAAA" maxlength="10" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Mês Fatura</label>
+              <input type="text" id="inpMesFat" placeholder="MM/AAAA" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
+            <input type="text" id="inpDesc" list="listaDescricoes" onchange="checarAutopreenchimento()" placeholder="Ex: Supermercado, IFood..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            <datalist id="listaDescricoes"></datalist>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
+              <select id="selForma" onchange="atualizarRegrasForma()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Categoria</label>
+              <select id="selCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></select>
+            </div>
+          </div> 
+          
+          <div class="border border-slate-700 bg-slate-800/30 p-3 rounded-xl flex items-center gap-3 mt-2">
+            <input type="checkbox" id="checkAssinatura" onchange="alternarModoAssinatura()" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 bg-slate-900 border-slate-600">
+            <label for="checkAssinatura" class="text-sm font-bold text-blue-400 cursor-pointer w-full">Gasto Fixo / Assinatura</label>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
+            <div class="col-span-2 sm:col-span-1">
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Valor (R$)</label>
+              <input type="number" step="0.01" id="inpValor" placeholder="0.00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            </div>
+            <div id="boxParc">
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Parcelas</label>
+              <input type="number" id="inpParc" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none transition">
+            </div>
+            <div id="boxParcIni">
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
+              <input type="number" id="inpParcIni" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none transition">
+            </div>
+          </div>
+          <div id="boxStatus">
+            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Status</label>
+            <select id="selStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 outline-none">
+              <option value="Em Aberto">Em Aberto</option>
+              <option value="Pago">Pago</option>
+              <option value="Agendado">Agendado</option>
+            </select>
+          </div>
+          <!-- 🔥 BOTÃO LIMPO -->
+          <button type="submit" id="btnSalvar" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition transform active:scale-95 mt-4">
+            💾 Lançar
+          </button>
+        </form>
+      </div>
+    </div> 
+
+    <!-- ABA 2: LANÇAMENTOS GERAIS -->
+    <div id="view-lancamentos" class="hidden space-y-4">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-3">
+        <h2 class="text-sm font-bold text-white w-full md:w-auto">Histórico Geral</h2>
+        <div class="flex flex-wrap w-full md:w-auto gap-2">
+          <input type="text" id="inpBusca" placeholder="Pesquisa rápida..." class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
+          
+          <button onclick="abrirModalFiltros()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex gap-1 items-center">
+            ⚙️ <span class="hidden sm:inline">Filtros</span>
+          </button>
+
+          <button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button>
+          
+          <button onclick="limparFiltros()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition border border-slate-700">Limpar</button>
+        </div>
+      </div>
+      
+      <div id="lista-lancamentos" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+      <div id="boxCarregarMais" class="hidden text-center mt-6 pb-4">
+         <button onclick="carregarMaisLancamentos()" class="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Carregar mais antigas 👇</button>
+      </div>
+    </div>
+
+    <!-- ABA 3: RELATÓRIOS MENSAL -->
+    <div id="view-relatorio" class="hidden space-y-6">
+      <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-sm font-bold text-white">📑 Fatura do Mês</h2>
+        <select id="selFiltroMes" onchange="carregarRelatorioMes()" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="card-glass p-4 border-t-4 border-t-amber-400 flex flex-col justify-center"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">A Pagar</span><div id="rel-aberto" class="text-lg sm:text-2xl font-bold text-amber-400 mt-1">R$ 0,00</div></div>
+        <div class="card-glass p-4 border-t-4 border-t-emerald-400 flex flex-col justify-center"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="rel-pago" class="text-lg sm:text-2xl font-bold text-emerald-400 mt-1">R$ 0,00</div></div>
+        <div class="card-glass p-4 border-t-4 border-t-purple-400 flex flex-col justify-center col-span-2 sm:col-span-1"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total Fatura</span><div id="rel-total" class="text-xl sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card-glass p-5 lg:col-span-1">
+          <h2 class="text-sm font-bold text-white mb-4">Divisão de Gastos</h2>
+          <div class="relative h-48 flex items-center justify-center"><canvas id="chartRelatorio"></canvas></div>
+          <h3 class="text-xs font-bold text-slate-400 mt-8 mb-4 uppercase tracking-wider">Termômetro de Metas</h3>
+          <div id="termometro-metas" class="space-y-4"></div>
+        </div>
+        <div class="lg:col-span-2 space-y-3">
+          <h2 class="text-sm font-bold text-white px-1">Lançamentos da Fatura</h2>
+          <div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 3.5: RESUMO ANUAL -->
+    <div id="view-anual" class="hidden space-y-6">
+      <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-sm font-bold text-white">📆 Balanço Anual</h2>
+        <select id="selFiltroAno" onchange="carregarRelatorioAnual()" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div class="card-glass p-4 border-t-4 border-t-purple-500"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Ano</span><div id="anual-total" class="text-lg sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div></div>
+        <div class="card-glass p-4 border-t-4 border-t-sky-500"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Média/Mês</span><div id="anual-media" class="text-lg sm:text-2xl font-bold text-sky-400 mt-1">R$ 0,00</div></div>
+        <div class="card-glass p-4 border-t-4 border-t-rose-500 col-span-2 sm:col-span-1"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Mês Pico</span><div id="anual-pico" class="text-lg sm:text-2xl font-bold text-rose-400 mt-1">-</div></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card-glass p-5">
+          <h2 class="text-sm font-bold text-white mb-4">Evolução no Ano</h2>
+          <div class="relative h-56 flex items-center justify-center"><canvas id="chartAnualBarras"></canvas></div>
+        </div>
+        <div class="card-glass p-5 overflow-x-auto">
+          <h2 class="text-sm font-bold text-white mb-3">Ranking de Categorias</h2>
+          <table class="w-full text-left text-sm"><tbody id="tabela-anual-cat" class="divide-y divide-slate-800/50"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 4: DASHBOARD GERAL -->
+    <div id="view-dashboard" class="hidden space-y-6">
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1">...</div></div> 
+      </section>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="card-glass p-5 lg:col-span-1 flex flex-col justify-between">
+          <h2 class="text-sm font-bold text-white mb-3">Distribuição Global</h2>
+          <div class="relative h-64 flex items-center justify-center"><canvas id="chartCategorias"></canvas></div>
+        </div>
+        <div class="card-glass p-5 lg:col-span-2 overflow-x-auto">
+          <div class="flex justify-between items-center mb-4 min-w-[300px]">
+            <h2 class="text-sm font-bold text-white">Próximos Meses (Horizonte)</h2>
+            <div class="flex gap-2">
+              <button onclick="mudarMesEvolucao(-1)" id="btnEvolPrev" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">&larr; Ant</button>
+              <button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">Próx &rarr;</button>
+            </div>
+          </div>
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
+            <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA 5: FORMAS DE PAGAMENTO -->
+    <div id="view-formas" class="hidden space-y-4">
+      <div class="flex justify-between items-center px-1 mb-2">
+        <h2 class="text-sm font-bold text-white">Cartões e Limites</h2>
+        <div class="flex gap-2">
+          <button onclick="abrirModalForma()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">➕ Novo</button>
+          <button onclick="toggleEdicaoFormas()" id="btnToggleEdicaoFp" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button>
+        </div>
+      </div>
+      <div id="lista-formas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-2"></div>
+      
+      <!-- 🔥 BOTÃO SALVAR RENOMEADO -->
+      <button onclick="salvarOrdemFormas()" id="btnSalvarFormas" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mb-4">
+        💾 Salvar
+      </button>
+    </div>
+
+    <!-- ABA 6: CATEGORIAS E METAS -->
+    <div id="view-categorias" class="hidden space-y-6 max-w-xl mx-auto">
+      <div class="card-glass p-5 sm:p-8">
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-base font-bold text-white">🏷️ Categorias e Metas</h2>
+          <div class="flex items-center gap-3">
+            <span id="contador-cat" class="text-[11px] font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">0/19</span>
+            <button onclick="toggleEdicaoCategorias()" id="btnToggleEdicaoCat" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button>
+          </div>
+        </div>
+        
+        <p id="infoTextCat" class="hidden text-xs text-slate-400 mb-6">Arraste (☰) para personalizar. Exclua ou adicione novas abaixo para enviar à planilha.</p>
+        
+        <div id="boxNovaCat" class="hidden flex-col sm:flex-row gap-3 mb-6">
+          <input type="text" id="inpNovaCat" placeholder="Nova Categoria..." onkeypress="if(event.key==='Enter'){adicionarCategoriaUi(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+          <input type="number" id="inpNovaMeta" placeholder="Meta R$ (Opc.)" class="w-full sm:w-32 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+          <button type="button" id="btnAdicionarCat" onclick="adicionarCategoriaUi()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition shadow-md active:scale-95">Adicionar</button>
+        </div>
+        
+        <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-3 mb-6 mt-4">
+          <ul id="lista-categorias-ui" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+            <li class="text-center text-slate-500 py-4 text-sm">Carregando...</li>
+          </ul>
+        </div>
+        
+        <!-- 🔥 BOTÃO SALVAR RENOMEADO -->
+        <button onclick="salvarCategorias()" id="btnSalvarCat" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95">
+          💾 Salvar
+        </button>
+      </div>
+    </div>
+
+    <!-- ABA 7: ASSINATURAS -->
+    <div id="view-assinaturas" class="hidden space-y-6">
+      <div class="px-1"><h2 class="text-sm font-bold text-white">🔄 Despesas Fixas Ativas</h2><p class="text-xs text-slate-400 mt-1">Lançadas automaticamente todo mês.</p></div>
+      <div id="lista-assinaturas-ativas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+      <div class="px-1 pt-6 border-t border-slate-800"><h2 class="text-sm font-bold text-slate-400">🚫 Histórico Canceladas</h2></div>
+      <div id="lista-assinaturas-inativas" class="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-60"></div>
+    </div>
+  </main>
+
+  <nav id="barraNavegacaoMobile" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2 pt-2 px-2 flex items-center overflow-x-auto hide-scrollbar gap-2 touch-pan-x shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)]"></nav>
+
+  <!-- MODAL: FILTRO AVANÇADO -->
+  <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">⚙️ Filtros Avançados</h3>
+      <div class="space-y-4">
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Cartão/Forma</label><select id="filtForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="filtCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todas</option></select></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm">
+          <option value="">Todos</option><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option>
+        </select></div>
+      </div>
+      <div class="flex gap-3 pt-5">
+        <button type="button" onclick="fecharModalFiltros()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
+        <button type="button" onclick="aplicarFiltros()" class="w-1/2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition shadow-[0_4px_14px_0_rgba(37,99,235,0.39)]">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTROS MODAIS -->
+  <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
+      <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
+      <form onsubmit="salvarForma(event)" class="space-y-4">
+        <input type="hidden" id="inpFpOriginal">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Nome</label><input type="text" id="inpFpNome" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Banco / Tipo</label><input type="text" id="inpFpBanco" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        </div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Limite Total (R$)</label><input type="text" id="inpFpLimite" placeholder="Ex: 5000,00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Dia Fechamento</label><input type="number" id="inpFpFechamento" min="1" max="31" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none"></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Dia Vencimento</label><input type="number" id="inpFpVencimento" min="1" max="31" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none"></div>
+        </div>
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="fecharModalForma()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
+          <button type="submit" id="btnSalvarFp" class="w-1/2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl transition">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-5">✏️ Editar Lançamento</h3>
+      <form onsubmit="salvarEdicaoLanc(event)" class="space-y-4">
+        <input type="hidden" id="inpEdLinha">
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Data</label><input type="text" id="inpEdData" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><input type="text" id="inpEdMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        </div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="inpEdDesc" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label><input type="text" id="inpEdValor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
+            <select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold">
+              <option value="Em Aberto">Em Aberto</option>
+              <option value="Pago">Pago</option>
+              <option value="Agendado">Agendado</option>
+              <option value="Assinatura Ativa">Ass. Ativa</option>
+              <option value="Assinatura Cancelada">Ass. Cancelada</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="fecharModalEdicaoLanc()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
+          <button type="submit" id="btnSalvarEdLanc" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition">Atualizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalEdicaoAss" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-2">🔄 Editar Assinatura</h3>
+      <p class="text-xs text-slate-400 mb-5">Altera o mês atual (em aberto) e futuros. O histórico pago é protegido.</p>
+      
+      <form onsubmit="salvarEdicaoAss(event)" class="space-y-4">
+        <input type="hidden" id="inpAssDescOrig">
+        <input type="hidden" id="inpAssFormaOrig">
+        
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Descrição</label><input type="text" id="inpAssDesc" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Cartão</label><select id="selAssForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Categoria</label><select id="selAssCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+        </div>
+        
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Valor Mensal (R$)</label><input type="text" id="inpAssValor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="fecharModalEdicaoAss()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
+          <button type="submit" id="btnSalvarEdAss" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition">Atualizar Assinatura</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 🔥 MOTOR DE COMUNICAÇÃO EXTERNA (FETCH API)
+    // ==========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
+
+    async function apiCall(action, param = null) {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, param: param })
+        });
+        const data = await response.json();
+        if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem.");
+        return data.dados;
+      } catch (err) {
+        console.error("Falha na API:", err);
+        throw err;
+      }
+    }
+
+    // --- ESTADOS DO APLICATIVO ---
+    let chartGlobal = null; let chartRel = null; let chartAnualObj = null;
+    let formasGlobais = []; let categoriasGlobaisEdit = []; let dadosCarregadosIniciais = false;
+    let evolucaoMeses = []; let evolucaoPivot = {}; let evolucaoIdx = 0;
+    let ultimosLancamentosCache = []; let dicionarioAutofill = {}; 
+    let modoEdicaoFormas = false; 
+    let modoEdicaoCategorias = false; 
+
+    let offsetAtual = 0; const LIMITE_PAGINA = 50; let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '' };
+
+    const abasConfig = [
+      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Lançamento', cor: 'text-emerald-400' },
+      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300' },
+      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300' },
+      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Lançamentos', cor: 'text-slate-300' },
+      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Mensal', cor: 'text-slate-300' },
+      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Anual', cor: 'text-slate-300' },
+      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Formas de Pagto', cor: 'text-slate-300' },
+      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias', cor: 'text-slate-300' }
+    ];
+
+    document.addEventListener("DOMContentLoaded", function() {
+      renderizarMenusNavegacao();
+      
+      const navDesktop = document.getElementById('barraNavegacaoDesktop');
+      new Sortable(navDesktop, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 100, delayOnTouchOnly: true, onEnd: function () { localStorage.setItem('ordemAbasGestorV8', JSON.stringify(Array.from(navDesktop.children).map(btn => btn.getAttribute('data-id')))); } });
+
+      const navMobile = document.getElementById('barraNavegacaoMobile');
+      new Sortable(navMobile, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 200, delayOnTouchOnly: true, onEnd: function () { localStorage.setItem('ordemAbasGestorV8', JSON.stringify(Array.from(navMobile.children).map(btn => btn.getAttribute('data-id')))); } });
+
+      window.addEventListener('online', atualizarIndicadorOffline);
+      window.addEventListener('offline', atualizarIndicadorOffline);
+      atualizarIndicadorOffline();
+    });
+
+    function renderizarMenusNavegacao() {
+      const ordemPadrao = ['novo', 'dashboard', 'assinaturas', 'lancamentos', 'relatorio', 'anual', 'formas', 'categorias'];
+      const ordemSalva = JSON.parse(localStorage.getItem('ordemAbasGestorV8')) || ordemPadrao;
+      const navDesktop = document.getElementById('barraNavegacaoDesktop'); const navMobile = document.getElementById('barraNavegacaoMobile');
+      navDesktop.innerHTML = ''; navMobile.innerHTML = '';
+      
+      ordemSalva.forEach(id => {
+        const config = abasConfig.find(a => a.id === id); if(!config) return;
+        navDesktop.innerHTML += `<button onclick="setAba('${id}')" id="btn-desk-${id}" data-id="${id}" class="tab-btn-global whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium ${config.cor} hover:text-white transition cursor-pointer">${config.icone} ${config.tituloD}</button>`;
+        navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" data-id="${id}" class="tab-btn-global flex-1 min-w-[70px] flex flex-col items-center justify-center p-1.5 rounded-xl ${config.cor} transition"><span class="text-xl mb-0.5">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
+      });
+      setAba(localStorage.getItem('abaAtivaGestorV8') || 'novo', false);
+    }
+
+    function setAba(aba, salvar=true) {
+      if(salvar) localStorage.setItem('abaAtivaGestorV8', aba);
+      abasConfig.forEach(a => {
+        const view = document.getElementById('view-' + a.id); if(view) view.classList.add('hidden');
+        const btnD = document.getElementById('btn-desk-' + a.id); const btnM = document.getElementById('btn-mob-' + a.id);
+        if(btnD) { btnD.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnD.classList.add(a.cor); }
+        if(btnM) { btnM.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnM.classList.add(a.cor); }
+      });
+      const viewShow = document.getElementById('view-' + aba); if(viewShow) viewShow.classList.remove('hidden');
+      const btnShowD = document.getElementById('btn-desk-' + aba); const btnShowM = document.getElementById('btn-mob-' + aba);
+      const corAtiva = (aba === 'novo') ? 'bg-emerald-600' : 'bg-blue-600';
+      if(btnShowD) { btnShowD.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowD.classList.remove('text-slate-300', 'text-emerald-400'); }
+      if(btnShowM) { btnShowM.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowM.classList.remove('text-slate-300', 'text-emerald-400'); }
+    }
+
+    function isCategoriaOutros(nome) { return String(nome || '').trim().toLowerCase() === 'outros' || String(nome || '').trim().toLowerCase() === 'outro'; }
+
+    function toggleEdicaoCategorias() {
+      modoEdicaoCategorias = !modoEdicaoCategorias;
+      const btn = document.getElementById('btnToggleEdicaoCat');
+      const boxNova = document.getElementById('boxNovaCat');
+      const btnSalvar = document.getElementById('btnSalvarCat');
+      const infoText = document.getElementById('infoTextCat');
+
+      if (modoEdicaoCategorias) {
+         btn.classList.replace('bg-slate-700', 'bg-amber-500');
+         btn.classList.replace('hover:bg-slate-600', 'hover:bg-amber-400');
+         btn.textContent = '❌ Cancelar';
+         boxNova.classList.replace('hidden', 'flex'); 
+         btnSalvar.classList.remove('hidden');
+         infoText.classList.remove('hidden');
+      } else {
+         btn.classList.replace('bg-amber-500', 'bg-slate-700');
+         btn.classList.replace('hover:bg-amber-400', 'hover:bg-slate-600');
+         btn.textContent = '⚙️ Organizar';
+         boxNova.classList.replace('flex', 'hidden');
+         btnSalvar.classList.add('hidden');
+         infoText.classList.add('hidden');
+      }
+      renderizarListaCategorias();
+    }
+
+    function atualizarIndicadorOffline() {
+      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+      const btn = document.getElementById('btnSyncOffline');
+      if (fila.length > 0) { btn.classList.remove('hidden'); btn.textContent = `📶 Sincronizar (${fila.length})`; } 
+      else { btn.classList.add('hidden'); }
+    }
+
+    function sincronizarFilaOffline() {
+      if (!navigator.onLine) { alert('Você ainda está sem internet.'); return; }
+      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+      if (fila.length === 0) return;
+      const btn = document.getElementById('btnSyncOffline'); btn.textContent = 'Enviando...'; btn.disabled = true;
+      
+      apiCall('sincronizarLoteWeb', fila)
+        .then(res => { localStorage.removeItem('filaOfflineGestor'); btn.disabled = false; alert(`✅ Sincronização Perfeita! ${res.qtd} lançamento(s) enviado(s).`); atualizarIndicadorOffline(); carregarDados(); })
+        .catch(err => { alert('Erro ao sincronizar: ' + err.message); btn.disabled = false; atualizarIndicadorOffline(); });
+    }
+
+    function toggleEdicaoFormas() {
+      modoEdicaoFormas = !modoEdicaoFormas;
+      const btn = document.getElementById('btnToggleEdicaoFp'); const btnSalvar = document.getElementById('btnSalvarFormas');
+      if (modoEdicaoFormas) { btn.classList.replace('bg-slate-700', 'bg-amber-500'); btn.classList.replace('hover:bg-slate-600', 'hover:bg-amber-400'); btn.textContent = '❌ Cancelar'; btnSalvar.classList.remove('hidden'); } 
+      else { btn.classList.replace('bg-amber-500', 'bg-slate-700'); btn.classList.replace('hover:bg-amber-400', 'hover:bg-slate-600'); btn.textContent = '⚙ Organizar'; btnSalvar.classList.add('hidden'); }
+      renderListaFormas();
+    }
+
+    function salvarOrdemFormas() {
+      const listaFormas = document.getElementById('lista-formas'); if(!listaFormas) return;
+      const novaOrdemNomes = Array.from(listaFormas.children).map(c => c.getAttribute('data-nome'));
+      const btnSalvar = document.getElementById('btnSalvarFormas'); btnSalvar.textContent = 'Salvando...'; btnSalvar.disabled = true; listaFormas.style.opacity = '0.5';
+      
+      apiCall('reordenarFormasPagamentoWeb', novaOrdemNomes)
+        .then(() => { btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; toggleEdicaoFormas(); carregarDados(); })
+        .catch(err => { alert('Erro ao salvar ordem: ' + err.message); btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; });
+    }
+
+    function renderizarDados(dados) {
+      if (!dados) return;
+
+      try { formasGlobais = dados.formasPagamento || []; categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : []; renderizarListaCategorias(); } catch(e){}
+      try { dicionarioAutofill = dados.autofill || {}; const dl = document.getElementById('listaDescricoes'); if(dl) { dl.innerHTML = ''; Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; }); } } catch(e){}
+      try { if (dados.kpis) { document.getElementById('kpi-aberto').textContent = dados.kpis.totalAberto; document.getElementById('kpi-pago').textContent = dados.kpis.totalPago; document.getElementById('kpi-comp').textContent = dados.kpis.comprometimentoMes; document.getElementById('kpi-geral').textContent = dados.kpis.totalGeral; } } catch(e){}
+
+      try {
+        const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma')];
+        selectsForma.forEach(sel => { if(sel) { const v = sel.value; sel.innerHTML = (sel.id==='filtForma') ? '<option value="">Todos</option>' : ''; (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`); sel.value=v;} });
+      } catch(e){}
+
+      try {
+        if (!dadosCarregadosIniciais) { definirDataHoje(); atualizarRegrasForma(); dadosCarregadosIniciais = true; }
+      } catch(e){}
+
+      try {
+        const selMes = document.getElementById('selFiltroMes'); const filtMes = document.getElementById('filtMes');
+        if(selMes) { const mesAtualSelecionado = selMes.value; selMes.innerHTML = '<option value="">Fatura...</option>'; (dados.mesesDisponiveis || []).forEach(m => selMes.innerHTML += `<option value="${m}">${m}</option>`); if(mesAtualSelecionado && (dados.mesesDisponiveis || []).includes(mesAtualSelecionado)) { selMes.value = mesAtualSelecionado; carregarRelatorioMes(); } else if ((dados.mesesDisponiveis || []).length > 0) { selMes.value = dados.mesesDisponiveis[0]; carregarRelatorioMes(); } }
+        if(filtMes) { const v = filtMes.value; filtMes.innerHTML = '<option value="">Todos</option>'; (dados.mesesDisponiveis || []).forEach(m => filtMes.innerHTML += `<option value="${m}">${m}</option>`); filtMes.value=v; }
+
+        const selAno = document.getElementById('selFiltroAno'); 
+        if(selAno) { const anoAtualSelecionado = selAno.value; selAno.innerHTML = '<option value="">Ano...</option>'; (dados.anosDisponiveis || []).forEach(a => selAno.innerHTML += `<option value="${a}">${a}</option>`); if(anoAtualSelecionado && (dados.anosDisponiveis || []).includes(anoAtualSelecionado)) { selAno.value = anoAtualSelecionado; carregarRelatorioAnual(); } else if ((dados.anosDisponiveis || []).length > 0) { selAno.value = dados.anosDisponiveis[0]; carregarRelatorioAnual(); } }
+      } catch(e){}
+
+      try { if (dados.faturas) { evolucaoMeses = dados.faturas.mesesGlobais || []; evolucaoPivot = dados.faturas.pivot || {}; evolucaoIdx = evolucaoMeses.indexOf(dados.faturas.mesAtual); if (evolucaoIdx === -1) evolucaoIdx = 0; renderTabelaEvolucao(); } } catch(e){}
+
+      try { if (dados.categorias && dados.categorias.length > 0) { if (chartGlobal) chartGlobal.destroy(); chartGlobal = new Chart(document.getElementById('chartCategorias').getContext('2d'), { type: 'doughnut', data: { labels: dados.categorias.map(c => c.nome), datasets: [{ data: dados.categorias.map(c => c.total), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } }); } } catch(e){}
+
+      try { renderListaFormas(); } catch(e){}
+
+      try {
+        let htmlAtivas = ''; let htmlInativas = '';
+        if(dados.assinaturas && dados.assinaturas.length > 0) {
+          const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa'); const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa');
+          if (ativas.length > 0) { ativas.forEach(a => { const descSafe = String(a.descricao).replace(/'/g, "\\'"); const formaSafe = String(a.forma).replace(/'/g, "\\'"); const catSafe = String(a.categoria).replace(/'/g, "\\'"); htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ativa</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`; });
+          } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>'; }
+          if (inativas.length > 0) { inativas.forEach(a => { htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`; });
+          } else { htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>'; }
+        } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>'; htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>'; }
+        document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas; document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas;
+      } catch(e){}
+
+      try { 
+        ultimosLancamentosCache = dados.lancamentos || []; 
+        renderTabelaLancamentos(ultimosLancamentosCache, false); 
+        const box = document.getElementById('boxCarregarMais');
+        if (dados.temMaisLancamentos && filtrosAtuais.termo === '') { box.classList.remove('hidden'); } else { box.classList.add('hidden'); }
+      } catch(e){}
+    }
+
+    function renderListaFormas() {
+      let htmlP = '';
+      if (!formasGlobais || formasGlobais.length === 0) { htmlP = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum cartão carregado.</div>';
+      } else {
+        formasGlobais.forEach((p, idx) => {
+          const nomeSeguro = String(p.nome || ''); const bancoSeguro = String(p.banco || ''); const limiteSafe = String(p.limiteTotal || 'R$ 0,00'); const dispSafe = String(p.disponivel || 'R$ 0,00'); const utiSafe = String(p.utilizado || 'R$ 0,00');
+          const nomeEscaped = nomeSeguro.replace(/'/g, "\\'"); const bancoEscaped = bancoSeguro.replace(/'/g, "\\'");
+          const nLower = nomeSeguro.toLowerCase(); const isPix = nLower.includes('pix'); const isTotal = nLower.includes('total') || nLower.includes('carteira'); const isFixed = isPix || isTotal;
+          const badgeClass = isPix ? 'bg-slate-700 text-slate-300' : (isTotal ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30');
+          
+          let botaoExcluir = ''; let iconeDrag = ''; let lockClass = ''; let botoesRow = ''; let margemInterna = '';
+          if (modoEdicaoFormas) {
+              margemInterna = 'ml-9';
+              if (!isFixed) { iconeDrag = `<span class="drag-handle-fp text-slate-500 hover:text-white text-2xl pr-3 cursor-grab transition active:scale-90">☰</span>`; botaoExcluir = `<button onclick="excluirFormaLocal('${nomeEscaped}')" class="text-rose-400 hover:text-white text-xs font-bold px-4 py-2 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 rounded-xl transition active:scale-95">Excluir</button>`;
+              } else { iconeDrag = `<span class="text-slate-600 text-lg pr-3" title="Posição Fixa">🔒</span>`; lockClass = 'locked-card opacity-90'; }
+              let botaoEditar = `<button onclick="abrirModalForma('${nomeEscaped}', '${bancoEscaped}', '${p.limiteTotal || ''}', '${p.fechamento || ''}', '${p.vencimento || ''}')" class="text-blue-400 hover:text-white text-xs font-bold px-4 py-2 bg-blue-900/20 border border-blue-500/20 hover:bg-blue-600 rounded-xl transition active:scale-95">Editar</button>`;
+              botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
+          }
+          
+          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm transition-all duration-300"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna} transition-all duration-300"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${limiteSafe}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${dispSafe}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Fatura Atual</span><span class="text-amber-400 font-bold text-base">${utiSafe}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div></div>${botoesRow}</div>`;
+        });
+      }
+      const listaFormas = document.getElementById('lista-formas');
+      if(listaFormas) {
+        listaFormas.innerHTML = htmlP;
+        if (listaFormas.sortableInstance) { listaFormas.sortableInstance.destroy(); }
+        if (modoEdicaoFormas) { listaFormas.sortableInstance = new Sortable(listaFormas, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-fp', filter: '.locked-card', delay: 150, delayOnTouchOnly: true }); }
+      }
+    }
+
+    function renderTabelaLancamentos(lista, append=false) {
+      let htmlL = '';
+      lista.forEach(l => {
+        let badgeColor = l[9] === 'Pago' ? 'bg-emerald-500/20 text-emerald-400' : (l[9] === 'Agendado' ? 'bg-sky-500/20 text-sky-400' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30');
+        if(l[9].includes('Assinatura')) badgeColor = l[9] === 'Assinatura Ativa' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-rose-500/20 text-rose-400';
+        const descSafe = String(l[1]).replace(/'/g, "\\'"); const formaSafe = String(l[2]).replace(/'/g, "\\'"); const catSafe = String(l[3]).replace(/'/g, "\\'");
+        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${l[0]}</div><div class="text-white font-bold text-base mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg leading-tight tracking-tight">${l[7]}</div><div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">Parc: ${l[6]}</div></div></div><div class="flex justify-between items-center mt-2 pt-3 border-t border-slate-700/50"><div class="flex items-center gap-2"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${l[9]}</span><span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span></div><button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}')" class="text-purple-400 hover:text-white text-xs font-bold px-4 py-1.5 bg-purple-900/20 hover:bg-purple-600 rounded-lg transition active:scale-95 border border-purple-500/20">Editar</button></div></div>`;
+      });
+      if(lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado.</div>';
+      
+      const boxLanc = document.getElementById('lista-lancamentos');
+      if(boxLanc) { if(append) boxLanc.insertAdjacentHTML('beforeend', htmlL); else boxLanc.innerHTML = htmlL; }
+    }
+
+    function abrirModalFiltros() { document.getElementById('modalFiltros').classList.remove('hidden'); }
+    function fecharModalFiltros() { document.getElementById('modalFiltros').classList.add('hidden'); }
+    function limparFiltros() { document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = ''; document.getElementById('filtCat').value = ''; document.getElementById('filtStatus').value = ''; aplicarFiltros(); }
+
+    function aplicarFiltros() {
+      filtrosAtuais = { termo: document.getElementById('inpBusca').value.trim(), mes: document.getElementById('filtMes').value, forma: document.getElementById('filtForma').value, categoria: document.getElementById('filtCat').value, status: document.getElementById('filtStatus').value };
+      offsetAtual = 0; document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Buscando na nuvem...</div>';
+      document.getElementById('boxCarregarMais').classList.add('hidden'); fecharModalFiltros(); chamarFiltroBackend();
+    }
+
+    function carregarMaisLancamentos() { offsetAtual += LIMITE_PAGINA; const btn = document.querySelector('#boxCarregarMais button'); btn.textContent = 'Baixando...'; chamarFiltroBackend(true); }
+    
+    function chamarFiltroBackend(append = false) { 
+      apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA })
+        .then(res => { 
+          if(!append) document.getElementById('lista-lancamentos').innerHTML = ''; 
+          renderTabelaLancamentos(res.itens, append); 
+          const box = document.getElementById('boxCarregarMais'); 
+          if(res.temMais) { box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇'; } else { box.classList.add('hidden'); } 
+        })
+        .catch(err => alert('Erro na busca: ' + err.message)); 
+    }
+
+    function enviarGasto(e) {
+      e.preventDefault(); const btn = document.getElementById('btnSalvar'); btn.textContent = 'Aguarde...'; btn.disabled = true;
+      const payload = { dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, descricao: document.getElementById('inpDesc').value, formaPagto: document.getElementById('selForma').value, categoria: document.getElementById('selCat').value, valorTotal: document.getElementById('inpValor').value, numParcelas: document.getElementById('inpParc').value, parcelaInicial: document.getElementById('inpParcIni').value, statusInicial: document.getElementById('selStatus').value, isAssinatura: document.getElementById('checkAssinatura').checked };
+
+      if (!navigator.onLine) {
+         let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); fila.push(payload); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
+         alert('Conexão perdida! Gasto salvo OFFLINE ⚡.\nLembre-se de clicar em "Sincronizar" quando a internet voltar.');
+         document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); atualizarIndicadorOffline(); btn.textContent = '💾 Lançar'; btn.disabled = false; return;
+      }
+      
+      apiCall('salvarLancamentoWeb', payload)
+        .then(() => { alert('Lançado na nuvem!'); document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); btn.textContent = '💾 Lançar'; btn.disabled = false; carregarDados(); })
+        .catch(err => { alert('Erro: ' + err.message); btn.textContent = '💾 Lançar'; btn.disabled = false; });
+    }
+
+    function renderizarListaCategorias() {
+      const ul = document.getElementById('lista-categorias-ui'); if(!ul) return;
+      const countSpan = document.getElementById('contador-cat'); if(countSpan) countSpan.textContent = `${categoriasGlobaisEdit.length}/19`;
+      ul.innerHTML = '';
+      if(categoriasGlobaisEdit.length === 0) { ul.innerHTML = '<li class="text-center text-slate-500 py-4 text-sm">Nenhuma encontrada.</li>'; return; }
+
+      const ordemSalva = JSON.parse(localStorage.getItem('ordemCategoriasLocalV8')) || [];
+
+      categoriasGlobaisEdit.sort((a, b) => {
+        if (isCategoriaOutros(a.nome) && !isCategoriaOutros(b.nome)) return 1;
+        if (!isCategoriaOutros(a.nome) && isCategoriaOutros(b.nome)) return -1;
+        if (ordemSalva.length > 0) {
+          let idxA = ordemSalva.indexOf(a.nome); let idxB = ordemSalva.indexOf(b.nome);
+          if (idxA === -1) idxA = 999; if (idxB === -1) idxB = 999;
+          if (idxA !== idxB) return idxA - idxB;
+        }
+        return a.nome.toLowerCase().localeCompare(b.nome.toLowerCase());
+      });
+
+      const selectsCat = [document.getElementById('selCat'), document.getElementById('selEdCat'), document.getElementById('selAssCat'), document.getElementById('filtCat')];
+      selectsCat.forEach(sel => {
+        if(sel) {
+          const valAtual = sel.value; sel.innerHTML = (sel.id==='filtCat') ? '<option value="">Todas</option>' : '';
+          categoriasGlobaisEdit.forEach(c => sel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`); sel.value = valAtual;
+        }
+      });
+
+      categoriasGlobaisEdit.forEach((c, index) => {
+        const isFixa = isCategoriaOutros(c.nome);
+        const metaStr = c.meta > 0 ? `<span class="text-[10px] text-amber-400 font-bold ml-2 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">Meta: R$ ${c.meta.toFixed(2).replace('.',',')}</span>` : '';
+        
+        let espacamentoItem = ''; let iconeDrag = ''; let botoesAcao = ''; let classeLock = '';
+        
+        if (modoEdicaoCategorias) {
+            espacamentoItem = 'pl-2 pr-4 py-2.5';
+            if (isFixa) { iconeDrag = `<span class="text-slate-600 text-lg px-3" title="Posição Fixa">🔒</span>`; classeLock = 'locked-item opacity-80'; } 
+            else { iconeDrag = `<span class="drag-handle-cat text-slate-500 hover:text-white text-2xl px-3 py-1 bg-slate-900/50 rounded-lg transition cursor-grab active:scale-90">☰</span>`; classeLock = ''; }
+            botoesAcao = `<div class="flex gap-2"><button type="button" onclick="editarCategoriaUi(${index})" class="text-blue-400 bg-blue-900/20 p-2 rounded-lg transition active:scale-95">✏️</button><button type="button" onclick="removerCategoriaUi(${index})" class="text-rose-400 bg-rose-900/20 p-2 rounded-lg transition active:scale-95">🗑</button></div>`;
+        } else {
+            espacamentoItem = 'px-4 py-3'; 
+        }
+
+        ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80 mb-2 transition-all"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
+      });
+
+      if (ul.sortableInstance) { ul.sortableInstance.destroy(); ul.sortableInstance = null; }
+      if (modoEdicaoCategorias) {
+         ul.sortableInstance = new Sortable(ul, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item', onEnd: function () { const novaOrdemNomes = Array.from(ul.children).map(li => li.getAttribute('data-nome')); const normais = novaOrdemNomes.filter(n => !isCategoriaOutros(n)); const osOutros = novaOrdemNomes.filter(n => isCategoriaOutros(n)); localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...normais, ...osOutros])); renderizarListaCategorias(); } });
+      }
+    }
+
+    let indexEdicaoCat = -1;
+    function editarCategoriaUi(index) { const c = categoriasGlobaisEdit[index]; document.getElementById('inpNovaCat').value = c.nome; document.getElementById('inpNovaMeta').value = c.meta > 0 ? c.meta : ''; indexEdicaoCat = index; const btn = document.getElementById('btnAdicionarCat'); btn.textContent = 'Atualizar'; btn.classList.replace('bg-blue-600', 'bg-amber-500'); btn.classList.replace('hover:bg-blue-500', 'hover:bg-amber-400'); }
+    function adicionarCategoriaUi() { const inpNome = document.getElementById('inpNovaCat'); const inpMeta = document.getElementById('inpNovaMeta'); const valNome = inpNome.value.trim(); const valMeta = parseFloat(inpMeta.value.replace(',', '.')) || 0; if(!valNome) return; if (indexEdicaoCat !== -1) { if(categoriasGlobaisEdit.some((c, i) => i !== indexEdicaoCat && c.nome.toLowerCase() === valNome.toLowerCase())) { alert('Categoria já existe!'); return; } categoriasGlobaisEdit[indexEdicaoCat] = { nome: valNome, meta: valMeta }; indexEdicaoCat = -1; const btn = document.getElementById('btnAdicionarCat'); btn.textContent = 'Adicionar'; btn.classList.replace('bg-amber-500', 'bg-blue-600'); btn.classList.replace('hover:bg-amber-400', 'hover:bg-blue-500'); } else { if(categoriasGlobaisEdit.length >= 19) { alert('Limite atingido.'); return; } if(categoriasGlobaisEdit.some(c => c.nome.toLowerCase() === valNome.toLowerCase())) { alert('Categoria já existe!'); return; } categoriasGlobaisEdit.push({ nome: valNome, meta: valMeta }); } inpNome.value = ''; inpMeta.value = ''; renderizarListaCategorias(); }
+    function removerCategoriaUi(index) { categoriasGlobaisEdit.splice(index, 1); renderizarListaCategorias(); }
+    
+    function salvarCategorias() {
+      const btn = document.getElementById('btnSalvarCat'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      apiCall('salvarCategoriasWeb', categoriasGlobaisEdit)
+        .then(() => { btn.textContent = '💾 Salvar'; btn.disabled = false; toggleEdicaoCategorias(); alert('Banco atualizado!'); carregarDados(); })
+        .catch(err => { alert('Erro: ' + err.message); btn.textContent = '💾 Salvar'; btn.disabled = false; });
+    }
+
+    function definirDataHoje() { const hoje = new Date(); document.getElementById('inpData').value = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`; }
+    function mascaraData(input) { let v = input.value.replace(/\D/g,''); if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2); if (v.length > 5) v = v.substring(0,5) + '/' + v.substring(5,9); input.value = v; if (v.length === 10) atualizarRegrasForma(); }
+    function alternarModoAssinatura() { const chk = document.getElementById('checkAssinatura').checked; const boxParc = document.getElementById('boxParc'); const boxParcIni = document.getElementById('boxParcIni'); const boxStatus = document.getElementById('boxStatus'); if(chk) { boxParc.style.display = 'none'; boxParcIni.style.display = 'none'; boxStatus.style.display = 'none'; } else { boxParc.style.display = 'block'; boxParcIni.style.display = 'block'; boxStatus.style.display = 'block'; atualizarRegrasForma(); } }
+    function atualizarRegrasForma() {
+      const chk = document.getElementById('checkAssinatura').checked; const nomeSelecionado = document.getElementById('selForma').value; const dataCompraStr = document.getElementById('inpData').value; const inpMesFat = document.getElementById('inpMesFat'); const selStatus = document.getElementById('selStatus'); const inpParc = document.getElementById('inpParc'); const inpParcIni = document.getElementById('inpParcIni');
+      if (!nomeSelecionado || dataCompraStr.length !== 10) return; const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado); if (!formaObj) return;
+      if (nomeSelecionado.toLowerCase().includes('pix')) { inpParc.value = 1; inpParc.disabled = true; inpParcIni.value = 1; inpParcIni.disabled = true; if(!chk) selStatus.value = 'Pago'; const partes = dataCompraStr.split('/'); if (partes.length === 3) inpMesFat.value = `${partes[1]}/${partes[2]}`; } else {
+        inpParc.disabled = false; inpParcIni.disabled = false; if(!chk) selStatus.value = 'Em Aberto';
+        let diaVencimentoOrig = parseInt(formaObj.vencimento, 10); const partes = dataCompraStr.split('/'); let dataCompra = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10)); dataCompra.setHours(0,0,0,0);
+        let mesTentar = dataCompra.getMonth(); let anoTentar = dataCompra.getFullYear();
+        function getCicloFatura(ano, mes) { let venc = new Date(ano, mes, diaVencimentoOrig); if (venc.getDay() === 0) venc.setDate(venc.getDate() + 1); if (venc.getDay() === 6) venc.setDate(venc.getDate() + 2); venc.setHours(0,0,0,0); let fech = new Date(venc); fech.setDate(venc.getDate() - 7); fech.setHours(0,0,0,0); return { venc, fech }; }
+        let ciclo = getCicloFatura(anoTentar, mesTentar); let loops = 0; while (dataCompra >= ciclo.fech && loops < 3) { mesTentar++; if(mesTentar > 11) { mesTentar = 0; anoTentar++; } ciclo = getCicloFatura(anoTentar, mesTentar); loops++; }
+        inpMesFat.value = `${String(ciclo.venc.getMonth() + 1).padStart(2, '0')}/${ciclo.venc.getFullYear()}`;
+      }
+    }
+    function checarAutopreenchimento() { const desc = document.getElementById('inpDesc').value.trim().toLowerCase(); if (dicionarioAutofill[desc]) { const info = dicionarioAutofill[desc]; const selForma = document.getElementById('selForma'); if (info.forma && [...selForma.options].some(o => o.value === info.forma)) { selForma.value = info.forma; atualizarRegrasForma(); } const selCat = document.getElementById('selCat'); if (info.categoria && [...selCat.options].some(o => o.value === info.categoria)) { selCat.value = info.categoria; } } }
+
+    function abrirModalForma(nome='', banco='', limite='', fechamento='', vencimento='') { document.getElementById('modalFormaTitle').innerHTML = nome ? '✏️ Editar Cartão' : '➕ Novo Cartão'; document.getElementById('inpFpOriginal').value = nome; document.getElementById('inpFpNome').value = nome; document.getElementById('inpFpBanco').value = banco; document.getElementById('inpFpLimite').value = limite; document.getElementById('inpFpFechamento').value = fechamento; document.getElementById('inpFpVencimento').value = vencimento; document.getElementById('modalForma').classList.remove('hidden'); }
+    function fecharModalForma() { document.getElementById('modalForma').classList.add('hidden'); }
+    function salvarForma(e) { 
+      e.preventDefault(); const btn = document.getElementById('btnSalvarFp'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
+      apiCall('salvarFormaPagamentoWeb', { nomeOriginal: document.getElementById('inpFpOriginal').value, nome: document.getElementById('inpFpNome').value, banco: document.getElementById('inpFpBanco').value, limite: document.getElementById('inpFpLimite').value, fechamento: document.getElementById('inpFpFechamento').value, vencimento: document.getElementById('inpFpVencimento').value })
+        .then(() => { fecharModalForma(); carregarDados(); btn.textContent = 'Salvar'; btn.disabled = false; })
+        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Salvar'; btn.disabled = false; });
+    }
+    
+    function excluirFormaLocal(nome) { 
+      if(!confirm(`Tem certeza que deseja excluir "${nome}" permanentemente?\n\nOs lançamentos antigos já gravados não serão afetados, mas a forma de pagamento deixará de existir.`)) return; 
+      const lista = document.getElementById('lista-formas'); if(lista) lista.style.opacity = '0.4'; 
+      apiCall('excluirFormaPagamentoWeb', nome)
+        .then(res => { if(res.sucesso || res) alert('Excluído!'); carregarDados(); })
+        .catch(err => { alert('Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
+    }
+
+    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status) { document.getElementById('inpEdLinha').value = linha; document.getElementById('inpEdData').value = data; document.getElementById('inpEdDesc').value = desc; document.getElementById('selEdForma').value = forma; document.getElementById('selEdCat').value = cat; document.getElementById('inpEdValor').value = valor; document.getElementById('inpEdMesFat').value = mes; document.getElementById('selEdStatus').value = status; document.getElementById('modalEdicaoLanc').classList.remove('hidden'); }
+    function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
+    function salvarEdicaoLanc(e) { 
+      e.preventDefault(); const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
+      apiCall('editarLancamentoLinhaWeb', { linha: document.getElementById('inpEdLinha').value, dataCompra: document.getElementById('inpEdData').value, descricao: document.getElementById('inpEdDesc').value, formaPagto: document.getElementById('selEdForma').value, categoria: document.getElementById('selEdCat').value, valorParcela: document.getElementById('inpEdValor').value, mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value })
+        .then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; })
+        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+    }
+    
+    function abrirModalEdicaoAss(desc, forma, cat, valor) { document.getElementById('inpAssDescOrig').value = desc; document.getElementById('inpAssFormaOrig').value = forma; document.getElementById('inpAssDesc').value = desc; document.getElementById('selAssForma').value = forma; document.getElementById('selAssCat').value = cat; document.getElementById('inpAssValor').value = valor.replace('R$', '').trim(); document.getElementById('modalEdicaoAss').classList.remove('hidden'); }
+    function fecharModalEdicaoAss() { document.getElementById('modalEdicaoAss').classList.add('hidden'); }
+    function salvarEdicaoAss(e) { 
+      e.preventDefault(); const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
+      apiCall('editarAssinaturaWeb', { descOriginal: document.getElementById('inpAssDescOrig').value, formaOriginal: document.getElementById('inpAssFormaOrig').value, novaDesc: document.getElementById('inpAssDesc').value, novaForma: document.getElementById('selAssForma').value, novaCat: document.getElementById('selAssCat').value, novaValor: document.getElementById('inpAssValor').value })
+        .then(res => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar'; btn.disabled = false; if(res.sucesso || res) alert('Atualizado!'); carregarDados(); })
+        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+    }
+
+    function cancelarAssinaturaLocal(descricao, forma) { 
+      if(!confirm(`Deseja desativar "${descricao}"?`)) return; 
+      document.getElementById('lista-assinaturas-ativas').style.opacity = '0.4'; 
+      apiCall('cancelarAssinaturaWeb', {descricao: descricao, forma: forma})
+        .then(res => carregarDados())
+        .catch(err => { alert('Erro: ' + err.message); document.getElementById('lista-assinaturas-ativas').style.opacity = '1'; });
+    }
+    
+    function renderTabelaEvolucao() { const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + 4); let th = `<th class="py-2.5">Forma de Pagamento</th>`; mToShow.forEach(m => th += `<th class="py-2.5 text-center">${m}</th>`); th += `<th class="py-2.5 text-right pr-2">Restante a Pagar</th>`; const hdr = document.getElementById('faturas-header'); if(hdr) hdr.innerHTML = th; let tb = ''; const formas = Object.keys(evolucaoPivot).sort(); formas.forEach(forma => { let totalLinha = 0; let cols = mToShow.map(m => { const val = evolucaoPivot[forma][m] || 0; totalLinha += val; return `<td class="py-2.5 text-center text-slate-300 font-medium">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`; }); tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800"><td class="py-3 font-semibold text-white">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`; }); const fBody = document.getElementById('faturas-body'); if(fBody) fBody.innerHTML = tb; const btnPrev = document.getElementById('btnEvolPrev'); const btnNext = document.getElementById('btnEvolNext'); const isStart = (evolucaoIdx === 0); const isEnd = (evolucaoIdx + 4 >= evolucaoMeses.length); if(btnPrev) { btnPrev.disabled = isStart; btnPrev.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } if(btnNext) { btnNext.disabled = isEnd; btnNext.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } }
+    function mudarMesEvolucao(step) { evolucaoIdx += step; if (evolucaoIdx < 0) evolucaoIdx = 0; if (evolucaoIdx + 4 > evolucaoMeses.length) evolucaoIdx = Math.max(0, evolucaoMeses.length - 4); renderTabelaEvolucao(); }
+    
+    function carregarRelatorioMes() { 
+      const mes = document.getElementById('selFiltroMes').value; if(!mes) return; 
+      document.getElementById('lista-relatorio').innerHTML = '<div class="py-4 text-center text-slate-500">Buscando dados...</div>'; 
+      apiCall('obterRelatorioMes', mes)
+        .then(res => { 
+          if(!res) return; document.getElementById('rel-aberto').textContent = res.kpis.aberto; document.getElementById('rel-pago').textContent = res.kpis.pago; document.getElementById('rel-total').textContent = res.kpis.total; if (chartRel) chartRel.destroy(); chartRel = new Chart(document.getElementById('chartRelatorio').getContext('2d'), { type: 'pie', data: { labels: res.categorias.map(c => c.nome), datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } }); let htmlMetas = ''; let temMeta = false; res.categorias.forEach(c => { if (c.meta > 0) { temMeta = true; const realPct = (c.total / c.meta) * 100; const pct = Math.min(realPct, 100).toFixed(0); let corBg = 'bg-emerald-500'; let corTexto = 'text-emerald-400'; if (realPct >= 75 && realPct < 100) { corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; } else if (realPct >= 100) { corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; } htmlMetas += `<div><div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">${c.nome}</span><span class="${corTexto}">${c.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} / ${c.meta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} (${realPct.toFixed(0)}%)</span></div><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`; } }); if(!temMeta) htmlMetas = '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>'; document.getElementById('termometro-metas').innerHTML = htmlMetas; let html = ''; res.lancamentos.forEach(l => { let badge = l[9] === 'Pago' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'; if(l[9].includes('Assinatura')) badge = l[9] === 'Assinatura Ativa' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-rose-500/20 text-rose-400'; const descSafe = String(l[1]).replace(/'/g, "\\'"); const formaSafe = String(l[2]).replace(/'/g, "\\'"); const catSafe = String(l[3]).replace(/'/g, "\\'"); html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-[11px] text-slate-400 mt-0.5">💳 ${l[2]}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95">Editar</button></div></div>`; }); if(res.lancamentos.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento no mês.</div>'; document.getElementById('lista-relatorio').innerHTML = html; 
+        })
+        .catch(err => alert('Erro no relatório: ' + err.message)); 
+    }
+
+    function carregarRelatorioAnual() { 
+      const ano = document.getElementById('selFiltroAno').value; if(!ano) return; 
+      document.getElementById('tabela-anual-cat').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Buscando...</td></tr>'; 
+      apiCall('obterRelatorioAnual', ano)
+        .then(res => { 
+          if(!res) return; document.getElementById('anual-total').textContent = res.total; document.getElementById('anual-media').textContent = res.media; document.getElementById('anual-pico').textContent = res.maiorMes; if (chartAnualObj) chartAnualObj.destroy(); chartAnualObj = new Chart(document.getElementById('chartAnualBarras').getContext('2d'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], datasets: [{ label: 'Gastos R$', data: res.graficoMeses, backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); let html = ''; res.categorias.forEach(c => { html += `<tr class="border-b border-slate-800/50"><td class="py-3 text-slate-300 font-medium">${c.nome}</td><td class="py-3 text-right font-bold text-white">${c.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`; }); if(res.categorias.length === 0) html = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>'; document.getElementById('tabela-anual-cat').innerHTML = html; 
+        })
+        .catch(err => alert('Erro: ' + err.message)); 
+    }
+
+    function carregarDados() { 
+      apiCall('getDadosCompletos')
+        .then(renderizarDados)
+        .catch(err => alert('Erro crítico ao carregar sistema: ' + err.message)); 
+    }
+
+    window.onload = carregarDados; 
+  </script>
+</body>
+</html>
