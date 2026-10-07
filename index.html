@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    <!-- 🔥 DASHBOARD COM O TOTAL CARTEIRA INTEGRADO -->
+    <!-- 🔥 DASHBOARD: LIMPO, APENAS COM A TABELA DE HORIZONTE NO FINAL -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -186,20 +186,6 @@
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1">...</div></div> 
       </section>
-
-      <!-- CARD EXCLUSIVO DE TOTAL CARTEIRA NO DASHBOARD -->
-      <div class="card-glass p-5 border-l-4 border-l-purple-500 bg-gradient-to-r from-purple-950/20 to-slate-900/40">
-        <div class="flex justify-between items-center mb-3">
-          <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">💳 Resumo Consolidado (Total Carteira)</h3>
-          <span class="text-xs text-slate-400 font-semibold">Crédito Geral</span>
-        </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Limite Total</span><span id="dash-carteira-limite" class="text-slate-300 font-medium text-sm sm:text-base">R$ 0,00</span></div>
-          <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Disponível</span><span id="dash-carteira-disp" class="text-emerald-400 font-bold text-sm sm:text-base">R$ 0,00</span></div>
-          <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Fatura Mês Atual</span><span id="dash-carteira-mes" class="text-amber-400 font-bold text-sm sm:text-base">R$ 0,00</span></div>
-          <div><span class="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Total Futuro</span><span id="dash-carteira-futuro" class="text-sky-400 font-bold text-sm sm:text-base">R$ 0,00</span></div>
-        </div>
-      </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="card-glass p-5 lg:col-span-1 flex flex-col justify-between">
@@ -507,20 +493,6 @@
           document.getElementById('kpi-comp').textContent = dados.kpis.comprometimentoMes; 
           document.getElementById('kpi-geral').textContent = dados.kpis.totalGeral; 
         } 
-      } catch(e){}
-
-      // EXIBIÇÃO DO TOTAL CARTEIRA NO DASHBOARD
-      try {
-        const carteiraObj = formasGlobais.find(f => {
-            const n = f.nome.toLowerCase();
-            return n.includes('total') || n.includes('carteira');
-        });
-        if (carteiraObj) {
-            document.getElementById('dash-carteira-limite').textContent = carteiraObj.limiteTotal || 'R$ 0,00';
-            document.getElementById('dash-carteira-disp').textContent = carteiraObj.disponivel || 'R$ 0,00';
-            document.getElementById('dash-carteira-mes').textContent = carteiraObj.utilizado || 'R$ 0,00';
-            document.getElementById('dash-carteira-futuro').textContent = carteiraObj.totalFuturo || 'R$ 0,00';
-        }
       } catch(e){}
 
       try { const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma')]; selectsForma.forEach(sel => { if(sel) { const v = sel.value; sel.innerHTML = (sel.id==='filtForma') ? '<option value="">Todos</option>' : ''; (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`); sel.value=v;} }); } catch(e){}
