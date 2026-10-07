@@ -178,7 +178,7 @@
       </div>
     </div>
 
-    <!-- 🔥 DASHBOARD: LIMPO, APENAS COM A TABELA DE HORIZONTE NO FINAL -->
+    <!-- 🔥 DASHBOARD: LIMPO COM A LINHA DE TOTAL CARTEIRA A FUNCIONAR! -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -485,7 +485,6 @@
       try { formasGlobais = dados.formasPagamento || []; categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : []; renderizarListaCategorias(); } catch(e){}
       try { dicionarioAutofill = dados.autofill || {}; const dl = document.getElementById('listaDescricoes'); if(dl) { dl.innerHTML = ''; Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; }); } } catch(e){}
       
-      // KPI'S DO DASHBOARD
       try { 
         if (dados.kpis) { 
           document.getElementById('kpi-aberto').textContent = dados.kpis.totalAberto; 
@@ -498,12 +497,15 @@
       try { const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma')]; selectsForma.forEach(sel => { if(sel) { const v = sel.value; sel.innerHTML = (sel.id==='filtForma') ? '<option value="">Todos</option>' : ''; (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`); sel.value=v;} }); } catch(e){}
       try { if (!dadosCarregadosIniciais) { definirDataHoje(); atualizarRegrasForma(); dadosCarregadosIniciais = true; } } catch(e){}
       try { const selMes = document.getElementById('selFiltroMes'); const filtMes = document.getElementById('filtMes'); if(selMes) { const mesAtualSelecionado = selMes.value; selMes.innerHTML = '<option value="">Fatura...</option>'; (dados.mesesDisponiveis || []).forEach(m => selMes.innerHTML += `<option value="${m}">${m}</option>`); if(mesAtualSelecionado && (dados.mesesDisponiveis || []).includes(mesAtualSelecionado)) { selMes.value = mesAtualSelecionado; carregarRelatorioMes(); } else if ((dados.mesesDisponiveis || []).length > 0) { selMes.value = dados.mesesDisponiveis[0]; carregarRelatorioMes(); } } if(filtMes) { const v = filtMes.value; filtMes.innerHTML = '<option value="">Todos</option>'; (dados.mesesDisponiveis || []).forEach(m => filtMes.innerHTML += `<option value="${m}">${m}</option>`); filtMes.value=v; } const selAno = document.getElementById('selFiltroAno'); if(selAno) { const anoAtualSelecionado = selAno.value; selAno.innerHTML = '<option value="">Ano...</option>'; (dados.anosDisponiveis || []).forEach(a => selAno.innerHTML += `<option value="${a}">${a}</option>`); if(anoAtualSelecionado && (dados.anosDisponiveis || []).includes(anoAtualSelecionado)) { selAno.value = anoAtualSelecionado; carregarRelatorioAnual(); } else if ((dados.anosDisponiveis || []).length > 0) { selAno.value = dados.anosDisponiveis[0]; carregarRelatorioAnual(); } } } catch(e){}
+      
       try { if (dados.faturas) { evolucaoMeses = dados.faturas.mesesGlobais || []; evolucaoPivot = dados.faturas.pivot || {}; evolucaoIdx = evolucaoMeses.indexOf(dados.faturas.mesAtual); if (evolucaoIdx === -1) evolucaoIdx = 0; renderTabelaEvolucao(); } } catch(e){}
+      
       try { if (dados.categorias && dados.categorias.length > 0) { if (chartGlobal) chartGlobal.destroy(); chartGlobal = new Chart(document.getElementById('chartCategorias').getContext('2d'), { type: 'doughnut', data: { labels: dados.categorias.map(c => c.nome), datasets: [{ data: dados.categorias.map(c => c.total), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } }); } } catch(e){}
       
       try { renderListaFormas(); } catch(e){}
 
       try { let htmlAtivas = ''; let htmlInativas = ''; if(dados.assinaturas && dados.assinaturas.length > 0) { const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa'); const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa'); if (ativas.length > 0) { ativas.forEach(a => { const descSafe = String(a.descricao).replace(/'/g, "\\'"); const formaSafe = String(a.forma).replace(/'/g, "\\'"); const catSafe = String(a.categoria).replace(/'/g, "\\'"); htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ativa</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`; }); } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>'; } if (inativas.length > 0) { inativas.forEach(a => { htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`; }); } else { htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>'; } } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>'; htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>'; } document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas; document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas; } catch(e){}
+      
       try { ultimosLancamentosCache = dados.lancamentos || []; renderTabelaLancamentos(ultimosLancamentosCache, false); const box = document.getElementById('boxCarregarMais'); if (dados.temMaisLancamentos && filtrosAtuais.termo === '') { box.classList.remove('hidden'); } else { box.classList.add('hidden'); } } catch(e){}
     }
 
@@ -543,7 +545,6 @@
       }
     }
 
-    // 🔥 TABELA DE HISTÓRICO COM BOTÃO DE EXCLUIR
     function renderTabelaLancamentos(lista, append=false) {
       let htmlL = '';
       lista.forEach(l => {
