@@ -45,26 +45,26 @@
       padding-right: 1.5rem;
     }
 
-    /* 🔥 ANIMAÇÃO DO TOAST AMIGÁVEL */
+    /* 🔥 ANIMAÇÃO DO TOAST PERFEITAMENTE CENTRALIZADO */
     #toastNotificacao {
-      transition: transform 0.3s ease, opacity 0.3s ease;
-      transform: translateY(100px);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      transform: translate(-50%, -20px) scale(0.9);
       opacity: 0;
     }
     #toastNotificacao.show {
-      transform: translateY(0);
+      transform: translate(-50%, 0) scale(1);
       opacity: 1;
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <!-- 🔥 COMPONENTE DO TOAST FLUTUANTE (SUBSTITUTO DOS ALERTAS FEIOS) -->
-  <div id="toastNotificacao" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-slate-800 border border-emerald-500/40 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-none max-w-xs w-full mx-auto">
-    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30">✨</div>
+  <!-- 🔥 TOAST CENTRALIZADO NO TOPO ABAIXO DO HEADER -->
+  <div id="toastNotificacao" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 pointer-events-none max-w-sm w-[90%]">
+    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
     <div>
-      <h4 id="toastTitulo" class="text-xs font-bold text-white uppercase tracking-wider">Sucesso</h4>
-      <p id="toastMensagem" class="text-xs text-slate-300 mt-0.5 leading-tight">Ação concluída com sucesso!</p>
+      <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
+      <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
     </div>
   </div>
   
@@ -416,9 +416,8 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
 
-    // 🔥 FUNÇÃO DE TOAST AMIGÁVEL (SUBSTITUI OS ALERTS NATIVOS)
     function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
       document.getElementById('toastTitulo').textContent = titulo;
