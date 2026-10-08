@@ -13,8 +13,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-  
-  <!-- 🔥 BIBLIOTECA GERADORA DE PDF INCLUÍDA AQUI -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   
   <link rel="manifest" href="manifest.json">
@@ -59,7 +57,6 @@
 
   <main class="main-content flex-1 px-4 sm:p-6 pt-6 max-w-7xl w-full mx-auto space-y-6">
     
-    <!-- ABA: NOVO REGISTRO -->
     <div id="view-novo" class="max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
         <h2 class="text-base font-bold text-white mb-5 flex items-center gap-2"><span>➕</span> Novo Registro</h2>
@@ -91,10 +88,10 @@
             </div>
           </div> 
 
-          <!-- 🔥 CAMPO DE TAGS ADICIONADO -->
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label>
-            <input type="text" id="inpTags" list="listaTagsUI" placeholder="Ex: #viagem_sp, #presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
+            <input type="text" id="inpTags" list="listaTagsUI" placeholder="Ex: viagem sp, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
+            <p class="text-[10px] text-slate-500 mt-1 ml-1">Separe as palavras por vírgula. O sistema coloca a # automaticamente.</p>
             <datalist id="listaTagsUI"></datalist>
           </div>
           
@@ -132,7 +129,6 @@
       </div>
     </div> 
 
-    <!-- ABA: HISTÓRICO -->
     <div id="view-lancamentos" class="hidden space-y-4">
       <div class="flex flex-col md:flex-row justify-between items-center gap-3">
         <h2 class="text-sm font-bold text-white w-full md:w-auto">Histórico Geral</h2>
@@ -152,14 +148,12 @@
       </div>
     </div>
 
-    <!-- 🔥 ABA: RELATÓRIO MENSAL (COM BOTÃO GERAR PDF) -->
     <div id="view-relatorio" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white">📑 Fatura do Mês</h2>
         <div class="flex gap-2">
           <button onclick="gerarPDF('view-relatorio', 'Fechamento_Mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1 no-print">📄 <span class="hidden sm:inline">PDF</span></button>
           <select id="selFiltroMes" onchange="carregarRelatorioMes()" class="no-print bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
-          <!-- Exibição apenas no PDF -->
           <span class="hidden text-white font-bold px-2 py-1 print-only-text" id="pdfMesTitle"></span>
         </div>
       </div>
@@ -182,7 +176,6 @@
       </div>
     </div>
 
-    <!-- 🔥 ABA: BALANÇO ANUAL (COM BOTÃO GERAR PDF) -->
     <div id="view-anual" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white">📆 Balanço Anual</h2>
@@ -209,7 +202,6 @@
       </div>
     </div>
 
-    <!-- ABA: DASHBOARD -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -239,7 +231,6 @@
       </div>
     </div>
 
-    <!-- OUTRAS ABAS (Formas, Metas, Fixos) MANTIDAS IGUAIS -->
     <div id="view-formas" class="hidden space-y-4">
       <div class="flex justify-between items-center px-1 mb-2">
         <h2 class="text-sm font-bold text-white">Cartões e Limites</h2>
@@ -343,7 +334,7 @@
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label><input type="text" id="inpEdValor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Tags</label>
-            <input type="text" id="inpEdTags" placeholder="#tag" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+            <input type="text" id="inpEdTags" placeholder="Ex: viagem, sp" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
           </div>
         </div>
         <div>
@@ -387,7 +378,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzvjs6uQeaugTJQwWwvEqw7GpwOuoQkki_F9mQuqzlclye75WhWf0y3KpJpL0sPSGkwDQ/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
 
     async function apiCall(action, param = null) {
       try {
@@ -402,22 +393,26 @@
       } catch (err) { console.error("Falha na API:", err); throw err; }
     }
 
-    // 🔥 FUNÇÃO DE GERAR PDF (MENSAL E ANUAL)
+    // 🔥 FORMATADOR AUTOMÁTICO DE HASHTAGS
+    function formatarTagsAutomaticamente(textoBruto) {
+      if (!textoBruto) return '';
+      return textoBruto.split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .map(t => t.startsWith('#') ? t : '#' + t)
+        .join(', ');
+    }
+
     function gerarPDF(viewId, prefixo) {
       const element = document.getElementById(viewId);
-      
-      // Oculta tudo o que tiver a classe 'no-print' e mostra os títulos estáticos
       const noPrintEls = element.querySelectorAll('.no-print');
       noPrintEls.forEach(el => el.style.display = 'none');
-      
       const printOnlyEls = element.querySelectorAll('.print-only-text');
       printOnlyEls.forEach(el => {
           if (viewId === 'view-relatorio') el.textContent = document.getElementById('selFiltroMes').value;
           if (viewId === 'view-anual') el.textContent = document.getElementById('selFiltroAno').value;
           el.style.display = 'inline-block';
       });
-
-      // Corrige temporariamente os scrolls para não cortar os gráficos/tabelas no PDF
       const scrollEls = element.querySelectorAll('.overflow-x-auto');
       const origOvf = [];
       scrollEls.forEach(el => { origOvf.push(el.style.overflowX); el.style.overflowX = 'visible'; });
@@ -431,7 +426,6 @@
       };
       
       html2pdf().set(opt).from(element).save().then(() => {
-        // Restaura a interface ao normal
         noPrintEls.forEach(el => el.style.display = '');
         printOnlyEls.forEach(el => el.style.display = 'none');
         scrollEls.forEach((el, i) => el.style.overflowX = origOvf[i]);
@@ -480,7 +474,7 @@
         navDesktop.innerHTML += `<button onclick="setAba('${id}')" id="btn-desk-${id}" data-id="${id}" class="tab-btn-global whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium ${config.cor} hover:text-white transition cursor-pointer">${config.icone} ${config.tituloD}</button>`;
         navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" data-id="${id}" class="tab-btn-global flex-1 min-w-[70px] flex flex-col items-center justify-center p-1.5 rounded-xl ${config.cor} transition"><span class="text-xl mb-0.5">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
       });
-      setAba('novo', false); // Abre sempre no Novo Registo por padrão
+      setAba('novo', false);
     }
 
     function setAba(aba, salvar=true) {
@@ -552,7 +546,6 @@
       try { formasGlobais = dados.formasPagamento || []; categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : []; renderizarListaCategorias(); } catch(e){}
       try { dicionarioAutofill = dados.autofill || {}; const dl = document.getElementById('listaDescricoes'); if(dl) { dl.innerHTML = ''; Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; }); } } catch(e){}
       
-      // AUTOCOMPLETAR DAS TAGS
       try { 
         const dlTags = document.getElementById('listaTagsUI'); 
         if(dlTags) { dlTags.innerHTML = ''; (dados.opcoesTags || []).forEach(t => dlTags.innerHTML += `<option value="${t}">`); } 
@@ -576,6 +569,7 @@
       try { renderListaFormas(); } catch(e){}
 
       try { let htmlAtivas = ''; let htmlInativas = ''; if(dados.assinaturas && dados.assinaturas.length > 0) { const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa'); const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa'); if (ativas.length > 0) { ativas.forEach(a => { const descSafe = String(a.descricao).replace(/'/g, "\\'"); const formaSafe = String(a.forma).replace(/'/g, "\\'"); const catSafe = String(a.categoria).replace(/'/g, "\\'"); htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ativa</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`; }); } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>'; } if (inativas.length > 0) { inativas.forEach(a => { htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`; }); } else { htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>'; } } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>'; htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>'; } document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas; document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas; } catch(e){}
+      
       try { ultimosLancamentosCache = dados.lancamentos || []; renderTabelaLancamentos(ultimosLancamentosCache, false); const box = document.getElementById('boxCarregarMais'); if (dados.temMaisLancamentos && filtrosAtuais.termo === '') { box.classList.remove('hidden'); } else { box.classList.add('hidden'); } } catch(e){}
     }
 
@@ -615,7 +609,6 @@
       }
     }
 
-    // 🔥 TABELA DE HISTÓRICO ATUALIZADA PARA INCLUIR TAGS E EXCLUSÃO
     function renderTabelaLancamentos(lista, append=false) {
       let htmlL = '';
       lista.forEach(l => {
@@ -625,7 +618,6 @@
         const descSafe = String(l[1]).replace(/'/g, "\\'"); const formaSafe = String(l[2]).replace(/'/g, "\\'"); const catSafe = String(l[3]).replace(/'/g, "\\'");
         const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
         
-        // Formatação das Tags em "pílulas"
         let tagsHtml = '';
         if (l[11]) {
             let tList = String(l[11]).split(',').map(t => t.trim()).filter(Boolean);
@@ -679,9 +671,21 @@
     function carregarMaisLancamentos() { offsetAtual += LIMITE_PAGINA; const btn = document.querySelector('#boxCarregarMais button'); btn.textContent = 'Baixando...'; chamarFiltroBackend(true); }
     function chamarFiltroBackend(append = false) { apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA }).then(res => { if(!append) document.getElementById('lista-lancamentos').innerHTML = ''; renderTabelaLancamentos(res.itens, append); const box = document.getElementById('boxCarregarMais'); if(res.temMais) { box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇'; } else { box.classList.add('hidden'); } }).catch(err => alert('Erro na busca: ' + err.message)); }
 
+    // 🔥 GRAVAR GASTO (Com Auto-Hashtag)
     function enviarGasto(e) {
       e.preventDefault(); const btn = document.getElementById('btnSalvar'); btn.textContent = 'Aguarde...'; btn.disabled = true;
-      const payload = { dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, descricao: document.getElementById('inpDesc').value, formaPagto: document.getElementById('selForma').value, categoria: document.getElementById('selCat').value, tags: document.getElementById('inpTags').value, valorTotal: document.getElementById('inpValor').value, numParcelas: document.getElementById('inpParc').value, parcelaInicial: document.getElementById('inpParcIni').value, statusInicial: document.getElementById('selStatus').value, isAssinatura: document.getElementById('checkAssinatura').checked };
+      
+      let rawTags = document.getElementById('inpTags').value;
+      let tagsTratadas = formatarTagsAutomaticamente(rawTags);
+
+      const payload = { 
+        dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, 
+        descricao: document.getElementById('inpDesc').value, formaPagto: document.getElementById('selForma').value, 
+        categoria: document.getElementById('selCat').value, tags: tagsTratadas, 
+        valorTotal: document.getElementById('inpValor').value, numParcelas: document.getElementById('inpParc').value, 
+        parcelaInicial: document.getElementById('inpParcIni').value, statusInicial: document.getElementById('selStatus').value, 
+        isAssinatura: document.getElementById('checkAssinatura').checked 
+      };
 
       if (!navigator.onLine) {
          let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); fila.push(payload); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
@@ -775,12 +779,22 @@
         .catch(err => { alert('Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
     }
 
-    // Modal de Edição (Adicionado as Tags)
+    // 🔥 EDITAR GASTO (Com Auto-Hashtag)
     function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { document.getElementById('inpEdLinha').value = linha; document.getElementById('inpEdData').value = data; document.getElementById('inpEdDesc').value = desc; document.getElementById('selEdForma').value = forma; document.getElementById('selEdCat').value = cat; document.getElementById('inpEdValor').value = valor; document.getElementById('inpEdMesFat').value = mes; document.getElementById('selEdStatus').value = status; document.getElementById('inpEdTags').value = tag || ''; document.getElementById('modalEdicaoLanc').classList.remove('hidden'); }
     function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
     function salvarEdicaoLanc(e) { 
       e.preventDefault(); const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
-      apiCall('editarLancamentoLinhaWeb', { linha: document.getElementById('inpEdLinha').value, dataCompra: document.getElementById('inpEdData').value, descricao: document.getElementById('inpEdDesc').value, formaPagto: document.getElementById('selEdForma').value, categoria: document.getElementById('selEdCat').value, valorParcela: document.getElementById('inpEdValor').value, mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value, tags: document.getElementById('inpEdTags').value })
+      
+      let rawEdTags = document.getElementById('inpEdTags').value;
+      let tagsEdTratadas = formatarTagsAutomaticamente(rawEdTags);
+
+      apiCall('editarLancamentoLinhaWeb', { 
+        linha: document.getElementById('inpEdLinha').value, dataCompra: document.getElementById('inpEdData').value, 
+        descricao: document.getElementById('inpEdDesc').value, formaPagto: document.getElementById('selEdForma').value, 
+        categoria: document.getElementById('selEdCat').value, valorParcela: document.getElementById('inpEdValor').value, 
+        mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value, 
+        tags: tagsEdTratadas 
+      })
         .then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; })
         .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
