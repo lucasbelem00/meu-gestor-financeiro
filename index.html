@@ -10,6 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b1120">
   
+  <!-- 🔥 QUEBRA DE CACHE AUTOMÁTICA (Força o navegador a buscar sempre a versão mais recente) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -45,7 +50,6 @@
       padding-right: 1.5rem;
     }
 
-    /* 🔥 ANIMAÇÃO DO TOAST PERFEITAMENTE CENTRALIZADO */
     #toastNotificacao {
       transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
       transform: translate(-50%, -20px) scale(0.9);
@@ -59,7 +63,6 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <!-- 🔥 TOAST CENTRALIZADO NO TOPO ABAIXO DO HEADER -->
   <div id="toastNotificacao" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 pointer-events-none max-w-sm w-[90%]">
     <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
     <div>
