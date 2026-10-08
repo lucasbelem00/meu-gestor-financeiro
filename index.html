@@ -184,7 +184,7 @@
       </div>
     </div>
 
-    <!-- 🔥 ABA MENSAL COM SETAS INTELIGENTES -->
+    <!-- MENSAL -->
     <div id="view-relatorio" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -219,7 +219,7 @@
       </div>
     </div>
 
-    <!-- 🔥 ABA ANUAL COM SETAS INTELIGENTES -->
+    <!-- ANUAL -->
     <div id="view-anual" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço <span class="hidden print-only-text" id="pdfAnoTitle"></span></h2>
@@ -422,7 +422,30 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
+    // 🔥 REGISTRO AUTOMÁTICO DO SERVICE WORKER (Atualização em segundo plano)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('ServiceWorker ativo:', registration.scope);
+            registration.onupdatefound = () => {
+              const installingWorker = registration.installing;
+              installingWorker.onstatechange = () => {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    window.location.reload();
+                  }
+                }
+              };
+            };
+          })
+          .catch(error => {
+            console.log('Falha no registo do ServiceWorker:', error);
+          });
+      });
+    }
+
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
 
     function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
@@ -655,7 +678,6 @@
         dispararBuscaRelatorioMensal();
     }
 
-    // 🔥 SETAS INTELIGENTES MENSAL (Com verificação de limites e desativação)
     function atualizarEstadoSetasMensal() {
         const selAno = document.getElementById('selFiltroRelAno');
         const selMes = document.getElementById('selFiltroRelMes');
@@ -702,7 +724,6 @@
         }
     }
 
-    // 🔥 SETAS INTELIGENTES ANUAL (Com verificação de limites e desativação)
     function atualizarEstadoSetasAnual() {
         const selAnoSimples = document.getElementById('selFiltroAnoSimples');
         const btnPrev = document.getElementById('btnAnoPrev');
