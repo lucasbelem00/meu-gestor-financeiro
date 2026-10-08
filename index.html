@@ -10,7 +10,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0b1120">
   
-  <!-- 🔥 QUEBRA DE CACHE AUTOMÁTICA (Força o navegador a buscar sempre a versão mais recente) -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
@@ -185,17 +184,18 @@
       </div>
     </div>
 
+    <!-- 🔥 ABA MENSAL COM SETAS INTELIGENTES -->
     <div id="view-relatorio" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h2 class="text-sm font-bold text-white flex items-center gap-2">📑 Fatura <span class="hidden print-only-text" id="pdfMesTitle"></span></h2>
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print">
-            <button onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95">◀</button>
+            <button id="btnMesPrev" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
             <div class="flex flex-1 sm:flex-none gap-2">
               <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
               <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis()" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
             </div>
-            <button onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95">▶</button>
+            <button id="btnMesNext" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
             <button onclick="gerarPDF('view-relatorio', 'Fechamento_Mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1 w-full sm:w-auto mt-2 sm:mt-0">📄 PDF</button>
           </div>
         </div>
@@ -219,11 +219,14 @@
       </div>
     </div>
 
+    <!-- 🔥 ABA ANUAL COM SETAS INTELIGENTES -->
     <div id="view-anual" class="hidden space-y-6 print-container bg-[#0b1120] p-1">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço <span class="hidden print-only-text" id="pdfAnoTitle"></span></h2>
-        <div class="flex w-full sm:w-auto gap-2 no-print">
+        <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+          <button id="btnAnoPrev" onclick="mudarAnoSimples(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
           <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
+          <button id="btnAnoNext" onclick="mudarAnoSimples(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
           <button onclick="gerarPDF('view-anual', 'Fechamento_Anual')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1">📄 PDF</button>
         </div>
       </div>
@@ -419,7 +422,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
 
     function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
@@ -623,6 +626,7 @@
             }
         }
         atualizarMesesDisponiveis(mesPadrao);
+        atualizarEstadoSetasAnual();
     }
 
     function atualizarMesesDisponiveis(mesPadraoForcado = null) {
@@ -634,7 +638,7 @@
         const mesesDoAno = arvoreMesesAno[anoEscolhido] || [];
         
         const mesesExtraidos = mesesDoAno.map(str => str.split('/')[0]);
-        const mesesUnicosInt = [...new Set(mesesExtraidos)].sort((a,b) => parseInt(b) - parseInt(a));
+        const mesesUnicosInt = [...new Set(mesesExtraidos)].sort((a,b) => parseInt(a) - parseInt(b));
 
         selMes.innerHTML = '';
         mesesUnicosInt.forEach(m => {
@@ -643,9 +647,36 @@
 
         if (mesPadraoForcado && mesesUnicosInt.includes(mesPadraoForcado)) {
             selMes.value = mesPadraoForcado;
+        } else if (mesesUnicosInt.length > 0) {
+            selMes.value = mesesUnicosInt[0];
         }
 
+        atualizarEstadoSetasMensal();
         dispararBuscaRelatorioMensal();
+    }
+
+    // 🔥 SETAS INTELIGENTES MENSAL (Com verificação de limites e desativação)
+    function atualizarEstadoSetasMensal() {
+        const selAno = document.getElementById('selFiltroRelAno');
+        const selMes = document.getElementById('selFiltroRelMes');
+        const btnPrev = document.getElementById('btnMesPrev');
+        const btnNext = document.getElementById('btnMesNext');
+        if (!selAno || !selMes || !btnPrev || !btnNext) return;
+
+        const anoAtual = selAno.value;
+        const mesAtual = selMes.value;
+        const anosDisponiveis = Object.keys(arvoreMesesAno).sort((a,b) => a - b);
+        
+        let listaGlobalMeses = [];
+        anosDisponiveis.forEach(a => {
+            const mList = arvoreMesesAno[a] || [];
+            mList.forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
+        });
+
+        const idxAtual = listaGlobalMeses.findIndex(item => item.ano === anoAtual && item.mes === mesAtual);
+
+        btnPrev.disabled = (idxAtual <= 0);
+        btnNext.disabled = (idxAtual === -1 || idxAtual >= listaGlobalMeses.length - 1);
     }
 
     function mudarMesRelatorio(step) {
@@ -653,20 +684,55 @@
         const selMes = document.getElementById('selFiltroRelMes');
         if (!selAno || !selMes) return;
 
-        let curAno = parseInt(selAno.value, 10);
-        let curMes = parseInt(selMes.value, 10);
-        let curDate = new Date(curAno, curMes - 1 + step, 1);
+        const anoAtual = selAno.value;
+        const mesAtual = selMes.value;
         
-        let novoAno = curDate.getFullYear().toString();
-        let novoMes = String(curDate.getMonth() + 1).padStart(2, '0');
+        let listaGlobalMeses = [];
+        Object.keys(arvoreMesesAno).sort((a,b) => a - b).forEach(a => {
+            (arvoreMesesAno[a] || []).forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
+        });
 
-        if (arvoreMesesAno[novoAno]) {
-            selAno.value = novoAno;
-            atualizarMesesDisponiveis(novoMes);
+        const idxAtual = listaGlobalMeses.findIndex(item => item.ano === anoAtual && item.mes === mesAtual);
+        const novoIdx = idxAtual + step;
+
+        if (novoIdx >= 0 && novoIdx < listaGlobalMeses.length) {
+            const alvo = listaGlobalMeses[novoIdx];
+            selAno.value = alvo.ano;
+            atualizarMesesDisponiveis(alvo.mes);
+        }
+    }
+
+    // 🔥 SETAS INTELIGENTES ANUAL (Com verificação de limites e desativação)
+    function atualizarEstadoSetasAnual() {
+        const selAnoSimples = document.getElementById('selFiltroAnoSimples');
+        const btnPrev = document.getElementById('btnAnoPrev');
+        const btnNext = document.getElementById('btnAnoNext');
+        if (!selAnoSimples || !btnPrev || !btnNext) return;
+
+        const anos = Array.from(selAnoSimples.options).map(o => o.value).sort((a,b) => a - b);
+        const idxAtual = anos.indexOf(selAnoSimples.value);
+
+        btnPrev.disabled = (idxAtual <= 0);
+        btnNext.disabled = (idxAtual === -1 || idxAtual >= anos.length - 1);
+    }
+
+    function mudarAnoSimples(step) {
+        const selAnoSimples = document.getElementById('selFiltroAnoSimples');
+        if (!selAnoSimples) return;
+
+        const anos = Array.from(selAnoSimples.options).map(o => o.value).sort((a,b) => a - b);
+        const idxAtual = anos.indexOf(selAnoSimples.value);
+        const novoIdx = idxAtual + step;
+
+        if (novoIdx >= 0 && novoIdx < anos.length) {
+            selAnoSimples.value = anos[novoIdx];
+            carregarRelatorioAnual();
+            atualizarEstadoSetasAnual();
         }
     }
 
     function dispararBuscaRelatorioMensal() {
+        atualizarEstadoSetasMensal();
         const ano = document.getElementById('selFiltroRelAno').value;
         const mes = document.getElementById('selFiltroRelMes').value;
         if(ano && mes) {
@@ -1055,6 +1121,7 @@
 
     function carregarRelatorioAnual() { 
       const ano = document.getElementById('selFiltroAnoSimples').value; if(!ano) return; 
+      atualizarEstadoSetasAnual();
       document.getElementById('tabela-anual-cat').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Buscando...</td></tr>'; 
       apiCall('obterRelatorioAnual', ano)
         .then(res => { 
