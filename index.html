@@ -129,17 +129,25 @@
       </div>
     </div> 
 
+    <!-- 🔥 ABA DE HISTÓRICO COM BOTÕES CORRIGIDOS -->
     <div id="view-lancamentos" class="hidden space-y-4">
-      <div class="flex flex-col md:flex-row justify-between items-center gap-3">
-        <h2 class="text-sm font-bold text-white w-full md:w-auto">Histórico Geral</h2>
-        <div class="flex flex-wrap w-full md:w-auto gap-2">
-          <input type="text" id="inpBusca" placeholder="Pesquisa rápida..." class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
-          <button onclick="abrirModalFiltros()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex gap-1 items-center">⚙️ <span class="hidden sm:inline">Filtros</span></button>
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+        <h2 class="text-sm font-bold text-white hidden md:block">Histórico Geral</h2>
+        <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
           
-          <button onclick="toggleEdicaoLancamentos()" id="btnToggleEdicaoLanc" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex gap-1 items-center">⚙️ <span class="hidden sm:inline">Organizar</span></button>
+          <div class="flex gap-2 w-full sm:w-auto">
+            <input type="text" id="inpBusca" placeholder="Pesquisa rápida..." class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
+            <button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button>
+          </div>
 
-          <button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button>
-          <button onclick="limparFiltros()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition border border-slate-700">Limpar</button>
+          <div class="flex gap-2 w-full sm:w-auto justify-between">
+            <button onclick="abrirModalFiltros()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">🎛️ <span class="hidden sm:inline">Filtros</span></button>
+            
+            <button onclick="toggleEdicaoLancamentos()" id="btnToggleEdicaoLanc" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">⚙️ <span class="hidden sm:inline">Organizar</span></button>
+
+            <button onclick="limparFiltros()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition border border-slate-700">Limpar</button>
+          </div>
+
         </div>
       </div>
       <div id="lista-lancamentos" class="grid grid-cols-1 md:grid-cols-2 gap-3 transition-all duration-300"></div>
@@ -278,12 +286,12 @@
   <!-- MODAL: FILTRO AVANÇADO COM TAGS -->
   <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
-      <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">⚙️ Filtros Avançados</h3>
+      <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
       <div class="space-y-4">
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Cartão/Forma</label><select id="filtForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="filtCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todas</option></select></div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tag 🏷️</label><input type="text" id="filtTag" placeholder="#exemplo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500"></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tag 🏷️</label><input type="text" id="filtTag" placeholder="viagem, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500"></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
       </div>
       <div class="flex gap-3 pt-5">
@@ -293,6 +301,7 @@
     </div>
   </div>
 
+  <!-- OUTROS MODAIS -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
@@ -315,7 +324,6 @@
     </div>
   </div>
 
-  <!-- 🔥 MODAL EDIÇÃO COM CAMPO DE TAGS CORRIGIDO -->
   <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-5">✏️ Editar Lançamento</h3>
@@ -334,7 +342,7 @@
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label><input type="text" id="inpEdValor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Tags</label>
-            <input type="text" id="inpEdTags" placeholder="Ex: bar, casal" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+            <input type="text" id="inpEdTags" placeholder="bar, sp" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
           </div>
         </div>
         <div>
@@ -608,7 +616,6 @@
       }
     }
 
-    // TABELA DE HISTÓRICO
     function renderTabelaLancamentos(lista, append=false) {
       let htmlL = '';
       lista.forEach(l => {
@@ -778,7 +785,6 @@
         .catch(err => { alert('Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
     }
 
-    // 🔥 EDITAR GASTO
     function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { 
       document.getElementById('inpEdLinha').value = linha; 
       document.getElementById('inpEdData').value = data; 
@@ -845,7 +851,6 @@
             const formaSafe = String(l[2]).replace(/'/g, "\\'"); 
             const catSafe = String(l[3]).replace(/'/g, "\\'"); 
             
-            // 🔥 CORREÇÃO NA ABA MENSAL: TAG É O ITEM [10] E A LINHA É O ITEM [11]
             const tagSafe = String(l[10] || '').replace(/'/g, "\\'");
 
             let tagsHtml = '';
