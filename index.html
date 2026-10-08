@@ -44,9 +44,29 @@
       background-size: 0.65rem auto;
       padding-right: 1.5rem;
     }
+
+    /* 🔥 ANIMAÇÃO DO TOAST AMIGÁVEL */
+    #toastNotificacao {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: translateY(100px);
+      opacity: 0;
+    }
+    #toastNotificacao.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col relative">
+
+  <!-- 🔥 COMPONENTE DO TOAST FLUTUANTE (SUBSTITUTO DOS ALERTAS FEIOS) -->
+  <div id="toastNotificacao" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-slate-800 border border-emerald-500/40 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-none max-w-xs w-full mx-auto">
+    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30">✨</div>
+    <div>
+      <h4 id="toastTitulo" class="text-xs font-bold text-white uppercase tracking-wider">Sucesso</h4>
+      <p id="toastMensagem" class="text-xs text-slate-300 mt-0.5 leading-tight">Ação concluída com sucesso!</p>
+    </div>
+  </div>
   
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-sm no-print">
     <div class="flex items-center gap-3">
@@ -267,7 +287,6 @@
         <div class="flex justify-between items-center mb-2">
           <h2 class="text-base font-bold text-white">🏷️ Categorias e Metas</h2>
           <div class="flex items-center gap-3">
-            <!-- 🔥 LIMITE ATUALIZADO PARA 25 NO HTML -->
             <span id="contador-cat" class="text-[11px] font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">0/25</span>
             <button onclick="toggleEdicaoCategorias()" id="btnToggleEdicaoCat" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button>
           </div>
@@ -313,7 +332,6 @@
     </div>
   </div>
 
-  <!-- OUTROS MODAIS -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
@@ -398,7 +416,18 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxGNbS7wV-WBemLgQwU8fykaZ-aI63BONhD7XVSApFsvhM9JpGFhWeSm999HG29xyys/exec";
+
+    // 🔥 FUNÇÃO DE TOAST AMIGÁVEL (SUBSTITUI OS ALERTS NATIVOS)
+    function mostrarAviso(titulo, mensagem) {
+      const toast = document.getElementById('toastNotificacao');
+      document.getElementById('toastTitulo').textContent = titulo;
+      document.getElementById('toastMensagem').textContent = mensagem;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
 
     async function apiCall(action, param = null) {
       try {
@@ -548,10 +577,10 @@
     }
 
     function sincronizarFilaOffline() {
-      if (!navigator.onLine) { alert('Você ainda está sem internet.'); return; }
+      if (!navigator.onLine) { mostrarAviso('Aviso', 'Você ainda está sem internet.'); return; }
       let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); if (fila.length === 0) return;
       const btn = document.getElementById('btnSyncOffline'); btn.textContent = 'Enviando...'; btn.disabled = true;
-      apiCall('sincronizarLoteWeb', fila).then(res => { localStorage.removeItem('filaOfflineGestor'); btn.disabled = false; alert(`✅ Sincronização Perfeita! ${res.qtd} lançamento(s) enviado(s).`); atualizarIndicadorOffline(); carregarDados(); }).catch(err => { alert('Erro ao sincronizar: ' + err.message); btn.disabled = false; atualizarIndicadorOffline(); });
+      apiCall('sincronizarLoteWeb', fila).then(res => { localStorage.removeItem('filaOfflineGestor'); btn.disabled = false; mostrarAviso('Sucesso', `Sincronização Perfeita! ${res.qtd} item(ns) enviado(s).`); atualizarIndicadorOffline(); carregarDados(); }).catch(err => { mostrarAviso('Erro', 'Erro ao sincronizar: ' + err.message); btn.disabled = false; atualizarIndicadorOffline(); });
     }
 
     function toggleEdicaoFormas() {
@@ -566,7 +595,7 @@
       const listaFormas = document.getElementById('lista-formas'); if(!listaFormas) return;
       const novaOrdemNomes = Array.from(listaFormas.children).map(c => c.getAttribute('data-nome'));
       const btnSalvar = document.getElementById('btnSalvarFormas'); btnSalvar.textContent = 'Salvando...'; btnSalvar.disabled = true; listaFormas.style.opacity = '0.5';
-      apiCall('reordenarFormasPagamentoWeb', novaOrdemNomes).then(() => { btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; toggleEdicaoFormas(); carregarDados(); }).catch(err => { alert('Erro ao salvar ordem: ' + err.message); btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; });
+      apiCall('reordenarFormasPagamentoWeb', novaOrdemNomes).then(() => { btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; toggleEdicaoFormas(); carregarDados(); }).catch(err => { mostrarAviso('Erro', 'Erro ao salvar ordem: ' + err.message); btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; listaFormas.style.opacity = '1'; });
     }
 
     function getNomeMes(numero) {
@@ -774,7 +803,7 @@
 
     function excluirLancamentoLocal(linha, descricao) {
       if(!confirm(`Tem certeza que deseja excluir o lançamento "${descricao}" permanentemente?`)) return;
-      apiCall('excluirLancamentoWeb', linha).then(() => { alert('Lançamento excluído com sucesso!'); carregarDados(); }).catch(err => alert('Erro ao excluir: ' + err.message));
+      apiCall('excluirLancamentoWeb', linha).then(() => { mostrarAviso('Sucesso', 'Lançamento excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
     }
 
     function abrirModalFiltros() { document.getElementById('modalFiltros').classList.remove('hidden'); }
@@ -788,7 +817,7 @@
     }
 
     function carregarMaisLancamentos() { offsetAtual += LIMITE_PAGINA; const btn = document.querySelector('#boxCarregarMais button'); btn.textContent = 'Baixando...'; chamarFiltroBackend(true); }
-    function chamarFiltroBackend(append = false) { apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA }).then(res => { if(!append) document.getElementById('lista-lancamentos').innerHTML = ''; renderTabelaLancamentos(res.itens, append); const box = document.getElementById('boxCarregarMais'); if(res.temMais) { box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇'; } else { box.classList.add('hidden'); } }).catch(err => alert('Erro na busca: ' + err.message)); }
+    function chamarFiltroBackend(append = false) { apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA }).then(res => { if(!append) document.getElementById('lista-lancamentos').innerHTML = ''; renderTabelaLancamentos(res.itens, append); const box = document.getElementById('boxCarregarMais'); if(res.temMais) { box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇'; } else { box.classList.add('hidden'); } }).catch(err => mostrarAviso('Erro', 'Erro na busca: ' + err.message)); }
 
     function enviarGasto(e) {
       e.preventDefault(); const btn = document.getElementById('btnSalvar'); btn.textContent = 'Aguarde...'; btn.disabled = true;
@@ -807,16 +836,17 @@
 
       if (!navigator.onLine) {
          let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); fila.push(payload); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
-         alert('Conexão perdida! Gasto salvo OFFLINE ⚡.\nLembre-se de clicar em "Sincronizar" quando a internet voltar.');
+         mostrarAviso('Offline', 'Gasto salvo OFFLINE ⚡. Sincronize quando voltar a ter rede.');
          document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); atualizarIndicadorOffline(); btn.textContent = '💾 Lançar'; btn.disabled = false; return;
       }
-      apiCall('salvarLancamentoWeb', payload).then(() => { alert('Lançado na nuvem!'); document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); btn.textContent = '💾 Lançar'; btn.disabled = false; carregarDados(); }).catch(err => { alert('Erro: ' + err.message); btn.textContent = '💾 Lançar'; btn.disabled = false; });
+      apiCall('salvarLancamentoWeb', payload).then(() => { 
+        mostrarAviso('Sucesso', 'Lançamento efetuado na nuvem!'); 
+        document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); btn.textContent = '💾 Lançar'; btn.disabled = false; carregarDados(); 
+      }).catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = '💾 Lançar'; btn.disabled = false; });
     }
 
     function renderizarListaCategorias() {
       const ul = document.getElementById('lista-categorias-ui'); if(!ul) return;
-      
-      // 🔥 LIMITE ATUALIZADO PARA 25 NO JS
       const countSpan = document.getElementById('contador-cat'); if(countSpan) countSpan.textContent = `${categoriasGlobaisEdit.length}/25`;
       ul.innerHTML = '';
       if(categoriasGlobaisEdit.length === 0) { ul.innerHTML = '<li class="text-center text-slate-500 py-4 text-sm">Nenhuma encontrada.</li>'; return; }
@@ -864,19 +894,27 @@
       const inpNome = document.getElementById('inpNovaCat'); const inpMeta = document.getElementById('inpNovaMeta'); const valNome = inpNome.value.trim(); const valMeta = parseFloat(inpMeta.value.replace(',', '.')) || 0; 
       if(!valNome) return; 
       if (indexEdicaoCat !== -1) { 
-        if(categoriasGlobaisEdit.some((c, i) => i !== indexEdicaoCat && c.nome.toLowerCase() === valNome.toLowerCase())) { alert('Categoria já existe!'); return; } 
+        if(categoriasGlobaisEdit.some((c, i) => i !== indexEdicaoCat && c.nome.toLowerCase() === valNome.toLowerCase())) { mostrarAviso('Atenção', 'Categoria já existe!'); return; } 
         categoriasGlobaisEdit[indexEdicaoCat] = { nome: valNome, meta: valMeta }; indexEdicaoCat = -1; const btn = document.getElementById('btnAdicionarCat'); btn.textContent = 'Adicionar'; btn.classList.replace('bg-amber-500', 'bg-blue-600'); btn.classList.replace('hover:bg-amber-400', 'hover:bg-blue-500'); 
       } else { 
-        // 🔥 AQUI ESTÁ A ÚLTIMA MÁGICA: A Trava do App sobe para 25
-        if(categoriasGlobaisEdit.length >= 25) { alert('Limite de 25 categorias atingido.'); return; } 
-        if(categoriasGlobaisEdit.some(c => c.nome.toLowerCase() === valNome.toLowerCase())) { alert('Categoria já existe!'); return; } 
+        if(categoriasGlobaisEdit.length >= 25) { mostrarAviso('Atenção', 'Limite de 25 categorias atingido.'); return; } 
+        if(categoriasGlobaisEdit.some(c => c.nome.toLowerCase() === valNome.toLowerCase())) { mostrarAviso('Atenção', 'Categoria já existe!'); return; } 
         categoriasGlobaisEdit.push({ nome: valNome, meta: valMeta }); 
       } 
       inpNome.value = ''; inpMeta.value = ''; renderizarListaCategorias(); 
     }
     function removerCategoriaUi(index) { categoriasGlobaisEdit.splice(index, 1); renderizarListaCategorias(); }
     
-    function salvarCategorias() { const btn = document.getElementById('btnSalvarCat'); btn.textContent = 'Salvando...'; btn.disabled = true; apiCall('salvarCategoriasWeb', categoriasGlobaisEdit).then(() => { btn.textContent = '💾 Salvar'; btn.disabled = false; toggleEdicaoCategorias(); alert('Banco atualizado!'); carregarDados(); }).catch(err => { alert('Erro: ' + err.message); btn.textContent = '💾 Salvar'; btn.disabled = false; }); }
+    function salvarCategorias() { 
+      const btn = document.getElementById('btnSalvarCat'); btn.textContent = 'Salvando...'; btn.disabled = true; 
+      apiCall('salvarCategoriasWeb', categoriasGlobaisEdit).then(() => { 
+        btn.textContent = '💾 Salvar'; btn.disabled = false; toggleEdicaoCategorias(); 
+        mostrarAviso('Sucesso', 'Banco de categorias atualizado!'); 
+        carregarDados(); 
+      }).catch(err => { 
+        mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = '💾 Salvar'; btn.disabled = false; 
+      }); 
+    }
 
     function definirDataHoje() { const hoje = new Date(); document.getElementById('inpData').value = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`; }
     function mascaraData(input) { let v = input.value.replace(/\D/g,''); if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2); if (v.length > 5) v = v.substring(0,5) + '/' + v.substring(5,9); input.value = v; if (v.length === 10) atualizarRegrasForma(); }
@@ -901,15 +939,15 @@
       e.preventDefault(); const btn = document.getElementById('btnSalvarFp'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
       apiCall('salvarFormaPagamentoWeb', { nomeOriginal: document.getElementById('inpFpOriginal').value, nome: document.getElementById('inpFpNome').value, banco: document.getElementById('inpFpBanco').value, limite: document.getElementById('inpFpLimite').value, fechamento: document.getElementById('inpFpFechamento').value, vencimento: document.getElementById('inpFpVencimento').value })
         .then(() => { fecharModalForma(); carregarDados(); btn.textContent = 'Salvar'; btn.disabled = false; })
-        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Salvar'; btn.disabled = false; });
+        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Salvar'; btn.disabled = false; });
     }
     
     function excluirFormaLocal(nome) { 
       if(!confirm(`Tem certeza que deseja excluir "${nome}" permanentemente?`)) return; 
       const lista = document.getElementById('lista-formas'); if(lista) lista.style.opacity = '0.4'; 
       apiCall('excluirFormaPagamentoWeb', nome)
-        .then(res => { if(res.sucesso || res) alert('Excluído!'); carregarDados(); })
-        .catch(err => { alert('Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
+        .then(res => { if(res.sucesso || res) mostrarAviso('Sucesso', 'Excluído!'); carregarDados(); })
+        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
     }
 
     function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { 
@@ -939,7 +977,7 @@
         tags: tagsEdTratadas 
       })
         .then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; })
-        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
     
     function abrirModalEdicaoAss(desc, forma, cat, valor) { document.getElementById('inpAssDescOrig').value = desc; document.getElementById('inpAssFormaOrig').value = forma; document.getElementById('inpAssDesc').value = desc; document.getElementById('selAssForma').value = forma; document.getElementById('selAssCat').value = cat; document.getElementById('inpAssValor').value = valor.replace('R$', '').trim(); document.getElementById('modalEdicaoAss').classList.remove('hidden'); }
@@ -947,8 +985,8 @@
     function salvarEdicaoAss(e) { 
       e.preventDefault(); const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
       apiCall('editarAssinaturaWeb', { descOriginal: document.getElementById('inpAssDescOrig').value, formaOriginal: document.getElementById('inpAssFormaOrig').value, novaDesc: document.getElementById('inpAssDesc').value, novaForma: document.getElementById('selAssForma').value, novaCat: document.getElementById('selAssCat').value, novaValor: document.getElementById('inpAssValor').value })
-        .then(res => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar'; btn.disabled = false; if(res.sucesso||res) alert('Atualizado!'); carregarDados(); })
-        .catch(err => { alert('Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+        .then(res => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar'; btn.disabled = false; if(res.sucesso||res) mostrarAviso('Sucesso', 'Atualizado!'); carregarDados(); })
+        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
 
     function cancelarAssinaturaLocal(descricao, forma) { 
@@ -956,7 +994,7 @@
       document.getElementById('lista-assinaturas-ativas').style.opacity = '0.4'; 
       apiCall('cancelarAssinaturaWeb', {descricao: descricao, forma: forma})
         .then(res => carregarDados())
-        .catch(err => { alert('Erro: ' + err.message); document.getElementById('lista-assinaturas-ativas').style.opacity = '1'; });
+        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); document.getElementById('lista-assinaturas-ativas').style.opacity = '1'; });
     }
     
     function renderTabelaEvolucao() { const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + 4); let th = `<th class="py-2.5">Forma de Pagamento</th>`; mToShow.forEach(m => th += `<th class="py-2.5 text-center">${m}</th>`); th += `<th class="py-2.5 text-right pr-2">Total</th>`; const hdr = document.getElementById('faturas-header'); if(hdr) hdr.innerHTML = th; let tb = ''; const formas = Object.keys(evolucaoPivot).sort(); formas.forEach(forma => { let totalLinha = 0; let cols = mToShow.map(m => { const val = evolucaoPivot[forma][m] || 0; totalLinha += val; return `<td class="py-2.5 text-center text-slate-300 font-medium">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`; }); tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800"><td class="py-3 font-semibold text-white">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`; }); const fBody = document.getElementById('faturas-body'); if(fBody) fBody.innerHTML = tb; const btnPrev = document.getElementById('btnEvolPrev'); const btnNext = document.getElementById('btnEvolNext'); const isStart = (evolucaoIdx === 0); const isEnd = (evolucaoIdx + 4 >= evolucaoMeses.length); if(btnPrev) { btnPrev.disabled = isStart; btnPrev.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } if(btnNext) { btnNext.disabled = isEnd; btnNext.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } }
@@ -1010,7 +1048,7 @@
             if(res.lancamentos.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento no mês.</div>'; 
             document.getElementById('lista-relatorio').innerHTML = html; 
           })
-          .catch(err => alert('Erro no relatório: ' + err.message));
+          .catch(err => mostrarAviso('Erro', 'Erro no relatório: ' + err.message));
     }
 
     function carregarRelatorioAnual() { 
@@ -1020,13 +1058,13 @@
         .then(res => { 
           if(!res) return; document.getElementById('anual-total').textContent = res.total; document.getElementById('anual-media').textContent = res.media; document.getElementById('anual-pico').textContent = res.maiorMes; if (chartAnualObj) chartAnualObj.destroy(); chartAnualObj = new Chart(document.getElementById('chartAnualBarras').getContext('2d'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], datasets: [{ label: 'Gastos R$', data: res.graficoMeses, backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } }); let html = ''; res.categorias.forEach(c => { html += `<tr class="border-b border-slate-800/50"><td class="py-3 text-slate-300 font-medium">${c.nome}</td><td class="py-3 text-right font-bold text-white">${c.total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td></tr>`; }); if(res.categorias.length === 0) html = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>'; document.getElementById('tabela-anual-cat').innerHTML = html; 
         })
-        .catch(err => alert('Erro: ' + err.message)); 
+        .catch(err => mostrarAviso('Erro', 'Erro: ' + err.message)); 
     }
 
     function carregarDados() { 
       apiCall('getDadosCompletos')
         .then(renderizarDados)
-        .catch(err => alert('Erro crítico ao carregar sistema: ' + err.message)); 
+        .catch(err => mostrarAviso('Erro crítico', 'Erro ao carregar sistema: ' + err.message)); 
     }
 
     window.onload = carregarDados; 
