@@ -62,11 +62,25 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
+  <!-- TOAST FLUTUANTE CENTRALIZADO -->
   <div id="toastNotificacao" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 pointer-events-none max-w-sm w-[90%]">
     <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
     <div>
       <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
       <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (SUBSTITUI O CONFIRM NATIVO) -->
+  <div id="modalConfirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[210] hidden px-4">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
+      <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
+      <h3 id="confTitle" class="text-base font-bold text-white mb-2">Confirmação</h3>
+      <p id="confMensagem" class="text-xs text-slate-300 mb-6 leading-relaxed">Tem certeza que deseja executar esta ação?</p>
+      <div class="flex gap-3">
+        <button type="button" id="confBtnNao" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm">Cancelar</button>
+        <button type="button" id="confBtnSim" class="w-1/2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm shadow-md">Sim, Excluir</button>
+      </div>
     </div>
   </div>
   
@@ -121,8 +135,8 @@
 
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label>
-            <input type="text" id="inpTags" list="listaTagsUI" placeholder="Ex: viagem sp, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
-            <p class="text-[10px] text-slate-500 mt-1 ml-1">Separe as palavras por vírgula. O sistema coloca a # automaticamente.</p>
+            <input type="text" id="inpTags" list="listaTagsUI" autocapitalize="none" placeholder="Ex: viagem, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition lowercase">
+            <p class="text-[10px] text-slate-500 mt-1 ml-1">Separe por vírgulas. O sistema converte para minúsculas e adiciona # automaticamente.</p>
             <datalist id="listaTagsUI"></datalist>
           </div>
           
@@ -328,7 +342,7 @@
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Cartão/Forma</label><select id="filtForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="filtCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todas</option></select></div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tag 🏷️</label><input type="text" id="filtTag" placeholder="viagem, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500"></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tag 🏷️</label><input type="text" id="filtTag" autocapitalize="none" placeholder="viagem, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500 lowercase"></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
       </div>
       <div class="flex gap-3 pt-5">
@@ -378,7 +392,7 @@
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label><input type="text" id="inpEdValor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Tags</label>
-            <input type="text" id="inpEdTags" placeholder="bar, sp" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+            <input type="text" id="inpEdTags" autocapitalize="none" placeholder="bar, sp" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none lowercase">
           </div>
         </div>
         <div>
@@ -422,12 +436,10 @@
   </div>
 
   <script>
-    // 🔥 REGISTRO AUTOMÁTICO DO SERVICE WORKER (Atualização em segundo plano)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
           .then(registration => {
-            console.log('ServiceWorker ativo:', registration.scope);
             registration.onupdatefound = () => {
               const installingWorker = registration.installing;
               installingWorker.onstatechange = () => {
@@ -439,9 +451,7 @@
               };
             };
           })
-          .catch(error => {
-            console.log('Falha no registo do ServiceWorker:', error);
-          });
+          .catch(error => { console.log('SW fail:', error); });
       });
     }
 
@@ -452,9 +462,33 @@
       document.getElementById('toastTitulo').textContent = titulo;
       document.getElementById('toastMensagem').textContent = mensagem;
       toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+      setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    // MODAL DE CONFIRMAÇÃO MODERNO (SUBSTITUTO DO CONFIRM)
+    function mostrarConfirmacao(titulo, mensagem, onSimCallback) {
+      const modal = document.getElementById('modalConfirmacao');
+      document.getElementById('confTitle').textContent = titulo;
+      document.getElementById('confMensagem').textContent = mensagem;
+      modal.classList.remove('hidden');
+
+      const btnSim = document.getElementById('confBtnSim');
+      const btnNao = document.getElementById('confBtnNao');
+
+      const limparEventos = () => {
+        btnSim.replaceWith(btnSim.cloneNode(true));
+        btnNao.replaceWith(btnNao.cloneNode(true));
+        modal.classList.add('hidden');
+      };
+
+      document.getElementById('confBtnSim').addEventListener('click', () => {
+        limparEventos();
+        if (onSimCallback) onSimCallback();
+      });
+
+      document.getElementById('confBtnNao').addEventListener('click', () => {
+        limparEventos();
+      });
     }
 
     async function apiCall(action, param = null) {
@@ -470,10 +504,11 @@
       } catch (err) { console.error("Falha na API:", err); throw err; }
     }
 
+    // 🔥 TAGS SEMPRE EM MINÚSCULAS
     function formatarTagsAutomaticamente(textoBruto) {
       if (!textoBruto) return '';
       return textoBruto.split(',')
-        .map(t => t.trim())
+        .map(t => t.trim().toLowerCase())
         .filter(t => t.length > 0)
         .map(t => t.startsWith('#') ? t : '#' + t)
         .join(', ');
@@ -891,8 +926,9 @@
     }
 
     function excluirLancamentoLocal(linha, descricao) {
-      if(!confirm(`Tem certeza que deseja excluir o lançamento "${descricao}" permanentemente?`)) return;
-      apiCall('excluirLancamentoWeb', linha).then(() => { mostrarAviso('Sucesso', 'Lançamento excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
+      mostrarConfirmacao("Excluir Lançamento", `Tem certeza que deseja excluir o lançamento "${descricao}" permanentemente?`, () => {
+        apiCall('excluirLancamentoWeb', linha).then(() => { mostrarAviso('Sucesso', 'Lançamento excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
+      });
     }
 
     function abrirModalFiltros() { document.getElementById('modalFiltros').classList.remove('hidden'); }
@@ -1032,11 +1068,12 @@
     }
     
     function excluirFormaLocal(nome) { 
-      if(!confirm(`Tem certeza que deseja excluir "${nome}" permanentemente?`)) return; 
-      const lista = document.getElementById('lista-formas'); if(lista) lista.style.opacity = '0.4'; 
-      apiCall('excluirFormaPagamentoWeb', nome)
-        .then(res => { if(res.sucesso || res) mostrarAviso('Sucesso', 'Excluído!'); carregarDados(); })
-        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
+      mostrarConfirmacao("Excluir Cartão", `Tem certeza que deseja excluir "${nome}" permanentemente?`, () => {
+        const lista = document.getElementById('lista-formas'); if(lista) lista.style.opacity = '0.4'; 
+        apiCall('excluirFormaPagamentoWeb', nome)
+          .then(res => { if(res.sucesso || res) mostrarAviso('Sucesso', 'Excluído!'); carregarDados(); })
+          .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); if(lista) lista.style.opacity = '1'; });
+      });
     }
 
     function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { 
@@ -1079,11 +1116,12 @@
     }
 
     function cancelarAssinaturaLocal(descricao, forma) { 
-      if(!confirm(`Deseja desativar "${descricao}"?`)) return; 
-      document.getElementById('lista-assinaturas-ativas').style.opacity = '0.4'; 
-      apiCall('cancelarAssinaturaWeb', {descricao: descricao, forma: forma})
-        .then(res => carregarDados())
-        .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); document.getElementById('lista-assinaturas-ativas').style.opacity = '1'; });
+      mostrarConfirmacao("Desativar Assinatura", `Deseja desativar "${descricao}"?`, () => {
+        document.getElementById('lista-assinaturas-ativas').style.opacity = '0.4'; 
+        apiCall('cancelarAssinaturaWeb', {descricao: descricao, forma: forma})
+          .then(res => carregarDados())
+          .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); document.getElementById('lista-assinaturas-ativas').style.opacity = '1'; });
+      });
     }
     
     function renderTabelaEvolucao() { const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + 4); let th = `<th class="py-2.5">Forma de Pagamento</th>`; mToShow.forEach(m => th += `<th class="py-2.5 text-center">${m}</th>`); th += `<th class="py-2.5 text-right pr-2">Total</th>`; const hdr = document.getElementById('faturas-header'); if(hdr) hdr.innerHTML = th; let tb = ''; const formas = Object.keys(evolucaoPivot).sort(); formas.forEach(forma => { let totalLinha = 0; let cols = mToShow.map(m => { const val = evolucaoPivot[forma][m] || 0; totalLinha += val; return `<td class="py-2.5 text-center text-slate-300 font-medium">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`; }); tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800"><td class="py-3 font-semibold text-white">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`; }); const fBody = document.getElementById('faturas-body'); if(fBody) fBody.innerHTML = tb; const btnPrev = document.getElementById('btnEvolPrev'); const btnNext = document.getElementById('btnEvolNext'); const isStart = (evolucaoIdx === 0); const isEnd = (evolucaoIdx + 4 >= evolucaoMeses.length); if(btnPrev) { btnPrev.disabled = isStart; btnPrev.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } if(btnNext) { btnNext.disabled = isEnd; btnNext.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } }
@@ -1131,7 +1169,8 @@
                   tList.forEach(t => { tagsHtml += `<span class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${t}</span>`; });
               }
 
-              html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-[11px] text-slate-400 mt-0.5 mb-1">💳 ${l[2]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`; 
+              // 🔥 ABA MENSAL COM A ETIQUETA DA CATEGORIA IGUAL AO HISTÓRICO
+              html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`; 
             }); 
             
             if(res.lancamentos.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento no mês.</div>'; 
