@@ -25,7 +25,7 @@
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; overscroll-behavior-y: none; }
     .card-glass { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
-    .tab-btn-global { transition: all 0.2s ease; cursor: grab; user-select: none; }
+    .tab-btn-global { transition: all 0.2s ease; user-select: none; }
     .tab-btn-global.active { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -34,7 +34,7 @@
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     .sortable-ghost { opacity: 0.4; background-color: #334155 !important; border-radius: 0.5rem; }
     .sortable-drag { cursor: grabbing !important; }
-    .main-content { padding-bottom: 90px; }
+    .main-content { padding-bottom: 95px; }
     @media (min-width: 640px) { .main-content { padding-bottom: 24px; } }
     
     .btn-acao-lanc { display: none; }
@@ -71,7 +71,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (SUBSTITUI O CONFIRM NATIVO) -->
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA -->
   <div id="modalConfirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[210] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
       <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
@@ -79,7 +79,76 @@
       <p id="confMensagem" class="text-xs text-slate-300 mb-6 leading-relaxed">Tem certeza que deseja executar esta ação?</p>
       <div class="flex gap-3">
         <button type="button" id="confBtnNao" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm">Cancelar</button>
-        <button type="button" id="confBtnSim" class="w-1/2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm shadow-md">Sim, Excluir</button>
+        <button type="button" id="confBtnSim" class="w-1/2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm shadow-md">Sim, Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAVETA DO MENU MOBILE (CATEGORIZADO) -->
+  <div id="modalMenuMobile" onclick="if(event.target === this) fecharMenuMobile()" class="sm:hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end">
+    <div class="bg-slate-900 border-t border-slate-700 rounded-t-3xl p-5 pb-24 space-y-5 shadow-2xl animate-fade-in">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🧭</span>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Menu de Navegação</h3>
+        </div>
+        <button onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">✕ Fechar</button>
+      </div>
+
+      <!-- Grupo 1: Relatórios -->
+      <div>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Relatórios e Análises</span>
+        <div class="grid grid-cols-1 gap-2.5">
+          <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">📆</div>
+              <div>
+                <div class="text-sm font-bold text-white">Balanço Anual</div>
+                <div class="text-[11px] text-slate-400">Evolução no ano, média mensal e ranking</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Grupo 2: Gestão e Ajustes -->
+      <div>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
+        <div class="grid grid-cols-1 gap-2.5">
+          <button onclick="setAba('assinaturas')" id="btn-menu-assinaturas" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg">🔄</div>
+              <div>
+                <div class="text-sm font-bold text-white">Despesas Fixas</div>
+                <div class="text-[11px] text-slate-400">Gerir assinaturas e cobranças recorrentes</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">➔</span>
+          </button>
+
+          <button onclick="setAba('formas')" id="btn-menu-formas" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-lg">💳</div>
+              <div>
+                <div class="text-sm font-bold text-white">Cartões e Limites</div>
+                <div class="text-[11px] text-slate-400">Fechamento, vencimento e limites disponíveis</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">➔</span>
+          </button>
+
+          <button onclick="setAba('categorias')" id="btn-menu-categorias" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-lg">🏷️</div>
+              <div>
+                <div class="text-sm font-bold text-white">Categorias e Metas</div>
+                <div class="text-[11px] text-slate-400">Personalizar categorias e tetos de gastos</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">➔</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -90,6 +159,7 @@
       <div class="flex items-center">
         <div>
           <h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1>
+          <p id="subtituloMobileAba" class="text-[10px] text-blue-400 font-semibold sm:hidden">Novo Registro</p>
           <p class="text-[10px] text-slate-400 hidden sm:block">Pressione e arraste para organizar</p>
         </div>
         <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">
@@ -180,7 +250,7 @@
         <div class="flex flex-col sm:flex-row w-full md:w-auto gap-2">
           
           <div class="flex gap-2 w-full sm:w-auto">
-            <input type="text" id="inpBusca" placeholder="Pesquisa rápida..." class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
+            <input type="text" id="inpBusca" placeholder="Ex: pizza dividido ou pizza, açaí..." class="flex-1 min-w-[140px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
             <button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button>
           </div>
 
@@ -261,6 +331,7 @@
       </div>
     </div>
 
+    <!-- DASHBOARD COM GRÁFICO CENTRALIZADO NO DESKTOP -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -270,22 +341,26 @@
       </section>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="card-glass p-5 lg:col-span-1 flex flex-col justify-between">
+        <div class="card-glass p-5 lg:col-span-1 flex flex-col">
           <h2 class="text-sm font-bold text-white mb-3">Distribuição Global</h2>
-          <div class="relative h-64 flex items-center justify-center"><canvas id="chartCategorias"></canvas></div>
-        </div>
-        <div class="card-glass p-5 lg:col-span-2 overflow-x-auto">
-          <div class="flex justify-between items-center mb-4 min-w-[300px]">
-            <h2 class="text-sm font-bold text-white">Próximos Meses (Horizonte)</h2>
-            <div class="flex gap-2">
-              <button onclick="mudarMesEvolucao(-1)" id="btnEvolPrev" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">&larr; Ant</button>
-              <button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">Próx &rarr;</button>
-            </div>
+          <div class="relative flex-1 min-h-[16rem] flex items-center justify-center my-auto py-2">
+            <canvas id="chartCategorias"></canvas>
           </div>
-          <table class="w-full text-left text-xs sm:text-sm">
-            <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
-            <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
-          </table>
+        </div>
+        <div class="card-glass p-5 lg:col-span-2 overflow-x-auto flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4 min-w-[300px]">
+              <h2 class="text-sm font-bold text-white">Próximos Meses (Horizonte)</h2>
+              <div class="flex gap-2">
+                <button onclick="mudarMesEvolucao(-1)" id="btnEvolPrev" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">&larr; Ant</button>
+                <button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-3 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md">Próx &rarr;</button>
+              </div>
+            </div>
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
+              <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -332,7 +407,8 @@
     </div>
   </main>
 
-  <nav id="barraNavegacaoMobile" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2 pt-2 px-2 flex items-center overflow-x-auto hide-scrollbar gap-2 touch-pan-x shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
+  <!-- BARRA INFERIOR MOBILE ERGONÔMICA: 4 ABAS PRINCIPAIS + 1 BOTÃO MENU (SEM ROLAGEM) -->
+  <nav id="barraNavegacaoMobile" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2.5 pt-2 px-2 grid grid-cols-5 gap-1.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
 
   <!-- MODAL: FILTRO AVANÇADO COM TAGS -->
   <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
@@ -342,7 +418,11 @@
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Cartão/Forma</label><select id="filtForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="filtCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todas</option></select></div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tag 🏷️</label><input type="text" id="filtTag" autocapitalize="none" placeholder="viagem, presente" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500 lowercase"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Tags Combinadas 🏷️</label>
+          <input type="text" id="filtTag" autocapitalize="none" placeholder="Ex: casal, dividido" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500 lowercase">
+          <p class="text-[10px] text-slate-400 mt-1">Separe por vírgula para exigir ambas as tags juntas.</p>
+        </div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
       </div>
       <div class="flex gap-3 pt-5">
@@ -465,7 +545,6 @@
       setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
 
-    // MODAL DE CONFIRMAÇÃO MODERNO (SUBSTITUTO DO CONFIRM)
     function mostrarConfirmacao(titulo, mensagem, onSimCallback) {
       const modal = document.getElementById('modalConfirmacao');
       document.getElementById('confTitle').textContent = titulo;
@@ -491,20 +570,32 @@
       });
     }
 
-    async function apiCall(action, param = null) {
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, param: param })
-        });
-        const data = await response.json();
-        if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem.");
-        return data.dados;
-      } catch (err) { console.error("Falha na API:", err); throw err; }
+    // 🔥 BLINDAGEM DE REDE COM AUTO-RETRY (Evita erros de "Failed to fetch")
+    async function apiCall(action, param = null, tentativas = 3) {
+      for (let i = 0; i < tentativas; i++) {
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: action, param: param })
+          });
+          if (!response.ok) throw new Error(`Falha HTTP ${response.status}`);
+          const data = await response.json();
+          if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem.");
+          return data.dados;
+        } catch (err) {
+          console.warn(`Tentativa ${i + 1} falhou para [${action}]:`, err);
+          if (i === tentativas - 1) {
+            console.error("Falha definitiva na API:", err);
+            throw err;
+          }
+          // Aguarda um pequeno intervalo antes de tentar novamente (600ms, 1200ms...)
+          await new Promise(res => setTimeout(res, 600 * (i + 1)));
+        }
+      }
     }
 
-    // 🔥 TAGS SEMPRE EM MINÚSCULAS
     function formatarTagsAutomaticamente(textoBruto) {
       if (!textoBruto) return '';
       return textoBruto.split(',')
@@ -561,55 +652,113 @@
     let offsetAtual = 0; const LIMITE_PAGINA = 50; let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '' };
 
     const abasConfig = [
-      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Lançamento', cor: 'text-emerald-400' },
-      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300' },
-      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300' },
-      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Lançamentos', cor: 'text-slate-300' },
-      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Mensal', cor: 'text-slate-300' },
-      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Anual', cor: 'text-slate-300' },
-      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Formas de Pagto', cor: 'text-slate-300' },
-      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias', cor: 'text-slate-300' }
+      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Lançamento', cor: 'text-emerald-400', fixoMobile: true },
+      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300', fixoMobile: true },
+      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Lançamentos', cor: 'text-slate-300', fixoMobile: true },
+      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Mensal', cor: 'text-slate-300', fixoMobile: true },
+      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Anual', cor: 'text-slate-300', fixoMobile: false },
+      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300', fixoMobile: false },
+      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Formas de Pagto', cor: 'text-slate-300', fixoMobile: false },
+      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias', cor: 'text-slate-300', fixoMobile: false }
     ];
 
     document.addEventListener("DOMContentLoaded", function() {
       renderizarMenusNavegacao();
       const navDesktop = document.getElementById('barraNavegacaoDesktop');
       new Sortable(navDesktop, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 100, delayOnTouchOnly: true, onEnd: function () { localStorage.setItem('ordemAbasGestorV8', JSON.stringify(Array.from(navDesktop.children).map(btn => btn.getAttribute('data-id')))); } });
-      const navMobile = document.getElementById('barraNavegacaoMobile');
-      new Sortable(navMobile, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', delay: 200, delayOnTouchOnly: true, onEnd: function () { localStorage.setItem('ordemAbasGestorV8', JSON.stringify(Array.from(navMobile.children).map(btn => btn.getAttribute('data-id')))); } });
 
       window.addEventListener('online', atualizarIndicadorOffline);
       window.addEventListener('offline', atualizarIndicadorOffline);
       atualizarIndicadorOffline();
     });
 
+    function abrirMenuMobile() {
+      const m = document.getElementById('modalMenuMobile');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function fecharMenuMobile() {
+      const m = document.getElementById('modalMenuMobile');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
     function renderizarMenusNavegacao() {
       const ordemPadrao = ['novo', 'dashboard', 'assinaturas', 'lancamentos', 'relatorio', 'anual', 'formas', 'categorias'];
       const ordemSalva = JSON.parse(localStorage.getItem('ordemAbasGestorV8')) || ordemPadrao;
-      const navDesktop = document.getElementById('barraNavegacaoDesktop'); const navMobile = document.getElementById('barraNavegacaoMobile');
+      const navDesktop = document.getElementById('barraNavegacaoDesktop');
+      const navMobile = document.getElementById('barraNavegacaoMobile');
       navDesktop.innerHTML = ''; navMobile.innerHTML = '';
       
+      // Desktop: Todas as abas organizáveis
       ordemSalva.forEach(id => {
         const config = abasConfig.find(a => a.id === id); if(!config) return;
         navDesktop.innerHTML += `<button onclick="setAba('${id}')" id="btn-desk-${id}" data-id="${id}" class="tab-btn-global whitespace-nowrap px-3.5 py-1.5 rounded-lg font-medium ${config.cor} hover:text-white transition cursor-pointer">${config.icone} ${config.tituloD}</button>`;
-        navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" data-id="${id}" class="tab-btn-global flex-1 min-w-[70px] flex flex-col items-center justify-center p-1.5 rounded-xl ${config.cor} transition"><span class="text-xl mb-0.5">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
       });
+
+      // Mobile: 4 Abas Fixas Principais + 1 Botão Menu
+      const abasFixasMobile = ['novo', 'dashboard', 'lancamentos', 'relatorio'];
+      abasFixasMobile.forEach(id => {
+        const config = abasConfig.find(a => a.id === id);
+        navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl ${config.cor} transition active:scale-95"><span class="text-lg mb-0.5 leading-none">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
+      });
+
+      // 5º Botão Mobile: Menu
+      navMobile.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-mob-menu" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-slate-300 transition active:scale-95"><span id="icone-mob-menu" class="text-lg mb-0.5 leading-none">☰</span><span id="txt-mob-menu" class="text-[10px] font-bold tracking-tight">Menu</span></button>`;
+
       setAba('novo', false);
     }
 
     function setAba(aba, salvar=true) {
+      fecharMenuMobile();
       if(salvar) localStorage.setItem('abaAtivaGestorV8', aba);
+
+      const configAtiva = abasConfig.find(a => a.id === aba);
+      const subMobile = document.getElementById('subtituloMobileAba');
+      if (subMobile && configAtiva) subMobile.textContent = configAtiva.tituloD;
+
       abasConfig.forEach(a => {
         const view = document.getElementById('view-' + a.id); if(view) view.classList.add('hidden');
-        const btnD = document.getElementById('btn-desk-' + a.id); const btnM = document.getElementById('btn-mob-' + a.id);
+        const btnD = document.getElementById('btn-desk-' + a.id);
+        const btnM = document.getElementById('btn-mob-' + a.id);
+        const btnMenuModal = document.getElementById('btn-menu-' + a.id);
+
         if(btnD) { btnD.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnD.classList.add(a.cor); }
         if(btnM) { btnM.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnM.classList.add(a.cor); }
+        if(btnMenuModal) { btnMenuModal.classList.remove('border-blue-500', 'bg-blue-950/40'); btnMenuModal.classList.add('border-slate-700/80', 'bg-slate-800/80'); }
       });
+
       const viewShow = document.getElementById('view-' + aba); if(viewShow) viewShow.classList.remove('hidden');
-      const btnShowD = document.getElementById('btn-desk-' + aba); const btnShowM = document.getElementById('btn-mob-' + aba);
+      const btnShowD = document.getElementById('btn-desk-' + aba);
+      const btnShowM = document.getElementById('btn-mob-' + aba);
+      const btnMenuM = document.getElementById('btn-mob-menu');
+      const btnMenuModalAtivo = document.getElementById('btn-menu-' + aba);
+
       const corAtiva = (aba === 'novo') ? 'bg-emerald-600' : 'bg-blue-600';
       if(btnShowD) { btnShowD.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowD.classList.remove('text-slate-300', 'text-emerald-400'); }
-      if(btnShowM) { btnShowM.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowM.classList.remove('text-slate-300', 'text-emerald-400'); }
+
+      // Se for uma das 4 abas fixas do mobile
+      if(btnShowM) {
+        btnShowM.classList.add(corAtiva, 'text-white', 'shadow-md');
+        btnShowM.classList.remove('text-slate-300', 'text-emerald-400');
+        if(btnMenuM) {
+          btnMenuM.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+          btnMenuM.classList.add('text-slate-300');
+          document.getElementById('txt-mob-menu').textContent = 'Menu';
+        }
+      } else {
+        // Se for uma aba de dentro do Menu Gaveta, destaca o botão Menu na barra inferior
+        if(btnMenuM && configAtiva) {
+          btnMenuM.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+          btnMenuM.classList.remove('text-slate-300');
+          document.getElementById('txt-mob-menu').textContent = configAtiva.titulo;
+        }
+        if(btnMenuModalAtivo) {
+          btnMenuModalAtivo.classList.remove('border-slate-700/80', 'bg-slate-800/80');
+          btnMenuModalAtivo.classList.add('border-blue-500', 'bg-blue-950/40');
+        }
+      }
     }
 
     function isCategoriaOutros(nome) { return String(nome || '').trim().toLowerCase() === 'outros' || String(nome || '').trim().toLowerCase() === 'outro'; }
@@ -833,11 +982,12 @@
          const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, '0');
          
          preencherSeletoresInteligentes(anoAtualStr, mesAtualStr);
-         carregarRelatorioAnual(); 
+         // Escalona a chamada anual em 350ms para evitar colisão de requisições simultâneas no Google
+         setTimeout(() => carregarRelatorioAnual(), 350); 
       } catch(e){}
       
       try { if (dados.faturas) { evolucaoMeses = dados.faturas.mesesGlobais || []; evolucaoPivot = dados.faturas.pivot || {}; evolucaoIdx = evolucaoMeses.indexOf(dados.faturas.mesAtual); if (evolucaoIdx === -1) evolucaoIdx = 0; renderTabelaEvolucao(); } } catch(e){}
-      try { if (dados.categorias && dados.categorias.length > 0) { if (chartGlobal) chartGlobal.destroy(); chartGlobal = new Chart(document.getElementById('chartCategorias').getContext('2d'), { type: 'doughnut', data: { labels: dados.categorias.map(c => c.nome), datasets: [{ data: dados.categorias.map(c => c.total), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } }); } } catch(e){}
+      try { if (dados.categorias && dados.categorias.length > 0) { if (chartGlobal) chartGlobal.destroy(); chartGlobal = new Chart(document.getElementById('chartCategorias').getContext('2d'), { type: 'doughnut', data: { labels: dados.categorias.map(c => c.nome), datasets: [{ data: dados.categorias.map(c => c.total), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, padding: 14, font: { size: 11 } } } } } }); } } catch(e){}
       try { renderListaFormas(); } catch(e){}
 
       try { let htmlAtivas = ''; let htmlInativas = ''; if(dados.assinaturas && dados.assinaturas.length > 0) { const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa'); const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa'); if (ativas.length > 0) { ativas.forEach(a => { const descSafe = String(a.descricao).replace(/'/g, "\\'"); const formaSafe = String(a.forma).replace(/'/g, "\\'"); const catSafe = String(a.categoria).replace(/'/g, "\\'"); htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ativa</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`; }); } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>'; } if (inativas.length > 0) { inativas.forEach(a => { htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`; }); } else { htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>'; } } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>'; htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>'; } document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas; document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas; } catch(e){}
@@ -919,7 +1069,7 @@
           </div>
         </div>`;
       });
-      if(lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado.</div>';
+      if(lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado.</div>';
       
       const boxLanc = document.getElementById('lista-lancamentos');
       if(boxLanc) { if(append) boxLanc.insertAdjacentHTML('beforeend', htmlL); else boxLanc.innerHTML = htmlL; }
@@ -1124,7 +1274,55 @@
       });
     }
     
-    function renderTabelaEvolucao() { const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + 4); let th = `<th class="py-2.5">Forma de Pagamento</th>`; mToShow.forEach(m => th += `<th class="py-2.5 text-center">${m}</th>`); th += `<th class="py-2.5 text-right pr-2">Total</th>`; const hdr = document.getElementById('faturas-header'); if(hdr) hdr.innerHTML = th; let tb = ''; const formas = Object.keys(evolucaoPivot).sort(); formas.forEach(forma => { let totalLinha = 0; let cols = mToShow.map(m => { const val = evolucaoPivot[forma][m] || 0; totalLinha += val; return `<td class="py-2.5 text-center text-slate-300 font-medium">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`; }); tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800"><td class="py-3 font-semibold text-white">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`; }); const fBody = document.getElementById('faturas-body'); if(fBody) fBody.innerHTML = tb; const btnPrev = document.getElementById('btnEvolPrev'); const btnNext = document.getElementById('btnEvolNext'); const isStart = (evolucaoIdx === 0); const isEnd = (evolucaoIdx + 4 >= evolucaoMeses.length); if(btnPrev) { btnPrev.disabled = isStart; btnPrev.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } if(btnNext) { btnNext.disabled = isEnd; btnNext.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; } }
+    // 🔥 TABELA HORIZONTE COM "TOTAL CARTEIRA" FIXADO NO RODAPÉ E DESTACADO EM ROXO
+    function renderTabelaEvolucao() {
+      const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + 4);
+      let th = `<th class="py-2.5 pl-2">Forma de Pagamento</th>`;
+      mToShow.forEach(m => th += `<th class="py-2.5 text-center">${m}</th>`);
+      th += `<th class="py-2.5 text-right pr-2">Total</th>`;
+      const hdr = document.getElementById('faturas-header'); if(hdr) hdr.innerHTML = th;
+
+      let tb = '';
+      const todasFormas = Object.keys(evolucaoPivot);
+      
+      // Separa os cartões/Pix normais da linha consolidada "Total Carteira"
+      const formasNormais = todasFormas.filter(f => !f.toLowerCase().includes('total') && !f.toLowerCase().includes('carteira')).sort((a, b) => {
+        const isPixA = a.toLowerCase().includes('pix');
+        const isPixB = b.toLowerCase().includes('pix');
+        if (isPixA && !isPixB) return 1;
+        if (!isPixA && isPixB) return -1;
+        return a.localeCompare(b);
+      });
+      const formasTotal = todasFormas.filter(f => f.toLowerCase().includes('total') || f.toLowerCase().includes('carteira'));
+
+      formasNormais.forEach(forma => {
+        let totalLinha = 0;
+        let cols = mToShow.map(m => {
+          const val = evolucaoPivot[forma][m] || 0;
+          totalLinha += val;
+          return `<td class="py-2.5 text-center text-slate-300 font-medium">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`;
+        });
+        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`;
+      });
+
+      // Renderiza o Total Carteira sempre por último com cor diferenciada (Roxo/Índigo)
+      formasTotal.forEach(forma => {
+        let totalLinha = 0;
+        let cols = mToShow.map(m => {
+          const val = evolucaoPivot[forma][m] || 0;
+          totalLinha += val;
+          return `<td class="py-3.5 text-center text-purple-200 font-bold">${val > 0 ? val.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td>`;
+        });
+        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 flex items-center gap-1.5"><span>💼</span> ${forma}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-sm sm:text-base">${totalLinha > 0 ? totalLinha.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '-'}</td></tr>`;
+      });
+
+      const fBody = document.getElementById('faturas-body'); if(fBody) fBody.innerHTML = tb;
+      const btnPrev = document.getElementById('btnEvolPrev'); const btnNext = document.getElementById('btnEvolNext');
+      const isStart = (evolucaoIdx === 0); const isEnd = (evolucaoIdx + 4 >= evolucaoMeses.length);
+      if(btnPrev) { btnPrev.disabled = isStart; btnPrev.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; }
+      if(btnNext) { btnNext.disabled = isEnd; btnNext.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-md no-print ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-slate-700 text-white hover:bg-slate-600'}`; }
+    }
+
     function mudarMesEvolucao(step) { evolucaoIdx += step; if (evolucaoIdx < 0) evolucaoIdx = 0; if (evolucaoIdx + 4 > evolucaoMeses.length) evolucaoIdx = Math.max(0, evolucaoMeses.length - 4); renderTabelaEvolucao(); }
     
     function carregarRelatorioMesUnico(mesFiltro) {
@@ -1169,7 +1367,6 @@
                   tList.forEach(t => { tagsHtml += `<span class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${t}</span>`; });
               }
 
-              // 🔥 ABA MENSAL COM A ETIQUETA DA CATEGORIA IGUAL AO HISTÓRICO
               html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`; 
             }); 
             
