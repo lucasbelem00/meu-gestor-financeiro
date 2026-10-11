@@ -170,10 +170,9 @@
     <nav id="barraNavegacaoDesktop" class="hidden sm:flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 text-sm overflow-x-auto hide-scrollbar"></nav>
   </header>
 
-  <!-- MAIN SEM ESPAÇO FANTASMA: TODAS AS ABAS ALINHADAS NO TOPO -->
   <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
     
-    <!-- NOVO LANÇAMENTO COM DICA DE PADRONIZAÇÃO -->
+    <!-- NOVO LANÇAMENTO COM DATA TRIPLA E AUTOPREENCHIMENTO INTELIGENTE -->
     <div id="view-novo" class="max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
         <h2 class="text-base font-bold text-white mb-5 flex items-center gap-2"><span>➕</span> Novo Registro</h2>
@@ -181,7 +180,29 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Data</label>
-              <input type="text" id="inpData" oninput="mascaraData(this)" onblur="atualizarRegrasForma()" placeholder="DD/MM/AAAA" maxlength="10" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              <!-- CAMPO TRIPLO INTEGRADO: [ DD ] / [ MM ] / [ AAAA ] -->
+              <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
+                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
+                  onfocus="this.select()"
+                  oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')"
+                  onblur="formatarZeroData(this, 2); sincronizarDataTripla('novo', true)"
+                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <span class="text-slate-500 font-bold select-none">/</span>
+                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
+                  onfocus="this.select()"
+                  oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')"
+                  onkeydown="voltarParteData(event, this, 'inpDataDia')"
+                  onblur="formatarZeroData(this, 2); sincronizarDataTripla('novo', true)"
+                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <span class="text-slate-500 font-bold select-none">/</span>
+                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
+                  onfocus="this.select()"
+                  oninput="aoDigitarParteData(this, null, 4, 'novo')"
+                  onkeydown="voltarParteData(event, this, 'inpDataMes')"
+                  onblur="sincronizarDataTripla('novo', true)"
+                  class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              </div>
+              <input type="hidden" id="inpData">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Mês Fatura</label>
@@ -190,7 +211,12 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
-            <input type="text" id="inpDesc" list="listaDescricoes" onchange="checarAutopreenchimento()" placeholder="Ex: Gasolina - Posto X, Pizzaria X" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+            <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words"
+              oninput="checarAutopreenchimento()"
+              onchange="this.value = formatarTituloInteligente(this.value); checarAutopreenchimento()"
+              onblur="this.value = formatarTituloInteligente(this.value); checarAutopreenchimento()"
+              placeholder="Ex: Gasolina - Posto X, Pizzaria X" required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             <p class="text-[10px] text-slate-500 mt-1 ml-1">Padrão sugerido: 'Item - Local' ou apenas 'Local' (quando óbvio).</p>
             <datalist id="listaDescricoes"></datalist>
           </div>
@@ -198,11 +224,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
-              <select id="selForma" onchange="atualizarRegrasForma()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></select>
+              <select id="selForma" onchange="atualizarRegrasForma()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition"></select>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Categoria</label>
-              <select id="selCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></select>
+              <select id="selCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition"></select>
             </div>
           </div> 
 
@@ -291,7 +317,6 @@
         </div>
       </div>
 
-      <!-- CARDS TOPO MENSAL (MAIOR GASTO NO CARD LARGO PARA NUNCA CORTAR) -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="card-glass p-4 border-t-4 border-t-amber-400 flex flex-col justify-between">
           <div>
@@ -323,7 +348,6 @@
             <div class="relative h-48 flex items-center justify-center"><canvas id="chartRelatorio"></canvas></div>
           </div>
 
-          <!-- ÍNDICE DE RIGIDEZ DA FATURA (À VISTA VS PARCELADO/FIXO) -->
           <div class="pt-4 border-t border-slate-700/60">
             <h3 class="text-xs font-bold text-slate-400 mb-2.5 uppercase tracking-wider">⚖️ Composição da Fatura</h3>
             <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden flex mb-2">
@@ -424,7 +448,7 @@
       </div>
     </div>
 
-    <!-- DASHBOARD COM TABELA HORIZONTE ENXUTA (APENAS MESES COM GASTOS PREVISTOS) -->
+    <!-- DASHBOARD COM TABELA HORIZONTE ENXUTA -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -482,7 +506,7 @@
         </div>
         <p id="infoTextCat" class="hidden text-xs text-slate-400 mb-6">Arraste (☰) para personalizar. Exclua ou adicione novas abaixo para enviar à planilha.</p>
         <div id="boxNovaCat" class="hidden flex-col sm:flex-row gap-3 mb-6">
-          <input type="text" id="inpNovaCat" placeholder="Nova Categoria..." onkeypress="if(event.key==='Enter'){adicionarCategoriaUi(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+          <input type="text" id="inpNovaCat" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Nova Categoria..." onkeypress="if(event.key==='Enter'){adicionarCategoriaUi(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
           <input type="number" id="inpNovaMeta" placeholder="Meta R$ (Opc.)" class="w-full sm:w-32 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
           <button type="button" id="btnAdicionarCat" onclick="adicionarCategoriaUi()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition shadow-md active:scale-95">Adicionar</button>
         </div>
@@ -548,16 +572,44 @@
     </div>
   </div>
 
+  <!-- MODAL EDIÇÃO DE LANÇAMENTO COM DATA TRIPLA E CAPITALIZAÇÃO INTELIGENTE -->
   <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-5">✏️ Editar Lançamento</h3>
       <form onsubmit="salvarEdicaoLanc(event)" class="space-y-4">
         <input type="hidden" id="inpEdLinha">
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Data</label><input type="text" id="inpEdData" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Data</label>
+            <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
+              <input type="text" id="inpEdDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
+                onfocus="this.select()"
+                oninput="aoDigitarParteData(this, 'inpEdDataMes', 2, 'edicao')"
+                onblur="formatarZeroData(this, 2); sincronizarDataTripla('edicao', false)"
+                class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <span class="text-slate-500 font-bold select-none">/</span>
+              <input type="text" id="inpEdDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
+                onfocus="this.select()"
+                oninput="aoDigitarParteData(this, 'inpEdDataAno', 2, 'edicao')"
+                onkeydown="voltarParteData(event, this, 'inpEdDataDia')"
+                onblur="formatarZeroData(this, 2); sincronizarDataTripla('edicao', false)"
+                class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <span class="text-slate-500 font-bold select-none">/</span>
+              <input type="text" id="inpEdDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
+                onfocus="this.select()"
+                oninput="aoDigitarParteData(this, null, 4, 'edicao')"
+                onkeydown="voltarParteData(event, this, 'inpEdDataMes')"
+                onblur="sincronizarDataTripla('edicao', false)"
+                class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+            </div>
+            <input type="hidden" id="inpEdData">
+          </div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><input type="text" id="inpEdMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
         </div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="inpEdDesc" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label>
+          <input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
@@ -595,7 +647,10 @@
       <form onsubmit="salvarEdicaoAss(event)" class="space-y-4">
         <input type="hidden" id="inpAssDescOrig">
         <input type="hidden" id="inpAssFormaOrig">
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Descrição</label><input type="text" id="inpAssDesc" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Nova Descrição</label>
+          <input type="text" id="inpAssDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Cartão</label><select id="selAssForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Categoria</label><select id="selAssCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
@@ -697,10 +752,105 @@
         .join(', ');
     }
 
+    // 🔥 CAPITALIZAÇÃO INTELIGENTE DE INICIAIS MAIÚSCULAS (Preserva preposições e siglas)
+    function formatarTituloInteligente(texto) {
+      if (!texto) return '';
+      const conectivos = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'por', 'para', 'e', 'ou', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às']);
+      const palavras = String(texto).trim().replace(/\s+/g, ' ').split(' ');
+
+      return palavras.map((palavra, index) => {
+        if (!palavra) return '';
+        if (palavra === '-' || palavra === '–') return '-';
+        const limpa = palavra.toLowerCase();
+        const anterior = index > 0 ? palavras[index - 1] : '';
+        if (index > 0 && anterior !== '-' && anterior !== '–' && conectivos.has(limpa)) {
+          return limpa;
+        }
+        if (palavra.length > 1 && palavra === palavra.toUpperCase() && /[A-Z]/.test(palavra)) {
+          return palavra;
+        }
+        return limpa.charAt(0).toUpperCase() + limpa.slice(1);
+      }).join(' ');
+    }
+
+    // 🔥 FUNÇÕES DO CAMPO DE DATA TRIPLO ([ DD ] / [ MM ] / [ AAAA ])
+    function formatarZeroData(input, tamanho) {
+      let v = input.value.replace(/\D/g, '');
+      if (v.length > 0 && v.length < tamanho) {
+        input.value = v.padStart(tamanho, '0');
+      }
+    }
+
+    function aoDigitarParteData(input, nextId, maxLen, contexto) {
+      let v = input.value.replace(/\D/g, '');
+      if (v.length > maxLen) v = v.substring(0, maxLen);
+      input.value = v;
+      sincronizarDataTripla(contexto, true);
+      if (v.length === maxLen && nextId) {
+        const nextEl = document.getElementById(nextId);
+        if (nextEl) {
+          nextEl.focus();
+          nextEl.select();
+        }
+      }
+    }
+
+    function voltarParteData(event, input, prevId) {
+      if (event.key === 'Backspace' && input.value.length === 0 && prevId) {
+        const prevEl = document.getElementById(prevId);
+        if (prevEl) {
+          event.preventDefault();
+          prevEl.focus();
+          prevEl.select();
+        }
+      }
+    }
+
+    function sincronizarDataTripla(contexto = 'novo', dispararRegras = true) {
+      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
+      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
+      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
+      const idHidden = contexto === 'novo' ? 'inpData' : 'inpEdData';
+
+      const d = (document.getElementById(idDia)?.value || '').replace(/\D/g, '');
+      const m = (document.getElementById(idMes)?.value || '').replace(/\D/g, '');
+      const a = (document.getElementById(idAno)?.value || '').replace(/\D/g, '');
+
+      const hiddenEl = document.getElementById(idHidden);
+      if (d.length >= 1 && m.length >= 1 && a.length === 4) {
+        const dFmt = d.padStart(2, '0');
+        const mFmt = m.padStart(2, '0');
+        if (hiddenEl) hiddenEl.value = `${dFmt}/${mFmt}/${a}`;
+        if (contexto === 'novo' && dispararRegras) {
+          atualizarRegrasForma();
+        }
+      }
+    }
+
+    function preencherDataTripla(contexto, dataStr) {
+      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
+      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
+      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
+      const idHidden = contexto === 'novo' ? 'inpData' : 'inpEdData';
+
+      const partes = String(dataStr || '').trim().split('/');
+      if (partes.length === 3) {
+        const d = partes[0].padStart(2, '0');
+        const m = partes[1].padStart(2, '0');
+        const a = partes[2];
+        if (document.getElementById(idDia)) document.getElementById(idDia).value = d;
+        if (document.getElementById(idMes)) document.getElementById(idMes).value = m;
+        if (document.getElementById(idAno)) document.getElementById(idAno).value = a;
+        if (document.getElementById(idHidden)) document.getElementById(idHidden).value = `${d}/${m}/${a}`;
+      }
+    }
+
     let chartGlobal = null; let chartRel = null; let chartAnualObj = null;
     let formasGlobais = []; let categoriasGlobaisEdit = []; let dadosCarregadosIniciais = false;
     let evolucaoMeses = []; let evolucaoPivot = {}; let evolucaoIdx = 0; let evolucaoMesAtual = '';
-    let ultimosLancamentosCache = []; let dicionarioAutofill = {}; 
+    let ultimosLancamentosCache = [];
+    let dicionarioAutofill = {};
+    let dicionarioPrefixosAutofill = {};
     let modoEdicaoFormas = false; let modoEdicaoCategorias = false; let modoEdicaoLancamentos = false;
     let arvoreMesesAno = {}; 
     let ultimoRelatorioMensalCache = null;
@@ -1248,7 +1398,15 @@
     function renderizarDados(dados) {
       if (!dados) return;
       try { formasGlobais = dados.formasPagamento || []; categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : []; renderizarListaCategorias(); } catch(e){}
-      try { dicionarioAutofill = dados.autofill || {}; const dl = document.getElementById('listaDescricoes'); if(dl) { dl.innerHTML = ''; Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; }); } } catch(e){}
+      try {
+        dicionarioAutofill = dados.autofill || {};
+        dicionarioPrefixosAutofill = dados.autofillPrefixos || {};
+        const dl = document.getElementById('listaDescricoes');
+        if(dl) {
+          dl.innerHTML = '';
+          Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; });
+        }
+      } catch(e){}
       
       try { 
         const dlTags = document.getElementById('listaTagsUI'); 
@@ -1407,14 +1565,22 @@
     function chamarFiltroBackend(append = false) { apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA }).then(res => { if(!append) document.getElementById('lista-lancamentos').innerHTML = ''; renderTabelaLancamentos(res.itens, append); const box = document.getElementById('boxCarregarMais'); if(res.temMais) { box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇'; } else { box.classList.add('hidden'); } }).catch(err => mostrarAviso('Erro', 'Erro na busca: ' + err.message)); }
 
     function enviarGasto(e) {
-      e.preventDefault(); const btn = document.getElementById('btnSalvar'); btn.textContent = 'Aguarde...'; btn.disabled = true;
+      e.preventDefault();
+      formatarZeroData(document.getElementById('inpDataDia'), 2);
+      formatarZeroData(document.getElementById('inpDataMes'), 2);
+      sincronizarDataTripla('novo', false);
+
+      const descInput = document.getElementById('inpDesc');
+      descInput.value = formatarTituloInteligente(descInput.value);
+
+      const btn = document.getElementById('btnSalvar'); btn.textContent = 'Aguarde...'; btn.disabled = true;
       
       let rawTags = document.getElementById('inpTags').value;
       let tagsTratadas = formatarTagsAutomaticamente(rawTags);
 
       const payload = { 
         dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, 
-        descricao: document.getElementById('inpDesc').value, formaPagto: document.getElementById('selForma').value, 
+        descricao: descInput.value, formaPagto: document.getElementById('selForma').value, 
         categoria: document.getElementById('selCat').value, tags: tagsTratadas, 
         valorTotal: document.getElementById('inpValor').value, numParcelas: document.getElementById('inpParc').value, 
         parcelaInicial: document.getElementById('inpParcIni').value, statusInicial: document.getElementById('selStatus').value, 
@@ -1478,7 +1644,7 @@
     let indexEdicaoCat = -1;
     function editarCategoriaUi(index) { const c = categoriasGlobaisEdit[index]; document.getElementById('inpNovaCat').value = c.nome; document.getElementById('inpNovaMeta').value = c.meta > 0 ? c.meta : ''; indexEdicaoCat = index; const btn = document.getElementById('btnAdicionarCat'); btn.textContent = 'Atualizar'; btn.classList.replace('bg-blue-600', 'bg-amber-500'); btn.classList.replace('hover:bg-blue-500', 'hover:bg-amber-400'); }
     function adicionarCategoriaUi() { 
-      const inpNome = document.getElementById('inpNovaCat'); const inpMeta = document.getElementById('inpNovaMeta'); const valNome = inpNome.value.trim(); const valMeta = parseFloat(inpMeta.value.replace(',', '.')) || 0; 
+      const inpNome = document.getElementById('inpNovaCat'); const inpMeta = document.getElementById('inpNovaMeta'); const valNome = formatarTituloInteligente(inpNome.value.trim()); const valMeta = parseFloat(inpMeta.value.replace(',', '.')) || 0; 
       if(!valNome) return; 
       if (indexEdicaoCat !== -1) { 
         if(categoriasGlobaisEdit.some((c, i) => i !== indexEdicaoCat && c.nome.toLowerCase() === valNome.toLowerCase())) { mostrarAviso('Atenção', 'Categoria já existe!'); return; } 
@@ -1503,10 +1669,16 @@
       }); 
     }
 
-    function definirDataHoje() { const hoje = new Date(); document.getElementById('inpData').value = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`; }
-    function mascaraData(input) { let v = input.value.replace(/\D/g,''); if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2); if (v.length > 5) v = v.substring(0,5) + '/' + v.substring(5,9); input.value = v; if (v.length === 10) atualizarRegrasForma(); }
+    function definirDataHoje() {
+      const hoje = new Date();
+      const strHoje = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+      preencherDataTripla('novo', strHoje);
+    }
+
     function alternarModoAssinatura() { const chk = document.getElementById('checkAssinatura').checked; const boxParc = document.getElementById('boxParc'); const boxParcIni = document.getElementById('boxParcIni'); const boxStatus = document.getElementById('boxStatus'); if(chk) { boxParc.style.display = 'none'; boxParcIni.style.display = 'none'; boxStatus.style.display = 'none'; } else { boxParc.style.display = 'block'; boxParcIni.style.display = 'block'; boxStatus.style.display = 'block'; atualizarRegrasForma(); } }
+    
     function atualizarRegrasForma() {
+      sincronizarDataTripla('novo', false);
       const chk = document.getElementById('checkAssinatura').checked; const nomeSelecionado = document.getElementById('selForma').value; const dataCompraStr = document.getElementById('inpData').value; const inpMesFat = document.getElementById('inpMesFat'); const selStatus = document.getElementById('selStatus'); const inpParc = document.getElementById('inpParc'); const inpParcIni = document.getElementById('inpParcIni');
       if (!nomeSelecionado || dataCompraStr.length !== 10) return; const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado); if (!formaObj) return;
       if (nomeSelecionado.toLowerCase().includes('pix')) { inpParc.value = 1; inpParc.disabled = true; inpParcIni.value = 1; inpParcIni.disabled = true; if(!chk) selStatus.value = 'Pago'; const partes = dataCompraStr.split('/'); if (partes.length === 3) inpMesFat.value = `${partes[1]}/${partes[2]}`; } else {
@@ -1518,7 +1690,99 @@
         inpMesFat.value = `${String(ciclo.venc.getMonth() + 1).padStart(2, '0')}/${ciclo.venc.getFullYear()}`;
       }
     }
-    function checarAutopreenchimento() { const desc = document.getElementById('inpDesc').value.trim().toLowerCase(); if (dicionarioAutofill[desc]) { const info = dicionarioAutofill[desc]; const selForma = document.getElementById('selForma'); if (info.forma && [...selForma.options].some(o => o.value === info.forma)) { selForma.value = info.forma; atualizarRegrasForma(); } const selCat = document.getElementById('selCat'); if (info.categoria && [...selCat.options].some(o => o.value === info.categoria)) { selCat.value = info.categoria; } } }
+
+    // 🔥 MOTOR DE AUTOPREENCHIMENTO INTELIGENTE EM 3 CAMADAS
+    const mapaPalavrasChaveCategorias = [
+      {
+        termos: ['pizza', 'pizzaria', 'restaurante', 'bar', 'lanchonete', 'lanche', 'hamburguer', 'hambúrguer', 'burger', 'acai', 'açaí', 'sorvete', 'sorveteria', 'guloseima', 'guloseimas', 'doce', 'padaria', 'panificadora', 'cafe', 'café', 'cafeteria', 'sushi', 'japa', 'churrasco', 'churrascaria', 'espetinho', 'almoco', 'almoço', 'jantar', 'ifood', 'pastel', 'pastelaria', 'salgado', 'confeitaria', 'bistro', 'bistrô'],
+        alvos: ['alimentação fora', 'alimentacao fora', 'alimentação', 'alimentacao', 'restaurante']
+      },
+      {
+        termos: ['supermercado', 'mercado', 'mercadinho', 'atacadao', 'atacadão', 'assai', 'assaí', 'carrefour', 'hortifruti', 'sacolao', 'sacolão', 'feira', 'açougue', 'acougue', 'frigorifico'],
+        alvos: ['supermercado', 'mercado']
+      },
+      {
+        termos: ['gasolina', 'etanol', 'combustivel', 'combustível', 'posto', 'uber', '99pop', 'taxi', 'táxi', 'estacionamento', 'pedagio', 'pedágio', 'oficina', 'mecanico', 'mecânico', 'oleo', 'óleo', 'pneu', 'lavagem', 'lava jato'],
+        alvos: ['transporte', 'combustível', 'veículo']
+      },
+      {
+        termos: ['pet', 'petshop', 'veterinario', 'veterinário', 'doctorvet', 'racao', 'ração', 'areia', 'sache', 'sachê', 'vacina', 'banho e tosa', 'feliway', 'quatree'],
+        alvos: ['pets', 'pet']
+      },
+      {
+        termos: ['farmacia', 'farmácia', 'drogaria', 'drogasil', 'pague menos', 'remedio', 'remédio', 'medicamento', 'consulta', 'exame', 'clinica', 'clínica', 'hospital', 'dentista', 'odonto', 'psicologo', 'terapia'],
+        alvos: ['saúde', 'saude', 'farmácia']
+      },
+      {
+        termos: ['cinema', 'ingresso', 'show', 'teatro', 'parque', 'boliche', 'steam', 'passeio', 'evento', 'clube', 'praia'],
+        alvos: ['lazer', 'entretenimento']
+      },
+      {
+        termos: ['barbearia', 'corte de cabelo', 'salao', 'salão', 'perfume', 'cosmetico', 'cosmético', 'desodorante', 'shampoo', 'hidratante', 'maquiagem', 'manicure', 'estetica', 'estética'],
+        alvos: ['cuidados pessoais', 'beleza', 'higiene']
+      },
+      {
+        termos: ['curso', 'livro', 'apostila', 'faculdade', 'mensalidade', 'inscricao', 'inscrição', 'prova', 'revalida', 'duolingo', 'papelaria', 'caderno'],
+        alvos: ['educação', 'educacao', 'estudos']
+      },
+      {
+        termos: ['aluguel', 'condominio', 'condomínio', 'energia', 'equatorial', 'agua', 'água', 'agespisa', 'internet', 'iptu', 'lampada', 'lâmpada'],
+        alvos: ['moradia', 'casa', 'contas']
+      }
+    ];
+
+    function checarAutopreenchimento() {
+      const descRaw = document.getElementById('inpDesc').value.trim();
+      const desc = descRaw.toLowerCase();
+      if (!desc) return;
+
+      const selForma = document.getElementById('selForma');
+      const selCat = document.getElementById('selCat');
+
+      const aplicarSugestao = (formaSug, catSug) => {
+        if (formaSug && selForma && [...selForma.options].some(o => o.value === formaSug)) {
+          if (selForma.value !== formaSug) {
+            selForma.value = formaSug;
+            atualizarRegrasForma();
+          }
+        }
+        if (catSug && selCat && [...selCat.options].some(o => o.value === catSug)) {
+          selCat.value = catSug;
+        }
+      };
+
+      // 1ª Camada: Correspondência Exata da Descrição (Moda Estatística do Histórico)
+      if (dicionarioAutofill[desc]) {
+        aplicarSugestao(dicionarioAutofill[desc].forma, dicionarioAutofill[desc].categoria);
+        return;
+      }
+
+      // 2ª Camada: Aprendizado pelo Padrão 'Item - Local' (Lê o Item antes do traço)
+      const partesTraco = desc.split(/\s*[-–]\s*/);
+      const prefixo = partesTraco[0].trim();
+      if (prefixo && dicionarioPrefixosAutofill[prefixo]) {
+        aplicarSugestao(dicionarioPrefixosAutofill[prefixo].forma, dicionarioPrefixosAutofill[prefixo].categoria);
+        return;
+      }
+
+      // 3ª Camada: Reconhecimento Inteligente de Palavras-Chave (Para locais/itens novos)
+      if (selCat) {
+        const opcoesCat = [...selCat.options].map(o => ({ original: o.value, lower: o.value.toLowerCase() }));
+        for (const grupo of mapaPalavrasChaveCategorias) {
+          const bateuPalavra = grupo.termos.some(termo => {
+            const regex = new RegExp(`(^|\\s|-|')${termo}(\\s|-|$|s)`, 'i');
+            return regex.test(desc);
+          });
+          if (bateuPalavra) {
+            const catEncontrada = opcoesCat.find(o => grupo.alvos.includes(o.lower));
+            if (catEncontrada) {
+              selCat.value = catEncontrada.original;
+              break;
+            }
+          }
+        }
+      }
+    }
 
     function abrirModalForma(nome='', banco='', limite='', fechamento='', vencimento='') { document.getElementById('modalFormaTitle').innerHTML = nome ? '✏️ Editar Cartão' : '➕ Novo Cartão'; document.getElementById('inpFpOriginal').value = nome; document.getElementById('inpFpNome').value = nome; document.getElementById('inpFpBanco').value = banco; document.getElementById('inpFpLimite').value = limite; document.getElementById('inpFpFechamento').value = fechamento; document.getElementById('inpFpVencimento').value = vencimento; document.getElementById('modalForma').classList.remove('hidden'); }
     function fecharModalForma() { document.getElementById('modalForma').classList.add('hidden'); }
@@ -1540,7 +1804,7 @@
 
     function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { 
       document.getElementById('inpEdLinha').value = linha; 
-      document.getElementById('inpEdData').value = data; 
+      preencherDataTripla('edicao', data);
       document.getElementById('inpEdDesc').value = desc; 
       document.getElementById('selEdForma').value = forma; 
       document.getElementById('selEdCat').value = cat; 
@@ -1552,14 +1816,22 @@
     }
     function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
     function salvarEdicaoLanc(e) { 
-      e.preventDefault(); const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
+      e.preventDefault();
+      formatarZeroData(document.getElementById('inpEdDataDia'), 2);
+      formatarZeroData(document.getElementById('inpEdDataMes'), 2);
+      sincronizarDataTripla('edicao', false);
+
+      const edDescEl = document.getElementById('inpEdDesc');
+      edDescEl.value = formatarTituloInteligente(edDescEl.value);
+
+      const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
       
       let rawEdTags = document.getElementById('inpEdTags').value;
       let tagsEdTratadas = formatarTagsAutomaticamente(rawEdTags);
 
       apiCall('editarLancamentoLinhaWeb', { 
         linha: document.getElementById('inpEdLinha').value, dataCompra: document.getElementById('inpEdData').value, 
-        descricao: document.getElementById('inpEdDesc').value, formaPagto: document.getElementById('selEdForma').value, 
+        descricao: edDescEl.value, formaPagto: document.getElementById('selEdForma').value, 
         categoria: document.getElementById('selEdCat').value, valorParcela: document.getElementById('inpEdValor').value, 
         mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value, 
         tags: tagsEdTratadas 
@@ -1571,8 +1843,11 @@
     function abrirModalEdicaoAss(desc, forma, cat, valor) { document.getElementById('inpAssDescOrig').value = desc; document.getElementById('inpAssFormaOrig').value = forma; document.getElementById('inpAssDesc').value = desc; document.getElementById('selAssForma').value = forma; document.getElementById('selAssCat').value = cat; document.getElementById('inpAssValor').value = valor.replace('R$', '').trim(); document.getElementById('modalEdicaoAss').classList.remove('hidden'); }
     function fecharModalEdicaoAss() { document.getElementById('modalEdicaoAss').classList.add('hidden'); }
     function salvarEdicaoAss(e) { 
-      e.preventDefault(); const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
-      apiCall('editarAssinaturaWeb', { descOriginal: document.getElementById('inpAssDescOrig').value, formaOriginal: document.getElementById('inpAssFormaOrig').value, novaDesc: document.getElementById('inpAssDesc').value, novaForma: document.getElementById('selAssForma').value, novaCat: document.getElementById('selAssCat').value, novaValor: document.getElementById('inpAssValor').value })
+      e.preventDefault();
+      const assDescEl = document.getElementById('inpAssDesc');
+      assDescEl.value = formatarTituloInteligente(assDescEl.value);
+      const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Aguarde...'; btn.disabled = true; 
+      apiCall('editarAssinaturaWeb', { descOriginal: document.getElementById('inpAssDescOrig').value, formaOriginal: document.getElementById('inpAssFormaOrig').value, novaDesc: assDescEl.value, novaForma: document.getElementById('selAssForma').value, novaCat: document.getElementById('selAssCat').value, novaValor: document.getElementById('inpAssValor').value })
         .then(res => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar'; btn.disabled = false; if(res.sucesso||res) mostrarAviso('Sucesso', 'Atualizado!'); carregarDados(); })
         .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
