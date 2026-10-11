@@ -470,6 +470,7 @@
       <button onclick="salvarOrdemFormas()" id="btnSalvarFormas" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mb-4">💾 Salvar</button>
     </div>
 
+    <!-- CATEGORIAS E METAS EXPANDIDA ATÉ AO FINAL -->
     <div id="view-categorias" class="hidden space-y-6 max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8">
         <div class="flex justify-between items-center mb-2">
@@ -485,10 +486,10 @@
           <input type="number" id="inpNovaMeta" placeholder="Meta R$ (Opc.)" class="w-full sm:w-32 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
           <button type="button" id="btnAdicionarCat" onclick="adicionarCategoriaUi()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition shadow-md active:scale-95">Adicionar</button>
         </div>
-        <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-3 mb-6 mt-4">
-          <ul id="lista-categorias-ui" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"><li class="text-center text-slate-500 py-4 text-sm">Carregando...</li></ul>
+        <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-3 mt-4">
+          <ul id="lista-categorias-ui" class="space-y-2"><li class="text-center text-slate-500 py-4 text-sm">Carregando...</li></ul>
         </div>
-        <button onclick="salvarCategorias()" id="btnSalvarCat" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95">💾 Salvar</button>
+        <button onclick="salvarCategorias()" id="btnSalvarCat" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mt-5">💾 Salvar</button>
       </div>
     </div>
 
@@ -1468,7 +1469,7 @@
             else { iconeDrag = `<span class="drag-handle-cat text-slate-500 hover:text-white text-2xl px-3 py-1 bg-slate-900/50 rounded-lg transition cursor-grab active:scale-90">☰</span>`; classeLock = ''; }
             botoesAcao = `<div class="flex gap-2"><button type="button" onclick="editarCategoriaUi(${index})" class="text-blue-400 bg-blue-900/20 p-2 rounded-lg transition active:scale-95">✏️</button><button type="button" onclick="removerCategoriaUi(${index})" class="text-rose-400 bg-rose-900/20 p-2 rounded-lg transition active:scale-95">🗑</button></div>`;
         } else { espacamentoItem = 'px-4 py-3'; }
-        ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80 mb-2 transition-all"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
+        ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80 transition-all"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
       });
       if (ul.sortableInstance) { ul.sortableInstance.destroy(); ul.sortableInstance = null; }
       if (modoEdicaoCategorias) { ul.sortableInstance = new Sortable(ul, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item', onEnd: function () { const novaOrdemNomes = Array.from(ul.children).map(li => li.getAttribute('data-nome')); const normais = novaOrdemNomes.filter(n => !isCategoriaOutros(n)); const osOutros = novaOrdemNomes.filter(n => isCategoriaOutros(n)); localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...normais, ...osOutros])); renderizarListaCategorias(); } }); }
