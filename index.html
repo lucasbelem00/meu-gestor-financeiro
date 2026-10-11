@@ -170,7 +170,8 @@
     <nav id="barraNavegacaoDesktop" class="hidden sm:flex items-center gap-1.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/60 text-sm overflow-x-auto hide-scrollbar"></nav>
   </header>
 
-  <main class="main-content flex-1 px-4 sm:p-6 pt-6 max-w-7xl w-full mx-auto space-y-6">
+  <!-- MAIN SEM ESPAÇO FANTASMA: TODAS AS ABAS ALINHADAS NO TOPO -->
+  <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
     
     <!-- NOVO LANÇAMENTO COM DICA DE PADRONIZAÇÃO -->
     <div id="view-novo" class="max-w-xl mx-auto">
@@ -271,7 +272,7 @@
     </div>
 
     <!-- MENSAL COM RITMO, RIGIDEZ, SUBTÍTULOS SEM CORTE E SOMA DE TAGS -->
-    <div id="view-relatorio" class="hidden space-y-6 bg-[#0b1120] p-1">
+    <div id="view-relatorio" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div class="flex flex-wrap items-center gap-2.5">
@@ -365,7 +366,7 @@
     </div>
 
     <!-- ANUAL COM ESTATÍSTICAS SEM CORTE, RIGIDEZ, FORMAS USADAS E SOMA DE TAGS -->
-    <div id="view-anual" class="hidden space-y-6 bg-[#0b1120] p-1">
+    <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual</h2>
         <div class="flex items-center gap-2 w-full sm:w-auto no-print">
@@ -706,7 +707,6 @@
 
     let offsetAtual = 0; const LIMITE_PAGINA = 50; let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '' };
 
-    // 🔥 GERADOR DE PDF EXECUTIVO A4 COM RITMO E RIGIDEZ
     function gerarPDFExecutivo(tipo) {
       const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       const fmtBRL = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -773,7 +773,6 @@
               <div style="text-align: right; font-size: 10px; color: #64748b;">Gerado em ${dataGeracao}</div>
             </div>
 
-            <!-- BLOCO 1: KPIs E ESTATÍSTICAS -->
             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px;">
               <div style="border: 1px solid #cbd5e1; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 10px; background: #f8fafc;">
                 <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b;">Total a Pagar</div>
@@ -792,13 +791,11 @@
               </div>
             </div>
 
-            <!-- FAIXA DE DIAGNÓSTICO (MAIOR GASTO + RIGIDEZ DA FATURA) -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; font-size: 10px;">
               <div><span style="color: #64748b; font-weight: 700; text-transform: uppercase;">Maior Despesa do Mês:</span> <strong style="color: #0f172a;">${est.maiorGasto || '-'}</strong></div>
               <div style="text-align: right;"><span style="color: #64748b; font-weight: 700; text-transform: uppercase;">Composição:</span> <strong style="color: #047857;">À Vista/1x: ${est.aVistaValor || 'R$ 0,00'} (${est.aVistaPct || 0}%)</strong> • <strong style="color: #4f46e5;">Parc./Fixo: ${est.rigidoValor || 'R$ 0,00'} (${est.rigidoPct || 0}%)</strong></div>
             </div>
 
-            <!-- BLOCO 2: FORMAS E CATEGORIAS -->
             <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 16px; margin-bottom: 12px;">
               <div>
                 <h3 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; border-bottom: 2px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px;">Consumo por Forma de Pagamento</h3>
@@ -818,7 +815,6 @@
 
             ${blocoTagsHtml}
 
-            <!-- BLOCO 3: EXTRATO DETALHADO -->
             <div style="margin-top: 20px;">
               <h3 style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #334155; border-bottom: 2px solid #cbd5e1; padding-bottom: 4px; margin-bottom: 8px;">Extrato Detalhado de Lançamentos (${est.qtdLancamentos || 0})</h3>
               <table style="width: 100%; border-collapse: collapse;">
@@ -1292,7 +1288,6 @@
           evolucaoPivot = dados.faturas.pivot || {};
           evolucaoMesAtual = dados.faturas.mesAtual || '';
           const todasF = Object.keys(evolucaoPivot);
-          // Filtra no frontend também para exibir apenas o mês atual ou meses com algum gasto > 0
           evolucaoMeses = (dados.faturas.mesesGlobais || []).filter(m => {
             if (m === evolucaoMesAtual) return true;
             return todasF.some(f => (evolucaoPivot[f][m] || 0) > 0);
@@ -1590,7 +1585,6 @@
       });
     }
     
-    // 🔥 TABELA HORIZONTE: EXIBE APENAS MESES COM GASTOS PREVISTOS (> 0) + MÊS ATUAL
     function renderTabelaEvolucao() {
       const qtdCols = window.innerWidth < 640 ? 3 : 4;
       const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + qtdCols);
@@ -1673,7 +1667,6 @@
               document.getElementById('rel-sub-pct').textContent = `✅ ${est.pctQuitado} quitado`;
               document.getElementById('rel-sub-maior').textContent = `🔥 Maior gasto: ${est.maiorGasto}`;
 
-              // Atualiza Badge de Ritmo vs. Mês Anterior
               const badgeRitmo = document.getElementById('rel-badge-ritmo');
               if (est.ritmoVariacao === null || est.ritmoVariacao === undefined) {
                 badgeRitmo.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
@@ -1686,7 +1679,6 @@
                 badgeRitmo.textContent = `📈 ${est.ritmoTexto}`;
               }
 
-              // Atualiza Barra de Rigidez da Fatura (À Vista vs. Parcelado/Fixo)
               document.getElementById('bar-rel-avista').style.width = `${est.aVistaPct || 0}%`;
               document.getElementById('bar-rel-rigido').style.width = `${est.rigidoPct || 0}%`;
               document.getElementById('txt-rel-avista').textContent = `${est.aVistaValor} (${est.aVistaPct}%)`;
