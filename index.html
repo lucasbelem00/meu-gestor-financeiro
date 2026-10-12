@@ -71,12 +71,20 @@
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA -->
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (COM OPÇÃO DE LOTE PARA PARCELADOS) -->
   <div id="modalConfirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[210] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
       <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
       <h3 id="confTitle" class="text-base font-bold text-white mb-2">Confirmação</h3>
-      <p id="confMensagem" class="text-xs text-slate-300 mb-6 leading-relaxed">Tem certeza que deseja executar esta ação?</p>
+      <p id="confMensagem" class="text-xs text-slate-300 mb-4 leading-relaxed">Tem certeza que deseja executar esta ação?</p>
+      
+      <div id="boxConfLoteParcelas" class="hidden mb-5 p-3 rounded-xl bg-slate-900/70 border border-slate-700 text-left">
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <input type="checkbox" id="chkConfTodasParcelas" class="mt-0.5 w-4 h-4 rounded text-rose-600 bg-slate-800 border-slate-600 focus:ring-rose-500">
+          <span class="text-xs text-slate-200 font-medium leading-snug">Excluir também todas as outras parcelas <strong>em aberto</strong> desta mesma compra</span>
+        </label>
+      </div>
+
       <div class="flex gap-3">
         <button type="button" id="confBtnNao" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm">Cancelar</button>
         <button type="button" id="confBtnSim" class="w-1/2 bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition active:scale-95 text-sm shadow-md">Sim, Confirmar</button>
@@ -95,7 +103,6 @@
         <button onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1 rounded-lg text-xs font-bold">✕ Fechar</button>
       </div>
 
-      <!-- Grupo 1: Relatórios -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Relatórios e Análises</span>
         <div class="grid grid-cols-1 gap-2.5">
@@ -112,7 +119,6 @@
         </div>
       </div>
 
-      <!-- Grupo 2: Gestão e Ajustes -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
         <div class="grid grid-cols-1 gap-2.5">
@@ -172,7 +178,7 @@
 
   <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
     
-    <!-- NOVO LANÇAMENTO COM DATA TRIPLA E AUTOPREENCHIMENTO INTELIGENTE -->
+    <!-- NOVO LANÇAMENTO ENXUTO (SEM CAMPO STATUS E COM PARCELAS DINÂMICAS) -->
     <div id="view-novo" class="max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
         <h2 class="text-base font-bold text-white mb-5 flex items-center gap-2"><span>➕</span> Novo Registro</h2>
@@ -180,26 +186,25 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Data</label>
-              <!-- CAMPO TRIPLO INTEGRADO: [ DD ] / [ MM ] / [ AAAA ] -->
               <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
                 <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
                   onfocus="this.select()"
                   oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')"
-                  onblur="formatarZeroData(this, 2); sincronizarDataTripla('novo', true)"
+                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
                   class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
                 <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
                   onfocus="this.select()"
                   oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')"
                   onkeydown="voltarParteData(event, this, 'inpDataDia')"
-                  onblur="formatarZeroData(this, 2); sincronizarDataTripla('novo', true)"
+                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
                   class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
                 <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
                   onfocus="this.select()"
                   oninput="aoDigitarParteData(this, null, 4, 'novo')"
                   onkeydown="voltarParteData(event, this, 'inpDataMes')"
-                  onblur="sincronizarDataTripla('novo', true)"
+                  onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
                   class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               </div>
               <input type="hidden" id="inpData">
@@ -244,28 +249,22 @@
             <label for="checkAssinatura" class="text-sm font-bold text-blue-400 cursor-pointer w-full">Gasto Fixo / Assinatura</label>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1">
-            <div class="col-span-2 sm:col-span-1">
+          <!-- GRADE INTELIGENTE: OCULTA PARCELAS NO PIX E SÓ MOSTRA INÍCIO SE PARCELAS > 1 -->
+          <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1">
+            <div id="boxValor" class="col-span-1">
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Valor (R$)</label>
               <input type="number" step="0.01" id="inpValor" placeholder="0.00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             </div>
             <div id="boxParc">
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Parcelas</label>
-              <input type="number" id="inpParc" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none transition">
+              <input type="number" id="inpParc" value="1" min="1" oninput="atualizarLayoutParcelas()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none transition">
             </div>
-            <div id="boxParcIni">
+            <div id="boxParcIni" class="hidden">
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
               <input type="number" id="inpParcIni" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm text-center focus:border-blue-500 outline-none transition">
             </div>
           </div>
-          <div id="boxStatus">
-            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Status</label>
-            <select id="selStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 outline-none">
-              <option value="Em Aberto">Em Aberto</option>
-              <option value="Pago">Pago</option>
-              <option value="Agendado">Agendado</option>
-            </select>
-          </div>
+
           <button type="submit" id="btnSalvar" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition transform active:scale-95 mt-4">
             💾 Lançar
           </button>
@@ -297,7 +296,7 @@
       </div>
     </div>
 
-    <!-- MENSAL COM RITMO, RIGIDEZ, SUBTÍTULOS SEM CORTE E SOMA DE TAGS -->
+    <!-- MENSAL -->
     <div id="view-relatorio" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -309,7 +308,7 @@
             <button id="btnMesPrev" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
             <div class="flex flex-1 sm:flex-none gap-2">
               <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
-              <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis()" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
+              <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
             </div>
             <button id="btnMesNext" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
             <button onclick="gerarPDFExecutivo('mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1 w-full sm:w-auto mt-2 sm:mt-0">📄 PDF Executivo</button>
@@ -389,7 +388,7 @@
       </div>
     </div>
 
-    <!-- ANUAL COM ESTATÍSTICAS SEM CORTE, RIGIDEZ, FORMAS USADAS E SOMA DE TAGS -->
+    <!-- ANUAL -->
     <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual</h2>
@@ -448,7 +447,7 @@
       </div>
     </div>
 
-    <!-- DASHBOARD COM TABELA HORIZONTE ENXUTA -->
+    <!-- DASHBOARD -->
     <div id="view-dashboard" class="hidden space-y-6">
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -494,7 +493,6 @@
       <button onclick="salvarOrdemFormas()" id="btnSalvarFormas" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mb-4">💾 Salvar</button>
     </div>
 
-    <!-- CATEGORIAS E METAS EXPANDIDA ATÉ AO FINAL -->
     <div id="view-categorias" class="hidden space-y-6 max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8">
         <div class="flex justify-between items-center mb-2">
@@ -525,10 +523,9 @@
     </div>
   </main>
 
-  <!-- BARRA INFERIOR MOBILE ERGONÔMICA: 4 ABAS PRINCIPAIS + 1 BOTÃO MENU -->
   <nav id="barraNavegacaoMobile" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2.5 pt-2 px-2 grid grid-cols-5 gap-1.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
 
-  <!-- MODAL: FILTRO AVANÇADO COM TAGS -->
+  <!-- MODAL: FILTRO AVANÇADO -->
   <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
@@ -541,7 +538,7 @@
           <input type="text" id="filtTag" autocapitalize="none" placeholder="Ex: casal, dividido" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500 lowercase">
           <p class="text-[10px] text-slate-400 mt-1">Separe por vírgula para exigir ambas as tags juntas.</p>
         </div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
+        <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto / A Pagar</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
       </div>
       <div class="flex gap-3 pt-5">
         <button type="button" onclick="fecharModalFiltros()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
@@ -550,6 +547,7 @@
     </div>
   </div>
 
+  <!-- MODAL: EDITAR CARTÃO/PIX -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
@@ -572,12 +570,13 @@
     </div>
   </div>
 
-  <!-- MODAL EDIÇÃO DE LANÇAMENTO COM DATA TRIPLA E CAPITALIZAÇÃO INTELIGENTE -->
-  <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
-    <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
-      <h3 class="text-lg font-bold text-white mb-5">✏️ Editar Lançamento</h3>
-      <form onsubmit="salvarEdicaoLanc(event)" class="space-y-4">
+  <!-- MODAL EDIÇÃO DE LANÇAMENTO (COM ANTECIPAÇÃO DE PARCELAS FUTURAS) -->
+  <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto">
+      <h3 class="text-lg font-bold text-white mb-4">✏️ Editar Lançamento</h3>
+      <form onsubmit="salvarEdicaoLanc(event)" class="space-y-3.5">
         <input type="hidden" id="inpEdLinha">
+        <input type="hidden" id="inpEdParcelaStr">
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Data</label>
@@ -585,21 +584,21 @@
               <input type="text" id="inpEdDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
                 onfocus="this.select()"
                 oninput="aoDigitarParteData(this, 'inpEdDataMes', 2, 'edicao')"
-                onblur="formatarZeroData(this, 2); sincronizarDataTripla('edicao', false)"
+                onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
                 class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               <span class="text-slate-500 font-bold select-none">/</span>
               <input type="text" id="inpEdDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
                 onfocus="this.select()"
                 oninput="aoDigitarParteData(this, 'inpEdDataAno', 2, 'edicao')"
                 onkeydown="voltarParteData(event, this, 'inpEdDataDia')"
-                onblur="formatarZeroData(this, 2); sincronizarDataTripla('edicao', false)"
+                onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
                 class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               <span class="text-slate-500 font-bold select-none">/</span>
               <input type="text" id="inpEdDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
                 onfocus="this.select()"
                 oninput="aoDigitarParteData(this, null, 4, 'edicao')"
                 onkeydown="voltarParteData(event, this, 'inpEdDataMes')"
-                onblur="sincronizarDataTripla('edicao', false)"
+                onblur="validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
                 class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
             </div>
             <input type="hidden" id="inpEdData">
@@ -611,7 +610,7 @@
           <input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" onchange="aoMudarFormaEdicao()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -622,16 +621,47 @@
           </div>
         </div>
         <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
-            <select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold">
-              <option value="Em Aberto">Em Aberto</option>
-              <option value="Pago">Pago</option>
-              <option value="Agendado">Agendado</option>
-              <option value="Assinatura Ativa">Ass. Ativa</option>
-              <option value="Assinatura Cancelada">Ass. Cancelada</option>
-            </select>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
+          <select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold">
+            <option value="Em Aberto">Em Aberto</option>
+            <option value="Pago">Pago</option>
+            <option value="Agendado">Agendado</option>
+            <option value="Assinatura Ativa">Assinatura Ativa</option>
+            <option value="Assinatura Paga">Assinatura Paga</option>
+            <option value="Assinatura Cancelada">Assinatura Cancelada</option>
+            <option value="Pago (Cancelada)">Pago (Cancelada)</option>
+          </select>
         </div>
-        <div class="flex gap-3 pt-3">
+
+        <!-- PAINEL DE ANTECIPAÇÃO DE PARCELAS FUTURAS (Visível apenas para itens parcelados) -->
+        <div id="boxAdiantarContainer" class="hidden pt-2 border-t border-slate-700">
+          <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
+            <span>⚡ Adiantar Parcelas Futuras</span>
+            <span id="setaAdiantar">▼</span>
+          </button>
+          <div id="painelAdiantarCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-3">
+            <p class="text-[11px] text-slate-300 leading-relaxed">Puxa as próximas parcelas <strong>em aberto</strong> desta compra para a fatura desejada e libera seu limite futuro.</p>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fatura Destino</label>
+                <input type="text" id="inpAdiantarMes" placeholder="MM/AAAA" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-bold outline-none focus:border-amber-400">
+              </div>
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Qtd. (Vazio = Todas)</label>
+                <input type="number" id="inpAdiantarQtd" min="1" placeholder="Todas" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs text-center outline-none focus:border-amber-400">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Desconto Total Obtido no Banco (R$)</label>
+              <input type="text" id="inpAdiantarDesconto" placeholder="0,00 (Opcional)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-amber-400">
+            </div>
+            <button type="button" id="btnExecutarAdiantar" onclick="executarAdiantamentoParcelas()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">
+              Confirmar Antecipação ⚡
+            </button>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-2">
           <button type="button" onclick="fecharModalEdicaoLanc()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
           <button type="submit" id="btnSalvarEdLanc" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition">Atualizar</button>
         </div>
@@ -639,10 +669,11 @@
     </div>
   </div>
 
+  <!-- MODAL EDIÇÃO DE ASSINATURA -->
   <div id="modalEdicaoAss" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-2">🔄 Editar Assinatura</h3>
-      <p class="text-xs text-slate-400 mb-5">Altera o mês atual (em aberto) e futuros. O histórico pago é protegido.</p>
+      <p class="text-xs text-slate-400 mb-5">Altera o mês atual e futuros. O histórico de meses passados fica protegido.</p>
       
       <form onsubmit="salvarEdicaoAss(event)" class="space-y-4">
         <input type="hidden" id="inpAssDescOrig">
@@ -672,10 +703,8 @@
             registration.onupdatefound = () => {
               const installingWorker = registration.installing;
               installingWorker.onstatechange = () => {
-                if (installingWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    window.location.reload();
-                  }
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  window.location.reload();
                 }
               };
             };
@@ -694,10 +723,19 @@
       setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
 
-    function mostrarConfirmacao(titulo, mensagem, onSimCallback) {
+    function mostrarConfirmacao(titulo, mensagem, onSimCallback, exibirOpcaoParcelas = false) {
       const modal = document.getElementById('modalConfirmacao');
       document.getElementById('confTitle').textContent = titulo;
       document.getElementById('confMensagem').textContent = mensagem;
+      
+      const boxLote = document.getElementById('boxConfLoteParcelas');
+      const chkLote = document.getElementById('chkConfTodasParcelas');
+      if (chkLote) chkLote.checked = false;
+      if (boxLote) {
+        if (exibirOpcaoParcelas) boxLote.classList.remove('hidden');
+        else boxLote.classList.add('hidden');
+      }
+
       modal.classList.remove('hidden');
 
       const btnSim = document.getElementById('confBtnSim');
@@ -710,8 +748,9 @@
       };
 
       document.getElementById('confBtnSim').addEventListener('click', () => {
+        const marcouTodas = chkLote ? chkLote.checked : false;
         limparEventos();
-        if (onSimCallback) onSimCallback();
+        if (onSimCallback) onSimCallback(marcouTodas);
       });
 
       document.getElementById('confBtnNao').addEventListener('click', () => {
@@ -734,10 +773,7 @@
           return data.dados;
         } catch (err) {
           console.warn(`Tentativa ${i + 1} falhou para [${action}]:`, err);
-          if (i === tentativas - 1) {
-            console.error("Falha definitiva na API:", err);
-            throw err;
-          }
+          if (i === tentativas - 1) throw err;
           await new Promise(res => setTimeout(res, 600 * (i + 1)));
         }
       }
@@ -752,7 +788,6 @@
         .join(', ');
     }
 
-    // 🔥 CAPITALIZAÇÃO INTELIGENTE DE INICIAIS MAIÚSCULAS (Preserva preposições e siglas)
     function formatarTituloInteligente(texto) {
       if (!texto) return '';
       const conectivos = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'por', 'para', 'e', 'ou', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às']);
@@ -773,11 +808,47 @@
       }).join(' ');
     }
 
-    // 🔥 FUNÇÕES DO CAMPO DE DATA TRIPLO ([ DD ] / [ MM ] / [ AAAA ])
+    // 🔥 CAMPO DE DATA TRIPLO COM TRAVA CONTRA DATAS IMPOSSÍVEIS
     function formatarZeroData(input, tamanho) {
       let v = input.value.replace(/\D/g, '');
       if (v.length > 0 && v.length < tamanho) {
         input.value = v.padStart(tamanho, '0');
+      }
+    }
+
+    function validarLimitesDataTripla(contexto = 'novo') {
+      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
+      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
+      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
+
+      const elDia = document.getElementById(idDia);
+      const elMes = document.getElementById(idMes);
+      const elAno = document.getElementById(idAno);
+      if (!elDia || !elMes || !elAno) return;
+
+      let m = parseInt(elMes.value, 10);
+      if (!isNaN(m)) {
+        if (m < 1) m = 1;
+        if (m > 12) m = 12;
+        elMes.value = String(m).padStart(2, '0');
+      }
+
+      let a = parseInt(elAno.value, 10);
+      if (!isNaN(a) && elAno.value.length === 4) {
+        if (a < 2000) a = 2000;
+        if (a > 2100) a = 2100;
+        elAno.value = String(a);
+      } else {
+        a = new Date().getFullYear();
+      }
+
+      let d = parseInt(elDia.value, 10);
+      if (!isNaN(d)) {
+        const mesRef = !isNaN(m) ? m : 1;
+        const maxDias = new Date(a, mesRef, 0).getDate();
+        if (d < 1) d = 1;
+        if (d > maxDias) d = maxDias;
+        elDia.value = String(d).padStart(2, '0');
       }
     }
 
@@ -787,6 +858,7 @@
       input.value = v;
       sincronizarDataTripla(contexto, true);
       if (v.length === maxLen && nextId) {
+        validarLimitesDataTripla(contexto);
         const nextEl = document.getElementById(nextId);
         if (nextEl) {
           nextEl.focus();
@@ -833,7 +905,8 @@
       const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
       const idHidden = contexto === 'novo' ? 'inpData' : 'inpEdData';
 
-      const partes = String(dataStr || '').trim().split('/');
+      const limpa = String(dataStr || '').replace(/^'/, '').trim();
+      const partes = limpa.split('/');
       if (partes.length === 3) {
         const d = partes[0].padStart(2, '0');
         const m = partes[1].padStart(2, '0');
@@ -855,6 +928,9 @@
     let arvoreMesesAno = {}; 
     let ultimoRelatorioMensalCache = null;
     let ultimoRelatorioAnualCache = null;
+    let abaAtivaAtual = 'novo';
+    let relatorioMensalPendente = true;
+    let relatorioAnualPendente = true;
 
     let offsetAtual = 0; const LIMITE_PAGINA = 50; let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '' };
 
@@ -1163,6 +1239,7 @@
 
     function setAba(aba, salvar=true) {
       fecharMenuMobile();
+      abaAtivaAtual = aba;
       if(salvar) localStorage.setItem('abaAtivaGestorV8', aba);
 
       const configAtiva = abasConfig.find(a => a.id === aba);
@@ -1207,6 +1284,15 @@
           btnMenuModalAtivo.classList.remove('border-slate-700/80', 'bg-slate-800/80');
           btnMenuModalAtivo.classList.add('border-blue-500', 'bg-blue-950/40');
         }
+      }
+
+      // 🔥 LAZY LOADING: Só requisita relatórios Mensal/Anual quando a aba for aberta
+      if (aba === 'relatorio' && relatorioMensalPendente && dadosCarregadosIniciais) {
+        relatorioMensalPendente = false;
+        dispararBuscaRelatorioMensal();
+      } else if (aba === 'anual' && relatorioAnualPendente && dadosCarregadosIniciais) {
+        relatorioAnualPendente = false;
+        carregarRelatorioAnual();
       }
     }
 
@@ -1264,7 +1350,7 @@
         return nomes[parseInt(numero, 10) - 1] || numero;
     }
 
-    function preencherSeletoresInteligentes(anoPadrao, mesPadrao) {
+    function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
         const selAno = document.getElementById('selFiltroRelAno');
         const selMes = document.getElementById('selFiltroRelMes');
         const selAnoSimples = document.getElementById('selFiltroAnoSimples');
@@ -1281,11 +1367,11 @@
                 selAnoSimples.value = anoPadrao;
             }
         }
-        atualizarMesesDisponiveis(mesPadrao);
+        atualizarMesesDisponiveis(mesPadrao, dispararBusca);
         atualizarEstadoSetasAnual();
     }
 
-    function atualizarMesesDisponiveis(mesPadraoForcado = null) {
+    function atualizarMesesDisponiveis(mesPadraoForcado = null, dispararBusca = true) {
         const selAno = document.getElementById('selFiltroRelAno');
         const selMes = document.getElementById('selFiltroRelMes');
         if (!selAno || !selMes) return;
@@ -1308,7 +1394,9 @@
         }
 
         atualizarEstadoSetasMensal();
-        dispararBuscaRelatorioMensal();
+        if (dispararBusca) {
+            dispararBuscaRelatorioMensal();
+        }
     }
 
     function atualizarEstadoSetasMensal() {
@@ -1353,7 +1441,7 @@
         if (novoIdx >= 0 && novoIdx < listaGlobalMeses.length) {
             const alvo = listaGlobalMeses[novoIdx];
             selAno.value = alvo.ano;
-            atualizarMesesDisponiveis(alvo.mes);
+            atualizarMesesDisponiveis(alvo.mes, true);
         }
     }
 
@@ -1390,8 +1478,8 @@
         const ano = document.getElementById('selFiltroRelAno').value;
         const mes = document.getElementById('selFiltroRelMes').value;
         if(ano && mes) {
-            const mesFormatado = `${mes}/${ano}`;
-            carregarRelatorioMesUnico(mesFormatado);
+            relatorioMensalPendente = false;
+            carregarRelatorioMesUnico(`${mes}/${ano}`);
         }
     }
 
@@ -1422,9 +1510,9 @@
         } 
       } catch(e){}
 
-      try { const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma')]; selectsForma.forEach(sel => { if(sel) { const v = sel.value; sel.innerHTML = (sel.id==='filtForma') ? '<option value="">Todos</option>' : ''; (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`); sel.value=v;} }); } catch(e){}
+      try { const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma')]; selectsForma.forEach(sel => { if(sel) { const v = sel.value; sel.innerHTML = (sel.id==='filtForma') ? '<option value="">Todos</option>' : ''; (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`); if (v) sel.value=v; } }); } catch(e){}
       
-      try { if (!dadosCarregadosIniciais) { definirDataHoje(); atualizarRegrasForma(); dadosCarregadosIniciais = true; } } catch(e){}
+      try { if (!dadosCarregadosIniciais) { definirDataHoje(); atualizarRegrasForma(); dadosCarregadosIniciais = true; } else { atualizarLayoutParcelas(); } } catch(e){}
       
       try { 
          arvoreMesesAno = dados.estruturaMesesAno || {};
@@ -1438,8 +1526,17 @@
          const anoAtualStr = hoje.getFullYear().toString();
          const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, '0');
          
-         preencherSeletoresInteligentes(anoAtualStr, mesAtualStr);
-         setTimeout(() => carregarRelatorioAnual(), 350); 
+         relatorioMensalPendente = true;
+         relatorioAnualPendente = true;
+         preencherSeletoresInteligentes(anoAtualStr, mesAtualStr, false);
+
+         if (abaAtivaAtual === 'relatorio') {
+           relatorioMensalPendente = false;
+           dispararBuscaRelatorioMensal();
+         } else if (abaAtivaAtual === 'anual') {
+           relatorioAnualPendente = false;
+           carregarRelatorioAnual();
+         }
       } catch(e){}
       
       try {
@@ -1460,7 +1557,38 @@
       try { if (dados.categorias && dados.categorias.length > 0) { if (chartGlobal) chartGlobal.destroy(); chartGlobal = new Chart(document.getElementById('chartCategorias').getContext('2d'), { type: 'doughnut', data: { labels: dados.categorias.map(c => c.nome), datasets: [{ data: dados.categorias.map(c => c.total), backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, padding: 14, font: { size: 11 } } } } } }); } } catch(e){}
       try { renderListaFormas(); } catch(e){}
 
-      try { let htmlAtivas = ''; let htmlInativas = ''; if(dados.assinaturas && dados.assinaturas.length > 0) { const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa'); const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa'); if (ativas.length > 0) { ativas.forEach(a => { const descSafe = String(a.descricao).replace(/'/g, "\\'"); const formaSafe = String(a.forma).replace(/'/g, "\\'"); const catSafe = String(a.categoria).replace(/'/g, "\\'"); htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">Ativa</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`; }); } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>'; } if (inativas.length > 0) { inativas.forEach(a => { htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`; }); } else { htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>'; } } else { htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>'; htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>'; } document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas; document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas; } catch(e){}
+      try {
+        let htmlAtivas = ''; let htmlInativas = '';
+        if(dados.assinaturas && dados.assinaturas.length > 0) {
+          const ativas = dados.assinaturas.filter(a => a.status === 'Assinatura Ativa' || a.status === 'Assinatura Paga');
+          const inativas = dados.assinaturas.filter(a => a.status !== 'Assinatura Ativa' && a.status !== 'Assinatura Paga');
+          if (ativas.length > 0) {
+            ativas.forEach(a => {
+              const descSafe = String(a.descricao).replace(/'/g, "\\'");
+              const formaSafe = String(a.forma).replace(/'/g, "\\'");
+              const catSafe = String(a.categoria).replace(/'/g, "\\'");
+              const jaPagaMes = (a.status === 'Assinatura Paga');
+              const badgeTxt = jaPagaMes ? 'Paga no Mês' : 'Ativa / A Pagar';
+              const badgeCor = jaPagaMes ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
+              htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base leading-tight">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${a.categoria}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg tracking-tight">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${badgeCor}">${badgeTxt}</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95">Desativar</button></div></div>`;
+            });
+          } else {
+            htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>';
+          }
+          if (inativas.length > 0) {
+            inativas.forEach(a => {
+              htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`;
+            });
+          } else {
+            htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma assinatura cancelada.</div>';
+          }
+        } else {
+          htmlAtivas = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma despesa fixa cadastrada.</div>';
+          htmlInativas = '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>';
+        }
+        document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas;
+        document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas;
+      } catch(e){}
       
       try { ultimosLancamentosCache = dados.lancamentos || []; renderTabelaLancamentos(ultimosLancamentosCache, false); const box = document.getElementById('boxCarregarMais'); if (dados.temMaisLancamentos && filtrosAtuais.termo === '') { box.classList.remove('hidden'); } else { box.classList.add('hidden'); } } catch(e){}
     }
@@ -1501,14 +1629,22 @@
       }
     }
 
+    function obterClasseBadgeStatus(statusStr) {
+      const s = String(statusStr || '').trim();
+      if (s === 'Pago' || s === 'Assinatura Paga' || s === 'Pago (Cancelada)') return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      if (s === 'Agendado') return 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
+      if (s === 'Assinatura Ativa') return 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
+      if (s === 'Assinatura Cancelada') return 'bg-rose-500/20 text-rose-400';
+      return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+    }
+
     function renderTabelaLancamentos(lista, append=false) {
       let htmlL = '';
       lista.forEach(l => {
-        let badgeColor = l[9] === 'Pago' ? 'bg-emerald-500/20 text-emerald-400' : (l[9] === 'Agendado' ? 'bg-sky-500/20 text-sky-400' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30');
-        if(l[9].includes('Assinatura')) badgeColor = l[9] === 'Assinatura Ativa' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-rose-500/20 text-rose-400';
-        
+        const badgeColor = obterClasseBadgeStatus(l[9]);
         const descSafe = String(l[1]).replace(/'/g, "\\'"); const formaSafe = String(l[2]).replace(/'/g, "\\'"); const catSafe = String(l[3]).replace(/'/g, "\\'");
         const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
+        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
         
         let tagsHtml = '';
         if (l[11]) {
@@ -1534,8 +1670,8 @@
             <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
           </div>
           <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50">
-            <button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}')" class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-3 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
-            <button onclick="excluirLancamentoLocal('${l[10]}', '${descSafe}')" class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-3 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
+            <button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}', '${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-3 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
+            <button onclick="excluirLancamentoLocal('${l[10]}', '${descSafe}', '${parcSafe}')" class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-3 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
           </div>
         </div>`;
       });
@@ -1545,10 +1681,20 @@
       if(boxLanc) { if(append) boxLanc.insertAdjacentHTML('beforeend', htmlL); else boxLanc.innerHTML = htmlL; }
     }
 
-    function excluirLancamentoLocal(linha, descricao) {
-      mostrarConfirmacao("Excluir Lançamento", `Tem certeza que deseja excluir o lançamento "${descricao}" permanentemente?`, () => {
-        apiCall('excluirLancamentoWeb', linha).then(() => { mostrarAviso('Sucesso', 'Lançamento excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
-      });
+    function excluirLancamentoLocal(linha, descricao, parcela = '') {
+      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
+      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
+
+      mostrarConfirmacao(
+        "Excluir Lançamento",
+        `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?`,
+        (excluirTodasParcelas) => {
+          apiCall('excluirLancamentoWeb', { linha: linha, excluirTodasParcelas: Boolean(excluirTodasParcelas) })
+            .then(() => { mostrarAviso('Sucesso', 'Lançamento excluído!'); carregarDados(); })
+            .catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
+        },
+        ehParcelado
+      );
     }
 
     function abrirModalFiltros() { document.getElementById('modalFiltros').classList.remove('hidden'); }
@@ -1568,6 +1714,7 @@
       e.preventDefault();
       formatarZeroData(document.getElementById('inpDataDia'), 2);
       formatarZeroData(document.getElementById('inpDataMes'), 2);
+      validarLimitesDataTripla('novo');
       sincronizarDataTripla('novo', false);
 
       const descInput = document.getElementById('inpDesc');
@@ -1578,23 +1725,38 @@
       let rawTags = document.getElementById('inpTags').value;
       let tagsTratadas = formatarTagsAutomaticamente(rawTags);
 
+      const formaVal = document.getElementById('selForma').value;
+      const isAssinatura = document.getElementById('checkAssinatura').checked;
+      const isPix = formaVal.toLowerCase().includes('pix');
+
+      let qtdParc = (isAssinatura || isPix) ? 1 : (parseInt(document.getElementById('inpParc').value, 10) || 1);
+      let iniParc = (qtdParc <= 1) ? 1 : (parseInt(document.getElementById('inpParcIni').value, 10) || 1);
+      if (iniParc > qtdParc) iniParc = 1;
+
+      const statusAuto = isAssinatura ? 'Assinatura Ativa' : (isPix ? 'Pago' : 'Em Aberto');
+
       const payload = { 
-        dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, 
-        descricao: descInput.value, formaPagto: document.getElementById('selForma').value, 
-        categoria: document.getElementById('selCat').value, tags: tagsTratadas, 
-        valorTotal: document.getElementById('inpValor').value, numParcelas: document.getElementById('inpParc').value, 
-        parcelaInicial: document.getElementById('inpParcIni').value, statusInicial: document.getElementById('selStatus').value, 
-        isAssinatura: document.getElementById('checkAssinatura').checked 
+        dataCompra: document.getElementById('inpData').value,
+        mesPrimeiraFatura: document.getElementById('inpMesFat').value, 
+        descricao: descInput.value,
+        formaPagto: formaVal, 
+        categoria: document.getElementById('selCat').value,
+        tags: tagsTratadas, 
+        valorTotal: document.getElementById('inpValor').value,
+        numParcelas: qtdParc, 
+        parcelaInicial: iniParc,
+        statusInicial: statusAuto, 
+        isAssinatura: isAssinatura 
       };
 
       if (!navigator.onLine) {
          let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); fila.push(payload); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
          mostrarAviso('Offline', 'Gasto salvo OFFLINE ⚡. Sincronize quando voltar a ter rede.');
-         document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); atualizarIndicadorOffline(); btn.textContent = '💾 Lançar'; btn.disabled = false; return;
+         document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; definirDataHoje(); atualizarRegrasForma(); atualizarIndicadorOffline(); btn.textContent = '💾 Lançar'; btn.disabled = false; return;
       }
       apiCall('salvarLancamentoWeb', payload).then(() => { 
         mostrarAviso('Sucesso', 'Lançamento efetuado na nuvem!'); 
-        document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; alternarModoAssinatura(); definirDataHoje(); atualizarRegrasForma(); btn.textContent = '💾 Lançar'; btn.disabled = false; carregarDados(); 
+        document.getElementById('formGasto').reset(); document.getElementById('checkAssinatura').checked = false; definirDataHoje(); atualizarRegrasForma(); btn.textContent = '💾 Lançar'; btn.disabled = false; carregarDados(); 
       }).catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = '💾 Lançar'; btn.disabled = false; });
     }
 
@@ -1621,7 +1783,7 @@
       selectsCat.forEach(sel => {
         if(sel) {
           const valAtual = sel.value; sel.innerHTML = (sel.id==='filtCat') ? '<option value="">Todas</option>' : '';
-          categoriasGlobaisEdit.forEach(c => sel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`); sel.value = valAtual;
+          categoriasGlobaisEdit.forEach(c => sel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`); if (valAtual) sel.value = valAtual;
         }
       });
 
@@ -1675,23 +1837,107 @@
       preencherDataTripla('novo', strHoje);
     }
 
-    function alternarModoAssinatura() { const chk = document.getElementById('checkAssinatura').checked; const boxParc = document.getElementById('boxParc'); const boxParcIni = document.getElementById('boxParcIni'); const boxStatus = document.getElementById('boxStatus'); if(chk) { boxParc.style.display = 'none'; boxParcIni.style.display = 'none'; boxStatus.style.display = 'none'; } else { boxParc.style.display = 'block'; boxParcIni.style.display = 'block'; boxStatus.style.display = 'block'; atualizarRegrasForma(); } }
-    
-    function atualizarRegrasForma() {
-      sincronizarDataTripla('novo', false);
-      const chk = document.getElementById('checkAssinatura').checked; const nomeSelecionado = document.getElementById('selForma').value; const dataCompraStr = document.getElementById('inpData').value; const inpMesFat = document.getElementById('inpMesFat'); const selStatus = document.getElementById('selStatus'); const inpParc = document.getElementById('inpParc'); const inpParcIni = document.getElementById('inpParcIni');
-      if (!nomeSelecionado || dataCompraStr.length !== 10) return; const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado); if (!formaObj) return;
-      if (nomeSelecionado.toLowerCase().includes('pix')) { inpParc.value = 1; inpParc.disabled = true; inpParcIni.value = 1; inpParcIni.disabled = true; if(!chk) selStatus.value = 'Pago'; const partes = dataCompraStr.split('/'); if (partes.length === 3) inpMesFat.value = `${partes[1]}/${partes[2]}`; } else {
-        inpParc.disabled = false; inpParcIni.disabled = false; if(!chk) selStatus.value = 'Em Aberto';
-        let diaVencimentoOrig = parseInt(formaObj.vencimento, 10); const partes = dataCompraStr.split('/'); let dataCompra = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10)); dataCompra.setHours(0,0,0,0);
-        let mesTentar = dataCompra.getMonth(); let anoTentar = dataCompra.getFullYear();
-        function getCicloFatura(ano, mes) { let venc = new Date(ano, mes, diaVencimentoOrig); if (venc.getDay() === 0) venc.setDate(venc.getDate() + 1); if (venc.getDay() === 6) venc.setDate(venc.getDate() + 2); venc.setHours(0,0,0,0); let fech = new Date(venc); fech.setDate(venc.getDate() - 7); fech.setHours(0,0,0,0); return { venc, fech }; }
-        let ciclo = getCicloFatura(anoTentar, mesTentar); let loops = 0; while (dataCompra >= ciclo.fech && loops < 3) { mesTentar++; if(mesTentar > 11) { mesTentar = 0; anoTentar++; } ciclo = getCicloFatura(anoTentar, mesTentar); loops++; }
-        inpMesFat.value = `${String(ciclo.venc.getMonth() + 1).padStart(2, '0')}/${ciclo.venc.getFullYear()}`;
+    // 🔥 LAYOUT DINÂMICO DE PARCELAS E INÍCIO (OCULTA NO PIX E EM ASSINATURAS)
+    function atualizarLayoutParcelas() {
+      const chkAss = document.getElementById('checkAssinatura')?.checked;
+      const nomeForma = (document.getElementById('selForma')?.value || '').toLowerCase();
+      const isPix = nomeForma.includes('pix');
+
+      const grid = document.getElementById('gridValorParcelas');
+      const boxValor = document.getElementById('boxValor');
+      const boxParc = document.getElementById('boxParc');
+      const boxParcIni = document.getElementById('boxParcIni');
+      const inpParc = document.getElementById('inpParc');
+      const inpParcIni = document.getElementById('inpParcIni');
+
+      if (!grid || !boxValor || !boxParc || !boxParcIni || !inpParc || !inpParcIni) return;
+
+      if (chkAss || isPix) {
+        inpParc.value = 1;
+        inpParcIni.value = 1;
+        boxParc.classList.add('hidden');
+        boxParcIni.classList.add('hidden');
+        grid.className = 'grid grid-cols-1 gap-3 pt-1';
+        boxValor.className = 'col-span-1';
+      } else {
+        boxParc.classList.remove('hidden');
+        const qtd = parseInt(inpParc.value, 10) || 1;
+        if (qtd > 1) {
+          boxParcIni.classList.remove('hidden');
+          grid.className = 'grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1';
+          boxValor.className = 'col-span-2 sm:col-span-1';
+        } else {
+          inpParcIni.value = 1;
+          boxParcIni.classList.add('hidden');
+          grid.className = 'grid grid-cols-2 gap-3 pt-1';
+          boxValor.className = 'col-span-1';
+        }
       }
     }
 
-    // 🔥 MOTOR DE AUTOPREENCHIMENTO INTELIGENTE EM 3 CAMADAS
+    function alternarModoAssinatura() {
+      atualizarLayoutParcelas();
+      atualizarRegrasForma();
+    }
+    
+    // 🔥 CÁLCULO EXATO DE CICLO BANCÁRIO (Usa Dia de Fechamento real + Dia de Vencimento)
+    function atualizarRegrasForma() {
+      sincronizarDataTripla('novo', false);
+      atualizarLayoutParcelas();
+
+      const nomeSelecionado = document.getElementById('selForma').value;
+      const dataCompraStr = document.getElementById('inpData').value;
+      const inpMesFat = document.getElementById('inpMesFat');
+      if (!nomeSelecionado || dataCompraStr.length !== 10) return;
+
+      const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado);
+      if (!formaObj) return;
+
+      const partes = dataCompraStr.split('/');
+      if (partes.length !== 3) return;
+
+      if (nomeSelecionado.toLowerCase().includes('pix')) {
+        inpMesFat.value = `${partes[1]}/${partes[2]}`;
+      } else {
+        const diaVencOrig = parseInt(formaObj.vencimento, 10) || 10;
+        const diaFechOrig = parseInt(formaObj.fechamento, 10);
+
+        const dataCompra = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10), 0, 0, 0, 0);
+        let mesTentar = dataCompra.getMonth();
+        let anoTentar = dataCompra.getFullYear();
+
+        function obterDataFechamentoDaFatura(anoFat, mesFatZeroIdx) {
+          if (!isNaN(diaFechOrig) && diaFechOrig >= 1 && diaFechOrig <= 31) {
+            // Se o Dia de Fechamento for maior ou igual ao Dia de Vencimento (ex: fecha dia 25 e vence dia 05),
+            // o fechamento daquela fatura ocorre no mês ANTERIOR ao mês do vencimento
+            const offsetMesFech = (diaFechOrig >= diaVencOrig) ? -1 : 0;
+            const dBase = new Date(anoFat, mesFatZeroIdx + offsetMesFech, 1);
+            const maxDia = new Date(dBase.getFullYear(), dBase.getMonth() + 1, 0).getDate();
+            return new Date(dBase.getFullYear(), dBase.getMonth(), Math.min(diaFechOrig, maxDia), 0, 0, 0, 0);
+          } else {
+            // Fallback caso o cartão não tenha Dia de Fechamento preenchido: Vencimento - 7 dias
+            const maxDiaVenc = new Date(anoFat, mesFatZeroIdx + 1, 0).getDate();
+            const venc = new Date(anoFat, mesFatZeroIdx, Math.min(diaVencOrig, maxDiaVenc), 0, 0, 0, 0);
+            const fech = new Date(venc);
+            fech.setDate(venc.getDate() - 7);
+            fech.setHours(0, 0, 0, 0);
+            return fech;
+          }
+        }
+
+        let dtFechamento = obterDataFechamentoDaFatura(anoTentar, mesTentar);
+        let loops = 0;
+        while (dataCompra.getTime() >= dtFechamento.getTime() && loops < 3) {
+          mesTentar++;
+          if (mesTentar > 11) { mesTentar = 0; anoTentar++; }
+          dtFechamento = obterDataFechamentoDaFatura(anoTentar, mesTentar);
+          loops++;
+        }
+
+        inpMesFat.value = `${String(mesTentar + 1).padStart(2, '0')}/${anoTentar}`;
+      }
+    }
+
     const mapaPalavrasChaveCategorias = [
       {
         termos: ['pizza', 'pizzaria', 'restaurante', 'bar', 'lanchonete', 'lanche', 'hamburguer', 'hambúrguer', 'burger', 'acai', 'açaí', 'sorvete', 'sorveteria', 'guloseima', 'guloseimas', 'doce', 'padaria', 'panificadora', 'cafe', 'café', 'cafeteria', 'sushi', 'japa', 'churrasco', 'churrascaria', 'espetinho', 'almoco', 'almoço', 'jantar', 'ifood', 'pastel', 'pastelaria', 'salgado', 'confeitaria', 'bistro', 'bistrô'],
@@ -1751,13 +1997,11 @@
         }
       };
 
-      // 1ª Camada: Correspondência Exata da Descrição (Moda Estatística do Histórico)
       if (dicionarioAutofill[desc]) {
         aplicarSugestao(dicionarioAutofill[desc].forma, dicionarioAutofill[desc].categoria);
         return;
       }
 
-      // 2ª Camada: Aprendizado pelo Padrão 'Item - Local' (Lê o Item antes do traço)
       const partesTraco = desc.split(/\s*[-–]\s*/);
       const prefixo = partesTraco[0].trim();
       if (prefixo && dicionarioPrefixosAutofill[prefixo]) {
@@ -1765,7 +2009,6 @@
         return;
       }
 
-      // 3ª Camada: Reconhecimento Inteligente de Palavras-Chave (Para locais/itens novos)
       if (selCat) {
         const opcoesCat = [...selCat.options].map(o => ({ original: o.value, lower: o.value.toLowerCase() }));
         for (const grupo of mapaPalavrasChaveCategorias) {
@@ -1802,8 +2045,70 @@
       });
     }
 
-    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag) { 
+    function aoMudarFormaEdicao() {
+      const formaVal = (document.getElementById('selEdForma')?.value || '').toLowerCase();
+      const selStatus = document.getElementById('selEdStatus');
+      const parcStr = document.getElementById('inpEdParcelaStr')?.value || '';
+      if (!selStatus || parcStr === '∞/∞') return;
+
+      if (formaVal.includes('pix')) {
+        selStatus.value = 'Pago';
+      } else if (selStatus.value === 'Pago') {
+        selStatus.value = 'Em Aberto';
+      }
+    }
+
+    function togglePainelAdiantar() {
+      const p = document.getElementById('painelAdiantarCampos');
+      const s = document.getElementById('setaAdiantar');
+      if (!p) return;
+      if (p.classList.contains('hidden')) {
+        p.classList.remove('hidden');
+        if (s) s.textContent = '▲';
+      } else {
+        p.classList.add('hidden');
+        if (s) s.textContent = '▼';
+      }
+    }
+
+    function executarAdiantamentoParcelas() {
+      const linha = document.getElementById('inpEdLinha').value;
+      const mesDestino = document.getElementById('inpAdiantarMes').value.trim();
+      const qtdAdiantar = document.getElementById('inpAdiantarQtd').value;
+      const descontoTotal = document.getElementById('inpAdiantarDesconto').value;
+
+      if (!mesDestino || !mesDestino.includes('/')) {
+        mostrarAviso('Atenção', 'Informe a Fatura Destino no formato MM/AAAA.');
+        return;
+      }
+
+      const btn = document.getElementById('btnExecutarAdiantar');
+      btn.textContent = 'Processando...';
+      btn.disabled = true;
+
+      apiCall('adiantarParcelasWeb', {
+        linha: linha,
+        mesDestino: mesDestino,
+        qtdAdiantar: qtdAdiantar,
+        descontoTotal: descontoTotal
+      })
+        .then(res => {
+          btn.textContent = 'Confirmar Antecipação ⚡';
+          btn.disabled = false;
+          fecharModalEdicaoLanc();
+          mostrarAviso('Sucesso', `${res.qtdAdiantada} parcela(s) adiantada(s) para ${mesDestino}!`);
+          carregarDados();
+        })
+        .catch(err => {
+          btn.textContent = 'Confirmar Antecipação ⚡';
+          btn.disabled = false;
+          mostrarAviso('Aviso', err.message);
+        });
+    }
+
+    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') { 
       document.getElementById('inpEdLinha').value = linha; 
+      document.getElementById('inpEdParcelaStr').value = parcela;
       preencherDataTripla('edicao', data);
       document.getElementById('inpEdDesc').value = desc; 
       document.getElementById('selEdForma').value = forma; 
@@ -1812,6 +2117,25 @@
       document.getElementById('inpEdMesFat').value = mes; 
       document.getElementById('selEdStatus').value = status; 
       document.getElementById('inpEdTags').value = tag || ''; 
+
+      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
+      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
+      const boxAdiantar = document.getElementById('boxAdiantarContainer');
+      const painelCampos = document.getElementById('painelAdiantarCampos');
+      if (painelCampos) painelCampos.classList.add('hidden');
+      if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
+
+      if (boxAdiantar) {
+        if (ehParcelado) {
+          boxAdiantar.classList.remove('hidden');
+          document.getElementById('inpAdiantarMes').value = evolucaoMesAtual || mes;
+          document.getElementById('inpAdiantarQtd').value = '';
+          document.getElementById('inpAdiantarDesconto').value = '';
+        } else {
+          boxAdiantar.classList.add('hidden');
+        }
+      }
+
       document.getElementById('modalEdicaoLanc').classList.remove('hidden'); 
     }
     function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
@@ -1819,6 +2143,7 @@
       e.preventDefault();
       formatarZeroData(document.getElementById('inpEdDataDia'), 2);
       formatarZeroData(document.getElementById('inpEdDataMes'), 2);
+      validarLimitesDataTripla('edicao');
       sincronizarDataTripla('edicao', false);
 
       const edDescEl = document.getElementById('inpEdDesc');
@@ -1999,13 +2324,12 @@
             
             let html = ''; 
             res.lancamentos.forEach(l => { 
-              let badge = l[9] === 'Pago' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'; 
-              if(l[9].includes('Assinatura')) badge = l[9] === 'Assinatura Ativa' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-rose-500/20 text-rose-400'; 
-              
+              const badge = obterClasseBadgeStatus(l[9]);
               const descSafe = String(l[1]).replace(/'/g, "\\'"); 
               const formaSafe = String(l[2]).replace(/'/g, "\\'"); 
               const catSafe = String(l[3]).replace(/'/g, "\\'"); 
               const tagSafe = String(l[10] || '').replace(/'/g, "\\'");
+              const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
 
               let tagsHtml = '';
               if (l[10]) {
@@ -2013,7 +2337,7 @@
                   tList.forEach(t => { tagsHtml += `<span class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${t}</span>`; });
               }
 
-              html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`; 
+              html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">Parc: ${l[6]}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}', '${tagSafe}', '${parcSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`; 
             }); 
             
             if(res.lancamentos.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento no mês.</div>'; 
@@ -2024,6 +2348,7 @@
 
     function carregarRelatorioAnual() { 
       const ano = document.getElementById('selFiltroAnoSimples').value; if(!ano) return; 
+      relatorioAnualPendente = false;
       atualizarEstadoSetasAnual();
       document.getElementById('tabela-anual-cat').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Buscando...</td></tr>'; 
       apiCall('obterRelatorioAnual', ano)
