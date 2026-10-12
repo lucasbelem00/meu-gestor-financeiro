@@ -92,26 +92,40 @@
     </div>
   </div>
 
-  <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, RELATÓRIOS E GESTÃO -->
+  <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
   <div id="modalMenuMobile" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
     <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-24 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-lg">🧭</span>
-          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Central de Navegação e Ferramentas</h3>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Central de Navegação</h3>
         </div>
-        <button onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">✕ Fechar</button>
+        <div class="flex items-center gap-2">
+          <button onclick="forcarAtualizacaoApp()" class="text-sky-400 hover:text-white bg-sky-500/15 border border-sky-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95" title="Limpa o cache do aparelho e busca a versão mais recente">🔄 Atualizar App</button>
+          <button onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">✕</button>
+        </div>
       </div>
 
-      <!-- Grupo 1: Ferramentas Práticas -->
+      <!-- Grupo 1: Ferramentas Práticas e Empréstimos -->
       <div>
-        <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2.5 px-1">🧰 Ferramentas Práticas do Dia a Dia</span>
+        <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2.5 px-1">🧰 Ferramentas e Controle de Terceiros</span>
         <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="abrirFerramenta('emprestimos')" class="col-span-2 flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition active:scale-95">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">🤝</div>
+              <div class="min-w-0">
+                <div class="text-sm font-bold text-amber-300 truncate">Empréstimos de Cartão (Terceiros)</div>
+                <div class="text-[11px] text-slate-300 truncate">Desconta do limite sem entrar nos seus gastos</div>
+              </div>
+            </div>
+            <span class="text-amber-400 text-xs font-bold shrink-0 ml-2">➔</span>
+          </button>
+
           <button onclick="abrirFerramenta('rachadinha')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
             <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">🍻</div>
             <div class="min-w-0">
               <div class="text-xs sm:text-sm font-bold text-white truncate">Dividir c/ Galera</div>
-              <div class="text-[10px] text-slate-400 truncate">Rachadinha + Whats</div>
+              <div class="text-[10px] text-slate-400 truncate">Comida x Bebida / Itens</div>
             </div>
           </button>
 
@@ -119,7 +133,7 @@
             <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-lg shrink-0">🛍️</div>
             <div class="min-w-0">
               <div class="text-xs sm:text-sm font-bold text-white truncate">Simular Compra</div>
-              <div class="text-[10px] text-slate-400 truncate">Impacto no Limite</div>
+              <div class="text-[10px] text-slate-400 truncate">Impacto + WhatsApp</div>
             </div>
           </button>
 
@@ -132,7 +146,7 @@
           </button>
 
           <button onclick="abrirFerramenta('notas')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
-            <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-lg shrink-0">📝</div>
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg shrink-0">📝</div>
             <div class="min-w-0">
               <div class="text-xs sm:text-sm font-bold text-white truncate">Bloco de Notas</div>
               <div class="text-[10px] text-slate-400 truncate">Lembretes na nuvem</div>
@@ -214,12 +228,15 @@
 
   <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
     
-    <!-- ABA 1: NOVO LANÇAMENTO (ORDEM ERGONÔMICA + VISORES AO VIVO + MÁSCARA R$ + CHIPS) -->
+    <!-- ABA 1: NOVO LANÇAMENTO PESSOAL -->
     <div id="view-novo" class="max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
         <h2 class="text-base font-bold text-white mb-4 flex items-center justify-between">
           <span class="flex items-center gap-2"><span>➕</span> Novo Registro</span>
-          <button type="button" onclick="limparFormularioNovoGasto()" class="text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition">🧹 Limpar</button>
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="abrirFerramenta('emprestimos')" class="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 transition" title="Registrar compra de outra pessoa no seu cartão">🤝 Empréstimo</button>
+            <button type="button" onclick="limparFormularioNovoGasto()" class="text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition">🧹 Limpar</button>
+          </div>
         </h2>
         <form id="formGasto" onsubmit="enviarGasto(event)" class="space-y-4"> 
           <div class="grid grid-cols-2 gap-3">
@@ -292,7 +309,6 @@
             </div>
           </div>
 
-          <!-- VALOR E PARCELAS POSICIONADOS ANTES DAS TAGS -->
           <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1">
             <div id="boxValor" class="col-span-1">
               <div class="flex items-center justify-between mb-1.5 gap-1">
@@ -317,7 +333,6 @@
             </div>
           </div>
 
-          <!-- TAGS COM CHIPS CLICÁVEIS ORDENADOS POR FREQUÊNCIA -->
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label>
@@ -361,7 +376,6 @@
         </div>
       </div>
 
-      <!-- BARRA DE FILTROS RÁPIDOS DE 1 TOQUE -->
       <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
         <button onclick="aplicarFiltroRapidoHist('')" id="chip-hist-todos" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white transition">Todos</button>
         <button onclick="aplicarFiltroRapidoHist('mesatual')" id="chip-hist-mesatual" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">📅 Mês Atual</button>
@@ -371,7 +385,6 @@
         <button onclick="aplicarFiltroRapidoHist('pix')" id="chip-hist-pix" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">⚡ Pix</button>
       </div>
 
-      <!-- BARRA DE SOMA AUTOMÁTICA + 50% + COPIAR WHATSAPP -->
       <div id="barraSomaFiltro" class="hidden card-glass p-3.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-800/90">
         <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
           <span id="txtSomaQtd" class="font-bold text-slate-300">📊 0 itens</span>
@@ -390,12 +403,12 @@
       </div>
     </div>
 
-    <!-- ABA 3: MENSAL COM FILTROS DE 1 TOQUE E BOTÃO QUITAR FATURA -->
+    <!-- ABA 3: MENSAL COM FILTROS DE 1 TOQUE, CONCILIAÇÃO DE TERCEIROS E QUITAR FATURA -->
     <div id="view-relatorio" class="hidden space-y-5 bg-[#0b1120]">
       <div class="card-glass p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div class="flex flex-wrap items-center gap-2.5">
-            <h2 class="text-sm font-bold text-white flex items-center gap-2">📑 Fatura Mensal</h2>
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">📑 Fatura Mensal (Seus Gastos)</h2>
             <span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print">
@@ -410,7 +423,6 @@
         </div>
       </div>
 
-      <!-- CARDS DE TOPO CLICÁVEIS PARA FILTRAR A LISTA DO MÊS -->
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div onclick="aplicarFiltroInternoMensal('status', 'aberto')" class="card-glass p-4 border-t-4 border-t-amber-400 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition active:scale-[0.99]" title="Toque para filtrar apenas itens A Pagar">
           <div>
@@ -428,7 +440,7 @@
         </div>
         <div onclick="aplicarFiltroInternoMensal('todos', '')" class="card-glass p-4 border-t-4 border-t-purple-400 flex flex-col justify-between col-span-2 sm:col-span-1 cursor-pointer hover:border-purple-400/60 transition active:scale-[0.99]" title="Toque para mostrar todos os itens da fatura">
           <div>
-            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Total Fatura</span><span class="text-[9px] text-purple-400/80">📋 Ver Tudo</span></span>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Total Pessoal</span><span class="text-[9px] text-purple-400/80">📋 Ver Tudo</span></span>
             <div id="rel-total" class="text-xl sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div>
           </div>
           <div id="rel-sub-maior" class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">🔥 Maior gasto: -</div>
@@ -501,7 +513,7 @@
     <!-- ABA 4: ANUAL COM RANKINGS CLICÁVEIS PARA AUDITORIA -->
     <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
-        <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual</h2>
+        <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2>
         <div class="flex items-center gap-2 w-full sm:w-auto no-print">
           <button id="btnAnoPrev" onclick="mudarAnoSimples(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
           <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
@@ -566,8 +578,16 @@
       </div>
     </div>
 
-    <!-- ABA 5: DASHBOARD COM TABELA HORIZONTE CLICÁVEL -->
+    <!-- ABA 5: DASHBOARD COM ALERTA DE EMPRÉSTIMOS E TABELA HORIZONTE CLICÁVEL -->
     <div id="view-dashboard" class="hidden space-y-6">
+      <div id="bannerEmprestimosDash" onclick="abrirFerramenta('emprestimos')" class="hidden card-glass p-3.5 border-l-4 border-l-amber-400 bg-amber-500/10 hover:bg-amber-500/15 cursor-pointer transition flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm">
+          <span class="text-lg">🤝</span>
+          <span id="txtBannerEmprestimosDash" class="text-amber-200 font-semibold">Você tem valores a receber de terceiros neste mês.</span>
+        </div>
+        <span class="text-xs font-bold text-amber-400 whitespace-nowrap">Ver e Cobrar ➔</span>
+      </div>
+
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div>
@@ -577,7 +597,7 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="card-glass p-5 lg:col-span-1 flex flex-col">
-          <h2 class="text-sm font-bold text-white mb-3">Distribuição Global</h2>
+          <h2 class="text-sm font-bold text-white mb-3">Distribuição Global (Pessoal)</h2>
           <div class="relative flex-1 min-h-[16rem] flex items-center justify-center my-auto py-2">
             <canvas id="chartCategorias"></canvas>
           </div>
@@ -586,7 +606,7 @@
           <div>
             <div class="flex justify-between items-center mb-4 gap-2">
               <div>
-                <h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte)</h2>
+                <h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte Pessoal)</h2>
                 <p class="text-[10px] text-slate-400 mt-0.5">Toque no mês no topo da coluna para abrir a Fatura Mensal</p>
               </div>
               <div class="flex gap-1.5 shrink-0">
@@ -603,76 +623,289 @@
       </div>
     </div>
 
-    <!-- ABA 6: CENTRAL DE FERRAMENTAS PRÁTICAS (4 FERRAMENTAS INTEGRADAS) -->
-    <div id="view-ferramentas" class="hidden space-y-5 max-w-3xl mx-auto">
-      <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
-        <button onclick="selecionarSubFerramenta('rachadinha')" id="btn-sub-rachadinha" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition">🍻 Dividir c/ Galera</button>
+    <!-- ABA 6: CENTRAL DE FERRAMENTAS PRÁTICAS (5 FERRAMENTAS INTEGRADAS) -->
+    <div id="view-ferramentas" class="hidden space-y-5 max-w-4xl mx-auto">
+      <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+        <button onclick="selecionarSubFerramenta('emprestimos')" id="btn-sub-emprestimos" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition">🤝 Empréstimos</button>
+        <button onclick="selecionarSubFerramenta('rachadinha')" id="btn-sub-rachadinha" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🍻 Dividir c/ Galera</button>
         <button onclick="selecionarSubFerramenta('simulador')" id="btn-sub-simulador" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🛍️ Simular Compra</button>
         <button onclick="selecionarSubFerramenta('calculadora')" id="btn-sub-calculadora" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🧮 Calculadora</button>
-        <button onclick="selecionarSubFerramenta('notas')" id="btn-sub-notas" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">📝 Bloco de Notas</button>
+        <button onclick="selecionarSubFerramenta('notas')" id="btn-sub-notas" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">📝 Notas</button>
       </div>
 
-      <!-- FERRAMENTA 1: DIVIDIR COM A GALERA (RACHADINHA + WHATSAPP) -->
-      <div id="subview-rachadinha" class="card-glass p-5 sm:p-7 space-y-5">
-        <div class="flex justify-between items-start">
-          <div>
-            <h2 class="text-base font-bold text-white flex items-center gap-2">🍻 Dividir Gastos com a Galera</h2>
-            <p class="text-xs text-slate-400 mt-0.5">Calcule a divisão de mesas, viagens ou churrascos e envie no WhatsApp.</p>
+      <!-- FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS - SEPARADO DOS GASTOS PESSOAIS) -->
+      <div id="subview-emprestimos" class="space-y-5">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="card-glass p-3.5 border-t-4 border-t-amber-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">A Receber (Mês Atual)</span>
+            <div id="emp-kpi-mes" class="text-base sm:text-xl font-bold text-amber-400 mt-1">R$ 0,00</div>
           </div>
-          <button onclick="limparRachadinha()" class="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">Limpar</button>
+          <div class="card-glass p-3.5 border-t-4 border-t-emerald-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Já Recebido (Mês)</span>
+            <div id="emp-kpi-recebido" class="text-base sm:text-xl font-bold text-emerald-400 mt-1">R$ 0,00</div>
+          </div>
+          <div class="card-glass p-3.5 border-t-4 border-t-sky-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Total Geral a Receber</span>
+            <div id="emp-kpi-total" class="text-base sm:text-xl font-bold text-sky-400 mt-1">R$ 0,00</div>
+          </div>
+          <div class="card-glass p-3.5 border-t-4 border-t-rose-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Limite de Cartão Ocupado</span>
+            <div id="emp-kpi-limite" class="text-base sm:text-xl font-bold text-rose-400 mt-1">R$ 0,00</div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Local / Evento (Opcional)</label>
-            <input type="text" id="rachaLocal" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria, Churrasco, Bar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Valor Total da Conta (R$)</label>
-            <input type="text" id="rachaValorTotal" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base outline-none focus:border-emerald-500">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Nº de Pessoas</label>
-            <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
-              <button type="button" onclick="ajustarPessoasRacha(-1)" class="px-3.5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button>
-              <input type="number" id="rachaQtdPessoas" value="2" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none">
-              <button type="button" onclick="ajustarPessoasRacha(1)" class="px-3.5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button>
+        <!-- Formulário de Novo Empréstimo -->
+        <div class="card-glass p-5 sm:p-6">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro no Seu Cartão</h2>
+              <p class="text-[11px] text-slate-400">Ocupa o limite disponível do cartão, mas não entra nos seus relatórios de gastos pessoais.</p>
             </div>
           </div>
+
+          <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-3.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Data Compra</label>
+                  <button type="button" onclick="definirDataHojeEmprestimo()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold">Hoje</button>
+                </div>
+                <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1">
+                  <input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500">/</span>
+                  <input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500">/</span>
+                  <input type="text" id="inpEmpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, null, 4)" onblur="sincronizarDataEmp()" class="w-11 bg-transparent text-center text-white outline-none">
+                </div>
+                <input type="hidden" id="inpEmpData">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">1ª Fatura</label>
+                <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
+              </div>
+
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
+                <input type="text" id="inpEmpPessoa" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
+                <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">O que foi comprado (Descrição)</label>
+                <input type="text" id="inpEmpDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Tênis Shopee, Celular, Passagem" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cartão Emprestado</label>
+                <select id="selEmpForma" onchange="atualizarFaturaEmprestimo()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+                  <option value="">Selecione o cartão...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label>
+                <input type="text" id="inpEmpValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
+                  <span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">1x</span>
+                </div>
+                <input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
+                <input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label>
+                <input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+              </div>
+            </div>
+
+            <button type="submit" id="btnSalvarEmp" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95">
+              💾 Registrar Empréstimo no Cartão
+            </button>
+          </form>
+        </div>
+
+        <!-- Filtros e Resumo Agrupado por Pessoa (Cobrança Rápida no WhatsApp) -->
+        <div class="card-glass p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 class="text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
+              <p class="text-[11px] text-slate-400">Filtre o mês da fatura para cobrar e dar baixa rapidamente.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+              <select id="selFiltroMesEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="">Todos os Meses</option>
+              </select>
+              <select id="selFiltroPessoaEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="">Todas as Pessoas</option>
+              </select>
+              <select id="selFiltroStatusEmp" onchange="renderizarPainelEmprestimos()" class="minimal bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="A Receber">⏳ A Receber</option>
+                <option value="">Todos Status</option>
+                <option value="Recebido">✅ Recebidos</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="listaResumoPessoasEmp" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+
+          <div class="pt-3 border-t border-slate-800">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">📋 Parcelas Detalhadas de Terceiros</h4>
+            <div id="listaItensEmprestimos" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FERRAMENTA 2: DIVIDIR COM A GALERA (2 MODOS: COMIDA VS BEBIDA E ITENS POR PESSOA) -->
+      <div id="subview-rachadinha" class="hidden card-glass p-5 sm:p-7 space-y-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">🍻 Dividir Gastos com a Galera</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Divida separando quem bebeu de quem não bebeu ou item por item.</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700 w-full sm:w-auto">
+            <button type="button" id="btnModoRachaRapido" onclick="alternarModoRachadinha('rapido')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition">⚡ Comida vs. Bebida</button>
+            <button type="button" id="btnModoRachaDetalhado" onclick="alternarModoRachadinha('detalhado')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">🧾 Itens por Pessoa</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Local / Evento (Opcional)</label>
+            <input type="text" id="rachaLocal" autocapitalize="words" oninput="calcularRachadinha(); calcularRachadinhaDetalhada()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria, Churrasco, Bar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-emerald-500">
+          </div>
           <div class="flex items-end">
-            <label class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-3 flex items-center gap-2.5 cursor-pointer">
-              <input type="checkbox" id="rachaTaxa10" onchange="calcularRachadinha()" class="w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-600">
+            <label class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between cursor-pointer">
               <span class="text-xs font-bold text-slate-200">+ 10% Garçom</span>
+              <input type="checkbox" id="rachaTaxa10" onchange="calcularRachadinha(); calcularRachadinhaDetalhada()" class="w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-600">
             </label>
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Nomes dos Participantes (Opcional, separe por vírgula)</label>
-          <input type="text" id="rachaNomes" oninput="calcularRachadinha()" placeholder="Ex: Lucas, Núbia, Heitor, Castalha" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-xs outline-none focus:border-emerald-500">
+        <!-- MODO 1: RÁPIDO (COMIDA VS. BEBIDA) -->
+        <div id="boxRachaModoRapido" class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+              <label class="block text-xs font-bold text-emerald-400 uppercase">🥗 Gasto Geral / Comida (Todos dividem)</label>
+              <input type="text" id="rachaValorTotal" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base outline-none focus:border-emerald-500">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[11px] font-bold text-slate-400">Total de Pessoas na Mesa:</span>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="setPessoasRachaRapido(2)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">2</button>
+                    <button type="button" onclick="setPessoasRachaRapido(3)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3</button>
+                    <button type="button" onclick="setPessoasRachaRapido(4)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">4</button>
+                    <button type="button" onclick="setPessoasRachaRapido(5)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">5</button>
+                    <button type="button" onclick="setPessoasRachaRapido(6)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6</button>
+                  </div>
+                </div>
+                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
+                  <button type="button" onclick="ajustarPessoasRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button>
+                  <input type="number" id="rachaQtdPessoas" value="2" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none">
+                  <button type="button" onclick="ajustarPessoasRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+              <label class="block text-xs font-bold text-amber-400 uppercase">🍺 Bebida / Extra (Só quem consumiu)</label>
+              <input type="text" id="rachaValorBebida" inputmode="numeric" placeholder="R$ 0,00 (Opcional)" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold text-base outline-none focus:border-amber-500">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[11px] font-bold text-slate-400">Quantas pessoas beberam?</span>
+                  <span class="text-[10px] text-slate-500">Divide a bebida só entre elas</span>
+                </div>
+                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
+                  <button type="button" onclick="ajustarBebeuRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button>
+                  <input type="number" id="rachaQtdBebeu" value="1" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none">
+                  <button type="button" onclick="ajustarBebeuRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 text-xs">
+              <span class="text-slate-400 font-bold uppercase">Total da Mesa (c/ taxas):</span>
+              <strong id="rachaTotalFinal" class="text-white text-base">R$ 0,00</strong>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                <span id="lblRachaSemBebida" class="text-[11px] font-bold text-emerald-400 block">🥗 Valor por Pessoa (Geral / Sem Bebida):</span>
+                <div id="rachaValorPorPessoa" class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">R$ 0,00</div>
+              </div>
+              <div id="boxResultadoComBebida" class="hidden bg-amber-500/10 p-3 rounded-xl border border-amber-500/30">
+                <span id="lblRachaComBebida" class="text-[11px] font-bold text-amber-300 block">🍺 Valor p/ Quem Bebeu (Comida + Bebida):</span>
+                <div id="rachaValorComBebida" class="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2 pt-1">
+              <button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button>
+              <button type="button" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Minha Parte (Sem Bebida)</button>
+              <button type="button" id="btnLancarParteBebeu" onclick="lancarMinhaParteRachadinha('bebeu')" class="hidden flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">🍺 Lançar Minha Parte (Com Bebida)</button>
+            </div>
+          </div>
         </div>
 
-        <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div class="text-center sm:text-left">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total c/ Taxas: <strong id="rachaTotalFinal" class="text-slate-200">R$ 0,00</strong></span>
-            <div class="text-xs text-emerald-400 font-bold mt-1">Valor por Pessoa:</div>
-            <div id="rachaValorPorPessoa" class="text-2xl sm:text-3xl font-extrabold text-white mt-0.5">R$ 0,00</div>
+        <!-- MODO 2: DETALHADO (ITENS POR PESSOA - QUEM CONSUMIU O QUÊ) -->
+        <div id="boxRachaModoDetalhado" class="hidden space-y-4">
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <label class="block text-xs font-bold text-slate-300 uppercase">1️⃣ Pessoas na Mesa</label>
+            <div class="flex gap-2">
+              <input type="text" id="inpNovoNomeRacha" autocapitalize="words" placeholder="Nome (ex: Lucas, Núbia, Heitor...)" onkeypress="if(event.key==='Enter'){adicionarPessoaRachaDet(); event.preventDefault();}" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white text-xs sm:text-sm outline-none focus:border-emerald-500">
+              <button type="button" onclick="adicionarPessoaRachaDet()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold px-4 py-2 rounded-xl text-xs">+ Pessoa</button>
+            </div>
+            <div id="listaPessoasRachaDet" class="flex flex-wrap gap-1.5"></div>
           </div>
-          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <button type="button" onclick="copiarRachadinhaWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button>
-            <button type="button" onclick="lancarMinhaParteRachadinha()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Minha Parte</button>
+
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <label class="block text-xs font-bold text-slate-300 uppercase">2️⃣ Adicionar Item da Conta e Marcar Quem Consumiu</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <input type="text" id="inpItemDescRacha" autocapitalize="words" placeholder="Item (ex: Pizza Grande, Cervejas, Suco)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-emerald-500">
+              <input type="text" id="inpItemValRacha" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor do Item (R$ 0,00)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-xs sm:text-sm outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="text-[11px] font-bold text-slate-400">Quem vai dividir este item?</span>
+                <button type="button" onclick="marcarTodosNoItemRacha()" class="text-[10px] text-emerald-400 font-bold underline">Marcar Todos</button>
+              </div>
+              <div id="boxCheckPessoasItemRacha" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <button type="button" onclick="adicionarItemRachaDet()" class="w-full bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-bold py-2.5 rounded-xl text-xs transition">+ Incluir Item na Conta</button>
+          </div>
+
+          <div id="listaItensRachaDet" class="space-y-1.5"></div>
+
+          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">3️⃣ Total Oficial Individual por Pessoa</h3>
+            <div id="listaResumoIndividualRachaDet" class="space-y-2 text-xs"></div>
+
+            <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar Detalhamento p/ WhatsApp</button>
+              <button type="button" onclick="limparRachadinhaDetalhada()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-xl text-xs border border-slate-700">Zerar Itens</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- FERRAMENTA 2: SIMULADOR DE COMPRA E IMPACTO NOS LIMITES -->
+      <!-- FERRAMENTA 3: SIMULADOR DE COMPRA E IMPACTO NOS LIMITES (AUTOMÁTICO + WHATSAPP + EMPRÉSTIMO) -->
       <div id="subview-simulador" class="hidden card-glass p-5 sm:p-7 space-y-5">
-        <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras e Parcelamento</h2>
-          <p class="text-xs text-slate-400 mt-0.5">Veja como uma compra afetará o limite disponível do cartão e suas faturas futuras antes de comprar.</p>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras e Parcelamento</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Calcula automaticamente enquanto você digita e compara seus cartões.</p>
+          </div>
+          <button type="button" id="btnAtalhoCartaoMaisUsado" onclick="selecionarCartaoMaisUsadoSimulador()" class="hidden text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition active:scale-95"></button>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -681,25 +914,44 @@
             <input type="text" id="simValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sky-400 font-bold text-base outline-none focus:border-sky-500">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Nº de Parcelas</label>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-400 uppercase">Nº de Parcelas</label>
+              <div class="flex gap-1">
+                <button type="button" onclick="setParcelasSimulador(1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">1x</button>
+                <button type="button" onclick="setParcelasSimulador(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3x</button>
+                <button type="button" onclick="setParcelasSimulador(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6x</button>
+                <button type="button" onclick="setParcelasSimulador(10)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">10x</button>
+                <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">12x</button>
+              </div>
+            </div>
             <input type="number" id="simParcelas" value="1" min="1" max="48" oninput="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500">
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cartão p/ Simular</label>
-            <select id="simCartao" onchange="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-sky-500"></select>
+            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cartão (Vazio = Comparar Todos)</label>
+            <select id="simCartao" onchange="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-sky-500">
+              <option value="">📊 Comparar Todos os Cartões</option>
+            </select>
           </div>
         </div>
 
         <div id="boxResultadoSimulador" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-4">
-          <p class="text-xs text-slate-500 text-center py-4">Digite um valor acima para simular o impacto no limite e nas faturas futuras.</p>
+          <p class="text-xs text-slate-500 text-center py-4">Digite o valor da compra acima para ver o cálculo instantâneo das parcelas e o comparativo entre seus cartões.</p>
         </div>
 
-        <button type="button" onclick="transformarSimulacaoEmLancamento()" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95">
-          ✅ Transformar esta Simulação em Novo Registro
-        </button>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <button type="button" onclick="copiarSimulacaoWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            📲 Copiar Simulação p/ WhatsApp
+          </button>
+          <button type="button" onclick="transformarSimulacaoEmEmprestimo()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            🤝 Lançar em Empréstimos
+          </button>
+          <button type="button" onclick="transformarSimulacaoEmLancamento()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            ➕ Lançar como Meu Gasto
+          </button>
+        </div>
       </div>
 
-      <!-- FERRAMENTA 3: CALCULADORA FINANCEIRA INTEGRADA -->
+      <!-- FERRAMENTA 4: CALCULADORA FINANCEIRA INTEGRADA -->
       <div id="subview-calculadora" class="hidden card-glass p-5 sm:p-7 max-w-sm mx-auto space-y-4">
         <div class="flex justify-between items-center">
           <h2 class="text-sm font-bold text-white">🧮 Calculadora Financeira</h2>
@@ -742,17 +994,17 @@
         </button>
       </div>
 
-      <!-- FERRAMENTA 4: BLOCO DE NOTAS E LEMBRETES SINCRONIZADO -->
+      <!-- FERRAMENTA 5: BLOCO DE NOTAS E LEMBRETES SINCRONIZADO -->
       <div id="subview-notas" class="hidden card-glass p-5 sm:p-7 space-y-4">
         <div class="flex justify-between items-center">
           <div>
             <h2 class="text-base font-bold text-white">📝 Bloco de Notas e Lembretes</h2>
-            <p class="text-xs text-slate-400">Anote dívidas a receber, lembretes de compras ou observações (sincronizado na planilha).</p>
+            <p class="text-xs text-slate-400">Anote observações rápidas ou lembretes financeiros (sincronizado na planilha).</p>
           </div>
         </div>
 
         <div class="flex gap-2">
-          <input type="text" id="inpNovaNotaTexto" placeholder="Ex: Heitor me deve R$ 45 do iFood..." onkeypress="if(event.key==='Enter'){adicionarNotaRapida(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500">
+          <input type="text" id="inpNovaNotaTexto" placeholder="Ex: Lembrar de conferir cashback..." onkeypress="if(event.key==='Enter'){adicionarNotaRapida(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500">
           <button type="button" onclick="adicionarNotaRapida()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-xl text-xs sm:text-sm transition active:scale-95">Adicionar</button>
         </div>
 
@@ -829,7 +1081,7 @@
     </div>
   </div>
 
-  <!-- MODAL: EDITAR CARTÃO/PIX (COM MÁSCARA R$ 0,00) -->
+  <!-- MODAL: EDITAR CARTÃO/PIX -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
@@ -852,7 +1104,7 @@
     </div>
   </div>
 
-  <!-- MODAL EDIÇÃO DE LANÇAMENTO (COM EDIÇÃO EM LOTE E ANTECIPAÇÃO PADRÃO NUBANK) -->
+  <!-- MODAL EDIÇÃO DE LANÇAMENTO (COM ANTECIPAÇÃO NUBANK E CONVERSOR P/ EMPRÉSTIMOS) -->
   <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto">
       <h3 class="text-lg font-bold text-white mb-4">✏️ Editar Lançamento</h3>
@@ -930,14 +1182,14 @@
           <div id="chipsTagsEdicao" class="flex flex-wrap gap-1.5 mt-2"></div>
         </div>
 
-        <!-- PAINEL DE ANTECIPAÇÃO PADRÃO NUBANK (1, 2, 3... OU TODAS DE TRÁS P/ FRENTE) -->
+        <!-- PAINEL DE ANTECIPAÇÃO PADRÃO NUBANK -->
         <div id="boxAdiantarContainer" class="hidden pt-2 border-t border-slate-700">
           <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
             <span>⚡ Adiantar Parcelas Futuras (Padrão Nubank)</span>
             <span id="setaAdiantar">▼</span>
           </button>
           <div id="painelAdiantarCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-3">
-            <p class="text-[11px] text-slate-300 leading-relaxed">Puxa as últimas parcelas futuras <strong>em aberto</strong> (de trás para a frente, mantendo a do mês atual) e libera seu limite futuro.</p>
+            <p class="text-[11px] text-slate-300 leading-relaxed">Puxa as últimas parcelas futuras <strong>em aberto</strong> (de trás para a frente) e libera seu limite futuro.</p>
             <div class="grid grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fatura Destino</label>
@@ -970,6 +1222,21 @@
           </div>
         </div>
 
+        <!-- CONVERSOR RÁPIDO: MOVER COMPRA PARA EMPRÉSTIMOS DE TERCEIROS -->
+        <div class="pt-2 border-t border-slate-700">
+          <button type="button" onclick="togglePainelMoverEmprestimo()" class="w-full bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
+            <span>🤝 Era compra de outra pessoa? Mover p/ Empréstimos</span>
+            <span id="setaMoverEmp">▼</span>
+          </button>
+          <div id="painelMoverEmprestimoCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-sky-500/30 space-y-2.5">
+            <p class="text-[11px] text-slate-300 leading-relaxed">Transfere esta compra (e todas as suas parcelas) da sua aba pessoal para a aba <strong>Empréstimos</strong>.</p>
+            <input type="text" id="inpMoverEmpPessoa" autocapitalize="words" placeholder="Nome da pessoa (ex: Heitor, Mãe...)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-bold outline-none focus:border-sky-400">
+            <button type="button" id="btnExecutarMoverEmp" onclick="executarMoverParaEmprestimos()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">
+              Transferir para Empréstimos 🤝
+            </button>
+          </div>
+        </div>
+
         <div class="flex gap-3 pt-2">
           <button type="button" onclick="fecharModalEdicaoLanc()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
           <button type="submit" id="btnSalvarEdLanc" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition">Atualizar</button>
@@ -978,7 +1245,7 @@
     </div>
   </div>
 
-  <!-- MODAL EDIÇÃO DE ASSINATURA (COM MÁSCARA R$ 0,00) -->
+  <!-- MODAL EDIÇÃO DE ASSINATURA -->
   <div id="modalEdicaoAss" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-2">🔄 Editar Assinatura</h3>
@@ -1003,7 +1270,7 @@
       </form>
     </div>
   </div>
-  <script>
+    <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -1018,18 +1285,42 @@
       });
     }
 
+    async function forcarAtualizacaoApp() {
+      mostrarAviso('Atualizando 🔄', 'Limpando cache do aparelho e buscando versão nova...');
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const r of regs) await r.unregister();
+        }
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (const k of keys) await caches.delete(k);
+        }
+      } catch (e) {}
+      setTimeout(() => { window.location.reload(true); }, 600);
+    }
+
     const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
 
     // ============================================================================
-    // UTILITÁRIOS DE MOEDA BRASILEIRA (R$ 0,00), TEXTO E ACENTUAÇÃO PT-BR
+    // UTILITÁRIOS DE MOEDA BRASILEIRA (R$ 0,00 CORRIGIDO + TRAVA DE CURSOR) E PT-BR
     // ============================================================================
 
     function formatBRL(val) {
       return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
+    // CORRIGIDO: Aceita ID do campo ('simValor'), Elemento HTML (this) ou texto ('R$ 50,00')
     function lerValorMoeda(valOuInput) {
-      const raw = (typeof valOuInput === 'object' && valOuInput !== null) ? valOuInput.value : String(valOuInput || '');
+      let raw = '';
+      if (typeof valOuInput === 'object' && valOuInput !== null) {
+        raw = valOuInput.value || '';
+      } else if (typeof valOuInput === 'string') {
+        const el = document.getElementById(valOuInput);
+        raw = el ? (el.value || '') : valOuInput;
+      } else {
+        raw = String(valOuInput || '');
+      }
       let str = String(raw || '0').trim();
       const isNeg = str.includes('-');
       str = str.replace(/[^\d,\.]/g, '');
@@ -1048,6 +1339,10 @@
       }
       const valorFloat = parseInt(digitos, 10) / 100;
       input.value = formatBRL(valorFloat);
+      try {
+        const len = input.value.length;
+        input.setSelectionRange(len, len);
+      } catch (e) {}
     }
 
     function definirValorMoeda(inputOrId, valorFloat) {
@@ -1075,7 +1370,8 @@
       'sacolao': 'sacolão', 'pedagio': 'pedágio', 'taxi': 'táxi', 'clinica': 'clínica',
       'estetica': 'estética', 'inscricao': 'inscrição', 'lampada': 'lâmpada',
       'sache': 'sachê', 'atacadao': 'atacadão', 'assai': 'assaí', 'bistro': 'bistrô',
-      'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos'
+      'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos',
+      'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó'
     };
 
     function formatarTituloInteligente(texto) {
@@ -1198,7 +1494,7 @@
     }
 
     // ============================================================================
-    // CAMPO DE DATA TRIPLO COM ATALHOS [ONTEM], [HOJE] E BARRA (/)
+    // CAMPO DE DATA TRIPLO (NOVO, EDIÇÃO E EMPRÉSTIMOS)
     // ============================================================================
 
     function formatarZeroData(input, tamanho) {
@@ -1219,9 +1515,12 @@
     }
 
     function validarLimitesDataTripla(contexto = 'novo') {
-      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
-      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
-      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
+      const mapIds = {
+        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno'],
+        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno'],
+        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno']
+      };
+      const [idDia, idMes, idAno] = mapIds[contexto] || mapIds['novo'];
       const elDia = document.getElementById(idDia), elMes = document.getElementById(idMes), elAno = document.getElementById(idAno);
       if (!elDia || !elMes || !elAno) return;
 
@@ -1268,10 +1567,12 @@
     }
 
     function sincronizarDataTripla(contexto = 'novo', dispararRegras = true) {
-      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
-      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
-      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
-      const idHidden = contexto === 'novo' ? 'inpData' : 'inpEdData';
+      const mapIds = {
+        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
+        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
+        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData']
+      };
+      const [idDia, idMes, idAno, idHidden] = mapIds[contexto] || mapIds['novo'];
       const d = (document.getElementById(idDia)?.value || '').replace(/\D/g, '');
       const m = (document.getElementById(idMes)?.value || '').replace(/\D/g, '');
       const a = (document.getElementById(idAno)?.value || '').replace(/\D/g, '');
@@ -1279,14 +1580,17 @@
       if (d.length >= 1 && m.length >= 1 && a.length === 4) {
         if (hiddenEl) hiddenEl.value = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${a}`;
         if (contexto === 'novo' && dispararRegras) atualizarRegrasForma();
+        if (contexto === 'emp' && dispararRegras) atualizarFaturaEmprestimo();
       }
     }
 
     function preencherDataTripla(contexto, dataStr) {
-      const idDia = contexto === 'novo' ? 'inpDataDia' : 'inpEdDataDia';
-      const idMes = contexto === 'novo' ? 'inpDataMes' : 'inpEdDataMes';
-      const idAno = contexto === 'novo' ? 'inpDataAno' : 'inpEdDataAno';
-      const idHidden = contexto === 'novo' ? 'inpData' : 'inpEdData';
+      const mapIds = {
+        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
+        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
+        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData']
+      };
+      const [idDia, idMes, idAno, idHidden] = mapIds[contexto] || mapIds['novo'];
       const partes = String(dataStr || '').replace(/^'/, '').trim().split('/');
       if (partes.length === 3) {
         const d = partes[0].padStart(2, '0'), m = partes[1].padStart(2, '0'), a = partes[2];
@@ -1307,12 +1611,29 @@
 
     function definirDataHoje() { definirDataOffset(0); }
 
+    function definirDataHojeEmprestimo() {
+      const dt = new Date();
+      const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+      preencherDataTripla('emp', str);
+      atualizarFaturaEmprestimo();
+    }
+
+    function aoDigitarParteDataEmp(input, nextId, maxLen) {
+      aoDigitarParteData(input, nextId, maxLen, 'emp');
+    }
+
+    function sincronizarDataEmp() {
+      validarLimitesDataTripla('emp');
+      sincronizarDataTripla('emp', true);
+    }
+
     // ============================================================================
     // ESTADO GLOBAL E NAVEGAÇÃO UNIFICADA (PC + MOBILE)
     // ============================================================================
 
     let chartGlobal = null, chartRel = null, chartAnualObj = null;
     let formasGlobais = [], categoriasGlobaisEdit = [], opcoesTagsGlobal = [];
+    let cartaoMaisFrequenteGlobal = '';
     let consumoCategoriasPorMesGlobal = {};
     let dadosCarregadosIniciais = false;
     let evolucaoMeses = [], evolucaoPivot = {}, evolucaoIdx = 0, evolucaoMesAtual = '';
@@ -1328,6 +1649,7 @@
     let valorOriginalAntesMetade = null;
     let ultimoValorSugeridoTemp = 0;
     let notasGlobais = [];
+    let emprestimosGlobal = { kpis: {}, pessoasFrequentes: [], itens: [] };
     let salvandoGastoTrava = false;
 
     let offsetAtual = 0;
@@ -1339,7 +1661,7 @@
       { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300', principal: true },
       { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Histórico', cor: 'text-slate-300', principal: true },
       { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Fatura Mensal', cor: 'text-slate-300', principal: true },
-      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas Práticas', cor: 'text-slate-300', principal: false },
+      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas & Empréstimos', cor: 'text-slate-300', principal: false },
       { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Balanço Anual', cor: 'text-slate-300', principal: false },
       { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300', principal: false },
       { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Cartões e Limites', cor: 'text-slate-300', principal: false },
@@ -1397,7 +1719,7 @@
     function setAba(aba, salvar = true) {
       fecharMenuMobile();
       abaAtivaAtual = aba;
-      if (salvar) localStorage.setItem('abaAtivaGestorV10', aba);
+      if (salvar) localStorage.setItem('abaAtivaGestorV11', aba);
 
       const configAtiva = abasConfig.find(a => a.id === aba);
       const subMobile = document.getElementById('subtituloMobileAba');
@@ -1449,15 +1771,20 @@
     }
 
     function selecionarSubFerramenta(sub) {
-      ['rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
+      ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
         document.getElementById('subview-' + id)?.classList.add('hidden');
         const btn = document.getElementById('btn-sub-' + id);
-        if (btn) { btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition'; }
+        if (btn) btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
       });
       document.getElementById('subview-' + sub)?.classList.remove('hidden');
       const btnAtivo = document.getElementById('btn-sub-' + sub);
-      if (btnAtivo) { btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition'; }
+      if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
+      if (sub === 'emprestimos') {
+        if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo();
+        renderizarPainelEmprestimos();
+      }
       if (sub === 'simulador') rodarSimuladorCompra();
+      if (sub === 'rachadinha') { calcularRachadinha(); calcularRachadinhaDetalhada(); }
       if (sub === 'notas') renderizarNotasUI();
     }
 
@@ -1500,11 +1827,8 @@
         const btnSugDiv = document.getElementById('btnSugestaoDivididoRapido');
         const valAtual = lerValorMoeda('inpValor');
         if (btnSugDiv) {
-          if (ativas.has('dividido') && valAtual > 0 && valorOriginalAntesMetade === null) {
-            btnSugDiv.classList.remove('hidden');
-          } else {
-            btnSugDiv.classList.add('hidden');
-          }
+          if (ativas.has('dividido') && valAtual > 0 && valorOriginalAntesMetade === null) btnSugDiv.classList.remove('hidden');
+          else btnSugDiv.classList.add('hidden');
         }
       }
     }
@@ -1516,11 +1840,9 @@
       const tagLimpa = tagComHash.replace(/^#/, '').toLowerCase();
       let lista = inp.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean);
 
-      if (lista.includes(tagLimpa)) {
-        lista = lista.filter(t => t !== tagLimpa);
-      } else {
-        lista.push(tagLimpa);
-      }
+      if (lista.includes(tagLimpa)) lista = lista.filter(t => t !== tagLimpa);
+      else lista.push(tagLimpa);
+
       inp.value = lista.map(t => '#' + t).join(', ');
       if (contexto === 'novo') toggleBotaoLimpar('inpTags', 'btnLimparTags');
       sincronizarChipsTags(contexto);
@@ -1539,7 +1861,6 @@
         valorOriginalAntesMetade = valAtual;
         definirValorMoeda(inp, valAtual / 2);
         if (btn) { btn.textContent = '×2 Voltar Cheio'; btn.className = 'text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 transition'; }
-        // Sincronia automática com a tag #dividido
         const inpTags = document.getElementById('inpTags');
         if (inpTags) {
           let lista = inpTags.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean);
@@ -1563,13 +1884,9 @@
       if (!lbl) return;
       const val = lerValorMoeda('inpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
-      if (qtd <= 1) {
-        lbl.textContent = 'À vista';
-      } else if (val > 0) {
-        lbl.textContent = `${qtd}x de ${formatBRL(val / qtd)}`;
-      } else {
-        lbl.textContent = `${qtd}x`;
-      }
+      if (qtd <= 1) lbl.textContent = 'À vista';
+      else if (val > 0) lbl.textContent = `${qtd}x de ${formatBRL(val / qtd)}`;
+      else lbl.textContent = `${qtd}x`;
     }
 
     function atualizarLayoutParcelas() {
@@ -1923,7 +2240,7 @@
 
     function obterClasseBadgeStatus(statusStr) {
       const s = String(statusStr || '').trim();
-      if (s === 'Pago' || s === 'Assinatura Paga' || s === 'Pago (Cancelada)') return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      if (s === 'Pago' || s === 'Assinatura Paga' || s === 'Pago (Cancelada)' || s === 'Recebido') return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
       if (s === 'Agendado') return 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
       if (s === 'Assinatura Ativa') return 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
       if (s === 'Assinatura Cancelada') return 'bg-rose-500/20 text-rose-400';
@@ -2145,7 +2462,7 @@
     }
 
     // ============================================================================
-    // EDIÇÃO, EXCLUSÃO EM LOTE E ANTECIPAÇÃO PADRÃO NUBANK
+    // EDIÇÃO, EXCLUSÃO, ANTECIPAÇÃO NUBANK E MOVER PARA EMPRÉSTIMOS
     // ============================================================================
 
     function excluirLancamentoLocal(linha, descricao, parcela = '', mesFat = '') {
@@ -2190,6 +2507,43 @@
       if (!p) return;
       if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
       else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
+    }
+
+    function togglePainelMoverEmprestimo() {
+      const p = document.getElementById('painelMoverEmprestimoCampos');
+      const s = document.getElementById('setaMoverEmp');
+      if (!p) return;
+      if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
+      else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
+    }
+
+    function executarMoverParaEmprestimos() {
+      const pessoa = (document.getElementById('inpMoverEmpPessoa')?.value || '').trim();
+      if (!pessoa) {
+        mostrarAviso('Atenção', 'Digite o nome da pessoa para transferir a compra.');
+        return;
+      }
+      const btn = document.getElementById('btnExecutarMoverEmp');
+      btn.textContent = 'Transferindo...';
+      btn.disabled = true;
+
+      apiCall('moverParaEmprestimosWeb', {
+        linha: document.getElementById('inpEdLinha').value,
+        descOriginal: document.getElementById('inpEdDescOrig').value,
+        mesOriginal: document.getElementById('inpEdMesOrig').value,
+        parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
+        pessoa: pessoa
+      }).then(res => {
+        btn.textContent = 'Transferir para Empréstimos 🤝';
+        btn.disabled = false;
+        fecharModalEdicaoLanc();
+        mostrarAviso('Transferido 🤝', `${res.qtdMovida} parcela(s) movidas para Empréstimos (${res.pessoa})!`);
+        carregarDados();
+      }).catch(err => {
+        btn.textContent = 'Transferir para Empréstimos 🤝';
+        btn.disabled = false;
+        mostrarAviso('Erro', err.message);
+      });
     }
 
     function executarAdiantamentoParcelas() {
@@ -2259,6 +2613,9 @@
 
       document.getElementById('painelAdiantarCampos')?.classList.add('hidden');
       if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
+      document.getElementById('painelMoverEmprestimoCampos')?.classList.add('hidden');
+      if (document.getElementById('setaMoverEmp')) document.getElementById('setaMoverEmp').textContent = '▼';
+      if (document.getElementById('inpMoverEmpPessoa')) document.getElementById('inpMoverEmpPessoa').value = '';
 
       if (ehParcelado) {
         boxAdiantar?.classList.remove('hidden');
@@ -2311,80 +2668,541 @@
         .then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Lançamento atualizado!'); })
         .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
+          // ============================================================================
+    // FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS - ISOLADO DOS GASTOS PESSOAIS)
+    // ============================================================================
+
+    function atualizarPreviewParcEmp() {
+      const lbl = document.getElementById('lblPreviewParcEmp');
+      if (!lbl) return;
+      const val = lerValorMoeda('inpEmpValor');
+      const qtd = Math.max(1, parseInt(document.getElementById('inpEmpParc')?.value, 10) || 1);
+      lbl.textContent = (qtd > 1 && val > 0) ? `${qtd}x de ${formatBRL(val / qtd)}` : `${qtd}x`;
+    }
+
+    function atualizarFaturaEmprestimo() {
+      sincronizarDataTripla('emp', false);
+      const nomeForma = document.getElementById('selEmpForma')?.value || '';
+      const dataStr = document.getElementById('inpEmpData')?.value || '';
+      const inpMesFat = document.getElementById('inpEmpMesFat');
+      if (!nomeForma || dataStr.length !== 10 || !inpMesFat) return;
+      const formaObj = formasGlobais.find(f => f.nome === nomeForma);
+      if (!formaObj) return;
+      const calc = calcularMesFaturaCartao(formaObj, dataStr);
+      inpMesFat.value = calc.mesFat;
+    }
+
+    function selecionarPessoaChipEmp(nome) {
+      const inp = document.getElementById('inpEmpPessoa');
+      if (inp) inp.value = nome;
+    }
+
+    function enviarEmprestimo(e) {
+      e.preventDefault();
+      formatarZeroData(document.getElementById('inpEmpDataDia'), 2);
+      formatarZeroData(document.getElementById('inpEmpDataMes'), 2);
+      sincronizarDataEmp();
+
+      const valTotal = lerValorMoeda('inpEmpValor');
+      if (valTotal <= 0) { mostrarAviso('Atenção', 'Informe um valor maior que R$ 0,00.'); return; }
+
+      const btn = document.getElementById('btnSalvarEmp');
+      btn.textContent = 'Salvando...'; btn.disabled = true;
+
+      const payload = {
+        dataCompra: document.getElementById('inpEmpData').value,
+        mesPrimeiraFatura: document.getElementById('inpEmpMesFat').value,
+        pessoa: formatarTituloInteligente(document.getElementById('inpEmpPessoa').value),
+        descricao: formatarTituloInteligente(document.getElementById('inpEmpDesc').value),
+        formaPagto: document.getElementById('selEmpForma').value,
+        valorTotal: valTotal,
+        numParcelas: parseInt(document.getElementById('inpEmpParc').value, 10) || 1,
+        parcelaInicial: parseInt(document.getElementById('inpEmpParcIni').value, 10) || 1,
+        observacoes: document.getElementById('inpEmpObs').value
+      };
+
+      apiCall('salvarEmprestimoWeb', payload).then(() => {
+        mostrarAviso('Sucesso 🤝', 'Empréstimo registrado sem afetar seus gastos pessoais!');
+        document.getElementById('formEmprestimo').reset();
+        definirDataHojeEmprestimo();
+        atualizarPreviewParcEmp();
+        btn.textContent = '💾 Registrar Empréstimo no Cartão'; btn.disabled = false;
+        carregarDados();
+      }).catch(err => {
+        mostrarAviso('Erro', err.message);
+        btn.textContent = '💾 Registrar Empréstimo no Cartão'; btn.disabled = false;
+      });
+    }
+
+    function renderizarPainelEmprestimos() {
+      const kpis = emprestimosGlobal.kpis || {};
+      if (document.getElementById('emp-kpi-mes')) document.getElementById('emp-kpi-mes').textContent = kpis.aReceberMes || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-recebido')) document.getElementById('emp-kpi-recebido').textContent = kpis.recebidoMes || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-total')) document.getElementById('emp-kpi-total').textContent = kpis.totalAReceberGeral || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-limite')) document.getElementById('emp-kpi-limite').textContent = kpis.limiteOcupado || 'R$ 0,00';
+
+      const chipsPessoas = document.getElementById('chipsPessoasEmp');
+      const pFreq = emprestimosGlobal.pessoasFrequentes || [];
+      if (chipsPessoas) {
+        chipsPessoas.innerHTML = pFreq.slice(0, 8).map(p => {
+          const pSafe = p.replace(/'/g, "\\'");
+          return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition">👤 ${p}</button>`;
+        }).join('');
+      }
+
+      const todosItens = emprestimosGlobal.itens || [];
+      const selMes = document.getElementById('selFiltroMesEmp');
+      const selPes = document.getElementById('selFiltroPessoaEmp');
+      const selSt = document.getElementById('selFiltroStatusEmp');
+
+      if (selMes && selPes) {
+        const vMes = selMes.value, vPes = selPes.value;
+        const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).filter(Boolean))].sort((a, b) => {
+          const [mA, aA] = a.split('/').map(Number), [mB, aB] = b.split('/').map(Number);
+          return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
+        });
+        selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${m}">${m}</option>`).join('');
+        selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pFreq.map(p => `<option value="${p}">${p}</option>`).join('');
+        if (vMes && mesesEmp.includes(vMes)) selMes.value = vMes;
+        else if (! selMes.dataset.iniciado && evolucaoMesAtual && mesesEmp.includes(evolucaoMesAtual)) {
+          selMes.value = evolucaoMesAtual;
+          selMes.dataset.iniciado = '1';
+        }
+        if (vPes && pFreq.includes(vPes)) selPes.value = vPes;
+      }
+
+      const fMes = selMes?.value || '';
+      const fPes = selPes?.value || '';
+      const fSt = selSt?.value || '';
+
+      const filtrados = todosItens.filter(item => {
+        if (fMes && item.mesFatura !== fMes) return false;
+        if (fPes && item.pessoa !== fPes) return false;
+        if (fSt && item.status !== fSt) return false;
+        return true;
+      });
+
+      // Agrupamento por Pessoa para Cobrança Rápida
+      const mapaPessoas = {};
+      filtrados.forEach(it => {
+        if (!mapaPessoas[it.pessoa]) mapaPessoas[it.pessoa] = { nome: it.pessoa, aReceber: 0, recebido: 0, itens: [] };
+        if (it.status === 'Recebido') mapaPessoas[it.pessoa].recebido += it.valorRaw;
+        else mapaPessoas[it.pessoa].aReceber += it.valorRaw;
+        mapaPessoas[it.pessoa].itens.push(it);
+      });
+
+      const boxPessoas = document.getElementById('listaResumoPessoasEmp');
+      const arrPessoas = Object.values(mapaPessoas).sort((a, b) => b.aReceber - a.aReceber);
+      if (boxPessoas) {
+        if (arrPessoas.length === 0) {
+          boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
+        } else {
+          boxPessoas.innerHTML = arrPessoas.map(p => {
+            const pSafe = p.nome.replace(/'/g, "\\'");
+            const btnQuitarMes = p.aReceber > 0
+              ? `<button onclick="quitarMesPessoaEmprestimo('${pSafe}', '${fMes}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">✅ Quitar ${fMes || 'Tudo'}</button>`
+              : '';
+            return `<div class="bg-slate-900/70 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between gap-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h4 class="text-white font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${p.nome}</h4>
+                  <span class="text-[11px] text-slate-400">${p.itens.length} parcela(s) ${fMes ? `em ${fMes}` : 'listadas'}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase block">A Receber</span>
+                  <strong class="text-amber-400 text-base sm:text-lg">${formatBRL(p.aReceber)}</strong>
+                </div>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="copiarCobrancaPessoaWhats('${pSafe}')" class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">📲 Cobrar no WhatsApp</button>
+                ${btnQuitarMes}
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const boxItens = document.getElementById('listaItensEmprestimos');
+      if (boxItens) {
+        if (filtrados.length === 0) {
+          boxItens.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma parcela encontrada.</div>';
+        } else {
+          boxItens.innerHTML = filtrados.map(it => {
+            const pSafe = it.pessoa.replace(/'/g, "\\'");
+            const dSafe = it.descricao.replace(/'/g, "\\'");
+            const parcSafe = it.parcela.replace(/'/g, "\\'");
+            const isRec = it.status === 'Recebido';
+            const badge = obterClasseBadgeStatus(it.status);
+            return `<div class="bg-slate-800/40 border border-slate-700/70 p-3.5 rounded-2xl flex flex-col gap-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${it.pessoa} • ${it.data}</span>
+                  <div class="text-white font-bold text-sm mt-0.5">${it.descricao}</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">💳 ${it.forma} • Fat: <strong class="text-slate-200">${it.mesFatura}</strong> • Parc: <strong>${it.parcela}</strong></div>
+                  ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${it.observacoes}</div>` : ''}
+                </div>
+                <div class="text-right">
+                  <div class="text-emerald-400 font-bold text-base">${it.valorFmt}</div>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${it.status}</span>
+                </div>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-slate-700/40">
+                <button onclick="alternarStatusItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="flex-1 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : '✅ Marcar Recebido'}</button>
+                <button onclick="excluirItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️</button>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+    }
+
+    function alternarStatusItemEmprestimo(linha, pessoa, descricao, parcela) {
+      apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela })
+        .then(res => { mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`); carregarDados(); })
+        .catch(err => mostrarAviso('Erro', err.message));
+    }
+
+    function quitarMesPessoaEmprestimo(pessoa, mesFatura) {
+      mostrarConfirmacao(
+        "Confirmar Recebimento",
+        `Marcar todas as parcelas em aberto de "${pessoa}" ${mesFatura ? `na fatura ${mesFatura}` : ''} como RECEBIDAS?`,
+        () => {
+          apiCall('alternarStatusEmprestimoWeb', { quitarMesPessoa: true, pessoa, mesFatura })
+            .then(res => { mostrarAviso('Recebido ✅', `${res.qtd} parcela(s) de ${pessoa} baixadas!`); carregarDados(); })
+            .catch(err => mostrarAviso('Erro', err.message));
+        }
+      );
+    }
+
+    function excluirItemEmprestimo(linha, pessoa, descricao, parcela) {
+      const ehParc = parcela.includes('/') && (parseInt(parcela.split('/')[1], 10) > 1);
+      mostrarConfirmacao(
+        "Excluir Empréstimo",
+        `Deseja excluir "${descricao}" de ${pessoa} (${parcela})?`,
+        (excluirTodas) => {
+          apiCall('excluirEmprestimoWeb', { linha, pessoa, descricao, parcela, excluirTodasParcelas: Boolean(excluirTodas) })
+            .then(() => { mostrarAviso('Excluído', 'Registro removido!'); carregarDados(); })
+            .catch(err => mostrarAviso('Erro', err.message));
+        },
+        ehParc
+      );
+    }
+
+    function copiarCobrancaPessoaWhats(pessoa) {
+      const fMes = document.getElementById('selFiltroMesEmp')?.value || '';
+      const fSt = document.getElementById('selFiltroStatusEmp')?.value || '';
+      const itens = (emprestimosGlobal.itens || []).filter(i => i.pessoa === pessoa && (!fMes || i.mesFatura === fMes) && (!fSt || i.status === fSt));
+      if (itens.length === 0) return;
+
+      let total = 0;
+      let msg = [`🤝 *Resumo do Cartão — ${pessoa}*`];
+      if (fMes) msg.push(`📅 Fatura de Referência: *${fMes}*`);
+      msg.push('');
+      itens.forEach(it => {
+        total += it.valorRaw;
+        msg.push(`• ${it.descricao} (${it.parcela}) [${it.forma}]: *${it.valorFmt}*`);
+      });
+      msg.push('');
+      msg.push(`💰 *Total a Pagar:* *${formatBRL(total)}*`);
+      copiarTextoAreaTransferencia(msg.join('\n'), `Resumo de ${pessoa} copiado p/ o WhatsApp!`);
+    }
 
     // ============================================================================
-    // AS 4 FERRAMENTAS PRÁTICAS (RACHADINHA, SIMULADOR, CALCULADORA E NOTAS)
+    // FERRAMENTA 2: RACHADINHA (MODO RÁPIDO COMIDA X BEBIDA + MODO DETALHADO ITENS)
     // ============================================================================
 
-    // --- 1. RACHADINHA (DIVIDIR COM A GALERA) ---
+    let modoRachadinhaAtual = 'rapido';
+    let rachaDetPessoas = ['Eu', 'Amigo 2'];
+    let rachaDetItens = [];
+
+    function alternarModoRachadinha(modo) {
+      modoRachadinhaAtual = modo;
+      const boxRap = document.getElementById('boxRachaModoRapido');
+      const boxDet = document.getElementById('boxRachaModoDetalhado');
+      const btnRap = document.getElementById('btnModoRachaRapido');
+      const btnDet = document.getElementById('btnModoRachaDetalhado');
+      if (modo === 'rapido') {
+        boxRap?.classList.remove('hidden'); boxDet?.classList.add('hidden');
+        if (btnRap) btnRap.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition';
+        if (btnDet) btnDet.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition';
+        calcularRachadinha();
+      } else {
+        boxRap?.classList.add('hidden'); boxDet?.classList.remove('hidden');
+        if (btnDet) btnDet.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition';
+        if (btnRap) btnRap.className = 'flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition';
+        renderizarPessoasRachaDet();
+        calcularRachadinhaDetalhada();
+      }
+    }
+
+    function setPessoasRachaRapido(n) {
+      const inp = document.getElementById('rachaQtdPessoas');
+      if (inp) { inp.value = n; calcularRachadinha(); }
+    }
+
     function ajustarPessoasRacha(delta) {
       const inp = document.getElementById('rachaQtdPessoas');
-      let v = (parseInt(inp.value, 10) || 2) + delta;
-      if (v < 1) v = 1;
+      let v = Math.max(1, (parseInt(inp.value, 10) || 2) + delta);
+      inp.value = v;
+      calcularRachadinha();
+    }
+
+    function ajustarBebeuRacha(delta) {
+      const inp = document.getElementById('rachaQtdBebeu');
+      const maxP = Math.max(1, parseInt(document.getElementById('rachaQtdPessoas')?.value, 10) || 1);
+      let v = Math.min(maxP, Math.max(1, (parseInt(inp.value, 10) || 1) + delta));
       inp.value = v;
       calcularRachadinha();
     }
 
     function calcularRachadinha() {
-      const valorBase = lerValorMoeda('rachaValorTotal');
-      const com10 = document.getElementById('rachaTaxa10')?.checked;
-      const nomesRaw = document.getElementById('rachaNomes')?.value || '';
-      const listaNomes = nomesRaw.split(',').map(n => n.trim()).filter(Boolean);
-      const inpPessoas = document.getElementById('rachaQtdPessoas');
-      if (listaNomes.length > 1 && document.activeElement === document.getElementById('rachaNomes')) {
-        inpPessoas.value = listaNomes.length;
+      const valComida = lerValorMoeda('rachaValorTotal');
+      const valBebida = lerValorMoeda('rachaValorBebida');
+      const com10 = Boolean(document.getElementById('rachaTaxa10')?.checked);
+      const mult = com10 ? 1.10 : 1.0;
+
+      const qtdTotal = Math.max(1, parseInt(document.getElementById('rachaQtdPessoas')?.value, 10) || 1);
+      let qtdBebeu = Math.max(1, parseInt(document.getElementById('rachaQtdBebeu')?.value, 10) || 1);
+      if (qtdBebeu > qtdTotal) {
+        qtdBebeu = qtdTotal;
+        if (document.getElementById('rachaQtdBebeu')) document.getElementById('rachaQtdBebeu').value = qtdTotal;
       }
-      const qtd = Math.max(1, parseInt(inpPessoas?.value, 10) || 1);
-      const totalFinal = com10 ? valorBase * 1.10 : valorBase;
-      const porPessoa = totalFinal / qtd;
 
-      document.getElementById('rachaTotalFinal').textContent = formatBRL(totalFinal);
-      document.getElementById('rachaValorPorPessoa').textContent = formatBRL(porPessoa);
-      return { valorBase, com10, totalFinal, qtd, porPessoa, listaNomes };
-    }
+      const comidaComTaxa = valComida * mult;
+      const bebidaComTaxa = valBebida * mult;
+      const totalMesa = comidaComTaxa + bebidaComTaxa;
 
-    function limparRachadinha() {
-      document.getElementById('rachaLocal').value = '';
-      document.getElementById('rachaValorTotal').value = '';
-      document.getElementById('rachaQtdPessoas').value = '2';
-      document.getElementById('rachaTaxa10').checked = false;
-      document.getElementById('rachaNomes').value = '';
-      calcularRachadinha();
+      const valorSemBebida = comidaComTaxa / qtdTotal;
+      const adicionalBebida = valBebida > 0 ? (bebidaComTaxa / qtdBebeu) : 0;
+      const valorComBebida = valorSemBebida + adicionalBebida;
+
+      if (document.getElementById('rachaTotalFinal')) document.getElementById('rachaTotalFinal').textContent = formatBRL(totalMesa);
+      if (document.getElementById('rachaValorPorPessoa')) document.getElementById('rachaValorPorPessoa').textContent = formatBRL(valorSemBebida);
+
+      const boxComBebida = document.getElementById('boxResultadoComBebida');
+      const btnLancarBebeu = document.getElementById('btnLancarParteBebeu');
+      if (valBebida > 0) {
+        boxComBebida?.classList.remove('hidden');
+        btnLancarBebeu?.classList.remove('hidden');
+        if (document.getElementById('rachaValorComBebida')) document.getElementById('rachaValorComBebida').textContent = formatBRL(valorComBebida);
+      } else {
+        boxComBebida?.classList.add('hidden');
+        btnLancarBebeu?.classList.add('hidden');
+      }
+
+      return { valComida, valBebida, com10, totalMesa, qtdTotal, qtdBebeu, valorSemBebida, valorComBebida };
     }
 
     function copiarRachadinhaWhats() {
       const d = calcularRachadinha();
-      if (d.totalFinal <= 0) { mostrarAviso('Atenção', 'Digite o valor da conta primeiro.'); return; }
+      if (d.totalMesa <= 0) { mostrarAviso('Atenção', 'Digite o valor da conta primeiro.'); return; }
       const local = document.getElementById('rachaLocal')?.value.trim() || 'Encontro da Galera';
       let msg = [`🍻 *Divisão da Conta — ${local}*`, ''];
-      msg.push(`🧾 Valor da Conta: ${formatBRL(d.valorBase)}`);
-      if (d.com10) msg.push(`➕ Taxa 10%: ${formatBRL(d.totalFinal - d.valorBase)}`);
-      msg.push(`💰 *Total Final:* ${formatBRL(d.totalFinal)}`);
-      msg.push(`👥 Dividido por: *${d.qtd} pessoas*`);
-      msg.push(`👉 *Valor p/ cada:* *${formatBRL(d.porPessoa)}*`);
-      if (d.listaNomes.length > 0) {
+      if (d.valBebida > 0) {
+        msg.push(`🥗 Comida/Geral: ${formatBRL(d.valComida)} (${d.qtdTotal} pessoas)`);
+        msg.push(`🍺 Bebidas/Extras: ${formatBRL(d.valBebida)} (${d.qtdBebeu} beberam)`);
+        if (d.com10) msg.push(`➕ Taxa 10% Garçom inclusa proporcionalmente`);
+        msg.push(`💰 *Total da Mesa:* *${formatBRL(d.totalMesa)}*`);
         msg.push('');
-        msg.push(`📋 *Participantes:*`);
-        d.listaNomes.forEach(n => msg.push(`• ${n}: ${formatBRL(d.porPessoa)}`));
+        const qtdNaoBebeu = d.qtdTotal - d.qtdBebeu;
+        if (qtdNaoBebeu > 0) msg.push(`👉 *Quem NÃO bebeu (${qtdNaoBebeu}x):* *${formatBRL(d.valorSemBebida)}* cada`);
+        msg.push(`🍺 *Quem BEBEU (${d.qtdBebeu}x):* *${formatBRL(d.valorComBebida)}* cada`);
+      } else {
+        msg.push(`🧾 Conta Base: ${formatBRL(d.valComida)}${d.com10 ? ' (+ 10% garçom)' : ''}`);
+        msg.push(`💰 *Total Final:* *${formatBRL(d.totalMesa)}*`);
+        msg.push(`👥 Dividido por ${d.qtdTotal} pessoas: *${formatBRL(d.valorSemBebida)}* cada`);
       }
       copiarTextoAreaTransferencia(msg.join('\n'), 'Rachadinha copiada p/ o WhatsApp!');
     }
 
-    function lancarMinhaParteRachadinha() {
+    function lancarMinhaParteRachadinha(tipo = 'normal') {
       const d = calcularRachadinha();
-      if (d.porPessoa <= 0) { mostrarAviso('Atenção', 'Calcule um valor antes de lançar.'); return; }
+      const valMeu = (tipo === 'bebeu' && d.valBebida > 0) ? d.valorComBebida : d.valorSemBebida;
+      if (valMeu <= 0) { mostrarAviso('Atenção', 'Digite um valor na conta primeiro.'); return; }
       const local = document.getElementById('rachaLocal')?.value.trim() || 'Divisão c/ Galera';
       limparFormularioNovoGasto();
       document.getElementById('inpDesc').value = formatarTituloInteligente(local);
-      definirValorMoeda('inpValor', d.porPessoa);
+      definirValorMoeda('inpValor', valMeu);
       document.getElementById('inpTags').value = '#dividido';
       checarAutopreenchimento();
       sincronizarChipsTags('novo');
       setAba('novo');
-      mostrarAviso('Pronto 🍻', 'Sua parte da conta foi enviada para o Novo Registro!');
+      mostrarAviso('Pronto 🍻', `Sua parte (${formatBRL(valMeu)}) foi preenchida no Novo Registro!`);
     }
 
-    // --- 2. SIMULADOR DE COMPRA E IMPACTO NOS LIMITES ---
+    // --- Modo 2 da Rachadinha: Detalhado por Pessoa / Itens ---
+    function renderizarPessoasRachaDet() {
+      const boxLista = document.getElementById('listaPessoasRachaDet');
+      const boxCheck = document.getElementById('boxCheckPessoasItemRacha');
+      if (!boxLista || !boxCheck) return;
+
+      boxLista.innerHTML = rachaDetPessoas.map((nome, idx) => `
+        <span class="bg-slate-800 border border-slate-700 text-slate-200 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
+          👤 ${nome}
+          ${rachaDetPessoas.length > 1 ? `<button type="button" onclick="removerPessoaRachaDet(${idx})" class="text-rose-400 hover:text-white ml-1">✕</button>` : ''}
+        </span>
+      `).join('');
+
+      boxCheck.innerHTML = rachaDetPessoas.map((nome, idx) => `
+        <label class="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer">
+          <input type="checkbox" value="${idx}" checked class="chk-pessoa-item-racha w-3.5 h-3.5 rounded text-emerald-500 bg-slate-900 border-slate-600">
+          <span>${nome}</span>
+        </label>
+      `).join('');
+    }
+
+    function adicionarPessoaRachaDet() {
+      const inp = document.getElementById('inpNovoNomeRacha');
+      const nome = formatarTituloInteligente((inp?.value || '').trim());
+      if (!nome) return;
+      if (!rachaDetPessoas.includes(nome)) rachaDetPessoas.push(nome);
+      inp.value = '';
+      renderizarPessoasRachaDet();
+      calcularRachadinhaDetalhada();
+    }
+
+    function removerPessoaRachaDet(idx) {
+      const nomeRem = rachaDetPessoas[idx];
+      rachaDetPessoas.splice(idx, 1);
+      rachaDetItens.forEach(it => { it.consumidores = it.consumidores.filter(n => n !== nomeRem); });
+      rachaDetItens = rachaDetItens.filter(it => it.consumidores.length > 0);
+      renderizarPessoasRachaDet();
+      calcularRachadinhaDetalhada();
+    }
+
+    function marcarTodosNoItemRacha() {
+      document.querySelectorAll('.chk-pessoa-item-racha').forEach(c => c.checked = true);
+    }
+
+    function adicionarItemRachaDet() {
+      const inpDesc = document.getElementById('inpItemDescRacha');
+      const desc = formatarTituloInteligente((inpDesc?.value || '').trim()) || `Item ${rachaDetItens.length + 1}`;
+      const valor = lerValorMoeda('inpItemValRacha');
+      if (valor <= 0) { mostrarAviso('Atenção', 'Digite o valor do item.'); return; }
+
+      const marcados = Array.from(document.querySelectorAll('.chk-pessoa-item-racha:checked')).map(c => rachaDetPessoas[parseInt(c.value, 10)]).filter(Boolean);
+      if (marcados.length === 0) { mostrarAviso('Atenção', 'Marque pelo menos 1 pessoa que consumiu este item.'); return; }
+
+      rachaDetItens.push({ id: Date.now(), desc, valor, consumidores: marcados });
+      if (inpDesc) inpDesc.value = '';
+      document.getElementById('inpItemValRacha').value = '';
+      calcularRachadinhaDetalhada();
+    }
+
+    function removerItemRachaDet(id) {
+      rachaDetItens = rachaDetItens.filter(i => i.id !== id);
+      calcularRachadinhaDetalhada();
+    }
+
+    function limparRachadinhaDetalhada() {
+      rachaDetItens = [];
+      calcularRachadinhaDetalhada();
+    }
+
+    function calcularRachadinhaDetalhada() {
+      const com10 = Boolean(document.getElementById('rachaTaxa10')?.checked);
+      const mult = com10 ? 1.10 : 1.0;
+
+      const boxItens = document.getElementById('listaItensRachaDet');
+      if (boxItens) {
+        boxItens.innerHTML = rachaDetItens.map(it => `
+          <div class="flex justify-between items-center bg-slate-950/70 border border-slate-800 px-3 py-2 rounded-xl text-xs">
+            <div>
+              <strong class="text-white">${it.desc}</strong> <span class="text-emerald-400 font-bold ml-1">${formatBRL(it.valor)}</span>
+              <div class="text-[10px] text-slate-400">Dividido por: ${it.consumidores.join(', ')} (${formatBRL(it.valor / it.consumidores.length)} cada)</div>
+            </div>
+            <button type="button" onclick="removerItemRachaDet(${it.id})" class="text-rose-400 hover:text-white px-2">🗑️</button>
+          </div>
+        `).join('');
+      }
+
+      const mapaPorPessoa = {};
+      rachaDetPessoas.forEach(p => mapaPorPessoa[p] = { base: 0, final: 0, itens: [] });
+      let totalGeralFinal = 0;
+
+      rachaDetItens.forEach(it => {
+        const cota = it.valor / it.consumidores.length;
+        it.consumidores.forEach(p => {
+          if (!mapaPorPessoa[p]) mapaPorPessoa[p] = { base: 0, final: 0, itens: [] };
+          mapaPorPessoa[p].base += cota;
+          mapaPorPessoa[p].itens.push(it.desc);
+        });
+      });
+
+      Object.keys(mapaPorPessoa).forEach(p => {
+        mapaPorPessoa[p].final = mapaPorPessoa[p].base * mult;
+        totalGeralFinal += mapaPorPessoa[p].final;
+      });
+
+      const boxResumo = document.getElementById('listaResumoIndividualRachaDet');
+      if (boxResumo) {
+        if (rachaDetItens.length === 0) {
+          boxResumo.innerHTML = '<p class="text-slate-500 text-center py-2">Adicione os itens consumidos acima para ver quanto cada pessoa vai pagar.</p>';
+        } else {
+          boxResumo.innerHTML = Object.keys(mapaPorPessoa).map(p => {
+            const dP = mapaPorPessoa[p];
+            const pSafe = p.replace(/'/g, "\\'");
+            return `<div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+              <div>
+                <strong class="text-white text-sm">👤 ${p}</strong>
+                <div class="text-[10px] text-slate-400">${dP.itens.join(', ') || 'Sem consumo'}${com10 && dP.base > 0 ? ' (+10%)' : ''}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <strong class="text-emerald-400 text-sm sm:text-base">${formatBRL(dP.final)}</strong>
+                ${dP.final > 0 ? `<button type="button" onclick="lancarParteIndividualDet('${pSafe}', ${dP.final})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-2 py-1 rounded-lg text-[10px] font-bold">➕ Lançar</button>` : ''}
+              </div>
+            </div>`;
+          }).join('') + `<div class="flex justify-between items-center pt-2 text-xs font-bold text-slate-300"><span>Total da Conta:</span><span class="text-white text-sm">${formatBRL(totalGeralFinal)}</span></div>`;
+        }
+      }
+      return { mapaPorPessoa, totalGeralFinal, com10 };
+    }
+
+    function lancarParteIndividualDet(nomePessoa, valorFloat) {
+      const local = document.getElementById('rachaLocal')?.value.trim() || `Conta (${nomePessoa})`;
+      limparFormularioNovoGasto();
+      document.getElementById('inpDesc').value = formatarTituloInteligente(local);
+      definirValorMoeda('inpValor', valorFloat);
+      document.getElementById('inpTags').value = '#dividido';
+      checarAutopreenchimento();
+      sincronizarChipsTags('novo');
+      setAba('novo');
+      mostrarAviso('Pronto 🧾', `Parte de ${nomePessoa} (${formatBRL(valorFloat)}) enviada p/ o Novo Registro!`);
+    }
+
+    function copiarRachadinhaDetalhadaWhats() {
+      const d = calcularRachadinhaDetalhada();
+      if (d.totalGeralFinal <= 0) { mostrarAviso('Atenção', 'Adicione pelo menos 1 item na conta primeiro.'); return; }
+      const local = document.getElementById('rachaLocal')?.value.trim() || 'Encontro da Galera';
+      let msg = [`🧾 *Divisão Detalhada — ${local}*`, ''];
+      Object.keys(d.mapaPorPessoa).forEach(p => {
+        const info = d.mapaPorPessoa[p];
+        if (info.final > 0) {
+          msg.push(`👤 *${p}:* *${formatBRL(info.final)}* _(${info.itens.join(', ')}${d.com10 ? ' +10%' : ''})_`);
+        }
+      });
+      msg.push('');
+      msg.push(`💰 *Total da Conta:* *${formatBRL(d.totalGeralFinal)}*`);
+      copiarTextoAreaTransferencia(msg.join('\n'), 'Detalhamento por pessoa copiado p/ o WhatsApp!');
+    }
+
+    // ============================================================================
+    // FERRAMENTA 3: SIMULADOR DE COMPRAS (AUTOMÁTICO + COMPARATIVO + WHATSAPP)
+    // ============================================================================
+
+    function setParcelasSimulador(n) {
+      const inp = document.getElementById('simParcelas');
+      if (inp) { inp.value = n; rodarSimuladorCompra(); }
+    }
+
+    function selecionarCartaoMaisUsadoSimulador() {
+      const sel = document.getElementById('simCartao');
+      if (sel && cartaoMaisFrequenteGlobal) {
+        sel.value = cartaoMaisFrequenteGlobal;
+        rodarSimuladorCompra();
+      }
+    }
+
     function rodarSimuladorCompra() {
       const box = document.getElementById('boxResultadoSimulador');
       const selCartao = document.getElementById('simCartao');
@@ -2394,74 +3212,128 @@
       const qtdParc = Math.max(1, parseInt(document.getElementById('simParcelas')?.value, 10) || 1);
       const nomeCartao = selCartao.value;
 
-      if (valTotal <= 0 || !nomeCartao) {
-        box.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Digite um valor e escolha o cartão para simular o impacto no limite e nas faturas futuras.</p>';
+      if (valTotal <= 0) {
+        box.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Digite o valor da compra acima para ver o cálculo instantâneo das parcelas e o comparativo entre seus cartões.</p>';
         return;
       }
 
-      const formaObj = formasGlobais.find(f => f.nome === nomeCartao);
-      if (!formaObj) return;
-
       const valParcela = valTotal / qtdParc;
-      const limTotal = formaObj.limiteRaw || 0;
-      const dispAtual = formaObj.disponivelRaw || 0;
-      const dispApos = dispAtual - valTotal;
-      const comprometidoAtual = limTotal - dispAtual;
-      const pctAntes = limTotal > 0 ? Math.round((comprometidoAtual / limTotal) * 100) : 0;
-      const pctDepois = limTotal > 0 ? Math.round(((comprometidoAtual + valTotal) / limTotal) * 100) : 0;
-
       const hoje = new Date();
       const strHoje = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
-      const calcFat = calcularMesFaturaCartao(formaObj, strHoje);
-      const [mIni, aIni] = (calcFat.mesFat || evolucaoMesAtual || '01/2026').split('/').map(Number);
+      const cartoesCredito = formasGlobais.filter(f => {
+        const nL = f.nome.toLowerCase();
+        return !nL.includes('pix') && !nL.includes('total') && !nL.includes('carteira');
+      });
 
-      let linhasMeses = '';
-      const qtdMostrar = Math.min(qtdParc, 6);
-      for (let i = 0; i < qtdMostrar; i++) {
-        const dtRef = new Date(aIni, (mIni - 1) + i, 1);
-        const mStr = `${String(dtRef.getMonth() + 1).padStart(2, '0')}/${dtRef.getFullYear()}`;
-        const fatAtualCartao = (evolucaoPivot[nomeCartao] && evolucaoPivot[nomeCartao][mStr]) ? evolucaoPivot[nomeCartao][mStr] : 0;
-        const fatNovaCartao = fatAtualCartao + valParcela;
-        linhasMeses += `<div class="flex justify-between items-center text-xs py-1.5 border-b border-slate-800/80">
-          <span class="font-bold text-slate-300">Fatura ${mStr} (${i + 1}/${qtdParc})</span>
-          <span><span class="text-slate-500">${formatBRL(fatAtualCartao)} ➔</span> <strong class="text-sky-300">${formatBRL(fatNovaCartao)}</strong></span>
-        </div>`;
-      }
+      // Tabela comparativa de todos os cartões
+      let linhasComp = cartoesCredito.map(c => {
+        const calc = calcularMesFaturaCartao(c, strHoje);
+        const dispAntes = c.disponivelRaw || 0;
+        const dispDepois = dispAntes - valTotal;
+        const isMaisUsado = (c.nome === cartaoMaisFrequenteGlobal);
+        const cSafe = c.nome.replace(/'/g, "\\'");
+        return `<tr onclick="document.getElementById('simCartao').value='${cSafe}'; rodarSimuladorCompra()" class="border-b border-slate-800/80 hover:bg-slate-800/50 cursor-pointer transition ${nomeCartao === c.nome ? 'bg-sky-950/40' : ''}">
+          <td class="py-2 pl-2 font-bold text-white">${c.nome} ${isMaisUsado ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded ml-1">⭐ Mais usado</span>' : ''}</td>
+          <td class="py-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${calc.fechou ? 'bg-sky-500/20 text-sky-300' : 'bg-emerald-500/20 text-emerald-300'}">${calc.mesFat} ${calc.fechou ? '🚀' : '🟢'}</span></td>
+          <td class="py-2 pr-2 text-right font-bold ${dispDepois < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispDepois)}</td>
+        </tr>`;
+      }).join('');
 
-      let statusVeredito = '';
-      if (limTotal > 0 && dispApos < 0) {
-        statusVeredito = `<div class="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-bold">⚠️ Atenção: Esta compra ultrapassa o limite disponível atual do cartão em ${formatBRL(Math.abs(dispApos))}!</div>`;
-      } else if (pctDepois >= 80) {
-        statusVeredito = `<div class="p-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold">⚡ Cuidado: O cartão ficará com ${pctDepois}% do limite total comprometido.</div>`;
-      } else {
-        statusVeredito = `<div class="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold">✅ Compra dentro do limite! Sobrarão ${formatBRL(dispApos)} disponíveis no cartão.</div>`;
+      let blocoDetalheCartao = '';
+      if (nomeCartao) {
+        const formaObj = formasGlobais.find(f => f.nome === nomeCartao);
+        if (formaObj) {
+          const limTotal = formaObj.limiteRaw || 0;
+          const dispAtual = formaObj.disponivelRaw || 0;
+          const dispApos = dispAtual - valTotal;
+          const comprometidoAtual = limTotal - dispAtual;
+          const pctAntes = limTotal > 0 ? Math.round((comprometidoAtual / limTotal) * 100) : 0;
+          const pctDepois = limTotal > 0 ? Math.round(((comprometidoAtual + valTotal) / limTotal) * 100) : 0;
+          const calcFat = calcularMesFaturaCartao(formaObj, strHoje);
+          const [mIni, aIni] = (calcFat.mesFat || evolucaoMesAtual || '01/2026').split('/').map(Number);
+
+          let linhasMeses = '';
+          const qtdMostrar = Math.min(qtdParc, 6);
+          for (let i = 0; i < qtdMostrar; i++) {
+            const dtRef = new Date(aIni, (mIni - 1) + i, 1);
+            const mStr = `${String(dtRef.getMonth() + 1).padStart(2, '0')}/${dtRef.getFullYear()}`;
+            const fatAtualCartao = (evolucaoPivot[nomeCartao] && evolucaoPivot[nomeCartao][mStr]) ? evolucaoPivot[nomeCartao][mStr] : 0;
+            linhasMeses += `<div class="flex justify-between items-center text-xs py-1.5 border-b border-slate-800/80">
+              <span class="font-bold text-slate-300">Fatura ${mStr} (${i + 1}/${qtdParc})</span>
+              <span><span class="text-slate-500">${formatBRL(fatAtualCartao)} ➔</span> <strong class="text-sky-300">${formatBRL(fatAtualCartao + valParcela)}</strong></span>
+            </div>`;
+          }
+
+          blocoDetalheCartao = `
+            <div class="pt-3 border-t border-slate-800 space-y-3">
+              <div class="grid grid-cols-2 gap-3 text-xs bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Limite Disponível (${nomeCartao})</span><span class="text-slate-400">${formatBRL(dispAtual)} ➔</span> <strong class="${dispApos < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispApos)}</strong></div>
+                <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Uso do Limite</span><span class="text-slate-400">${pctAntes}% ➔</span> <strong class="text-amber-400">${pctDepois}%</strong></div>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Projeção nas Faturas de ${nomeCartao}:</span>
+                ${linhasMeses}
+              </div>
+            </div>`;
+        }
       }
 
       box.innerHTML = `
-        ${statusVeredito}
-        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+        <div class="flex flex-col sm:flex-row justify-between items-center bg-slate-950 p-3.5 rounded-xl border border-sky-500/30 gap-2">
           <div>
-            <span class="text-slate-400 block text-[10px] uppercase font-bold">Valor de cada Parcela</span>
-            <strong class="text-white text-base">${qtdParc}x de ${formatBRL(valParcela)}</strong>
+            <span class="text-[10px] font-bold text-slate-400 uppercase block">Plano Simulado</span>
+            <strong class="text-white text-lg sm:text-xl">${qtdParc}x de ${formatBRL(valParcela)}</strong>
           </div>
-          <div>
-            <span class="text-slate-400 block text-[10px] uppercase font-bold">1ª Fatura Prevista</span>
-            <strong class="text-sky-400 text-base">${calcFat.mesFat} ${calcFat.fechou ? '(Fechada)' : '(Aberta)'}</strong>
-          </div>
-          <div class="pt-2 border-t border-slate-800">
-            <span class="text-slate-400 block text-[10px] uppercase font-bold">Limite Disponível</span>
-            <span class="text-slate-400">${formatBRL(dispAtual)} ➔</span> <strong class="${dispApos < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispApos)}</strong>
-          </div>
-          <div class="pt-2 border-t border-slate-800">
-            <span class="text-slate-400 block text-[10px] uppercase font-bold">Uso do Limite</span>
-            <span class="text-slate-400">${pctAntes}% ➔</span> <strong class="text-amber-400">${pctDepois}%</strong>
+          <div class="text-right">
+            <span class="text-[10px] font-bold text-slate-400 uppercase block">Valor Total</span>
+            <strong class="text-sky-400 text-base sm:text-lg">${formatBRL(valTotal)}</strong>
           </div>
         </div>
         <div>
-          <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Projeção nas Faturas de ${nomeCartao}:</span>
-          ${linhasMeses}
+          <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1.5">📊 Comparativo nos Seus Cartões (Toque num cartão p/ ver as faturas):</span>
+          <table class="w-full text-left text-xs">
+            <thead class="text-[10px] text-slate-400 uppercase border-b border-slate-800"><tr><th class="pb-1.5 pl-2">Cartão</th><th class="pb-1.5 text-center">1ª Fatura</th><th class="pb-1.5 pr-2 text-right">Limite Após Compra</th></tr></thead>
+            <tbody>${linhasComp}</tbody>
+          </table>
         </div>
+        ${blocoDetalheCartao}
       `;
+    }
+
+    function copiarSimulacaoWhats() {
+      const valTotal = lerValorMoeda('simValor');
+      if (valTotal <= 0) { mostrarAviso('Atenção', 'Digite um valor para simular primeiro.'); return; }
+      const qtdParc = Math.max(1, parseInt(document.getElementById('simParcelas')?.value, 10) || 1);
+      const valParcela = valTotal / qtdParc;
+      const nomeCartao = document.getElementById('simCartao')?.value || cartaoMaisFrequenteGlobal || '';
+      const hoje = new Date();
+      const strHoje = `${String(hoje.getDate()).padStart(2, '0')}/${String(hoje.getMonth() + 1).padStart(2, '0')}/${hoje.getFullYear()}`;
+      const formaObj = formasGlobais.find(f => f.nome === nomeCartao);
+      const calc = formaObj ? calcularMesFaturaCartao(formaObj, strHoje) : { mesFat: evolucaoMesAtual };
+
+      let msg = [`🛍️ *Simulação de Compra Parcelada*`, ''];
+      msg.push(`💰 *Valor Total:* ${formatBRL(valTotal)}`);
+      msg.push(`💳 *Parcelamento:* *${qtdParc}x de ${formatBRL(valParcela)}*`);
+      if (nomeCartao) msg.push(`🏦 *Cartão:* ${nomeCartao}`);
+      if (calc.mesFat) msg.push(`📅 *1ª Fatura:* *${calc.mesFat}*`);
+      copiarTextoAreaTransferencia(msg.join('\n'), 'Simulação copiada p/ o WhatsApp!');
+    }
+
+    function transformarSimulacaoEmEmprestimo() {
+      const valTotal = lerValorMoeda('simValor');
+      if (valTotal <= 0) { mostrarAviso('Atenção', 'Simule um valor primeiro.'); return; }
+      const qtdParc = Math.max(1, parseInt(document.getElementById('simParcelas')?.value, 10) || 1);
+      const nomeCartao = document.getElementById('simCartao')?.value || cartaoMaisFrequenteGlobal || '';
+
+      selecionarSubFerramenta('emprestimos');
+      definirDataHojeEmprestimo();
+      definirValorMoeda('inpEmpValor', valTotal);
+      document.getElementById('inpEmpParc').value = qtdParc;
+      if (nomeCartao) document.getElementById('selEmpForma').value = nomeCartao;
+      atualizarFaturaEmprestimo();
+      atualizarPreviewParcEmp();
+      document.getElementById('inpEmpPessoa')?.focus();
+      mostrarAviso('Empréstimo 🤝', 'Simulação transferida! Informe o nome da pessoa e a descrição.');
     }
 
     function transformarSimulacaoEmLancamento() {
@@ -2479,12 +3351,12 @@
       document.getElementById('inpDesc')?.focus();
     }
 
-    // --- 3. CALCULADORA FINANCEIRA ---
+    // ============================================================================
+    // FERRAMENTAS 4 E 5: CALCULADORA FINANCEIRA E BLOCO DE NOTAS
+    // ============================================================================
+
     let calcExprStr = '';
-    function calcDigito(d) {
-      calcExprStr += d;
-      atualizarVisorCalc();
-    }
+    function calcDigito(d) { calcExprStr += d; atualizarVisorCalc(); }
 
     function calcAcao(op) {
       if (op === 'C') {
@@ -2493,11 +3365,7 @@
         document.getElementById('calcVisor').textContent = '0';
         return;
       }
-      if (op === 'BACK') {
-        calcExprStr = calcExprStr.slice(0, -1);
-        atualizarVisorCalc();
-        return;
-      }
+      if (op === 'BACK') { calcExprStr = calcExprStr.slice(0, -1); atualizarVisorCalc(); return; }
       if (op === '=') {
         const res = avaliarExpressaoCalc(calcExprStr);
         if (res !== null) {
@@ -2540,7 +3408,6 @@
       mostrarAviso('Calculadora 🧮', `Valor ${formatBRL(val)} aplicado no Novo Registro!`);
     }
 
-    // --- 4. BLOCO DE NOTAS SINCRONIZADO ---
     function renderizarNotasUI() {
       const box = document.getElementById('listaNotasUI');
       if (!box) return;
@@ -2566,8 +3433,7 @@
       const inp = document.getElementById('inpNovaNotaTexto');
       const txt = (inp?.value || '').trim();
       if (!txt) return;
-      const hoje = new Date().toLocaleDateString('pt-BR');
-      notasGlobais.unshift({ id: String(Date.now()), texto: txt, concluida: false, data: hoje });
+      notasGlobais.unshift({ id: String(Date.now()), texto: txt, concluida: false, data: new Date().toLocaleDateString('pt-BR') });
       inp.value = '';
       renderizarNotasUI();
       sincronizarNotasNuvem();
@@ -2575,11 +3441,7 @@
 
     function toggleNotaConcluida(id) {
       const item = notasGlobais.find(n => String(n.id) === String(id));
-      if (item) {
-        item.concluida = !item.concluida;
-        renderizarNotasUI();
-        sincronizarNotasNuvem();
-      }
+      if (item) { item.concluida = !item.concluida; renderizarNotasUI(); sincronizarNotasNuvem(); }
     }
 
     function excluirNotaRapida(id) {
@@ -2589,14 +3451,12 @@
     }
 
     function sincronizarNotasNuvem() {
-      localStorage.setItem('notasLocaisGestorV10', JSON.stringify(notasGlobais));
-      if (navigator.onLine) {
-        apiCall('salvarNotasWeb', notasGlobais).catch(e => console.warn('Sync notas:', e));
-      }
+      localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+      if (navigator.onLine) apiCall('salvarNotasWeb', notasGlobais).catch(e => console.warn(e));
     }
 
     // ============================================================================
-    // CARTÕES, CATEGORIAS, ASSINATURAS E TABELA HORIZONTE CLICÁVEL
+    // CARTÕES (COM ETIQUETA DE TERCEIROS), CATEGORIAS, ASSINATURAS E HORIZONTE
     // ============================================================================
 
     function isCategoriaOutros(nome) {
@@ -2609,13 +3469,9 @@
       const btn = document.getElementById('btnToggleEdicaoLanc');
       const boxLanc = document.getElementById('lista-lancamentos');
       if (modoEdicaoLancamentos) {
-        btn.classList.replace('bg-slate-700', 'bg-amber-500');
-        btn.innerHTML = '❌ Fechar';
-        boxLanc?.classList.add('modo-edicao-lanc');
+        btn.classList.replace('bg-slate-700', 'bg-amber-500'); btn.innerHTML = '❌ Fechar'; boxLanc?.classList.add('modo-edicao-lanc');
       } else {
-        btn.classList.replace('bg-amber-500', 'bg-slate-700');
-        btn.innerHTML = '⚙️ Organizar';
-        boxLanc?.classList.remove('modo-edicao-lanc');
+        btn.classList.replace('bg-amber-500', 'bg-slate-700'); btn.innerHTML = '⚙️ Organizar'; boxLanc?.classList.remove('modo-edicao-lanc');
       }
     }
 
@@ -2651,9 +3507,7 @@
         localStorage.removeItem('filaOfflineGestor'); btn.disabled = false;
         mostrarAviso('Sucesso', `Sincronização concluída! ${res.qtd} item(ns) enviado(s).`);
         atualizarIndicadorOffline(); carregarDados();
-      }).catch(err => {
-        mostrarAviso('Erro', 'Erro ao sincronizar: ' + err.message); btn.disabled = false; atualizarIndicadorOffline();
-      });
+      }).catch(err => { mostrarAviso('Erro', err.message); btn.disabled = false; atualizarIndicadorOffline(); });
     }
 
     function toggleEdicaoFormas() {
@@ -2701,10 +3555,13 @@
             botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
           }
 
-          const labelFatura = isPix ? 'Gasto no Mês' : 'Fatura Atual';
+          const labelFatura = isPix ? 'Gasto no Mês' : 'Sua Fatura Atual';
           const htmlTotalFuturo = !isPix ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div>` : '';
+          const htmlTerceiros = (!isPix && p.terceirosMesRaw > 0)
+            ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${p.terceirosMes} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${p.totalBancoMes}</strong></span></div>`
+            : '';
 
-          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPix ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}</div>${botoesRow}</div>`;
+          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPix ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
         });
       }
       const listaFormas = document.getElementById('lista-formas');
@@ -2945,7 +3802,7 @@
     }
 
     // ============================================================================
-    // RELATÓRIO MENSAL (COM FILTROS INTERNOS DE 1 TOQUE E QUITAR FATURA) E ANUAL
+    // RELATÓRIO MENSAL (CONCILIAÇÃO DE TERCEIROS + QUITAR FATURA) E ANUAL
     // ============================================================================
 
     function getNomeMes(numero) {
@@ -3007,10 +3864,7 @@
       });
       const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
       const alvo = listaGlobalMeses[idxAtual + step];
-      if (alvo) {
-        selAno.value = alvo.ano;
-        atualizarMesesDisponiveis(alvo.mes, true);
-      }
+      if (alvo) { selAno.value = alvo.ano; atualizarMesesDisponiveis(alvo.mes, true); }
     }
 
     function atualizarEstadoSetasAnual() {
@@ -3027,11 +3881,7 @@
       const sel = document.getElementById('selFiltroAnoSimples');
       const anos = Array.from(sel.options).map(o => o.value).sort((a, b) => a - b);
       const novoAno = anos[anos.indexOf(sel.value) + step];
-      if (novoAno) {
-        sel.value = novoAno;
-        carregarRelatorioAnual();
-        atualizarEstadoSetasAnual();
-      }
+      if (novoAno) { sel.value = novoAno; carregarRelatorioAnual(); atualizarEstadoSetasAnual(); }
     }
 
     function dispararBuscaRelatorioMensal() {
@@ -3047,7 +3897,7 @@
     function quitarFaturaCartaoMes(forma, mesFatura) {
       mostrarConfirmacao(
         "Quitar Fatura Agora",
-        `Deseja marcar todos os lançamentos em aberto de "${forma}" na fatura ${mesFatura} como PAGOS e liberar o limite do cartão?`,
+        `Deseja marcar todos os seus lançamentos em aberto de "${forma}" na fatura ${mesFatura} como PAGOS?`,
         () => {
           apiCall('quitarFaturaWeb', { forma: forma, mesFatura: mesFatura })
             .then(res => {
@@ -3174,7 +4024,10 @@
           const btnQuitar = (f.aberto > 0 && !f.nome.toLowerCase().includes('pix'))
             ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${fSafe}', '${mesFiltro}')" class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">✅ Quitar</button>`
             : '';
-          htmlFormas += `<div onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="flex justify-between items-center bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><span class="text-slate-300 font-semibold">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>`;
+          const infoTerc = (f.terceiros > 0)
+            ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>Total Banco: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
+            : '';
+          htmlFormas += `<div onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
         });
         document.getElementById('rel-formas-usadas').innerHTML = htmlFormas || '<p class="text-xs text-slate-500 text-center">Nenhuma forma utilizada.</p>';
 
@@ -3299,22 +4152,47 @@
     }
 
     // ============================================================================
-    // RENDERIZAÇÃO GERAL + ABERTURA INSTANTÂNEA EM 0,01s (CACHE LOCAL)
+    // RENDERIZAÇÃO GERAL + ABERTURA INSTANTÂNEA EM 0,01s (CACHE V11)
     // ============================================================================
 
     function renderizarDados(dados) {
       if (!dados) return;
       try {
         formasGlobais = dados.formasPagamento || [];
+        cartaoMaisFrequenteGlobal = dados.cartaoMaisFrequente || '';
         categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : [];
         consumoCategoriasPorMesGlobal = dados.consumoCategoriasPorMes || {};
         opcoesTagsGlobal = dados.opcoesTags || [];
         if (dados.anotacoes) {
           notasGlobais = dados.anotacoes;
-          localStorage.setItem('notasLocaisGestorV10', JSON.stringify(notasGlobais));
+          localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+        }
+        if (dados.emprestimos) {
+          emprestimosGlobal = dados.emprestimos;
+          renderizarPainelEmprestimos();
+          const bannerEmp = document.getElementById('bannerEmprestimosDash');
+          const txtBannerEmp = document.getElementById('txtBannerEmprestimosDash');
+          if (bannerEmp && txtBannerEmp) {
+            if ((dados.emprestimos.kpis?.aReceberMesRaw || 0) > 0) {
+              bannerEmp.classList.remove('hidden');
+              txtBannerEmp.innerHTML = `Você tem <strong class="text-white">${dados.emprestimos.kpis.aReceberMes}</strong> a receber de terceiros neste mês (fora dos seus gastos).`;
+            } else {
+              bannerEmp.classList.add('hidden');
+            }
+          }
         }
         renderizarListaCategorias();
         renderizarChipsTags();
+
+        const btnMaisUsado = document.getElementById('btnAtalhoCartaoMaisUsado');
+        if (btnMaisUsado) {
+          if (cartaoMaisFrequenteGlobal) {
+            btnMaisUsado.textContent = `⭐ Simular no mais usado: ${cartaoMaisFrequenteGlobal}`;
+            btnMaisUsado.classList.remove('hidden');
+          } else {
+            btnMaisUsado.classList.add('hidden');
+          }
+        }
       } catch (e) {}
 
       try {
@@ -3342,14 +4220,28 @@
       } catch (e) {}
 
       try {
-        const selectsForma = [document.getElementById('selForma'), document.getElementById('selEdForma'), document.getElementById('selAssForma'), document.getElementById('filtForma'), document.getElementById('simCartao')];
+        const selectsForma = [
+          document.getElementById('selForma'),
+          document.getElementById('selEdForma'),
+          document.getElementById('selAssForma'),
+          document.getElementById('filtForma'),
+          document.getElementById('simCartao'),
+          document.getElementById('selEmpForma')
+        ];
         selectsForma.forEach(sel => {
           if (!sel) return;
           const v = sel.value;
           if (sel.id === 'filtForma') sel.innerHTML = '<option value="">Todos</option>';
           else if (sel.id === 'selForma') sel.innerHTML = '<option value="">Selecione...</option>';
+          else if (sel.id === 'simCartao') sel.innerHTML = '<option value="">📊 Comparar Todos os Cartões</option>';
+          else if (sel.id === 'selEmpForma') sel.innerHTML = '<option value="">Selecione o cartão...</option>';
           else sel.innerHTML = '';
-          (dados.opcoesFormas || []).forEach(f => sel.innerHTML += `<option value="${f}">${f}</option>`);
+
+          (dados.opcoesFormas || []).forEach(f => {
+            if ((sel.id === 'simCartao' || sel.id === 'selEmpForma') && f.toLowerCase().includes('pix')) return;
+            const star = (sel.id === 'simCartao' && f === cartaoMaisFrequenteGlobal) ? ' ⭐ (Mais usado)' : '';
+            sel.innerHTML += `<option value="${f}">${f}${star}</option>`;
+          });
           sel.value = v || '';
         });
       } catch (e) {}
@@ -3357,9 +4249,11 @@
       try {
         if (!dadosCarregadosIniciais) {
           definirDataHoje();
+          definirDataHojeEmprestimo();
           document.getElementById('selForma').value = '';
           document.getElementById('selCat').value = '';
           document.getElementById('inpMesFat').value = '';
+          document.getElementById('simCartao').value = '';
           atualizarLayoutParcelas();
           dadosCarregadosIniciais = true;
         } else {
@@ -3443,18 +4337,18 @@
     }
 
     function carregarDados() {
-      const cacheLocal = localStorage.getItem('cacheDadosGestorV10');
+      const cacheLocal = localStorage.getItem('cacheDadosGestorV11');
       if (cacheLocal && !dadosCarregadosIniciais) {
         try { renderizarDados(JSON.parse(cacheLocal)); } catch (e) {}
       }
-      const notasSalvas = localStorage.getItem('notasLocaisGestorV10');
+      const notasSalvas = localStorage.getItem('notasLocaisGestorV11');
       if (notasSalvas && notasGlobais.length === 0) {
         try { notasGlobais = JSON.parse(notasSalvas); } catch (e) {}
       }
 
       apiCall('getDadosCompletos')
         .then(dados => {
-          localStorage.setItem('cacheDadosGestorV10', JSON.stringify(dados));
+          localStorage.setItem('cacheDadosGestorV11', JSON.stringify(dados));
           renderizarDados(dados);
         })
         .catch(err => {
