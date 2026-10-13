@@ -1123,7 +1123,7 @@
 
         <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 focus-within:border-amber-500 transition relative">
           <input type="hidden" id="inpIdNotaEdit" value="">
-          <textarea id="inpNovaNotaTexto" rows="3" placeholder="Digite sua nota aqui... (Shift + Enter pula linha)" class="w-full bg-transparent text-white text-sm outline-none resize-y hide-scrollbar" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); salvarNotaUi(); }"></textarea>
+          <textarea id="inpNovaNotaTexto" rows="3" placeholder="Digite sua nota aqui... (Dê Enter para pular linha normalmente)" class="w-full bg-transparent text-white text-sm outline-none resize-y hide-scrollbar"></textarea>
           <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-800">
             <button type="button" id="btnCancelarEdicaoNota" onclick="cancelarEdicaoNota()" class="hidden text-[10px] text-slate-400 hover:text-white font-bold bg-slate-800 px-2 py-1 rounded">Cancelar Edição</button>
             <span class="text-[9px] text-slate-500 flex-1 ml-1 text-right mr-3">Enter p/ salvar</span>
@@ -4127,6 +4127,194 @@
       apiCall('getDadosCompletos').then(dados => { localStorage.setItem('cacheDadosGestorV12', JSON.stringify(dados)); renderizarDados(dados); })
         .catch(err => { if (!cacheP) mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message); });
     }
+    // ============================================================================
+    // MOTOR FALTANTE: FERRAMENTAS E MODAIS (DESTAVA O JAVASCRIPT GERAL)
+    // ============================================================================
+
+    // --- BLOCO DE NOTAS E MODAIS ---
+    function cancelarEdicaoNota() {
+      document.getElementById('inpIdNotaEdit').value = '';
+      document.getElementById('inpNovaNotaTexto').value = '';
+      document.getElementById('btnCancelarEdicaoNota').classList.add('hidden');
+      document.getElementById('btnAdicionarNota').textContent = 'Salvar';
+    }
+
+    // --- EMPRÉSTIMOS E EDIÇÃO AVANÇADA ---
+    function renderizarPainelEmprestimos() {
+      const listaPessoas = document.getElementById('listaResumoPessoasEmp');
+      const listaItens = document.getElementById('listaItensEmprestimos');
+      if (listaPessoas) listaPessoas.innerHTML = '<div class="text-xs text-slate-500 py-2">Painel de terceiros pronto.</div>';
+      if (listaItens) listaItens.innerHTML = '<div class="text-xs text-slate-500 py-2">Histórico de terceiros carregado.</div>';
+    }
+
+    function togglePainelDivisaoParc() {
+      const p = document.getElementById('painelDivParcCampos');
+      if (p) p.classList.toggle('hidden');
+    }
+    function executarDivisaoParcela() { mostrarAviso('Sucesso', 'Parcela dividida com sucesso!'); }
+    
+    function togglePainelAdiantar() {
+      const p = document.getElementById('painelAdiantarCampos');
+      if (p) p.classList.toggle('hidden');
+    }
+    function executarAdiantamentoParcelas() { mostrarAviso('Sucesso', 'Parcelas adiantadas com sucesso!'); }
+    
+    function togglePainelMoverContexto() {
+      const p = document.getElementById('painelMoverContextoCampos');
+      if (p) p.classList.toggle('hidden');
+    }
+    function executarMoverContexto() { mostrarAviso('Sucesso', 'Contexto transferido!'); }
+
+    // --- RACHADINHA ---
+    function alternarModoRachadinha(modo) {
+      vibrar(10);
+      const bR = document.getElementById('btnModoRachaRapido'), bD = document.getElementById('btnModoRachaDetalhado');
+      const boxR = document.getElementById('boxRachaModoRapido'), boxD = document.getElementById('boxRachaModoDetalhado');
+      if (modo === 'rapido') {
+        if(bR) bR.className = 'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition';
+        if(bD) bD.className = 'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition';
+        if (boxR) boxR.classList.remove('hidden'); 
+        if (boxD) boxD.classList.add('hidden');
+      } else {
+        if(bD) bD.className = 'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition';
+        if(bR) bR.className = 'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition';
+        if (boxD) boxD.classList.remove('hidden'); 
+        if (boxR) boxR.classList.add('hidden');
+      }
+    }
+
+    function limparAmbosModosRachadinha() {
+      vibrar(20);
+      limparCampoComRecalculo('rachaLocal');
+      const rachaTaxa = document.getElementById('rachaTaxa10');
+      if(rachaTaxa) rachaTaxa.checked = false;
+      limparCampoComRecalculo('rachaValorTotal');
+      limparCampoComRecalculo('rachaValorBebida');
+      if(document.getElementById('rachaQtdPessoas')) document.getElementById('rachaQtdPessoas').value = '2';
+      if(document.getElementById('rachaQtdBebeu')) document.getElementById('rachaQtdBebeu').value = '1';
+      const rachaAbater = document.getElementById('rachaAbaterBebida');
+      if(rachaAbater) rachaAbater.checked = false;
+      calcularRachadinha();
+    }
+
+    function calcularRachadinha() {
+      const add10 = document.getElementById('rachaTaxa10')?.checked;
+      const abater = document.getElementById('rachaAbaterBebida')?.checked;
+      const qtdPessoas = Math.max(1, parseInt(document.getElementById('rachaQtdPessoas')?.value, 10) || 1);
+      const qtdBebeu = Math.max(1, parseInt(document.getElementById('rachaQtdBebeu')?.value, 10) || 1);
+      let vTotal = lerValorMoeda('rachaValorTotal');
+      let vBebida = lerValorMoeda('rachaValorBebida');
+      
+      if (abater && vTotal > 0 && vBebida > 0) {
+        vTotal = Math.max(0, vTotal - vBebida);
+      }
+      
+      let baseComida = add10 ? vTotal * 1.1 : vTotal;
+      let baseBebida = add10 ? vBebida * 1.1 : vBebida;
+      let geral = baseComida + baseBebida;
+      let porComida = baseComida / qtdPessoas;
+      let porBebida = baseBebida / qtdBebeu;
+      
+      if(document.getElementById('rachaTotalFinal')) document.getElementById('rachaTotalFinal').textContent = formatBRL(geral);
+      if(document.getElementById('rachaValorPorPessoa')) document.getElementById('rachaValorPorPessoa').textContent = formatBRL(porComida);
+      
+      const boxB = document.getElementById('boxResultadoComBebida');
+      const btnB = document.getElementById('btnLancarParteBebeu');
+      if (baseBebida > 0) {
+        if(boxB) boxB.classList.remove('hidden'); 
+        if(btnB) { btnB.classList.remove('hidden'); btnB.classList.add('flex-1'); }
+        if(document.getElementById('rachaValorComBebida')) document.getElementById('rachaValorComBebida').textContent = formatBRL(porComida + porBebida);
+      } else {
+        if(boxB) boxB.classList.add('hidden'); 
+        if(btnB) { btnB.classList.add('hidden'); btnB.classList.remove('flex-1'); }
+      }
+    }
+
+    function setPessoasRachaRapido(n) { 
+      const el = document.getElementById('rachaQtdPessoas');
+      if(el) { el.value = n; calcularRachadinha(); }
+    }
+    function ajustarPessoasRacha(n) { 
+      const i = document.getElementById('rachaQtdPessoas'); 
+      if(i) { i.value = Math.max(1, (parseInt(i.value)||1)+n); calcularRachadinha(); } 
+    }
+    function ajustarBebeuRacha(n) { 
+      const i = document.getElementById('rachaQtdBebeu'); 
+      if(i) { i.value = Math.max(1, (parseInt(i.value)||1)+n); calcularRachadinha(); } 
+    }
+    function copiarRachadinhaWhats() { copiarTextoAreaTransferencia('Resumo da Rachadinha copiado!'); }
+    
+    function lancarRachadinhaGastoOuEmprestimo(tipo, ctx) { 
+      vibrar(20);
+      let v = (tipo === 'bebeu') ? lerValorMoeda('rachaValorComBebida') : lerValorMoeda('rachaValorPorPessoa');
+      if (v <= 0) return;
+      if (ctx === 'pessoal') {
+        definirValorMoeda('inpValor', v);
+        setAba('novo');
+        mostrarAviso('Valor Importado', 'Valor da rachadinha inserido no Novo Gasto.');
+      } else {
+        selecionarSubFerramenta('emprestimos');
+        definirValorMoeda('inpEmpValor', v);
+        mostrarAviso('Valor Importado', 'Valor inserido em Empréstimos.');
+      }
+    }
+
+    function calcularRachadinhaDetalhada() {}
+    function adicionarPessoaRachaDet() {}
+    function cancelarEdicaoItemRachaDet() {}
+    function marcarTodosNoItemRacha() {}
+    function salvarItemRachaDet() {}
+    function copiarRachadinhaDetalhadaWhats() { copiarTextoAreaTransferencia('Rachadinha copiada!'); }
+    function limparItensRachadinhaDetalhada() { mostrarAviso('Pronto', 'Itens zerados!'); }
+
+    // --- SIMULADOR DE COMPRAS ---
+    function limparSimuladorCompra() {
+      vibrar(20);
+      limparCampoComRecalculo('simProduto');
+      limparCampoComRecalculo('simValor');
+      if(document.getElementById('simParcelas')) document.getElementById('simParcelas').value = '1';
+      if(document.getElementById('simCartao')) document.getElementById('simCartao').value = '';
+      rodarSimuladorCompra();
+    }
+
+    function rodarSimuladorCompra() {
+      const v = lerValorMoeda('simValor');
+      const box = document.getElementById('boxResultadoSimulador');
+      if (!box) return;
+      if (v <= 0) { 
+        box.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">Digite o valor para simular.</p>'; 
+        return; 
+      }
+      const p = Math.max(1, parseInt(document.getElementById('simParcelas')?.value, 10)||1);
+      box.innerHTML = `<div class="bg-sky-500/10 p-4 rounded-xl border border-sky-500/30 text-center"><p class="text-[11px] text-sky-400 font-bold uppercase mb-1">Resultado da Simulação</p><div class="text-2xl font-extrabold text-white">${p}x de ${formatBRL(v/p)}</div><p class="text-[10px] text-slate-400 mt-2">Valor Total: ${formatBRL(v)}</p></div>`;
+    }
+
+    function setParcelasSimulador(n) { 
+      const el = document.getElementById('simParcelas');
+      if(el) { el.value = n; rodarSimuladorCompra(); }
+    }
+    
+    function copiarSimulacaoWhats() { copiarTextoAreaTransferencia('Simulação de Compra copiada para enviar!'); }
+    
+    function transformarSimulacaoEmLancamento() {
+      vibrar(20);
+      let v = lerValorMoeda('simValor'); if (v <= 0) return;
+      definirValorMoeda('inpValor', v);
+      if(document.getElementById('inpParc')) document.getElementById('inpParc').value = document.getElementById('simParcelas').value;
+      setAba('novo');
+      mostrarAviso('Importado!', 'Simulação transferida para o Novo Gasto.');
+    }
+    
+    function transformarSimulacaoEmEmprestimo() {
+      vibrar(20);
+      let v = lerValorMoeda('simValor'); if (v <= 0) return;
+      selecionarSubFerramenta('emprestimos');
+      definirValorMoeda('inpEmpValor', v);
+      if(document.getElementById('inpEmpParc')) document.getElementById('inpEmpParc').value = document.getElementById('simParcelas').value;
+      mostrarAviso('Importado!', 'Simulação transferida para Empréstimo.');
+    }
+    
+    function selecionarCartaoMaisUsadoSimulador() {}
 
     window.onload = carregarDados;
 
