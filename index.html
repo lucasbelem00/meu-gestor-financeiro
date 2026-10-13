@@ -227,7 +227,7 @@
           <p id="subtituloMobileAba" class="text-[10px] text-blue-400 font-semibold">Novo Registro</p>
         </div>
         <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">
-          📶 Sincronizar
+          📶 Sincronizar (1)
         </button>
       </div>
     </div>
@@ -298,7 +298,7 @@
               <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words"
                 oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc')"
                 onkeypress="pularComEnter(event, 'inpValor')"
-                onblur="this.value = formatarTituloInteligente(this.value)"
+                onblur="aoSairDescricao()"
                 placeholder="Ex: Gasolina, Açaí (Cole o Pix aqui...)" required
                 class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
               <button type="button" id="btnLimparDesc" onclick="limparCampoComRecalculo('inpDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
@@ -330,7 +330,7 @@
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
                 <div class="flex items-center gap-1">
                   <button type="button" id="btnSugestaoUltimoValor" onclick="aplicarUltimoValorSugerido()" class="hidden text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 transition"></button>
-                  <button type="button" id="btnDividirMetade" onclick="alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95 shadow-sm">÷2 Metade</button>
+                  <button type="button" id="btnDividirMetade" onclick="alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2 Metade</button>
                 </div>
               </div>
               <div class="relative">
@@ -434,7 +434,7 @@
       </div>
     </div>
 
-    <!-- ABA 3: MENSAL COM TOTAIS FIXOS E AUDITORIA VISUAL -->
+    <!-- ABA 3: MENSAL COM TOTAIS FIXOS, AUDITORIA VISUAL E EMPURRAR MÊS -->
     <div id="view-relatorio" class="hidden space-y-5 bg-[#0b1120] relative">
       <div class="card-glass p-4 sm:p-5 sticky top-[68px] sm:top-[76px] z-30 bg-slate-900/95 backdrop-blur shadow-sm border-b border-slate-800 -mx-4 px-4 sm:mx-0 sm:px-5">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -534,22 +534,23 @@
               <h2 class="text-sm font-bold text-white">Lançamentos da Fatura</h2>
               <p class="text-[10px] text-slate-400 mt-0.5">Toque no valor do item para riscar (auditoria). Toque duplo no valor para copiar.</p>
             </div>
-            <div id="bannerFiltroMensal" class="hidden items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 px-3 py-1 rounded-xl text-xs font-bold transition">
+            <div id="bannerFiltroMensal" class="hidden items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 px-3 py-1 rounded-xl text-xs font-bold">
               <span id="txtBannerFiltroMensal">Filtro ativo</span>
-              <button onclick="aplicarFiltroInternoMensal('todos', '')" class="text-white hover:text-rose-300 ml-1 transition">✕ Mostrar Todos</button>
+              <button onclick="aplicarFiltroInternoMensal('todos', '')" class="text-white hover:text-rose-300 ml-1">✕ Mostrar Todos</button>
             </div>
           </div>
           <div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
         </div>
       </div>
     </div>
+
     <!-- ABA 4: ANUAL COM RANKINGS CLICÁVEIS PARA AUDITORIA -->
     <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
         <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2>
         <div class="flex items-center gap-2 w-full sm:w-auto no-print">
           <button id="btnAnoPrev" onclick="mudarAnoSimples(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
-          <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none transition"></select>
+          <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
           <button id="btnAnoNext" onclick="mudarAnoSimples(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
           <button onclick="gerarPDFExecutivo('anual')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1 whitespace-nowrap">📄 PDF Executivo</button>
         </div>
@@ -582,18 +583,14 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="card-glass p-5">
           <h2 class="text-sm font-bold text-white mb-4">Evolução no Ano</h2>
-          <div class="relative h-56 flex items-center justify-center">
-            <canvas id="chartAnualBarras"></canvas>
-          </div>
+          <div class="relative h-56 flex items-center justify-center"><canvas id="chartAnualBarras"></canvas></div>
         </div>
         <div class="card-glass p-5 overflow-x-auto">
           <div class="flex justify-between items-center mb-3">
             <h2 class="text-sm font-bold text-white">Ranking de Categorias</h2>
             <span class="text-[10px] text-slate-400">Toque p/ auditar no Histórico</span>
           </div>
-          <table class="w-full text-left text-sm">
-            <tbody id="tabela-anual-cat" class="divide-y divide-slate-800/50"></tbody>
-          </table>
+          <table class="w-full text-left text-sm"><tbody id="tabela-anual-cat" class="divide-y divide-slate-800/50"></tbody></table>
         </div>
       </div>
 
@@ -603,9 +600,7 @@
             <h2 class="text-sm font-bold text-white">💳 Consumo por Forma de Pagamento</h2>
             <span class="text-[10px] text-slate-400">Toque p/ auditar</span>
           </div>
-          <table class="w-full text-left text-sm">
-            <tbody id="tabela-anual-formas" class="divide-y divide-slate-800/50"></tbody>
-          </table>
+          <table class="w-full text-left text-sm"><tbody id="tabela-anual-formas" class="divide-y divide-slate-800/50"></tbody></table>
         </div>
         <div class="card-glass p-5">
           <div class="flex justify-between items-center mb-3">
@@ -628,22 +623,10 @@
       </div>
 
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div class="card-glass p-4">
-          <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span>
-          <div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Saldo A Pagar copiado!')">...</div>
-        </div>
-        <div class="card-glass p-4">
-          <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span>
-          <div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div>
-        </div>
-        <div class="card-glass p-4">
-          <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span>
-          <div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div>
-        </div>
-        <div class="card-glass p-4">
-          <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span>
-          <div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Total Geral copiado!')">...</div>
-        </div> 
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Saldo A Pagar copiado!')">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Total Geral copiado!')">...</div></div> 
       </section>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -672,16 +655,8 @@
               </div>
             </div>
             <table class="w-full text-left text-xs sm:text-sm">
-              <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700">
-                <tr id="faturas-header">
-                  <th class="py-2">Forma</th>
-                  <th>Meses</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody id="faturas-body" class="divide-y divide-slate-800/50">
-                <tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr>
-              </tbody>
+              <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
+              <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -722,8 +697,8 @@
         <div class="card-glass p-5 sm:p-6">
           <div class="flex justify-between items-center mb-4">
             <div>
-              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro</h2>
-              <p class="text-[11px] text-slate-400">Ocupa o limite disponível do cartão, mas não entra nos seus relatórios pessoais.</p>
+              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro no Seu Cartão</h2>
+              <p class="text-[11px] text-slate-400">Ocupa o limite disponível do cartão, mas não entra nos seus relatórios de gastos pessoais.</p>
             </div>
             <button type="button" onclick="limparFormularioEmprestimo()" class="text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition">🧹 Limpar</button>
           </div>
@@ -1137,7 +1112,7 @@
         </div>
       </div>
 
-      <!-- FERRAMENTA 5: BLOCO DE NOTAS (TEXTAREA LIVRE PARA PARÁGRAFOS) -->
+      <!-- FERRAMENTA 5: BLOCO DE NOTAS (COM TEXTAREA E BOTÃO LANÇAR) -->
       <div id="subview-notas" class="hidden card-glass p-5 sm:p-7 space-y-4">
         <div class="flex justify-between items-center">
           <div>
@@ -1148,10 +1123,10 @@
 
         <div class="bg-slate-900 border border-slate-700 rounded-xl p-3 focus-within:border-amber-500 transition relative">
           <input type="hidden" id="inpIdNotaEdit" value="">
-          <textarea id="inpNovaNotaTexto" rows="3" placeholder="Digite sua nota aqui... (Use Enter para pular linha)" class="w-full bg-transparent text-white text-sm outline-none resize-y hide-scrollbar"></textarea>
+          <textarea id="inpNovaNotaTexto" rows="3" placeholder="Digite sua nota aqui... (Shift + Enter pula linha)" class="w-full bg-transparent text-white text-sm outline-none resize-y hide-scrollbar" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); salvarNotaUi(); }"></textarea>
           <div class="flex justify-between items-center mt-2 pt-2 border-t border-slate-800">
             <button type="button" id="btnCancelarEdicaoNota" onclick="cancelarEdicaoNota()" class="hidden text-[10px] text-slate-400 hover:text-white font-bold bg-slate-800 px-2 py-1 rounded">Cancelar Edição</button>
-            <span class="flex-1 text-right text-[10px] text-slate-500 mr-3 hidden sm:inline">Ctrl + Enter p/ salvar rápido</span>
+            <span class="text-[9px] text-slate-500 flex-1 ml-1 text-right mr-3">Enter p/ salvar</span>
             <button type="button" id="btnAdicionarNota" onclick="salvarNotaUi()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-2 rounded-lg text-xs transition active:scale-95">Salvar</button>
           </div>
         </div>
@@ -1237,7 +1212,7 @@
     </div>
   </div>
 
-  <!-- MODAL: EDITAR CARTÃO/PIX -->
+  <!-- MODAL: EDITAR CARTÃO/PIX (COM ARQUIVAMENTO) -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto overflow-y-auto">
       <div class="flex justify-between items-center mb-5">
@@ -1270,7 +1245,7 @@
     </div>
   </div>
 
-  <!-- MODAL EDIÇÃO DE LANÇAMENTO -->
+  <!-- MODAL EDIÇÃO DE LANÇAMENTO (EMPRÉSTIMOS + ADIANTAMENTO + EXCLUIR + EMPURRAR) -->
   <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 py-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-5 sm:p-6 rounded-2xl shadow-2xl my-auto overflow-y-auto max-h-[95vh] hide-scrollbar">
       <div class="flex justify-between items-center mb-4">
@@ -1279,7 +1254,7 @@
       </div>
       
       <form onsubmit="salvarEdicaoLanc(event)" class="space-y-3.5">
-        <input type="hidden" id="inpEdContexto" value="pessoal">
+        <input type="hidden" id="inpEdContexto" value="pessoal"> <!-- 'pessoal' ou 'emprestimo' -->
         <input type="hidden" id="inpEdLinha">
         <input type="hidden" id="inpEdParcelaStr">
         <input type="hidden" id="inpEdDescOrig">
@@ -1380,6 +1355,7 @@
           <div id="chipsTagsEdicao" class="flex flex-wrap gap-1 mt-1.5"></div>
         </div>
 
+        <!-- DIVIDIR PARCELA (BAIXA PARCIAL) - SÓ PARA EMPRÉSTIMOS -->
         <div id="boxDividirParcEmp" class="hidden pt-1.5 border-t border-slate-700">
           <button type="button" onclick="togglePainelDivisaoParc()" class="w-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
             <span>✂️ Recebeu só uma parte? (Baixa Parcial)</span>
@@ -1396,6 +1372,7 @@
           </div>
         </div>
 
+        <!-- PAINEL DE ANTECIPAÇÃO PADRÃO NUBANK -->
         <div id="boxAdiantarContainer" class="hidden pt-1.5 border-t border-slate-700">
           <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
             <span>⚡ Adiantar Parcelas Futuras (Padrão Nubank)</span>
@@ -1432,6 +1409,7 @@
           </div>
         </div>
 
+        <!-- CONVERSOR RÁPIDO: MOVER ENTRE PESSOAL E EMPRÉSTIMO -->
         <div id="boxMoverContextoContainer" class="hidden pt-1.5 border-t border-slate-700">
           <button type="button" id="btnToggleMover" onclick="togglePainelMoverContexto()" class="w-full bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
             <span id="txtBtnToggleMover">🤝 Era de terceiro? Mover p/ Empréstimos</span>
@@ -1486,6 +1464,7 @@
       </form>
     </div>
   </div>
+  
   <script>
     // ============================================================================
     // SERVICE WORKER E ATUALIZAÇÃO FORÇADA DE CACHE (APP NATIVO)
@@ -1511,15 +1490,11 @@
       try {
         if ('serviceWorker' in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
-          for (const r of regs) {
-            await r.unregister();
-          }
+          for (const r of regs) await r.unregister();
         }
         if ('caches' in window) {
           const keys = await caches.keys();
-          for (const k of keys) {
-            await caches.delete(k);
-          }
+          for (const k of keys) await caches.delete(k);
         }
       } catch (e) {
         console.error("Erro ao limpar cache:", e);
@@ -1566,30 +1541,26 @@
     let salvandoGastoTrava = false;
     let operacaoEmAndamento = false;
 
-    // Variáveis de Paginação e Filtros
     let offsetAtual = 0;
     const LIMITE_PAGINA = 50;
     let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' };
 
-    // Variáveis da Calculadora e Desfazer
     let filaDesfazer = null;
     let timerDesfazer = null;
-    let calcExprStr = '';
-    let lastEqualTime = 0;
 
     // ============================================================================
     // CONFIGURAÇÃO DE ABAS E NAVEGAÇÃO
     // ============================================================================
     const abasConfig = [
-      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Registro', cor: 'text-emerald-400' },
-      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300' },
-      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Histórico', cor: 'text-slate-300' },
-      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Fatura Mensal', cor: 'text-slate-300' },
-      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas Práticas', cor: 'text-slate-300' },
-      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Balanço Anual', cor: 'text-slate-300' },
-      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300' },
-      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Cartões e Limites', cor: 'text-slate-300' },
-      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300' }
+      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Registro', cor: 'text-emerald-400', principal: true },
+      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300', principal: true },
+      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Histórico', cor: 'text-slate-300', principal: true },
+      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Fatura Mensal', cor: 'text-slate-300', principal: true },
+      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas Práticas', cor: 'text-slate-300', principal: false },
+      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Balanço Anual', cor: 'text-slate-300', principal: false },
+      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300', principal: false },
+      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Cartões e Limites', cor: 'text-slate-300', principal: false },
+      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300', principal: false }
     ];
 
     function renderizarMenusNavegacao() {
@@ -1616,15 +1587,11 @@
     function setAba(aba, salvar = true) {
       fecharMenuMobile();
       abaAtivaAtual = aba;
-      if (salvar) {
-        localStorage.setItem('abaAtivaGestorV12', aba);
-      }
+      if (salvar) localStorage.setItem('abaAtivaGestorV12', aba);
 
       const configAtiva = abasConfig.find(a => a.id === aba);
       const subMobile = document.getElementById('subtituloMobileAba');
-      if (subMobile && configAtiva) {
-        subMobile.textContent = configAtiva.tituloD;
-      }
+      if (subMobile && configAtiva) subMobile.textContent = configAtiva.tituloD;
 
       abasConfig.forEach(a => {
         const view = document.getElementById('view-' + a.id); 
@@ -1702,27 +1669,20 @@
       }
       
       if (aba === 'novo') { 
-        setTimeout(() => {
-          const inpDesc = document.getElementById('inpDesc');
-          if (inpDesc) inpDesc.focus({ preventScroll: true });
-        }, 100); 
+        setTimeout(() => document.getElementById('inpDesc')?.focus({ preventScroll: true }), 100); 
       }
     }
 
     function abrirMenuMobile() {
       const m = document.getElementById('modalMenuMobile');
-      if (m) {
-        m.classList.remove('hidden'); 
-        m.classList.add('flex');
-      }
+      m.classList.remove('hidden'); 
+      m.classList.add('flex');
     }
 
     function fecharMenuMobile() {
       const m = document.getElementById('modalMenuMobile');
-      if (m) {
-        m.classList.add('hidden'); 
-        m.classList.remove('flex');
-      }
+      m.classList.add('hidden'); 
+      m.classList.remove('flex');
     }
 
     function abrirFerramenta(sub) {
@@ -1731,48 +1691,31 @@
     }
 
     function selecionarSubFerramenta(sub) {
-      const ids = ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'];
-      ids.forEach(id => {
-        const view = document.getElementById('subview-' + id);
-        if (view) view.classList.add('hidden');
-        
+      ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
+        document.getElementById('subview-' + id)?.classList.add('hidden');
         const btn = document.getElementById('btn-sub-' + id);
         if (btn) btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
       });
       
-      const subViewAtiva = document.getElementById('subview-' + sub);
-      if (subViewAtiva) subViewAtiva.classList.remove('hidden');
-      
+      document.getElementById('subview-' + sub)?.classList.remove('hidden');
       const btnAtivo = document.getElementById('btn-sub-' + sub);
       if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
       
       if (sub === 'emprestimos') {
-        const dataEmp = document.getElementById('inpEmpData');
-        if (dataEmp && !dataEmp.value) {
-          definirDataHojeEmprestimo();
-        }
+        if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo();
         renderizarPainelEmprestimos();
       }
-      if (sub === 'simulador') {
-        rodarSimuladorCompra();
-      }
-      if (sub === 'rachadinha') { 
-        calcularRachadinha(); 
-        calcularRachadinhaDetalhada(); 
-      }
-      if (sub === 'notas') {
-        renderizarNotasUI();
-      }
+      if (sub === 'simulador') rodarSimuladorCompra();
+      if (sub === 'rachadinha') { calcularRachadinha(); calcularRachadinhaDetalhada(); }
+      if (sub === 'notas') renderizarNotasUI();
     }
 
     // ============================================================================
-    // UTILITÁRIOS BASE (Vibração, Moedas, Máscaras e Textos)
+    // UTILITÁRIOS BASE (Vibração, Moedas e Textos)
     // ============================================================================
 
     function vibrar(ms = 50) {
-      if (navigator.vibrate) {
-        navigator.vibrate(ms);
-      }
+      if (navigator.vibrate) navigator.vibrate(ms);
     }
 
     function ativarAutoScroll(el) {
@@ -1801,9 +1744,7 @@
       let str = String(raw || '0').trim();
       const isNeg = str.includes('-');
       str = str.replace(/[^\d,\.]/g, '');
-      if (str.includes('.') && str.includes(',')) {
-        str = str.replace(/\./g, '');
-      }
+      if (str.includes('.') && str.includes(',')) str = str.replace(/\./g, '');
       str = str.replace(',', '.');
       
       const num = parseFloat(str) || 0;
@@ -1895,7 +1836,6 @@
       const inp = document.getElementById(idInput);
       const btn = document.getElementById(idBtn);
       if (!inp || !btn) return;
-      
       if (inp.value.trim().length > 0) { 
         btn.classList.remove('hidden'); 
         btn.classList.add('flex'); 
@@ -1969,13 +1909,10 @@
       }
       
       toast.classList.add('show');
-      
       if (timerDesfazer) clearTimeout(timerDesfazer);
       timerDesfazer = setTimeout(() => {
         toast.classList.remove('show');
-        if (filaDesfazer) { 
-          processarFilaDesfazerNuvem(); 
-        }
+        if (filaDesfazer) { processarFilaDesfazerNuvem(); }
       }, acaoDesfazer ? 5000 : 3000);
     }
 
@@ -2009,13 +1946,9 @@
       const chkLote = document.getElementById('chkConfTodasParcelas');
       
       if (chkLote) chkLote.checked = false;
-      
       if (boxLote) {
-        if (exibirOpcaoParcelas) {
-          boxLote.classList.remove('hidden');
-        } else {
-          boxLote.classList.add('hidden');
-        }
+        if (exibirOpcaoParcelas) boxLote.classList.remove('hidden');
+        else boxLote.classList.add('hidden');
       }
       
       modal.classList.remove('hidden');
@@ -2296,7 +2229,7 @@
     }
 
     // ============================================================================
-    // NOVO REGISTRO: ENVIO, TAGS E CÁLCULO DE FATURAS
+    // NOVO REGISTRO: ENVIO, TAGS, E CÁLCULO DE FATURAS
     // ============================================================================
 
     function verificarLeituraPix(textoDescricao) {
@@ -2806,7 +2739,7 @@
       btn.disabled = false; 
       salvandoGastoTrava = false;
     }
-    // ============================================================================
+        // ============================================================================
     // HISTÓRICO GERAL (SOMA, BADGES, EDIÇÃO DE CARDS E FILTROS)
     // ============================================================================
 
@@ -2822,217 +2755,1241 @@
     function formatarInfoParcelaCard(parcStr, resParcObj) {
       const limpa = String(parcStr || '').replace(/^'/, '').trim();
       if (limpa === '∞/∞') return 'Fixo Mensal (∞)';
-      if (limpa.includes('/') && !limpa.endsWith('/1')) return resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes ? `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>` : `Parc: ${limpa}`;
+      if (limpa.includes('/') && !limpa.endsWith('/1')) {
+        if (resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes) {
+          return `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>`;
+        }
+        return `Parc: ${limpa}`;
+      }
       return `Parc: ${limpa || '1/1'}`;
     }
 
     function toggleAuditoriaRisco(el) {
       vibrar(10);
-      if (el.classList.contains('line-through')) el.classList.remove('line-through', 'opacity-40');
-      else el.classList.add('line-through', 'opacity-40');
-    }
-
-    function renderTabelaLancamentos(lista, append = false) {
-      if (!append) itensFiltradosAtualCache = [...lista]; else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
-      let htmlL = '', dataAtualBloco = '';
-
-      lista.forEach(l => {
-        const badgeColor = obterClasseBadgeStatus(l[9]), isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
-        const descSafe = String(l[1]).replace(/'/g, "\\'"), formaSafe = String(l[2]).replace(/'/g, "\\'"), catSafe = String(l[3]).replace(/'/g, "\\'"), tagSafe = String(l[11] || l[10] || '').replace(/'/g, "\\'"), parcSafe = String(l[6] || '').replace(/'/g, "\\'"), dtSafe = String(l[0] || '').replace(/'/g, "\\'"), mSafe = String(l[8] || '').replace(/'/g, "\\'");
-        
-        if (l[0] && l[0] !== dataAtualBloco && !append) { dataAtualBloco = l[0]; htmlL += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`; }
-        let tagsHtml = ''; if (l[11] || l[10]) { String(l[11] || l[10]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => { tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${t.replace(/'/g, "\\'")}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95 shadow-sm" title="Toque para filtrar por ${t}">${t}</button>`; }); }
-
-        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition"><div class="flex justify-between items-start gap-2"><div class="min-w-0 pr-2"><div class="text-white font-bold text-base mt-0.5 leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div><div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end shrink-0"><div class="valor-auditoria text-emerald-400 font-bold text-lg leading-tight tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div><div class="text-[10px] text-slate-400 mt-1 font-bold uppercase border border-slate-800 px-1.5 py-0.5 bg-slate-900 rounded-md shadow-sm">${formatarInfoParcelaCard(l[6], l[12] || null)}</div></div></div><div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm ${badgeColor}">${l[9]}</span><span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span></div><div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50"><button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>${isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[10] || l[11]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-sky-900/20 hover:bg-sky-600 rounded-xl transition active:scale-95 border border-sky-500/20" title="Avançar para o próximo mês">⏩ Empurrar</button>` : ''}<button onclick="abrirModalEdicaoLanc('${l[10] || l[11]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button></div></div>`;
-      });
-
-      if (lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado.</div>';
-      if (document.getElementById('lista-lancamentos')) append ? document.getElementById('lista-lancamentos').insertAdjacentHTML('beforeend', htmlL) : document.getElementById('lista-lancamentos').innerHTML = htmlL;
-    }
-
-    function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
-      vibrar(20); limparFormularioNovoGasto(); document.getElementById('inpDesc').value = desc; document.getElementById('selForma').value = forma; document.getElementById('selCat').value = cat; definirValorMoeda('inpValor', lerValorMoeda(valorParcelaStr)); document.getElementById('inpTags').value = tags || ''; toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); toggleBotaoLimpar('inpValor', 'btnLimparValor'); toggleBotaoLimpar('inpTags', 'btnLimparTags'); atualizarRegrasForma(); sincronizarChipsTags('novo'); setAba('novo'); mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje!');
-    }
-
-    function filtrarPorTagRapida(tag) { vibrar(10); setAba('lancamentos'); document.getElementById('filtTag').value = tag.replace(/^#/, ''); aplicarFiltros(); }
-    function auditarItemAnual(tipo, valor) { vibrar(15); setAba('lancamentos'); document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = tipo === 'forma' ? valor : ''; document.getElementById('filtCat').value = tipo === 'categoria' ? valor : ''; document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : ''; document.getElementById('filtStatus').value = ''; filtrosAtuais.tipoRapido = ''; atualizarEstiloChipsRapidosHist(''); aplicarFiltros(); }
-    
-    function atualizarEstiloChipsRapidosHist(tipoAtivo) {
-      const mapa = { '': 'chip-hist-todos', 'mesatual': 'chip-hist-mesatual', 'apagar': 'chip-hist-apagar', 'parcelados': 'chip-hist-parcelados', 'fixos': 'chip-hist-fixos', 'pix': 'chip-hist-pix' };
-      Object.keys(mapa).forEach(k => { const el = document.getElementById(mapa[k]); if (el) el.className = k === tipoAtivo ? 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition active:scale-95' : 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition active:scale-95'; });
-    }
-    function aplicarFiltroRapidoHist(tipo) { vibrar(15); filtrosAtuais.tipoRapido = tipo; atualizarEstiloChipsRapidosHist(tipo); aplicarFiltros(); }
-
-    function abrirModalFiltros() { vibrar(10); document.getElementById('modalFiltros').classList.remove('hidden'); }
-    function fecharModalFiltros() { document.getElementById('modalFiltros').classList.add('hidden'); }
-
-    function limparFiltros() {
-      vibrar(20); document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = ''; document.getElementById('filtCat').value = ''; document.getElementById('filtTag').value = ''; document.getElementById('filtStatus').value = ''; toggleBotaoLimpar('inpBusca', 'btnLimparBusca'); toggleBotaoLimpar('filtTag', 'btnLimpFiltTag'); filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' }; atualizarEstiloChipsRapidosHist(''); document.getElementById('barraSomaFiltro')?.classList.add('hidden'); renderTabelaLancamentos(ultimosLancamentosCache, false);
-    }
-
-    function temAlgumFiltroAtivo() { return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido); }
-
-    function aplicarFiltros() {
-      vibrar(20); filtrosAtuais.termo = normalizarTexto(document.getElementById('inpBusca').value); filtrosAtuais.mes = document.getElementById('filtMes').value; filtrosAtuais.forma = document.getElementById('filtForma').value; filtrosAtuais.categoria = document.getElementById('filtCat').value; filtrosAtuais.tag = normalizarTexto(document.getElementById('filtTag').value).replace(/^#/, ''); filtrosAtuais.status = document.getElementById('filtStatus').value; offsetAtual = 0; document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Filtrando registros...</div>'; document.getElementById('boxCarregarMais').classList.add('hidden'); fecharModalFiltros();
-      
-      let filtrados = ultimosLancamentosCache || [];
-      if (filtrosAtuais.tipoRapido === 'mesatual') filtrados = filtrados.filter(l => l[8] === evolucaoMesAtual);
-      else if (filtrosAtuais.tipoRapido === 'apagar') filtrados = filtrados.filter(l => String(l[9]).toLowerCase() === 'em aberto');
-      else if (filtrosAtuais.tipoRapido === 'parcelados') filtrados = filtrados.filter(l => String(l[6] || '').includes('/') && String(l[6]) !== '∞/∞');
-      else if (filtrosAtuais.tipoRapido === 'fixos') filtrados = filtrados.filter(l => String(l[6]) === '∞/∞');
-      else if (filtrosAtuais.tipoRapido === 'pix') filtrados = filtrados.filter(l => String(l[2]).toLowerCase().includes('pix'));
-
-      if (filtrosAtuais.termo) filtrados = filtrados.filter(l => normalizarTexto(l[1]).includes(filtrosAtuais.termo) || normalizarTexto(l[3]).includes(filtrosAtuais.termo));
-      if (filtrosAtuais.mes) filtrados = filtrados.filter(l => l[8] === filtrosAtuais.mes);
-      if (filtrosAtuais.forma) filtrados = filtrados.filter(l => l[2] === filtrosAtuais.forma);
-      if (filtrosAtuais.categoria) filtrados = filtrados.filter(l => l[3] === filtrosAtuais.categoria);
-      if (filtrosAtuais.status) filtrados = filtrados.filter(l => String(l[9]).toLowerCase() === filtrosAtuais.status.toLowerCase());
-      if (filtrosAtuais.tag) { const arr = filtrosAtuais.tag.split(',').map(t=>t.trim()).filter(Boolean); filtrados = filtrados.filter(l => arr.every(tag => normalizarTexto(l[11] || l[10] || '').includes(tag))); }
-
-      document.getElementById('lista-lancamentos').innerHTML = '';
-      renderTabelaLancamentos(filtrados.slice(0, LIMITE_PAGINA), false);
-      const boxLoadMore = document.getElementById('boxCarregarMais');
-      if (boxLoadMore) { if (filtrados.length > LIMITE_PAGINA) boxLoadMore.classList.remove('hidden'); else boxLoadMore.classList.add('hidden'); }
-      
-      const barraSoma = document.getElementById('barraSomaFiltro');
-      let somaTotal = 0; filtrados.forEach(l => { somaTotal += (l[13] !== undefined ? l[13] : lerValorMoeda(l[7])); });
-      
-      if (barraSoma) {
-        if (temAlgumFiltroAtivo() && filtrados.length > 0) {
-          barraSoma.classList.remove('hidden'); barraSoma.classList.add('flex');
-          document.getElementById('txtSomaQtd').textContent = `📊 ${filtrados.length} itens`;
-          document.getElementById('txtSomaTotal').textContent = formatBRL(somaTotal);
-          const badgeMetade = document.getElementById('badgeSomaMetade');
-          if (badgeMetade) badgeMetade.textContent = `➗ 50%: ${formatBRL(somaTotal / 2)}`;
-          ultimoResumoSomaFiltro = { somaTotal: formatBRL(somaTotal), somaMetade: formatBRL(somaTotal / 2) };
-        } else { barraSoma.classList.add('hidden'); barraSoma.classList.remove('flex'); }
+      if (el.classList.contains('line-through')) {
+        el.classList.remove('line-through', 'opacity-40');
+      } else {
+        el.classList.add('line-through', 'opacity-40');
       }
     }
 
-    function carregarMaisLancamentos() { vibrar(10); offsetAtual += LIMITE_PAGINA; const btn = document.querySelector('#boxCarregarMais button'); if (btn) btn.textContent = 'Baixando...'; aplicarFiltros(); }
+    function renderTabelaLancamentos(lista, append = false) {
+      if (!append) itensFiltradosAtualCache = [...lista];
+      else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
+
+      let htmlL = '';
+      let dataAtualBloco = '';
+
+      lista.forEach(l => {
+        const badgeColor = obterClasseBadgeStatus(l[9]);
+        const isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
+        const descSafe = String(l[1]).replace(/'/g, "\\'");
+        const formaSafe = String(l[2]).replace(/'/g, "\\'");
+        const catSafe = String(l[3]).replace(/'/g, "\\'");
+        const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
+        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
+        const dtSafe = String(l[0] || '').replace(/'/g, "\\'");
+        const mSafe = String(l[8] || '').replace(/'/g, "\\'");
+        const resParc = l[12] || null;
+
+        const dataLinha = l[0] || 'Sem data';
+        if (dataLinha !== dataAtualBloco && !append) {
+          dataAtualBloco = dataLinha;
+          htmlL += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`;
+        }
+
+        let tagsHtml = '';
+        if (l[11]) {
+          String(l[11]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+            const tSafeClick = t.replace(/'/g, "\\'");
+            tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${tSafeClick}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95 shadow-sm" title="Toque para filtrar por ${t}">${t}</button>`;
+          });
+        }
+
+        const btnEmpurrar = isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-sky-900/20 hover:bg-sky-600 rounded-xl transition active:scale-95 border border-sky-500/20" title="Avançar para o próximo mês">⏩ Empurrar</button>` : '';
+
+        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition">
+          <div class="flex justify-between items-start gap-2">
+            <div class="min-w-0 pr-2">
+              <div class="text-white font-bold text-base mt-0.5 leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div>
+              <div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div>
+              <div>${tagsHtml}</div>
+            </div>
+            <div class="text-right flex flex-col items-end shrink-0">
+              <div class="valor-auditoria text-emerald-400 font-bold text-lg leading-tight tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div>
+              <div class="text-[10px] text-slate-400 mt-1 font-bold uppercase border border-slate-800 px-1.5 py-0.5 bg-slate-900 rounded-md shadow-sm">${formatarInfoParcelaCard(l[6], resParc)}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
+            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm ${badgeColor}">${l[9]}</span>
+            <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
+          </div>
+          <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50">
+            <button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
+            ${btnEmpurrar}
+            <button onclick="abrirModalEdicaoLanc('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
+          </div>
+        </div>`;
+      });
+
+      if (lista.length === 0 && !append) {
+        htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado para este filtro.</div>';
+      }
+      
+      const boxLanc = document.getElementById('lista-lancamentos');
+      if (boxLanc) {
+        if (append) {
+          boxLanc.insertAdjacentHTML('beforeend', htmlL);
+        } else {
+          boxLanc.innerHTML = htmlL;
+        }
+      }
+    }
+
+    function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
+      vibrar(20);
+      limparFormularioNovoGasto();
+      document.getElementById('inpDesc').value = desc;
+      document.getElementById('selForma').value = forma;
+      document.getElementById('selCat').value = cat;
+      definirValorMoeda('inpValor', lerValorMoeda(valorParcelaStr));
+      document.getElementById('inpTags').value = tags || '';
+      
+      toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); 
+      toggleBotaoLimpar('inpValor', 'btnLimparValor'); 
+      toggleBotaoLimpar('inpTags', 'btnLimparTags');
+      
+      atualizarRegrasForma();
+      sincronizarChipsTags('novo');
+      setAba('novo');
+      mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje! Confira e clique em Lançar.');
+    }
+
+    function filtrarPorTagRapida(tag) {
+      vibrar(10); 
+      setAba('lancamentos');
+      document.getElementById('filtTag').value = tag.replace(/^#/, '');
+      aplicarFiltros();
+    }
+
+    function auditarItemAnual(tipo, valor) {
+      vibrar(15); 
+      setAba('lancamentos');
+      document.getElementById('inpBusca').value = '';
+      document.getElementById('filtMes').value = '';
+      document.getElementById('filtForma').value = tipo === 'forma' ? valor : '';
+      document.getElementById('filtCat').value = tipo === 'categoria' ? valor : '';
+      document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : '';
+      document.getElementById('filtStatus').value = '';
+      filtrosAtuais.tipoRapido = '';
+      atualizarEstiloChipsRapidosHist('');
+      aplicarFiltros();
+    }
+
+    function atualizarEstiloChipsRapidosHist(tipoAtivo) {
+      const mapa = { 
+        '': 'chip-hist-todos', 
+        'mesatual': 'chip-hist-mesatual', 
+        'apagar': 'chip-hist-apagar', 
+        'parcelados': 'chip-hist-parcelados', 
+        'fixos': 'chip-hist-fixos', 
+        'pix': 'chip-hist-pix' 
+      };
+      
+      Object.keys(mapa).forEach(k => {
+        const el = document.getElementById(mapa[k]);
+        if (!el) return;
+        if (k === tipoAtivo) {
+          el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition active:scale-95';
+        } else {
+          el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition active:scale-95';
+        }
+      });
+    }
+
+    function aplicarFiltroRapidoHist(tipo) {
+      vibrar(15); 
+      filtrosAtuais.tipoRapido = tipo;
+      atualizarEstiloChipsRapidosHist(tipo); 
+      aplicarFiltros();
+    }
+
+    function abrirModalFiltros() { 
+      vibrar(10); 
+      document.getElementById('modalFiltros').classList.remove('hidden'); 
+    }
+    
+    function fecharModalFiltros() { 
+      document.getElementById('modalFiltros').classList.add('hidden'); 
+    }
+
+    function limparFiltros() {
+      vibrar(20);
+      document.getElementById('inpBusca').value = '';
+      document.getElementById('filtMes').value = ''; 
+      document.getElementById('filtForma').value = '';
+      document.getElementById('filtCat').value = ''; 
+      document.getElementById('filtTag').value = '';
+      document.getElementById('filtStatus').value = '';
+      
+      toggleBotaoLimpar('inpBusca', 'btnLimparBusca'); 
+      toggleBotaoLimpar('filtTag', 'btnLimpFiltTag');
+      
+      filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' };
+      atualizarEstiloChipsRapidosHist('');
+      
+      document.getElementById('barraSomaFiltro')?.classList.add('hidden');
+      renderTabelaLancamentos(ultimosLancamentosCache, false);
+    }
+
+    function temAlgumFiltroAtivo() {
+      return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido);
+    }
+
+    function aplicarFiltros() {
+      vibrar(20);
+      filtrosAtuais.termo = document.getElementById('inpBusca').value.trim();
+      filtrosAtuais.mes = document.getElementById('filtMes').value;
+      filtrosAtuais.forma = document.getElementById('filtForma').value;
+      filtrosAtuais.categoria = document.getElementById('filtCat').value;
+      filtrosAtuais.tag = document.getElementById('filtTag').value.trim();
+      filtrosAtuais.status = document.getElementById('filtStatus').value;
+
+      offsetAtual = 0;
+      document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Filtrando registros...</div>';
+      document.getElementById('boxCarregarMais').classList.add('hidden');
+      
+      fecharModalFiltros();
+      chamarFiltroBackend();
+    }
+
+    function carregarMaisLancamentos() {
+      vibrar(10);
+      offsetAtual += LIMITE_PAGINA;
+      const btn = document.querySelector('#boxCarregarMais button');
+      if (btn) btn.textContent = 'Baixando...';
+      chamarFiltroBackend(true);
+    }
+
+    function chamarFiltroBackend(append = false) {
+      apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA })
+        .then(res => {
+          if (!append) document.getElementById('lista-lancamentos').innerHTML = '';
+          renderTabelaLancamentos(res.itens, append);
+          ultimoResumoSomaFiltro = res;
+
+          const barraSoma = document.getElementById('barraSomaFiltro');
+          if (barraSoma) {
+            if (temAlgumFiltroAtivo() && res.qtdTotal > 0) {
+              barraSoma.classList.remove('hidden');
+              barraSoma.classList.add('flex');
+              document.getElementById('txtSomaQtd').textContent = `📊 ${res.qtdTotal} ${res.qtdTotal === 1 ? 'item' : 'itens'}`;
+              document.getElementById('txtSomaTotal').textContent = res.somaTotal;
+              const badgeMetade = document.getElementById('badgeSomaMetade');
+              if (badgeMetade) badgeMetade.textContent = `➗ 50%: ${res.somaMetade}`;
+            } else {
+              barraSoma.classList.add('hidden');
+              barraSoma.classList.remove('flex');
+            }
+          }
+
+          const box = document.getElementById('boxCarregarMais');
+          if (res.temMais) {
+            box.classList.remove('hidden'); 
+            box.querySelector('button').textContent = 'Carregar mais antigas 👇';
+          } else { 
+            box.classList.add('hidden'); 
+          }
+        })
+        .catch(err => mostrarAviso('Erro', 'Erro na busca: ' + err.message));
+    }
 
     function copiarResumoFiltroWhats() {
-      vibrar(30); if (!itensFiltradosAtualCache || itensFiltradosAtualCache.length === 0) return;
+      vibrar(30);
+      if (!itensFiltradosAtualCache || itensFiltradosAtualCache.length === 0) return;
+      
       let linhas = [`📋 *Resumo de Gastos Filtrados*`];
-      if (filtrosAtuais.mes) linhas.push(`📅 Fatura: *${filtrosAtuais.mes}*`); if (filtrosAtuais.tag) linhas.push(`🏷️ Tag: *#${filtrosAtuais.tag.replace(/^#/, '')}*`); linhas.push('');
-      itensFiltradosAtualCache.forEach(item => { const parc = (item[6] && item[6] !== '1/1' && item[6] !== '∞/∞') ? ` (${item[6]})` : ''; linhas.push(`• ${item[0].substring(0, 5)} - ${item[1]}${parc}: *${item[7]}*`); });
-      linhas.push(''); const somaTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaTotal : ''; const metadeTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaMetade : '';
-      linhas.push(`💰 *Total:* ${somaTxt}`); linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
+      if (filtrosAtuais.mes) linhas.push(`📅 Fatura: *${filtrosAtuais.mes}*`);
+      if (filtrosAtuais.tag) linhas.push(`🏷️ Tag: *#${filtrosAtuais.tag.replace(/^#/, '')}*`);
+      linhas.push('');
+
+      itensFiltradosAtualCache.forEach(item => {
+        const parc = (item[6] && item[6] !== '1/1' && item[6] !== '∞/∞') ? ` (${item[6]})` : '';
+        linhas.push(`• ${item[0].substring(0, 5)} - ${item[1]}${parc}: *${item[7]}*`);
+      });
+
+      linhas.push('');
+      const somaTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaTotal : '';
+      const metadeTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaMetade : '';
+      linhas.push(`💰 *Total:* ${somaTxt}`);
+      linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
+
       copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo copiado p/ o WhatsApp!');
     }
 
     // ============================================================================
-    // EDIÇÃO DE LANÇAMENTOS E EMPRÉSTIMOS
+    // RELATÓRIOS (MENSAL E ANUAL) E EVOLUÇÃO
     // ============================================================================
-    
-    function excluirLancamentoLocal(linha, descricao, parcela = '', mesFat = '') {
-      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
-      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
-      mostrarConfirmacao("Excluir Lançamento Pessoal", `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?`, (excluirTodasParcelas) => {
-        apiCall('excluirLancamentoWeb', { linha, descricao, parcela: pLimpa, mesFatura: mesFat, excluirTodasParcelas: Boolean(excluirTodasParcelas) }).then(() => carregarDados()).catch(e => mostrarAviso('Erro', e.message));
-        mostrarAviso('Processando', 'Excluindo o seu lançamento...');
-      }, ehParcelado);
-    }
 
-    function excluirDoModalEdicao() {
-      vibrar(30); const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal', linha = document.getElementById('inpEdLinha').value, desc = document.getElementById('inpEdDescOrig').value, mes = document.getElementById('inpEdMesOrig').value, parc = document.getElementById('inpEdParcelaStr').value;
-      if (contexto === 'pessoal') { fecharModalEdicaoLanc(); excluirLancamentoLocal(linha, desc, parc, mes); } 
-      else { const pessoa = document.getElementById('inpEdPessoa').value; fecharModalEdicaoLanc(); excluirItemEmprestimo(linha, pessoa, desc, parc); }
-    }
-
-    function aoMudarFormaEdicao() {
-      const formaVal = (document.getElementById('selEdForma')?.value || '').toLowerCase(), selStatus = document.getElementById('selEdStatus'), parcStr = document.getElementById('inpEdParcelaStr')?.value || '';
-      if (!selStatus || parcStr === '∞/∞') return;
-      if (formaVal.includes('pix') && document.getElementById('inpEdContexto').value === 'pessoal') selStatus.value = 'Pago'; else if (selStatus.value === 'Pago') selStatus.value = 'Em Aberto';
-    }
-
-    function marcarPropagacaoValorSeParcelado() { const chk = document.getElementById('chkPropagarValorParc'); if (chk) chk.checked = true; }
-
-    function togglePainelAdiantar() {
-      vibrar(10); const p = document.getElementById('painelAdiantarCampos'), s = document.getElementById('setaAdiantar');
-      if (!p) return; if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; } else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
-    }
-
-    function togglePainelMoverContexto() {
-      vibrar(10); const p = document.getElementById('painelMoverContextoCampos'), s = document.getElementById('setaMoverCtx');
-      if (!p) return; if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; } else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
-    }
-
-    function executarMoverContexto() {
-      vibrar(30); const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal';
-      if (contexto === 'pessoal') {
-        const pessoa = (document.getElementById('inpMoverPessoa')?.value || '').trim(); if (!pessoa) { mostrarAviso('Atenção', 'Digite o nome da pessoa.'); return; }
-        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
-        apiCall('moverParaEmprestimosWeb', { linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value, mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value, pessoa: pessoa }).then(res => { btn.textContent = 'Transferir 🤝'; btn.disabled = false; fecharModalEdicaoLanc(); mostrarAviso('Sucesso 🤝', `Movido para Empréstimos (${res.pessoa})!`); carregarDados(); }).catch(err => { btn.textContent = 'Transferir 🤝'; btn.disabled = false; mostrarAviso('Erro', err.message); });
-      } else {
-        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
-        apiCall('moverParaGastosPessoaisWeb', { linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value, mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value, categoria: document.getElementById('selEdCat').value, tags: document.getElementById('inpEdTags').value }).then(res => { btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; fecharModalEdicaoLanc(); mostrarAviso('Sucesso ➕', `Movido para os seus Gastos!`); carregarDados(); }).catch(err => { btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; mostrarAviso('Erro', err.message); });
-      }
-    }
-
-    function executarAdiantamentoParcelas() {
+    function empurrarGastoUmMes(linha, descricao, dtAntiga, mesAntigo, parcAntiga) {
       vibrar(30);
-      const linha = document.getElementById('inpEdLinha').value, descOrig = document.getElementById('inpEdDescOrig').value, mesOrig = document.getElementById('inpEdMesOrig').value, parcOrig = document.getElementById('inpEdParcelaStr').value, mesDestino = document.getElementById('inpAdiantarMes').value.trim(), qtdAdiantar = document.getElementById('inpAdiantarQtd').value, descontoTotal = lerValorMoeda('inpAdiantarDesconto'), marcarComoPago = document.getElementById('chkAdiantarJaPago')?.checked;
-      if (!mesDestino || !mesDestino.includes('/')) { mostrarAviso('Atenção', 'Informe a Fatura Destino no formato MM/AAAA.'); return; }
-      const btn = document.getElementById('btnExecutarAdiantar'); btn.textContent = 'Processando...'; btn.disabled = true;
-      apiCall('adiantarParcelasWeb', { linha: linha, descOriginal: descOrig, mesOriginal: mesOrig, parcelaOriginal: parcOrig, mesDestino: mesDestino, qtdAdiantar: qtdAdiantar, descontoTotal: descontoTotal, marcarComoPago: Boolean(marcarComoPago) }).then(res => { btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; fecharModalEdicaoLanc(); mostrarAviso('Sucesso ⚡', `${res.qtdAdiantada} parcela(s) adiantada(s) para ${mesDestino}!`); carregarDados(); }).catch(err => { btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; mostrarAviso('Aviso', err.message); });
+      let pLimpa = String(parcAntiga || '').replace(/^'/, '').trim();
+      let dAntiga = String(dtAntiga || '').replace(/^'/, '').trim();
+      let mAntigo = String(mesAntigo || '').replace(/^'/, '').trim();
+
+      if (!dAntiga.includes('/') || !mAntigo.includes('/')) return;
+
+      let [d1, m1, a1] = dAntiga.split('/').map(Number);
+      let dtNova = new Date(a1, m1, 1);
+      let maxDiaNovo = new Date(dtNova.getFullYear(), dtNova.getMonth() + 1, 0).getDate();
+      let diaSeguro = Math.min(d1, maxDiaNovo);
+      let novaDataFmt = `${String(diaSeguro).padStart(2, '0')}/${String(dtNova.getMonth() + 1).padStart(2, '0')}/${dtNova.getFullYear()}`;
+
+      let [m2, a2] = mAntigo.split('/').map(Number);
+      let fatNova = new Date(a2, m2, 1);
+      let novoMesFmt = `${String(fatNova.getMonth() + 1).padStart(2, '0')}/${fatNova.getFullYear()}`;
+
+      const payload = { action: 'editarLancamentoLinhaWeb', param: {
+        linha: linha, descOriginal: descricao, mesOriginal: mAntigo, parcelaOriginal: pLimpa,
+        dataCompra: novaDataFmt, descricao: descricao, mesFatura: novoMesFmt, propagarValorParcelas: false
+      }};
+
+      mostrarAviso('Empurrando ⏩', `Avançando vencimento de ${descricao} para ${novoMesFmt}...`, payload);
     }
 
-    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') {
+    function atalhoEmpurrarModalEdicao(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') {
       vibrar(20);
-      document.getElementById('modalEdTitle').innerHTML = '✏️ Editar Gasto Pessoal'; document.getElementById('inpEdContexto').value = 'pessoal'; document.getElementById('inpEdLinha').value = linha; document.getElementById('inpEdParcelaStr').value = parcela; document.getElementById('inpEdDescOrig').value = desc; document.getElementById('inpEdMesOrig').value = mes;
-      preencherDataTripla('edicao', data);
-      document.getElementById('boxEdPessoa').classList.add('hidden'); document.getElementById('boxEdPessoa').classList.remove('block');
-      document.getElementById('inpEdDesc').value = desc; document.getElementById('selEdForma').value = forma; document.getElementById('boxEdCat').classList.remove('hidden'); document.getElementById('selEdCat').value = cat; definirValorMoeda('inpEdValor', lerValorMoeda(valor)); document.getElementById('inpEdMesFat').value = mes;
-      const selStatus = document.getElementById('selEdStatus'); document.getElementById('optGrpPessoal').classList.remove('hidden'); document.getElementById('optGrpEmprestimos').classList.add('hidden'); selStatus.value = status;
-      document.getElementById('boxEdTagsObs').classList.remove('hidden'); document.getElementById('lblEdTagsObs').textContent = 'Tags'; document.getElementById('inpEdTags').value = tag || ''; sincronizarChipsTags('edicao');
+      abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag, parcela);
+      setTimeout(() => {
+        ajustarMesFatura('inpEdMesFat', 1);
+        const btnSalvar = document.getElementById('btnSalvarEdLanc');
+        if (btnSalvar) btnSalvar.click();
+      }, 300);
+    }
+
+    function getNomeMes(numero) {
+      const nomes = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      return nomes[parseInt(numero, 10) - 1] || numero;
+    }
+
+    function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
+      const selAno = document.getElementById('selFiltroRelAno');
+      const selAnoSimples = document.getElementById('selFiltroAnoSimples');
       
-      const pLimpa = String(parcela || '').replace(/^'/, '').trim(); const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
-      const chkPropagar = document.getElementById('chkPropagarValorParc'); if (chkPropagar) chkPropagar.checked = false;
-      document.getElementById('painelAdiantarCampos')?.classList.add('hidden'); if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
-      document.getElementById('painelMoverContextoCampos')?.classList.add('hidden'); document.getElementById('txtBtnToggleMover').textContent = '🤝 Era de terceiro? Mover p/ Empréstimos'; document.getElementById('txtExplicacaoMover').innerHTML = 'Transfere esta compra para a aba <strong>Empréstimos</strong>.'; document.getElementById('inpMoverPessoa').classList.remove('hidden'); document.getElementById('btnExecutarMoverCtx').textContent = 'Transferir p/ Empréstimos 🤝'; if (document.getElementById('setaMoverCtx')) document.getElementById('setaMoverCtx').textContent = '▼'; if (document.getElementById('inpMoverPessoa')) document.getElementById('inpMoverPessoa').value = '';
-      document.getElementById('boxDividirParcEmp')?.classList.add('hidden');
+      if (selAno && selAnoSimples) {
+        const anosUnicosStr = Object.keys(arvoreMesesAno).sort((a, b) => b - a);
+        selAno.innerHTML = ''; 
+        selAnoSimples.innerHTML = '';
+        
+        anosUnicosStr.forEach(a => {
+          selAno.innerHTML += `<option value="${a}">${a}</option>`;
+          selAnoSimples.innerHTML += `<option value="${a}">${a}</option>`;
+        });
+        
+        if (anosUnicosStr.includes(anoPadrao)) { 
+          selAno.value = anoPadrao; 
+          selAnoSimples.value = anoPadrao; 
+        }
+      }
+      atualizarMesesDisponiveis(mesPadrao, dispararBusca);
+      atualizarEstadoSetasAnual();
+    }
 
-      if (ehParcelado) {
-        document.getElementById('boxAdiantarContainer')?.classList.remove('hidden'); document.getElementById('boxPropagarValorParc')?.classList.remove('hidden'); document.getElementById('inpAdiantarMes').value = evolucaoMesAtual || mes; document.getElementById('inpAdiantarQtd').value = ''; document.getElementById('inpAdiantarDesconto').value = ''; if (document.getElementById('chkAdiantarJaPago')) document.getElementById('chkAdiantarJaPago').checked = false;
+    function atualizarMesesDisponiveis(mesPadraoForcado = null, dispararBusca = true) {
+      const selAno = document.getElementById('selFiltroRelAno');
+      const selMes = document.getElementById('selFiltroRelMes');
+      if (!selAno || !selMes) return;
+      
+      const mesesDoAno = arvoreMesesAno[selAno.value] || [];
+      const mesesUnicosInt = [...new Set(mesesDoAno.map(str => str.split('/')[0]))].sort((a, b) => parseInt(a) - parseInt(b));
+      
+      selMes.innerHTML = '';
+      mesesUnicosInt.forEach(m => selMes.innerHTML += `<option value="${m}">${getNomeMes(m)}</option>`);
+      
+      if (mesPadraoForcado && mesesUnicosInt.includes(mesPadraoForcado)) {
+        selMes.value = mesPadraoForcado;
+      } else if (mesesUnicosInt.length > 0) {
+        selMes.value = mesesUnicosInt[0];
+      }
+      
+      atualizarEstadoSetasMensal();
+      if (dispararBusca) dispararBuscaRelatorioMensal();
+    }
+
+    function atualizarEstadoSetasMensal() {
+      const selAno = document.getElementById('selFiltroRelAno');
+      const selMes = document.getElementById('selFiltroRelMes');
+      const btnPrev = document.getElementById('btnMesPrev');
+      const btnNext = document.getElementById('btnMesNext');
+      
+      if (!selAno || !selMes || !btnPrev || !btnNext) return;
+      
+      let listaGlobalMeses = [];
+      Object.keys(arvoreMesesAno).sort((a, b) => a - b).forEach(a => {
+        (arvoreMesesAno[a] || []).forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
+      });
+      
+      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
+      
+      btnPrev.disabled = (idxAtual <= 0); 
+      btnNext.disabled = (idxAtual === -1 || idxAtual >= listaGlobalMeses.length - 1);
+    }
+
+    function mudarMesRelatorio(step) {
+      vibrar(20);
+      const selAno = document.getElementById('selFiltroRelAno');
+      const selMes = document.getElementById('selFiltroRelMes');
+      
+      let listaGlobalMeses = [];
+      Object.keys(arvoreMesesAno).sort((a, b) => a - b).forEach(a => {
+        (arvoreMesesAno[a] || []).forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
+      });
+      
+      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
+      const alvo = listaGlobalMeses[idxAtual + step];
+      
+      if (alvo) { 
+        selAno.value = alvo.ano; 
+        atualizarMesesDisponiveis(alvo.mes, true); 
+      }
+    }
+
+    function atualizarEstadoSetasAnual() {
+      const sel = document.getElementById('selFiltroAnoSimples');
+      const btnPrev = document.getElementById('btnAnoPrev');
+      const btnNext = document.getElementById('btnAnoNext');
+      
+      if (!sel || !btnPrev || !btnNext) return;
+      
+      const anos = Array.from(sel.options).map(o => o.value).sort((a, b) => a - b);
+      const idx = anos.indexOf(sel.value);
+      
+      btnPrev.disabled = (idx <= 0); 
+      btnNext.disabled = (idx === -1 || idx >= anos.length - 1);
+    }
+
+    function mudarAnoSimples(step) {
+      vibrar(20);
+      const sel = document.getElementById('selFiltroAnoSimples');
+      const anos = Array.from(sel.options).map(o => o.value).sort((a, b) => a - b);
+      const novoAno = anos[anos.indexOf(sel.value) + step];
+      
+      if (novoAno) { 
+        sel.value = novoAno; 
+        carregarRelatorioAnual(); 
+        atualizarEstadoSetasAnual(); 
+      }
+    }
+
+    function dispararBuscaRelatorioMensal() {
+      atualizarEstadoSetasMensal();
+      const ano = document.getElementById('selFiltroRelAno').value;
+      const mes = document.getElementById('selFiltroRelMes').value;
+      
+      if (ano && mes) { 
+        relatorioMensalPendente = false; 
+        carregarRelatorioMesUnico(`${mes}/${ano}`); 
+      }
+    }
+
+    function quitarFaturaCartaoMes(forma, mesFatura) {
+      mostrarConfirmacao("Quitar Fatura Agora", `Deseja marcar todos os seus lançamentos em aberto de "${forma}" na fatura ${mesFatura} como PAGOS?`, () => {
+        const payload = { action: 'quitarFaturaWeb', param: { forma: forma, mesFatura: mesFatura } };
+        mostrarAviso('Processando', 'Dando baixa nas parcelas...', payload);
+      });
+    }
+
+    function aplicarFiltroInternoMensal(tipo, valor) {
+      vibrar(15);
+      if (!ultimoRelatorioMensalCache) return;
+      
+      if (filtroInternoMensalAtivo.tipo === tipo && filtroInternoMensalAtivo.valor === valor && tipo !== 'todos') {
+        filtroInternoMensalAtivo = { tipo: 'todos', valor: '' };
+      } else { 
+        filtroInternoMensalAtivo = { tipo, valor }; 
+      }
+      renderizarListaItensFaturaMensal();
+    }
+
+    function renderizarListaItensFaturaMensal() {
+      if (!ultimoRelatorioMensalCache) return;
+      const todos = ultimoRelatorioMensalCache.lancamentos || [];
+      const f = filtroInternoMensalAtivo;
+      const banner = document.getElementById('bannerFiltroMensal');
+      const txtBanner = document.getElementById('txtBannerFiltroMensal');
+
+      let filtrados = todos;
+      
+      if (f.tipo === 'status') {
+        filtrados = todos.filter(l => {
+          const st = String(l[9] || '').toLowerCase();
+          const isPago = st === 'pago' || st === 'assinatura paga' || st === 'pago (cancelada)' || st === 'recebido';
+          return f.valor === 'pago' ? isPago : !isPago;
+        });
+        if (banner && txtBanner) { 
+          banner.classList.remove('hidden'); 
+          banner.classList.add('flex'); 
+          txtBanner.textContent = `Status: ${f.valor === 'pago' ? 'Pagos' : 'A Pagar'} (${filtrados.length})`; 
+        }
+      } else if (f.tipo === 'forma') {
+        filtrados = todos.filter(l => l[2] === f.valor);
+        if (banner && txtBanner) { 
+          banner.classList.remove('hidden'); 
+          banner.classList.add('flex'); 
+          txtBanner.textContent = `Forma: ${f.valor} (${filtrados.length})`; 
+        }
+      } else if (f.tipo === 'categoria') {
+        filtrados = todos.filter(l => l[3] === f.valor);
+        if (banner && txtBanner) { 
+          banner.classList.remove('hidden'); 
+          banner.classList.add('flex'); 
+          txtBanner.textContent = `Categoria: ${f.valor} (${filtrados.length})`; 
+        }
+      } else if (f.tipo === 'tag') {
+        const tagNorm = normalizarTexto(f.valor).replace(/^#/, '');
+        filtrados = todos.filter(l => normalizarTexto(l[10] || '').includes(tagNorm));
+        if (banner && txtBanner) { 
+          banner.classList.remove('hidden'); 
+          banner.classList.add('flex'); 
+          txtBanner.textContent = `Tag: ${f.valor} (${filtrados.length})`; 
+        }
       } else {
-        document.getElementById('boxAdiantarContainer')?.classList.add('hidden'); document.getElementById('boxPropagarValorParc')?.classList.add('hidden');
+        if (banner) { 
+          banner.classList.add('hidden'); 
+          banner.classList.remove('flex'); 
+        }
       }
 
-      document.getElementById('boxMoverContextoContainer')?.classList.remove('hidden'); document.getElementById('modalEdicaoLanc').classList.remove('hidden');
+      let html = '';
+      let dataAtualBloco = '';
+
+      filtrados.forEach((l, idx) => {
+        const dataLinha = l[0] || 'Sem data';
+        
+        if (dataLinha !== dataAtualBloco) {
+          dataAtualBloco = dataLinha;
+          html += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`;
+        }
+
+        const badge = obterClasseBadgeStatus(l[9]);
+        const isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
+        const descSafe = String(l[1]).replace(/'/g, "\\'");
+        const formaSafe = String(l[2]).replace(/'/g, "\\'");
+        const catSafe = String(l[3]).replace(/'/g, "\\'");
+        const tagSafe = String(l[10] || '').replace(/'/g, "\\'");
+        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
+        const dtSafe = String(l[0] || '').replace(/'/g, "\\'");
+        const mSafe = String(l[8] || '').replace(/'/g, "\\'");
+        const resParc = l[12] || null;
+
+        let tagsHtml = '';
+        if (l[10]) {
+          String(l[10]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+            const tSafe = t.replace(/'/g, "\\'");
+            tagsHtml += `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${tSafe}')" class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block transition active:scale-95 shadow-sm">${t}</button>`;
+          });
+        }
+
+        const btnEmpurrar = isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[11]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="text-sky-400 hover:text-white text-[10px] font-bold px-2 py-1.5 bg-sky-900/20 border border-sky-500/20 hover:bg-sky-600 rounded-lg transition active:scale-95 mr-1" title="Avançar para o próximo mês">⏩ Empurrar 1m</button>` : '';
+
+        html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition">
+          <div class="flex justify-between items-start">
+            <div class="min-w-0 pr-2">
+              <div class="text-white font-bold text-sm leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div>
+              <div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div>
+              <div>${tagsHtml}</div>
+            </div>
+            <div class="text-right flex flex-col items-end shrink-0">
+              <div class="valor-auditoria text-purple-400 font-bold text-base tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div>
+              <span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
+            <span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md shadow-sm border border-slate-800">${formatarInfoParcelaCard(l[6], resParc)}</span>
+            <div class="flex">
+              ${btnEmpurrar}
+              <button onclick="abrirModalEdicaoLanc('${l[11]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="text-slate-300 hover:text-white text-[10px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 shadow-sm border border-slate-600">Editar</button>
+            </div>
+          </div>
+        </div>`;
+      });
+
+      if (filtrados.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento encontrado.</div>';
+      document.getElementById('lista-relatorio').innerHTML = html;
     }
 
-    function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
+    function carregarRelatorioMesUnico(mesFiltro) {
+      document.getElementById('lista-relatorio').innerHTML = '<div class="py-4 text-center text-slate-500">Buscando dados...</div>';
+      
+      apiCall('obterRelatorioMes', mesFiltro).then(res => {
+        if (!res) return;
+        ultimoRelatorioMensalCache = res;
+        filtroInternoMensalAtivo = { tipo: 'todos', valor: '' };
 
-    function salvarEdicaoLanc(e) {
-      e.preventDefault(); vibrar(30); formatarZeroData(document.getElementById('inpEdDataDia'), 2); formatarZeroData(document.getElementById('inpEdDataMes'), 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false);
-      const edDescEl = document.getElementById('inpEdDesc'); edDescEl.value = formatarTituloInteligente(edDescEl.value); const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Salvando...'; btn.disabled = true; const contexto = document.getElementById('inpEdContexto').value;
+        document.getElementById('rel-aberto').textContent = res.kpis.aberto;
+        document.getElementById('rel-pago').textContent = res.kpis.pago;
+        document.getElementById('rel-total').textContent = res.kpis.total;
 
-      if (contexto === 'pessoal') {
-        const tagsEdTratadas = formatarTagsAutomaticamente(document.getElementById('inpEdTags').value);
-        apiCall('editarLancamentoLinhaWeb', { linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value, mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value, dataCompra: document.getElementById('inpEdData').value, descricao: edDescEl.value, formaPagto: document.getElementById('selEdForma').value, categoria: document.getElementById('selEdCat').value, valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked), mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value, tags: tagsEdTratadas }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Lançamento atualizado!'); }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+        if (res.estatisticas) {
+          const est = res.estatisticas;
+          document.getElementById('rel-sub-ticket').textContent = `🛒 ${est.qtdLancamentos} itens • Méd: ${est.ticketMedio}`;
+          document.getElementById('rel-sub-pct').textContent = `✅ ${est.pctQuitado} quitado`;
+          document.getElementById('rel-sub-maior').textContent = `🔥 Maior gasto: ${est.maiorGasto}`;
+
+          const badgeRitmo = document.getElementById('rel-badge-ritmo');
+          if (est.ritmoVariacao === null || est.ritmoVariacao === undefined) {
+            badgeRitmo.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
+            badgeRitmo.textContent = est.ritmoTexto || 'Sem base ant.';
+          } else if (est.ritmoVariacao <= 0) {
+            badgeRitmo.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
+            badgeRitmo.textContent = `📉 ${est.ritmoTexto}`;
+          } else {
+            badgeRitmo.className = 'px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30';
+            badgeRitmo.textContent = `📈 ${est.ritmoTexto}`;
+          }
+
+          document.getElementById('bar-rel-avista').style.width = `${est.aVistaPct || 0}%`;
+          document.getElementById('bar-rel-rigido').style.width = `${est.rigidoPct || 0}%`;
+          document.getElementById('txt-rel-avista').textContent = `${est.aVistaValor} (${est.aVistaPct}%)`;
+          document.getElementById('txt-rel-rigido').textContent = `${est.rigidoValor} (${est.rigidoPct}%)`;
+        }
+
+        if (chartRel) chartRel.destroy();
+        chartRel = new Chart(document.getElementById('chartRelatorio').getContext('2d'), {
+          type: 'pie',
+          data: { 
+            labels: res.categorias.map(c => c.nome), 
+            datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] 
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } }
+        });
+
+        let htmlFormas = '';
+        const totalMesRaw = res.totalRaw || 0;
+        
+        (res.formas || []).forEach(f => {
+          const pct = totalMesRaw > 0 ? Math.round((f.total / totalMesRaw) * 100) : 0;
+          const fSafe = f.nome.replace(/'/g, "\\'");
+          const btnQuitar = (f.aberto > 0 && !f.nome.toLowerCase().includes('pix'))
+            ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${fSafe}', '${mesFiltro}')" class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition active:scale-95 shadow-sm">✅ Quitar</button>`
+            : '';
+            
+          const infoTerc = (f.terceiros > 0)
+            ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>Total Banco: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
+            : '';
+            
+          htmlFormas += `<div onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="bg-slate-900/50 hover:bg-slate-800 px-3 py-2.5 rounded-xl border border-slate-800 cursor-pointer transition shadow-sm mb-1.5"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold text-xs">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold text-sm">${formatBRL(f.total)}</span> <span class="text-[9px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
+        });
+        document.getElementById('rel-formas-usadas').innerHTML = htmlFormas || '<p class="text-xs text-slate-500 text-center">Nenhuma forma utilizada.</p>';
+
+        const boxTags = document.getElementById('box-rel-tags');
+        const containerTags = document.getElementById('rel-tags-usadas');
+        if (res.tags && res.tags.length > 0) {
+          boxTags.classList.remove('hidden');
+          containerTags.innerHTML = res.tags.map(t => {
+            const tSafe = t.nome.replace(/'/g, "\\'");
+            return `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${tSafe}')" class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95 shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[9px] ml-0.5">(${t.qtd}x)</span></button>`;
+          }).join('');
+        } else {
+          boxTags.classList.add('hidden');
+        }
+
+        let htmlMetas = '';
+        let temMeta = false;
+        res.categorias.forEach(c => {
+          if (c.meta > 0) {
+            temMeta = true;
+            const realPct = (c.total / c.meta) * 100;
+            const pct = Math.min(realPct, 100).toFixed(0);
+            let corBg = 'bg-emerald-500', corTexto = 'text-emerald-400';
+            if (realPct >= 75 && realPct < 100) { corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; }
+            else if (realPct >= 100) { corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; }
+            const cSafe = c.nome.replace(/'/g, "\\'");
+            htmlMetas += `<div onclick="aplicarFiltroInternoMensal('categoria', '${cSafe}')" class="cursor-pointer hover:opacity-90 transition bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 mb-2"><div class="flex justify-between items-center text-[11px] font-semibold mb-1.5"><span class="text-slate-300 flex items-center gap-1.5">🏷️ ${c.nome}</span><span class="${corTexto} text-xs font-bold">${formatBRL(c.total)} / ${formatBRL(c.meta)} <span class="text-[9px] opacity-80">(${realPct.toFixed(0)}%)</span></span></div><div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
+          }
+        });
+        document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
+
+        renderizarListaItensFaturaMensal();
+      }).catch(err => mostrarAviso('Erro', 'Erro no relatório: ' + err.message));
+    }
+
+    function carregarRelatorioAnual() {
+      const ano = document.getElementById('selFiltroAnoSimples').value; 
+      if (!ano) return;
+      relatorioAnualPendente = false;
+      atualizarEstadoSetasAnual();
+      
+      document.getElementById('tabela-anual-cat').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Buscando...</td></tr>';
+      
+      apiCall('obterRelatorioAnual', ano).then(res => {
+        if (!res) return;
+        ultimoRelatorioAnualCache = res;
+
+        document.getElementById('anual-total').textContent = res.total;
+        document.getElementById('anual-media').textContent = res.media;
+        document.getElementById('anual-pico').textContent = res.maiorMes;
+        document.getElementById('anual-sub-qtd').textContent = `📊 ${res.qtdTransacoes || 0} transações no ano`;
+        document.getElementById('anual-sub-menor').textContent = `📉 Menor: ${res.menorMes || '-'}`;
+        if (res.composicao) {
+          document.getElementById('anual-sub-comp').textContent = `⚡ À Vista: ${res.composicao.aVistaValor} (${res.composicao.aVistaPct}%) • 🔒 Parc/Fixo: ${res.composicao.rigidoValor} (${res.composicao.rigidoPct}%)`;
+        }
+
+        if (chartAnualObj) chartAnualObj.destroy();
+        chartAnualObj = new Chart(document.getElementById('chartAnualBarras').getContext('2d'), {
+          type: 'bar',
+          data: { 
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], 
+            datasets: [{ label: 'Gastos R$', data: res.graficoMeses, backgroundColor: '#8b5cf6', borderRadius: 4 }] 
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+
+        const totalAnoRaw = res.totalRaw || 0;
+        let htmlCat = '';
+        res.categorias.forEach(c => {
+          const pct = totalAnoRaw > 0 ? Math.round((c.total / totalAnoRaw) * 100) : 0;
+          const cSafe = c.nome.replace(/'/g, "\\'");
+          htmlCat += `<tr onclick="auditarItemAnual('categoria', '${cSafe}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${c.nome} <span class="text-[9px] text-sky-400 bg-sky-500/10 px-1.5 py-0.5 rounded ml-1">↗</span></td><td class="py-3 pr-2 text-right font-bold text-white text-sm">${formatBRL(c.total)} <span class="text-[10px] text-slate-500 font-normal ml-1">(${pct}%)</span></td></tr>`;
+        });
+        document.getElementById('tabela-anual-cat').innerHTML = htmlCat || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto registrado.</td></tr>';
+
+        let htmlFormas = '';
+        (res.formas || []).forEach(f => {
+          const pct = totalAnoRaw > 0 ? Math.round((f.total / totalAnoRaw) * 100) : 0;
+          const fSafe = f.nome.replace(/'/g, "\\'");
+          htmlFormas += `<tr onclick="auditarItemAnual('forma', '${fSafe}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${f.nome} <span class="text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded ml-1">↗</span></td><td class="py-3 pr-2 text-right font-bold text-amber-400 text-sm">${formatBRL(f.total)} <span class="text-[10px] text-slate-500 font-normal ml-1">(${pct}%)</span></td></tr>`;
+        });
+        document.getElementById('tabela-anual-formas').innerHTML = htmlFormas || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhuma forma utilizada.</td></tr>';
+
+        const boxTagsAnual = document.getElementById('lista-anual-tags');
+        if (res.tags && res.tags.length > 0) {
+          boxTagsAnual.innerHTML = res.tags.map(t => {
+            const tSafe = t.nome.replace(/'/g, "\\'");
+            return `<button type="button" onclick="auditarItemAnual('tag', '${tSafe}')" class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[10px] ml-0.5">(${t.qtd}x)</span></button>`;
+          }).join('');
+        } else {
+          boxTagsAnual.innerHTML = '<p class="text-xs text-slate-500 py-2">Nenhuma tag registrada neste ano.</p>';
+        }
+      }).catch(err => mostrarAviso('Erro', err.message));
+    }
+
+    function gerarPDFExecutivo(tipo) {
+      vibrar(30);
+      const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      let htmlDoc = '', nomeArquivo = '';
+
+      if (tipo === 'mensal') {
+        if (!ultimoRelatorioMensalCache) { mostrarAviso('Aviso', 'Aguarde o carregamento do relatório mensal.'); return; }
+        const d = ultimoRelatorioMensalCache;
+        const selMes = document.getElementById('selFiltroRelMes'), selAno = document.getElementById('selFiltroRelAno');
+        const nomeMes = selMes && selMes.selectedIndex >= 0 ? selMes.options[selMes.selectedIndex].text : '';
+        const ano = selAno ? selAno.value : '';
+        nomeArquivo = `Relatorio_Mensal_${nomeMes}_${ano}.pdf`;
+        const totalRaw = d.totalRaw || 0, est = d.estatisticas || {};
+
+        let linhasFormas = (d.formas || []).map(f => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${f.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(f.total)}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${totalRaw > 0 ? ((f.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
+        let linhasCategorias = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${c.meta > 0 ? formatBRL(c.meta) : '-'}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
+        let linhasExtrato = (d.lancamentos || []).map((l, i) => `<tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #e2e8f0;"><td style="padding:6px;font-size:10px;">${l[0]}</td><td style="padding:6px;font-size:10px;font-weight:600;">${l[1]}</td><td style="padding:6px;font-size:10px;">${l[2]}</td><td style="padding:6px;font-size:10px;">${l[3]}</td><td style="padding:6px;font-size:9px;color:#4f46e5;">${l[10] || '-'}</td><td style="padding:6px;font-size:10px;text-align:center;">${l[6]}</td><td style="padding:6px;font-size:10px;text-align:center;">${l[9]}</td><td style="padding:6px;font-size:10px;text-align:right;font-weight:700;">${l[7]}</td></tr>`).join('');
+
+        htmlDoc = `<div style="font-family:Arial,sans-serif;color:#0f172a;background:#fff;padding:16px;"><div style="display:flex;justify-content:space-between;border-bottom:3px solid #1e293b;padding-bottom:12px;margin-bottom:16px;"><div><div style="font-size:10px;font-weight:700;color:#2563eb;">RELATÓRIO FINANCEIRO EXECUTIVO</div><h1 style="font-size:20px;font-weight:800;margin:2px 0 0 0;">Fechamento Mensal — ${nomeMes} de ${ano}</h1></div><div style="font-size:10px;color:#64748b;">Gerado em ${dataGeracao}</div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"><div style="border:1px solid #cbd5e1;border-left:4px solid #f59e0b;border-radius:8px;padding:10px;"><div>Total a Pagar: <strong>${d.kpis.aberto}</strong></div><div style="font-size:10px;color:#475569;">${est.qtdLancamentos || 0} itens • Méd: ${est.ticketMedio || 'R$ 0,00'}</div></div><div style="border:1px solid #cbd5e1;border-left:4px solid #10b981;border-radius:8px;padding:10px;"><div>Total Pago: <strong>${d.kpis.pago}</strong></div><div style="font-size:10px;color:#475569;">Quitado: ${est.pctQuitado || '0%'}</div></div><div style="border:1px solid #cbd5e1;border-left:4px solid #7c3aed;border-radius:8px;padding:10px;"><div>Total Fatura: <strong>${d.kpis.total}</strong></div><div style="font-size:10px;color:#475569;">Ritmo: ${est.ritmoTexto || '-'}</div></div></div><div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px;margin-bottom:16px;"><div><h3 style="font-size:12px;font-weight:700;">Por Forma</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>${linhasFormas}</tbody></table></div><div><h3 style="font-size:12px;font-weight:700;">Por Categoria vs. Meta</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>${linhasCategorias}</tbody></table></div></div><h3 style="font-size:12px;font-weight:700;">Extrato Detalhado</h3><table style="width:100%;border-collapse:collapse;"><tbody>${linhasExtrato}</tbody></table></div>`;
       } else {
-        const obsEdTratadas = document.getElementById('inpEdTags').value; 
-        apiCall('editarEmprestimoLinhaWeb', { linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value, mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value, dataCompra: document.getElementById('inpEdData').value, pessoa: document.getElementById('inpEdPessoa').value, descricao: edDescEl.value, formaPagto: document.getElementById('selEdForma').value, valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked), mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value, observacoes: obsEdTratadas }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Empréstimo atualizado!'); }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+        if (!ultimoRelatorioAnualCache) { mostrarAviso('Aviso', 'Aguarde o carregamento do balanço anual.'); return; }
+        const d = ultimoRelatorioAnualCache;
+        const ano = document.getElementById('selFiltroAnoSimples').value;
+        nomeArquivo = `Balanco_Anual_${ano}.pdf`;
+        const totalRaw = d.totalRaw || 0;
+        
+        let linhasCat = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
+        htmlDoc = `<div style="font-family:Arial,sans-serif;color:#0f172a;background:#fff;padding:16px;"><h1>Balanço Anual — ${ano}</h1><p>Total: <strong>${d.total}</strong> • Média/Mês: <strong>${d.media}</strong> • Pico: <strong>${d.maiorMes}</strong></p><table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;"><tbody>${linhasCat}</tbody></table></div>`;
       }
+
+      const containerTemp = document.createElement('div'); 
+      containerTemp.innerHTML = htmlDoc; 
+      document.body.appendChild(containerTemp);
+      html2pdf().set({ margin: 0.35, filename: nomeArquivo, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(containerTemp).save().then(() => document.body.removeChild(containerTemp));
     }
-
-    function abrirModalEdicaoAss(desc, forma, cat, valor) { vibrar(20); document.getElementById('inpAssDescOrig').value = desc; document.getElementById('inpAssFormaOrig').value = forma; document.getElementById('inpAssDesc').value = desc; document.getElementById('selAssForma').value = forma; document.getElementById('selAssCat').value = cat; definirValorMoeda('inpAssValor', lerValorMoeda(valor)); document.getElementById('modalEdicaoAss').classList.remove('hidden'); }
-    function fecharModalEdicaoAss() { document.getElementById('modalEdicaoAss').classList.add('hidden'); }
-
-    function salvarEdicaoAss(e) {
-      e.preventDefault(); const assDescEl = document.getElementById('inpAssDesc'); assDescEl.value = formatarTituloInteligente(assDescEl.value); const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Salvando...'; btn.disabled = true;
-      apiCall('editarAssinaturaWeb', { descOriginal: document.getElementById('inpAssDescOrig').value, formaOriginal: document.getElementById('inpAssFormaOrig').value, novaDesc: assDescEl.value, novaForma: document.getElementById('selAssForma').value, novaCat: document.getElementById('selAssCat').value, novaValor: lerValorMoeda('inpAssValor') }).then(() => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; mostrarAviso('Sucesso', 'Assinatura atualizada!'); carregarDados(); }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; });
-    }
-
-    function cancelarAssinaturaLocal(descricao, forma) { mostrarConfirmacao("Desativar Assinatura", `Deseja desativar "${descricao}"?`, () => { apiCall('cancelarAssinaturaWeb', { descricao, forma }).then(() => carregarDados()).catch(err => mostrarAviso('Erro', err.message)); }); }
 
     // ============================================================================
-    // MOTOR DE RENDERIZAÇÃO PRINCIPAL (INJEÇÃO DE DADOS NA TELA)
+    // PAINEL DE EVOLUÇÃO (HORIZONTE DASHBOARD)
+    // ============================================================================
+
+    let visaoEvolucaoAtual = 'pessoal'; 
+    
+    function alternarVisaoEvolucao(tipo) {
+      vibrar(20);
+      visaoEvolucaoAtual = tipo;
+      const btnPessoal = document.getElementById('btnVisaoEvolPessoal');
+      const btnBanco = document.getElementById('btnVisaoEvolBanco');
+      
+      if (tipo === 'pessoal') {
+        btnPessoal.className = 'flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-blue-600 text-white transition shadow-md';
+        btnBanco.className = 'flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-400 hover:text-white transition bg-transparent shadow-none';
+      } else {
+        btnBanco.className = 'flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-purple-600 text-white transition shadow-md';
+        btnPessoal.className = 'flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-400 hover:text-white transition bg-transparent shadow-none';
+      }
+      renderTabelaEvolucao();
+    }
+
+    function irParaFaturaMensal(mesAnoStr) {
+      if (!mesAnoStr || !mesAnoStr.includes('/')) return;
+      const [m, a] = mesAnoStr.split('/');
+      const selAno = document.getElementById('selFiltroRelAno');
+      if (selAno) selAno.value = a;
+      setAba('relatorio');
+      atualizarMesesDisponiveis(m, true);
+    }
+
+    function renderTabelaEvolucao() {
+      const qtdCols = window.innerWidth < 640 ? 3 : 4;
+      const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + qtdCols);
+
+      let th = `<th class="py-2.5 pl-2 border-b border-slate-700">Forma</th>`;
+      mToShow.forEach(m => {
+        const mCurto = m.length === 7 ? `${m.substring(0, 3)}${m.substring(5, 7)}` : m;
+        th += `<th class="py-2.5 text-center border-b border-slate-700"><button onclick="irParaFaturaMensal('${m}')" class="text-sky-400 hover:text-white underline decoration-sky-500/40 font-bold px-1.5 py-0.5 rounded hover:bg-slate-800 transition active:scale-95" title="Abrir fatura de ${m}">${mCurto} ↗</button></th>`;
+      });
+      th += `<th class="py-2.5 text-right pr-2 border-b border-slate-700">Total</th>`;
+      
+      const hdr = document.getElementById('faturas-header'); 
+      if (hdr) hdr.innerHTML = th;
+
+      let tb = '';
+      const todasFormas = Object.keys(evolucaoPivot);
+      const formasNormais = todasFormas.filter(f => {
+        const lower = f.toLowerCase();
+        if (lower.includes('total') || lower.includes('carteira') || f === '__BANCO_TOTAL__') return false;
+        return evolucaoMeses.reduce((acc, m) => acc + (evolucaoPivot[f][m] || 0), 0) > 0;
+      }).sort((a, b) => {
+        const isPixA = a.toLowerCase().includes('pix'), isPixB = b.toLowerCase().includes('pix');
+        if (isPixA && !isPixB) return 1;
+        if (!isPixA && isPixB) return -1;
+        return a.localeCompare(b);
+      });
+
+      const chaveTotalExibir = visaoEvolucaoAtual === 'pessoal' ? 
+        (todasFormas.find(f => f.toLowerCase().includes('total') && !f.includes('BANCO')) || 'Total Carteira') : 
+        '__BANCO_TOTAL__';
+      
+      const nomeLabelTotal = visaoEvolucaoAtual === 'pessoal' ? 'Total Seus Gastos' : 'Total Faturas no Banco';
+
+      formasNormais.forEach(forma => {
+        let totalLinha = 0;
+        let cols = mToShow.map(m => {
+          const val = evolucaoPivot[forma][m] || 0;
+          totalLinha += val;
+          return `<td class="py-2.5 text-center text-slate-300 font-medium whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+        });
+        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70 transition"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1 text-xs truncate max-w-[100px] sm:max-w-none" title="${forma}">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+      });
+
+      let totalLinhaGeral = 0;
+      let colsTotal = mToShow.map(m => {
+        const val = (evolucaoPivot[chaveTotalExibir] && evolucaoPivot[chaveTotalExibir][m]) ? evolucaoPivot[chaveTotalExibir][m] : 0;
+        totalLinhaGeral += val;
+        return `<td class="py-3.5 text-center text-white font-extrabold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+      });
+      tb += `<tr class="bg-blue-900/20 border-t-2 border-blue-500/40 shadow-sm"><td class="py-3.5 pl-2 font-extrabold text-blue-300 whitespace-nowrap pr-1 text-[11px] uppercase tracking-wider">${nomeLabelTotal}</td>${colsTotal.join('')}<td class="py-3.5 font-extrabold text-blue-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinhaGeral > 0 ? formatBRL(totalLinhaGeral) : '-'}</td></tr>`;
+
+      const fBody = document.getElementById('faturas-body'); 
+      if (fBody) fBody.innerHTML = tb;
+      
+      const btnPrev = document.getElementById('btnEvolPrev'), btnNext = document.getElementById('btnEvolNext');
+      const isStart = (evolucaoIdx === 0), isEnd = (evolucaoIdx + qtdCols >= evolucaoMeses.length);
+      
+      if (btnPrev) { 
+        btnPrev.disabled = isStart; 
+        btnPrev.className = `px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-md whitespace-nowrap active:scale-95 ${isStart ? 'bg-slate-800 text-slate-600 cursor-not-allowed shadow-none' : 'bg-slate-700 text-white hover:bg-slate-600'}`; 
+      }
+      if (btnNext) { 
+        btnNext.disabled = isEnd; 
+        btnNext.className = `px-2.5 py-1.5 rounded-lg text-xs font-bold transition shadow-md whitespace-nowrap active:scale-95 ${isEnd ? 'bg-slate-800 text-slate-600 cursor-not-allowed shadow-none' : 'bg-slate-700 text-white hover:bg-slate-600'}`; 
+      }
+    }
+
+    function mudarMesEvolucao(step) {
+      vibrar(15);
+      const qtdCols = window.innerWidth < 640 ? 3 : 4;
+      evolucaoIdx += step;
+      if (evolucaoIdx < 0) evolucaoIdx = 0;
+      if (evolucaoIdx + qtdCols > evolucaoMeses.length) evolucaoIdx = Math.max(0, evolucaoMeses.length - qtdCols);
+      renderTabelaEvolucao();
+    }
+
+    // ============================================================================
+    // EDIÇÃO DE CARTÕES E CATEGORIAS
+    // ============================================================================
+
+    function isCategoriaOutros(nome) { 
+      return normalizarTexto(nome).includes('outros') || normalizarTexto(nome).includes('antigas'); 
+    }
+
+    function toggleEdicaoLancamentos() {
+      vibrar(20);
+      modoEdicaoLancamentos = !modoEdicaoLancamentos;
+      const btn = document.getElementById('btnToggleEdicaoLanc');
+      const boxLanc = document.getElementById('lista-lancamentos');
+      if (modoEdicaoLancamentos) {
+        btn.classList.replace('bg-slate-700', 'bg-amber-500'); 
+        btn.innerHTML = '❌ Fechar'; 
+        boxLanc?.classList.add('modo-edicao-lanc');
+      } else {
+        btn.classList.replace('bg-amber-500', 'bg-slate-700'); 
+        btn.innerHTML = '⚙️ Organizar'; 
+        boxLanc?.classList.remove('modo-edicao-lanc');
+      }
+    }
+
+    function toggleEdicaoCategorias() {
+      vibrar(20);
+      modoEdicaoCategorias = !modoEdicaoCategorias;
+      const btn = document.getElementById('btnToggleEdicaoCat');
+      const boxNova = document.getElementById('boxNovaCat');
+      const btnSalvar = document.getElementById('btnSalvarCat');
+      const infoText = document.getElementById('infoTextCat');
+      
+      if (modoEdicaoCategorias) {
+        btn.classList.replace('bg-slate-700', 'bg-amber-500'); 
+        btn.textContent = '❌ Cancelar';
+        boxNova.classList.replace('hidden', 'flex'); 
+        btnSalvar.classList.remove('hidden'); 
+        infoText.classList.remove('hidden');
+        document.body.style.overscrollBehaviorY = 'contain';
+      } else {
+        btn.classList.replace('bg-amber-500', 'bg-slate-700'); 
+        btn.textContent = '⚙️ Organizar';
+        boxNova.classList.replace('flex', 'hidden'); 
+        btnSalvar.classList.add('hidden'); 
+        infoText.classList.add('hidden');
+        document.body.style.overscrollBehaviorY = '';
+      }
+      renderizarListaCategorias();
+    }
+
+    function atualizarIndicadorOffline() {
+      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+      const btn = document.getElementById('btnSyncOffline');
+      if (fila.length > 0) { 
+        btn.classList.remove('hidden'); 
+        btn.textContent = `📶 Sincronizar (${fila.length})`; 
+      } else { 
+        btn.classList.add('hidden'); 
+      }
+    }
+
+    function sincronizarFilaOffline() {
+      vibrar(20);
+      if (!navigator.onLine) { mostrarAviso('Aviso', 'Você ainda está sem internet.'); return; }
+      
+      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+      if (fila.length === 0) return;
+      
+      const btn = document.getElementById('btnSyncOffline'); 
+      btn.textContent = 'Enviando...'; 
+      btn.disabled = true;
+      
+      apiCall('sincronizarLoteWeb', fila).then(res => {
+        localStorage.removeItem('filaOfflineGestor'); 
+        btn.disabled = false;
+        mostrarAviso('Sucesso', `Sincronização concluída! ${res.qtd} item(ns) enviado(s).`);
+        atualizarIndicadorOffline(); 
+        carregarDados();
+      }).catch(err => { 
+        mostrarAviso('Erro', err.message); 
+        btn.disabled = false; 
+        atualizarIndicadorOffline(); 
+      });
+    }
+
+    function toggleEdicaoFormas() {
+      vibrar(20);
+      modoEdicaoFormas = !modoEdicaoFormas;
+      const btn = document.getElementById('btnToggleEdicaoFp');
+      const btnSalvar = document.getElementById('btnSalvarFormas');
+      
+      if (modoEdicaoFormas) { 
+        btn.classList.replace('bg-slate-700', 'bg-amber-500'); 
+        btn.textContent = '❌ Cancelar'; 
+        btnSalvar.classList.remove('hidden'); 
+        document.body.style.overscrollBehaviorY = 'contain';
+      } else { 
+        btn.classList.replace('bg-amber-500', 'bg-slate-700'); 
+        btn.textContent = '⚙️ Organizar'; 
+        btnSalvar.classList.add('hidden'); 
+        document.body.style.overscrollBehaviorY = '';
+      }
+      renderListaFormas();
+    }
+
+    function salvarOrdemFormas() {
+      vibrar(30);
+      const listaFormas = document.getElementById('lista-formas'); 
+      if (!listaFormas) return;
+      
+      const novaOrdemNomes = Array.from(listaFormas.children).map(c => c.getAttribute('data-nome'));
+      const btnSalvar = document.getElementById('btnSalvarFormas'); 
+      btnSalvar.textContent = 'Salvando...'; 
+      btnSalvar.disabled = true;
+      
+      apiCall('reordenarFormasPagamentoWeb', novaOrdemNomes).then(() => {
+        btnSalvar.textContent = '💾 Salvar Ordem'; 
+        btnSalvar.disabled = false; 
+        toggleEdicaoFormas(); 
+        carregarDados();
+      }).catch(err => { 
+        mostrarAviso('Erro', err.message); 
+        btnSalvar.textContent = '💾 Salvar Ordem'; 
+        btnSalvar.disabled = false; 
+      });
+    }
+
+    function renderListaFormas() {
+      let htmlP = '', htmlArq = '';
+      if (!formasGlobais || formasGlobais.length === 0) {
+        htmlP = '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum cartão carregado.</div>';
+      } else {
+        formasGlobais.forEach(p => {
+          const nomeSeguro = String(p.nome || ''), bancoSeguro = String(p.banco || '');
+          const nomeEscaped = nomeSeguro.replace(/'/g, "\\'"), bancoEscaped = bancoSeguro.replace(/'/g, "\\'");
+          const nLower = nomeSeguro.toLowerCase();
+          const isPix = nLower.includes('pix'), isTotal = nLower.includes('total') || nLower.includes('carteira');
+          const isFixed = isPix || isTotal;
+          const badgeClass = isPix ? 'bg-slate-700 text-slate-300' : (isTotal ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30');
+
+          let botaoExcluir = '', iconeDrag = '', lockClass = '', botoesRow = '', margemInterna = '';
+          
+          if (modoEdicaoFormas) {
+            margemInterna = 'ml-9';
+            if (!isFixed) {
+              iconeDrag = `<span class="drag-handle-fp text-slate-500 hover:text-white text-2xl pr-3 cursor-grab">☰</span>`;
+              botaoExcluir = `<button onclick="excluirFormaLocal('${nomeEscaped}')" class="text-rose-400 hover:text-white text-[10px] font-bold px-3 py-1.5 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 rounded-lg transition">Excluir</button>`;
+            } else {
+              iconeDrag = `<span class="text-slate-600 text-lg pr-3">🔒</span>`; 
+              lockClass = 'locked-card opacity-90';
+            }
+            const botaoEditar = `<button onclick="abrirModalForma('${nomeEscaped}', '${bancoEscaped}', '${p.limiteTotal || ''}', '${p.fechamento || ''}', '${p.vencimento || ''}', ${p.arquivado})" class="text-blue-400 hover:text-white text-[10px] font-bold px-4 py-1.5 bg-blue-900/20 border border-blue-500/20 hover:bg-blue-600 rounded-lg transition">Editar</button>`;
+            botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
+          }
+
+          const labelFatura = isPix ? 'Gasto no Mês' : 'Sua Fatura Atual';
+          const htmlTotalFuturo = !isPix ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div>` : '';
+          const htmlTerceiros = (!isPix && p.terceirosMesRaw > 0)
+            ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${p.terceirosMes} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${p.totalBancoMes}</strong></span></div>`
+            : '';
+
+          const cardHtml = `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-[10px] mt-0.5 font-bold uppercase tracking-wider">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPix ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
+          
+          if (p.arquivado) htmlArq += cardHtml;
+          else htmlP += cardHtml;
+        });
+      }
+      
+      const listaFormas = document.getElementById('lista-formas');
+      const listaArq = document.getElementById('lista-formas-arquivadas');
+      
+      if (listaFormas) {
+        listaFormas.innerHTML = htmlP;
+        if (listaFormas.sortableInstance) listaFormas.sortableInstance.destroy();
+        if (modoEdicaoFormas) {
+          listaFormas.sortableInstance = new Sortable(listaFormas, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-fp', filter: '.locked-card', delay: 150, delayOnTouchOnly: true });
+        }
+      }
+      if (listaArq) {
+        listaArq.innerHTML = htmlArq || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhum cartão arquivado.</div>';
+      }
+    }
+
+    function abrirModalForma(nome = '', banco = '', limite = '', fechamento = '', vencimento = '', isArq = false) {
+      vibrar(20);
+      document.getElementById('modalFormaTitle').innerHTML = nome ? '✏️ Editar Cartão' : '➕ Novo Cartão';
+      document.getElementById('inpFpOriginal').value = nome;
+      document.getElementById('inpFpNome').value = nome;
+      document.getElementById('inpFpBanco').value = banco;
+      definirValorMoeda('inpFpLimite', lerValorMoeda(limite));
+      document.getElementById('inpFpFechamento').value = fechamento;
+      document.getElementById('inpFpVencimento').value = vencimento;
+      document.getElementById('inpFpArquivado').value = isArq ? 'true' : 'false';
+      
+      const btnArq = document.getElementById('btnArquivarForma');
+      if (btnArq) {
+        if (nome && !nome.toLowerCase().includes('pix') && !nome.toLowerCase().includes('total')) {
+          btnArq.classList.remove('hidden');
+          btnArq.textContent = isArq ? '📦 Desarquivar' : '📦 Arquivar Cartão';
+        } else {
+          btnArq.classList.add('hidden');
+        }
+      }
+      document.getElementById('modalForma').classList.remove('hidden');
+    }
+
+    function fecharModalForma() { document.getElementById('modalForma').classList.add('hidden'); }
+
+    function arquivarFormaLocal() {
+      vibrar(30);
+      const isArqAtual = document.getElementById('inpFpArquivado').value === 'true';
+      document.getElementById('inpFpArquivado').value = isArqAtual ? 'false' : 'true';
+      const fakeEvent = { preventDefault: () => {} };
+      salvarForma(fakeEvent); 
+    }
+
+    function salvarForma(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSalvarFp'); 
+      btn.textContent = 'Salvando...'; 
+      btn.disabled = true;
+      
+      apiCall('salvarFormaPagamentoWeb', {
+        nomeOriginal: document.getElementById('inpFpOriginal').value,
+        nome: document.getElementById('inpFpNome').value,
+        banco: document.getElementById('inpFpBanco').value,
+        limite: lerValorMoeda('inpFpLimite'),
+        fechamento: document.getElementById('inpFpFechamento').value,
+        vencimento: document.getElementById('inpFpVencimento').value,
+        arquivado: document.getElementById('inpFpArquivado').value === 'true'
+      }).then(() => { 
+        fecharModalForma(); 
+        carregarDados(); 
+        btn.textContent = 'Salvar'; 
+        btn.disabled = false; 
+      }).catch(err => { 
+        mostrarAviso('Erro', err.message); 
+        btn.textContent = 'Salvar'; 
+        btn.disabled = false; 
+      });
+    }
+
+    function excluirFormaLocal(nome) {
+      mostrarConfirmacao("Excluir Definitivamente", `Se apagar o cartão "${nome}", ele somirá do histórico passado. Recomendamos ARQUIVAR no botão Editar.\n\nDeseja mesmo apagar?`, () => {
+        apiCall('excluirFormaPagamentoWeb', nome).then(() => { 
+          mostrarAviso('Sucesso', 'Cartão excluído!'); 
+          carregarDados(); 
+        }).catch(err => mostrarAviso('Erro', err.message));
+      });
+    }
+
+    function renderizarListaCategorias() {
+      const ul = document.getElementById('lista-categorias-ui'); if (!ul) return;
+      const countSpan = document.getElementById('contador-cat'); if (countSpan) countSpan.textContent = `${categoriasGlobaisEdit.length}/25`;
+      ul.innerHTML = '';
+
+      const ordemSalva = JSON.parse(localStorage.getItem('ordemCategoriasLocalV8')) || [];
+      categoriasGlobaisEdit.sort((a, b) => {
+        if (isCategoriaOutros(a.nome) && !isCategoriaOutros(b.nome)) return 1;
+        if (!isCategoriaOutros(a.nome) && isCategoriaOutros(b.nome)) return -1;
+        if (ordemSalva.length > 0) {
+          let idxA = ordemSalva.indexOf(a.nome), idxB = ordemSalva.indexOf(b.nome);
+          if (idxA === -1) idxA = 999; if (idxB === -1) idxB = 999;
+          if (idxA !== idxB) return idxA - idxB;
+        }
+        return a.nome.toLowerCase().localeCompare(b.nome.toLowerCase());
+      });
+
+      const selectsCat = [document.getElementById('selCat'), document.getElementById('selEdCat'), document.getElementById('selAssCat'), document.getElementById('filtCat')];
+      selectsCat.forEach(sel => {
+        if (!sel) return;
+        const valAtual = sel.value;
+        if (sel.id === 'filtCat') sel.innerHTML = '<option value="">Todas</option>';
+        else if (sel.id === 'selCat') sel.innerHTML = '<option value="">Selecione...</option>';
+        else sel.innerHTML = '';
+        
+        categoriasGlobaisEdit.forEach(c => sel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
+        sel.value = valAtual || '';
+      });
+
+      categoriasGlobaisEdit.forEach((c, index) => {
+        const isFixa = isCategoriaOutros(c.nome);
+        const metaStr = c.meta > 0 ? `<span class="text-[10px] text-amber-400 font-bold ml-2 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">Meta: ${formatBRL(c.meta)}</span>` : '';
+        let espacamentoItem = 'px-4 py-3', iconeDrag = '', botoesAcao = '', classeLock = '';
+        
+        if (modoEdicaoCategorias) {
+          espacamentoItem = 'pl-2 pr-4 py-2.5';
+          if (isFixa) { 
+            iconeDrag = `<span class="text-slate-600 text-lg px-3">🔒</span>`; 
+            classeLock = 'locked-item opacity-80'; 
+          } else { 
+            iconeDrag = `<span class="drag-handle-cat text-slate-500 hover:text-white text-2xl px-3 py-1 bg-slate-900/50 rounded-lg cursor-grab">☰</span>`; 
+          }
+          botoesAcao = `<div class="flex gap-2"><button type="button" onclick="editarCategoriaUi(${index})" class="text-blue-400 bg-blue-900/20 p-2 rounded-lg">✏️</button><button type="button" onclick="removerCategoriaUi(${index})" class="text-rose-400 bg-rose-900/20 p-2 rounded-lg">🗑</button></div>`;
+        }
+        ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
+      });
+
+      if (ul.sortableInstance) ul.sortableInstance.destroy();
+      if (modoEdicaoCategorias) {
+        ul.sortableInstance = new Sortable(ul, {
+          animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
+          onEnd: function () {
+            const nomes = Array.from(ul.children).map(li => li.getAttribute('data-nome'));
+            localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...nomes.filter(n => !isCategoriaOutros(n)), ...nomes.filter(n => isCategoriaOutros(n))]));
+            renderizarListaCategorias();
+          }
+        });
+      }
+    }
+
+    let indexEdicaoCat = -1;
+    function editarCategoriaUi(index) {
+      vibrar(20);
+      const c = categoriasGlobaisEdit[index];
+      document.getElementById('inpNovaCat').value = c.nome;
+      definirValorMoeda('inpNovaMeta', c.meta);
+      indexEdicaoCat = index;
+      const btn = document.getElementById('btnAdicionarCat'); 
+      btn.textContent = 'Atualizar'; 
+      btn.classList.replace('bg-blue-600', 'bg-amber-500');
+    }
+
+    function adicionarCategoriaUi() {
+      vibrar(20);
+      const inpNome = document.getElementById('inpNovaCat');
+      const valNome = formatarTituloInteligente(inpNome.value.trim());
+      const valMeta = lerValorMoeda('inpNovaMeta');
+      if (!valNome) return;
+      
+      if (indexEdicaoCat !== -1) {
+        categoriasGlobaisEdit[indexEdicaoCat] = { nome: valNome, meta: valMeta };
+        indexEdicaoCat = -1;
+        const btn = document.getElementById('btnAdicionarCat'); 
+        btn.textContent = 'Adicionar'; 
+        btn.classList.replace('bg-amber-500', 'bg-blue-600');
+      } else {
+        if (categoriasGlobaisEdit.length >= 25) { mostrarAviso('Atenção', 'Limite de 25 categorias atingido.'); return; }
+        categoriasGlobaisEdit.push({ nome: valNome, meta: valMeta });
+      }
+      
+      inpNome.value = ''; document.getElementById('inpNovaMeta').value = '';
+      toggleBotaoLimpar('inpNovaMeta','btnLimpNovaMeta');
+      renderizarListaCategorias();
+    }
+
+    function removerCategoriaUi(index) { vibrar(20); categoriasGlobaisEdit.splice(index, 1); renderizarListaCategorias(); }
+
+    function salvarCategorias() {
+      const btn = document.getElementById('btnSalvarCat'); 
+      btn.textContent = 'Salvando...'; 
+      btn.disabled = true;
+      
+      apiCall('salvarCategoriasWeb', categoriasGlobaisEdit).then(() => {
+        btn.textContent = '💾 Salvar Modificações'; 
+        btn.disabled = false; 
+        toggleEdicaoCategorias(); 
+        mostrarAviso('Sucesso', 'Categorias salvas!'); 
+        carregarDados();
+      }).catch(err => { 
+        mostrarAviso('Erro', err.message); 
+        btn.textContent = '💾 Salvar Modificações'; 
+        btn.disabled = false; 
+      });
+    }
+
+    // ============================================================================
+    // MOTOR PRINCIPAL DE RENDERIZAÇÃO (O "CORAÇÃO" DO APLICATIVO)
     // ============================================================================
 
     function renderizarDados(dados) {
       dadosCarregadosIniciais = true;
+      
       if (document.getElementById('kpi-aberto')) document.getElementById('kpi-aberto').textContent = dados.kpis?.totalAberto || 'R$ 0,00';
       if (document.getElementById('kpi-pago')) document.getElementById('kpi-pago').textContent = dados.kpis?.totalPago || 'R$ 0,00';
       if (document.getElementById('kpi-comp')) document.getElementById('kpi-comp').textContent = dados.kpis?.comprometimentoMes || 'R$ 0,00';
@@ -3062,7 +4019,7 @@
         if (selEmpForma) { selEmpForma.innerHTML = '<option value="">Selecione o cartão...</option>'; formasGlobais.filter(f => !f.nome.toLowerCase().includes('pix') && !f.nome.toLowerCase().includes('total') && !f.arquivado).forEach(f => selEmpForma.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
         if (selAssForma) { selAssForma.innerHTML = ''; opcoesFormsFiltradas.forEach(f => selAssForma.innerHTML += `<option value="${f}">${f}</option>`); }
         if (filtForma) { filtForma.innerHTML = '<option value="">Todos</option>'; (dados.formasPagamento || []).filter(f => !f.arquivado).forEach(f => filtForma.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
-        if (simCartao) { simCartao.innerHTML = '<option value="">📊 Comparar Todos</option>'; formasGlobais.filter(f => !f.arquivado && !f.nome.toLowerCase().includes('pix') && !f.nome.toLowerCase().includes('total')).forEach(f => simCartao.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
+        if (simCartao) { simCartao.innerHTML = '<option value="">📊 Comparar Todos os Cartões</option>'; formasGlobais.filter(f => !f.arquivado && !f.nome.toLowerCase().includes('pix') && !f.nome.toLowerCase().includes('total')).forEach(f => simCartao.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
 
         const opcoesCats = dados.opcoesCategorias || [];
         if (selCat) { const valAntigoCat = selCat.value; selCat.innerHTML = '<option value="">Selecione...</option>'; opcoesCats.forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`); selCat.value = valAntigoCat; }
@@ -3070,23 +4027,21 @@
         if (selAssCat) { selAssCat.innerHTML = ''; opcoesCats.forEach(c => selAssCat.innerHTML += `<option value="${c}">${c}</option>`); }
 
         renderizarListaCategorias(); renderListaFormas();
-      } catch (e) { console.error("Erro ao preencher opções:", e); }
+      } catch (e) { console.error("Erro ao preencher opções de dropdown:", e); }
 
       try {
         renderizarChipsTags();
         const listaLanc = dados.lancamentos || [];
-        ultimosLancamentosCache = listaLanc; 
-        
         if (abaAtivaAtual === 'lancamentos' && !temAlgumFiltroAtivo()) { 
-          renderTabelaLancamentos(ultimosLancamentosCache.slice(0, LIMITE_PAGINA), false); 
+          ultimosLancamentosCache = listaLanc; 
+          renderTabelaLancamentos(ultimosLancamentosCache, false); 
           const box = document.getElementById('boxCarregarMais'); 
-          if (box) box.classList[ultimosLancamentosCache.length > LIMITE_PAGINA ? 'remove' : 'add']('hidden'); 
+          if (box) { if (dados.temMaisLancamentos) box.classList.remove('hidden'); else box.classList.add('hidden'); } 
         }
 
         renderTabelaEvolucao();
 
-        const mStrSafe = evolucaoMesAtual || '01/2026';
-        const [mAtual, aAtual] = mStrSafe.split('/');
+        const [mAtual, aAtual] = evolucaoMesAtual.split('/');
         preencherSeletoresInteligentes(aAtual, mAtual, false);
 
         const filtMes = document.getElementById('filtMes');
@@ -3097,7 +4052,10 @@
           if (chartGlobal) chartGlobal.destroy();
           const categorias = dados.categorias || [];
           if (categorias.length > 0) {
-            chartGlobal = new Chart(chartCanvas.getContext('2d'), { type: 'doughnut', data: { labels: categorias.map(c => c.nome), datasets: [{ data: categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0, hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } } } } });
+            chartGlobal = new Chart(chartCanvas.getContext('2d'), {
+              type: 'doughnut', data: { labels: categorias.map(c => c.nome), datasets: [{ data: categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0, hoverOffset: 4 }] },
+              options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } } } }
+            });
           }
         }
 
@@ -3111,27 +4069,31 @@
             const card = `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between shadow-sm relative"><div class="flex justify-between items-start mb-3"><div class="pr-2"><h3 class="text-white font-bold text-sm leading-tight">${ass.descricao}</h3><div class="text-[10px] text-slate-400 mt-1 font-medium bg-slate-900 px-2 py-1 rounded-md inline-block border border-slate-800">💳 ${ass.forma} • 🏷️ ${ass.categoria}</div></div><div class="text-right shrink-0"><span class="text-emerald-400 font-bold text-base block">${ass.valor}</span><span class="text-[9px] text-slate-500">/ mês</span></div></div><div class="flex justify-between items-center pt-2 border-t border-slate-700/50"><div class="flex gap-2">${btnAcao}${btnEditar}</div><span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${isAtiva ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-500'}">${ass.status}</span></div></div>`;
             if (isAtiva) htmlAtivas += card; else htmlInativas += card;
           });
-          listaAssAtivas.innerHTML = htmlAtivas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura ativa.</div>'; listaAssInativas.innerHTML = htmlInativas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura cancelada.</div>';
+          listaAssAtivas.innerHTML = htmlAtivas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura ativa.</div>';
+          listaAssInativas.innerHTML = htmlInativas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura cancelada.</div>';
         }
 
         const bannerEmpDash = document.getElementById('bannerEmprestimosDash');
         if (bannerEmpDash) {
           const empKpi = emprestimosGlobal.kpis || {};
-          if (empKpi.atrasadosRaw > 0) { document.getElementById('txtBannerEmprestimosDash').textContent = `Você tem ${empKpi.atrasadosFmt} em atraso!`; bannerEmpDash.classList.remove('hidden'); bannerEmpDash.classList.add('flex'); } 
+          if (empKpi.atrasadosRaw > 0) { document.getElementById('txtBannerEmprestimosDash').textContent = `Você tem ${empKpi.atrasadosFmt} de empréstimos em atraso!`; bannerEmpDash.classList.remove('hidden'); bannerEmpDash.classList.add('flex'); } 
           else { bannerEmpDash.classList.add('hidden'); bannerEmpDash.classList.remove('flex'); }
         }
 
         renderizarMenusNavegacao();
         atualizarIndicadorOffline();
         
-        // Remove a interceptação do Enter no Bloco de Notas
+        // Remove a interceptação do Enter no Bloco de Notas para você conseguir dar Parágrafos
         const tAreaNota = document.getElementById('inpNovaNotaTexto');
-        if (tAreaNota) { tAreaNota.onkeydown = null; }
+        if (tAreaNota) {
+          tAreaNota.onkeydown = function(event) {
+             if (event.key === 'Enter' && event.ctrlKey) { 
+               event.preventDefault(); 
+               salvarNotaUi(); 
+             }
+          };
+        }
         
-        // Injeção Automática de Data se estiver vazio
-        const inpData = document.getElementById('inpData');
-        if (!inpData || inpData.value.length < 10) definirDataHoje();
-
         if (abaAtivaAtual === 'relatorio' && dadosCarregadosIniciais) dispararBuscaRelatorioMensal();
         if (abaAtivaAtual === 'anual' && dadosCarregadosIniciais) carregarRelatorioAnual();
         if (abaAtivaAtual === 'ferramentas') {
@@ -3154,271 +4116,20 @@
     }
 
     // ============================================================================
-    // LÓGICA DE FILTRAGEM LOCAL (RELATÓRIOS MENSAL E ANUAL)
-    // ============================================================================
-
-    function carregarRelatorioMesUnico(mesFiltro) {
-      const list = (ultimosLancamentosCache || []).filter(l => l[8] === mesFiltro);
-      
-      let totGeral = 0;
-      let totAberto = 0;
-      let totPago = 0;
-      let aVista = 0;
-      let parc = 0;
-      let maiorGasto = 0;
-      
-      let mapas = { cat: {}, forma: {}, tag: {} };
-
-      list.forEach(l => {
-        const val = (l[13] !== undefined ? l[13] : lerValorMoeda(l[7]));
-        totGeral += val; 
-        if (val > maiorGasto) maiorGasto = val;
-        
-        const status = String(l[9]).toLowerCase(); 
-        const isAberto = status === 'em aberto';
-        if (isAberto) totAberto += val; 
-        else totPago += val;
-        
-        if (String(l[6]) === '1/1') aVista += val; 
-        else parc += val;
-        
-        const cat = l[3] || 'Outros'; 
-        const forma = l[2] || 'Outros';
-        
-        if (!mapas.cat[cat]) mapas.cat[cat] = { nome: cat, total: 0 }; 
-        mapas.cat[cat].total += val;
-        
-        if (!mapas.forma[forma]) mapas.forma[forma] = { nome: forma, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 }; 
-        mapas.forma[forma].total += val; 
-        if (isAberto) mapas.forma[forma].aberto += val;
-        
-        const tags = (l[11] || l[10] || '').split(',').map(t => t.trim()).filter(Boolean);
-        tags.forEach(t => { 
-          if (!mapas.tag[t]) mapas.tag[t] = { nome: t, total: 0, qtd: 0 }; 
-          mapas.tag[t].total += val; 
-          mapas.tag[t].qtd++; 
-        });
-      });
-
-      const catArr = Object.values(mapas.cat).map(c => { 
-        const m = categoriasGlobaisEdit.find(g => g.nome === c.nome); 
-        return { nome: c.nome, total: c.total, meta: m ? m.meta : 0 }; 
-      }).sort((a,b) => b.total - a.total);
-
-      ultimoRelatorioMensalCache = {
-         lancamentos: list, 
-         totalRaw: totGeral,
-         kpis: { 
-           aberto: formatBRL(totAberto), 
-           pago: formatBRL(totPago), 
-           total: formatBRL(totGeral) 
-         },
-         estatisticas: { 
-           qtdLancamentos: list.length, 
-           ticketMedio: list.length > 0 ? formatBRL(totGeral / list.length) : 'R$ 0,00', 
-           pctQuitado: totGeral > 0 ? Math.round((totPago / totGeral) * 100) + '%' : '0%', 
-           maiorGasto: formatBRL(maiorGasto), 
-           aVistaValor: formatBRL(aVista), 
-           aVistaPct: totGeral > 0 ? Math.round((aVista / totGeral) * 100) : 0, 
-           rigidoValor: formatBRL(parc), 
-           rigidoPct: totGeral > 0 ? Math.round((parc / totGeral) * 100) : 0, 
-           ritmoTexto: '-' 
-         },
-         categorias: catArr, 
-         formas: Object.values(mapas.forma).sort((a,b) => b.total - a.total), 
-         tags: Object.values(mapas.tag).sort((a,b) => b.total - a.total)
-      };
-      
-      document.getElementById('rel-aberto').textContent = ultimoRelatorioMensalCache.kpis.aberto;
-      document.getElementById('rel-pago').textContent = ultimoRelatorioMensalCache.kpis.pago;
-      document.getElementById('rel-total').textContent = ultimoRelatorioMensalCache.kpis.total;
-      
-      const est = ultimoRelatorioMensalCache.estatisticas;
-      document.getElementById('rel-sub-ticket').textContent = `🛒 ${est.qtdLancamentos} itens • Méd: ${est.ticketMedio}`;
-      document.getElementById('rel-sub-pct').textContent = `✅ ${est.pctQuitado} quitado`;
-      document.getElementById('rel-sub-maior').textContent = `🔥 Maior gasto: ${est.maiorGasto}`;
-      document.getElementById('rel-badge-ritmo').textContent = 'Fatura Carregada';
-      document.getElementById('bar-rel-avista').style.width = `${est.aVistaPct || 0}%`;
-      document.getElementById('bar-rel-rigido').style.width = `${est.rigidoPct || 0}%`;
-      document.getElementById('txt-rel-avista').textContent = `${est.aVistaValor} (${est.aVistaPct}%)`;
-      document.getElementById('txt-rel-rigido').textContent = `${est.rigidoValor} (${est.rigidoPct}%)`;
-      
-      if (chartRel) chartRel.destroy();
-      chartRel = new Chart(document.getElementById('chartRelatorio').getContext('2d'), { 
-        type: 'pie', 
-        data: { 
-          labels: ultimoRelatorioMensalCache.categorias.map(c => c.nome), 
-          datasets: [{ 
-            data: ultimoRelatorioMensalCache.categorias.map(c => c.total), 
-            backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], 
-            borderWidth: 0 
-          }] 
-        }, 
-        options: { 
-          responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } 
-        } 
-      });
-
-      let htmlFormas = ''; 
-      ultimoRelatorioMensalCache.formas.forEach(f => { 
-        const pct = ultimoRelatorioMensalCache.totalRaw > 0 ? Math.round((f.total / ultimoRelatorioMensalCache.totalRaw) * 100) : 0; 
-        const fSafe = f.nome.replace(/'/g, "\\'"); 
-        const btnQuitar = (f.aberto > 0 && !f.nome.toLowerCase().includes('pix')) ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${fSafe}', '${mesFiltro}')" class="ml-2 bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition active:scale-95 shadow-sm">✅ Quitar</button>` : ''; 
-        htmlFormas += `<div onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="bg-slate-900/50 hover:bg-slate-800 px-3 py-2.5 rounded-xl border border-slate-800 cursor-pointer mb-1.5 transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold text-xs">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold text-sm">${formatBRL(f.total)}</span> <span class="text-[9px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div></div>`; 
-      });
-      document.getElementById('rel-formas-usadas').innerHTML = htmlFormas || '<p class="text-xs text-slate-500 text-center">Nenhuma forma utilizada.</p>';
-
-      const boxTags = document.getElementById('box-rel-tags');
-      const containerTags = document.getElementById('rel-tags-usadas');
-      
-      if (ultimoRelatorioMensalCache.tags.length > 0) { 
-        boxTags.classList.remove('hidden'); 
-        containerTags.innerHTML = ultimoRelatorioMensalCache.tags.map(t => `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${t.nome.replace(/'/g, "\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95 shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span></button>`).join(''); 
-      } else {
-        boxTags.classList.add('hidden');
-      }
-
-      let htmlMetas = ''; 
-      let temMeta = false;
-      ultimoRelatorioMensalCache.categorias.forEach(c => { 
-        if (c.meta > 0) { 
-          temMeta = true; 
-          const realPct = (c.total / c.meta) * 100;
-          const pct = Math.min(realPct, 100).toFixed(0); 
-          let corBg = 'bg-emerald-500', corTexto = 'text-emerald-400'; 
-          if (realPct >= 75 && realPct < 100) { 
-            corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; 
-          } else if (realPct >= 100) { 
-            corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; 
-          } 
-          htmlMetas += `<div onclick="aplicarFiltroInternoMensal('categoria', '${c.nome.replace(/'/g, "\\'")}')" class="cursor-pointer bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 mb-2 transition hover:opacity-80"><div class="flex justify-between items-center text-[11px] font-semibold mb-1.5"><span class="text-slate-300 flex items-center gap-1.5">🏷️ ${c.nome}</span><span class="${corTexto} text-xs font-bold">${formatBRL(c.total)} / ${formatBRL(c.meta)} <span class="text-[9px] opacity-80">(${realPct.toFixed(0)}%)</span></span></div><div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`; 
-        } 
-      });
-      document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Sem metas ativas.</p>';
-
-      filtroInternoMensalAtivo = { tipo: 'todos', valor: '' }; 
-      renderizarListaItensFaturaMensal();
-    }
-
-    function carregarRelatorioAnual() {
-      const ano = document.getElementById('selFiltroAnoSimples').value; 
-      if (!ano) return; 
-      
-      relatorioAnualPendente = false; 
-      atualizarEstadoSetasAnual();
-      
-      const list = (ultimosLancamentosCache || []).filter(l => String(l[0]).endsWith(`/${ano}`));
-      
-      let totAno = 0; 
-      let mesesMap = {}; 
-      let catMap = {}; 
-      let forMap = {}; 
-      let tagsMap = {}; 
-      let aVista = 0, rigido = 0;
-      
-      for(let i = 1; i <= 12; i++) mesesMap[String(i).padStart(2,'0')] = 0;
-      
-      list.forEach(l => { 
-        const val = (l[13] !== undefined ? l[13] : lerValorMoeda(l[7])); 
-        totAno += val; 
-        
-        const mesVal = String(l[0]).substring(3,5); 
-        if (mesesMap[mesVal] !== undefined) mesesMap[mesVal] += val; 
-        
-        if (String(l[6]) === '1/1') aVista += val; 
-        else rigido += val; 
-        
-        const c = l[3] || 'Outros'; 
-        if (!catMap[c]) catMap[c] = 0; 
-        catMap[c] += val; 
-        
-        const f = l[2] || 'Outros'; 
-        if (!forMap[f]) forMap[f] = 0; 
-        forMap[f] += val; 
-        
-        const tags = (l[11] || l[10] || '').split(',').map(t=>t.trim()).filter(Boolean); 
-        tags.forEach(t => { 
-          if(!tagsMap[t]) tagsMap[t] = {total:0, qtd:0}; 
-          tagsMap[t].total += val; 
-          tagsMap[t].qtd++; 
-        }); 
-      });
-      
-      const meses = Object.values(mesesMap);
-      const maxVal = Math.max(...meses);
-      const maxMesStr = Object.keys(mesesMap).find(k => mesesMap[k] === maxVal);
-      const minVal = Math.min(...meses.filter(v => v > 0));
-
-      ultimoRelatorioAnualCache = { 
-        total: formatBRL(totAno), 
-        totalRaw: totAno, 
-        media: formatBRL(totAno / 12), 
-        maiorMes: maxMesStr ? getNomeMes(maxMesStr) : '-', 
-        menorMes: minVal < Infinity ? formatBRL(minVal) : '-', 
-        qtdTransacoes: list.length, 
-        composicao: { 
-          aVistaValor: formatBRL(aVista), 
-          aVistaPct: totAno > 0 ? Math.round((aVista/totAno)*100) : 0, 
-          rigidoValor: formatBRL(rigido), 
-          rigidoPct: totAno > 0 ? Math.round((rigido/totAno)*100) : 0 
-        }, 
-        graficoMeses: meses, 
-        categorias: Object.keys(catMap).map(k => ({nome: k, total: catMap[k]})).sort((a,b)=>b.total - a.total), 
-        formas: Object.keys(forMap).map(k => ({nome: k, total: forMap[k]})).sort((a,b)=>b.total - a.total), 
-        tags: Object.keys(tagsMap).map(k => ({nome: k, total: tagsMap[k].total, qtd: tagsMap[k].qtd})).sort((a,b)=>b.total - a.total) 
-      };
-      
-      const res = ultimoRelatorioAnualCache;
-      
-      document.getElementById('anual-total').textContent = res.total; 
-      document.getElementById('anual-media').textContent = res.media; 
-      document.getElementById('anual-pico').textContent = res.maiorMes; 
-      document.getElementById('anual-sub-qtd').textContent = `📊 ${res.qtdTransacoes || 0} transações no ano`; 
-      document.getElementById('anual-sub-menor').textContent = `📉 Menor: ${res.menorMes || '-'}`; 
-      document.getElementById('anual-sub-comp').textContent = `⚡ À Vista: ${res.composicao.aVistaValor} (${res.composicao.aVistaPct}%) • 🔒 Parc: ${res.composicao.rigidoValor} (${res.composicao.rigidoPct}%)`;
-      
-      if (chartAnualObj) chartAnualObj.destroy();
-      chartAnualObj = new Chart(document.getElementById('chartAnualBarras').getContext('2d'), { 
-        type: 'bar', 
-        data: { 
-          labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], 
-          datasets: [{ label: 'Gastos R$', data: res.graficoMeses, backgroundColor: '#8b5cf6', borderRadius: 4 }] 
-        }, 
-        options: { 
-          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } 
-        } 
-      });
-      
-      document.getElementById('tabela-anual-cat').innerHTML = res.categorias.map(c => `<tr onclick="auditarItemAnual('categoria', '${c.nome.replace(/'/g, "\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${c.nome}</td><td class="py-3 pr-2 text-right font-bold text-white text-sm">${formatBRL(c.total)} <span class="text-[10px] text-slate-500 font-normal ml-1">(${res.totalRaw > 0 ? Math.round((c.total/res.totalRaw)*100) : 0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto registrado.</td></tr>';
-      
-      document.getElementById('tabela-anual-formas').innerHTML = res.formas.map(f => `<tr onclick="auditarItemAnual('forma', '${f.nome.replace(/'/g, "\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${f.nome}</td><td class="py-3 pr-2 text-right font-bold text-amber-400 text-sm">${formatBRL(f.total)} <span class="text-[10px] text-slate-500 font-normal ml-1">(${res.totalRaw > 0 ? Math.round((f.total/res.totalRaw)*100) : 0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhuma forma.</td></tr>';
-      
-      document.getElementById('lista-anual-tags').innerHTML = res.tags.length > 0 ? res.tags.map(t => `<button type="button" onclick="auditarItemAnual('tag', '${t.nome.replace(/'/g, "\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-[10px] ml-0.5">(${t.qtd}x)</span></button>`).join('') : '<p class="text-xs text-slate-500 py-2">Nenhuma tag registrada.</p>';
-    }
-
-    // ============================================================================
     // INICIALIZAÇÃO DO APLICATIVO
     // ============================================================================
     function carregarDados() {
       const cacheP = localStorage.getItem('cacheDadosGestorV12');
-      if (cacheP && !dadosCarregadosIniciais) { 
-        try { renderizarDados(JSON.parse(cacheP)); } catch (e) { console.error(e); } 
-      }
+      if (cacheP && !dadosCarregadosIniciais) { try { renderizarDados(JSON.parse(cacheP)); } catch (e) { console.error(e); } }
       const notasS = localStorage.getItem('notasLocaisGestorV12');
-      if (notasS && notasGlobais.length === 0) { 
-        try { notasGlobais = JSON.parse(notasS); } catch (e) {} 
-      }
+      if (notasS && notasGlobais.length === 0) { try { notasGlobais = JSON.parse(notasS); } catch (e) {} }
 
-      apiCall('getDadosCompletos').then(dados => { 
-        localStorage.setItem('cacheDadosGestorV12', JSON.stringify(dados)); 
-        renderizarDados(dados); 
-      }).catch(err => { 
-        if (!cacheP) mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message); 
-      });
+      apiCall('getDadosCompletos').then(dados => { localStorage.setItem('cacheDadosGestorV12', JSON.stringify(dados)); renderizarDados(dados); })
+        .catch(err => { if (!cacheP) mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message); });
     }
 
     window.onload = carregarDados;
 
   </script>
 </body>
-</html>
+                                                         </html>
