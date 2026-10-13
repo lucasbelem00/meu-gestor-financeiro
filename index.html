@@ -1466,19 +1466,16 @@
   </div>
   <script>
     // ============================================================================
-    // SERVICE WORKER E ATUALIZAÇÃO FORÇADA DE CACHE (APP NATIVO)
+    // SERVICE WORKER E ATUALIZAÇÃO FORÇADA
     // ============================================================================
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(reg => {
-            reg.onupdatefound = () => {
-              const w = reg.installing;
-              w.onstatechange = () => {
-                if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload();
-              };
-            };
-          }).catch(err => console.log('SW fail:', err));
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+          reg.onupdatefound = () => {
+            const w = reg.installing;
+            w.onstatechange = () => { if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload(); };
+          };
+        }).catch(err => console.log('SW fail:', err));
       });
     }
 
@@ -1500,7 +1497,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbyrAZUf0CLzaNVfkALFwKdiB4JkPHQGnBUAaEVB2dLP4v7r52VOI7mLn3R42VReMDyi-Q/exec";
 
     // ============================================================================
-    // ESTADO GLOBAL E NAVEGAÇÃO UNIFICADA
+    // VARIÁVEIS GLOBAIS
     // ============================================================================
     let chartGlobal = null, chartRel = null, chartAnualObj = null;
     let formasGlobais = [], categoriasGlobaisEdit = [], opcoesTagsGlobal = [];
@@ -1520,26 +1517,24 @@
     let valorOriginalAntesMetade = null;
     let notasGlobais = [];
     let emprestimosGlobal = { kpis: {}, pessoasFrequentes: [], itens: [] };
-    let salvandoGastoTrava = false;
-    let operacaoEmAndamento = false;
-
-    let offsetAtual = 0;
-    const LIMITE_PAGINA = 50;
+    let salvandoGastoTrava = false, operacaoEmAndamento = false;
+    let offsetAtual = 0; const LIMITE_PAGINA = 50;
     let filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' };
+    let filaDesfazer = null, timerDesfazer = null;
 
-    let filaDesfazer = null;
-    let timerDesfazer = null;
-
+    // ============================================================================
+    // MENU E NAVEGAÇÃO
+    // ============================================================================
     const abasConfig = [
-      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Registro', cor: 'text-emerald-400', principal: true },
-      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300', principal: true },
-      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Histórico', cor: 'text-slate-300', principal: true },
-      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Fatura Mensal', cor: 'text-slate-300', principal: true },
-      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas Práticas', cor: 'text-slate-300', principal: false },
-      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Balanço Anual', cor: 'text-slate-300', principal: false },
-      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300', principal: false },
-      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Cartões e Limites', cor: 'text-slate-300', principal: false },
-      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300', principal: false }
+      { id: 'novo', icone: '➕', titulo: 'Novo', tituloD: 'Novo Registro', cor: 'text-emerald-400' },
+      { id: 'dashboard', icone: '📊', titulo: 'Painel', tituloD: 'Dashboard', cor: 'text-slate-300' },
+      { id: 'lancamentos', icone: '📝', titulo: 'Histórico', tituloD: 'Histórico', cor: 'text-slate-300' },
+      { id: 'relatorio', icone: '📅', titulo: 'Mensal', tituloD: 'Fatura Mensal', cor: 'text-slate-300' },
+      { id: 'ferramentas', icone: '🧰', titulo: 'Ferramentas', tituloD: 'Ferramentas Práticas', cor: 'text-slate-300' },
+      { id: 'anual', icone: '📆', titulo: 'Anual', tituloD: 'Balanço Anual', cor: 'text-slate-300' },
+      { id: 'assinaturas', icone: '🔄', titulo: 'Fixos', tituloD: 'Despesas Fixas', cor: 'text-slate-300' },
+      { id: 'formas', icone: '💳', titulo: 'Cartões', tituloD: 'Cartões e Limites', cor: 'text-slate-300' },
+      { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300' }
     ];
 
     function renderizarMenusNavegacao() {
@@ -1560,32 +1555,22 @@
     }
 
     function setAba(aba, salvar = true) {
-      fecharMenuMobile();
-      abaAtivaAtual = aba;
+      fecharMenuMobile(); abaAtivaAtual = aba;
       if (salvar) localStorage.setItem('abaAtivaGestorV12', aba);
 
       const configAtiva = abasConfig.find(a => a.id === aba);
-      const subMobile = document.getElementById('subtituloMobileAba');
-      if (subMobile && configAtiva) subMobile.textContent = configAtiva.tituloD;
+      if (document.getElementById('subtituloMobileAba') && configAtiva) document.getElementById('subtituloMobileAba').textContent = configAtiva.tituloD;
 
       abasConfig.forEach(a => {
         const view = document.getElementById('view-' + a.id); if (view) view.classList.add('hidden');
-        const btnD = document.getElementById('btn-desk-' + a.id);
-        const btnM = document.getElementById('btn-mob-' + a.id);
-        const btnMenuModal = document.getElementById('btn-menu-' + a.id);
-
+        const btnD = document.getElementById('btn-desk-' + a.id), btnM = document.getElementById('btn-mob-' + a.id), btnMenuModal = document.getElementById('btn-menu-' + a.id);
         if (btnD) { btnD.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnD.classList.add(a.cor); }
         if (btnM) { btnM.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnM.classList.add(a.cor); }
         if (btnMenuModal) { btnMenuModal.classList.remove('border-blue-500', 'bg-blue-950/40'); btnMenuModal.classList.add('border-slate-700/80', 'bg-slate-800/80'); }
       });
 
       const viewShow = document.getElementById('view-' + aba); if (viewShow) viewShow.classList.remove('hidden');
-      const btnShowD = document.getElementById('btn-desk-' + aba);
-      const btnShowM = document.getElementById('btn-mob-' + aba);
-      const btnMenuD = document.getElementById('btn-desk-menu');
-      const btnMenuM = document.getElementById('btn-mob-menu');
-      const btnMenuModalAtivo = document.getElementById('btn-menu-' + aba);
-
+      const btnShowD = document.getElementById('btn-desk-' + aba), btnShowM = document.getElementById('btn-mob-' + aba), btnMenuD = document.getElementById('btn-desk-menu'), btnMenuM = document.getElementById('btn-mob-menu'), btnMenuModalAtivo = document.getElementById('btn-menu-' + aba);
       const corAtiva = (aba === 'novo') ? 'bg-emerald-600' : 'bg-blue-600';
 
       if (btnShowD && btnShowM) {
@@ -1599,388 +1584,152 @@
         if (btnMenuModalAtivo) { btnMenuModalAtivo.classList.remove('border-slate-700/80', 'bg-slate-800/80'); btnMenuModalAtivo.classList.add('border-blue-500', 'bg-blue-950/40'); }
       }
 
-      if (aba === 'relatorio' && relatorioMensalPendente && dadosCarregadosIniciais) {
-        relatorioMensalPendente = false; dispararBuscaRelatorioMensal();
-      } else if (aba === 'anual' && relatorioAnualPendente && dadosCarregadosIniciais) {
-        relatorioAnualPendente = false; carregarRelatorioAnual();
-      }
-      
-      if (aba === 'novo') { setTimeout(() => document.getElementById('inpDesc')?.focus({ preventScroll: true }), 100); }
+      if (aba === 'relatorio' && relatorioMensalPendente && dadosCarregadosIniciais) { relatorioMensalPendente = false; dispararBuscaRelatorioMensal(); } 
+      else if (aba === 'anual' && relatorioAnualPendente && dadosCarregadosIniciais) { relatorioAnualPendente = false; carregarRelatorioAnual(); }
     }
 
-    function abrirMenuMobile() {
-      const m = document.getElementById('modalMenuMobile');
-      m.classList.remove('hidden'); m.classList.add('flex');
-    }
-    function fecharMenuMobile() {
-      const m = document.getElementById('modalMenuMobile');
-      m.classList.add('hidden'); m.classList.remove('flex');
-    }
-
-    function abrirFerramenta(sub) {
-      setAba('ferramentas'); selecionarSubFerramenta(sub);
-    }
-
+    function abrirMenuMobile() { document.getElementById('modalMenuMobile').classList.remove('hidden'); document.getElementById('modalMenuMobile').classList.add('flex'); }
+    function fecharMenuMobile() { document.getElementById('modalMenuMobile').classList.add('hidden'); document.getElementById('modalMenuMobile').classList.remove('flex'); }
+    function abrirFerramenta(sub) { setAba('ferramentas'); selecionarSubFerramenta(sub); }
     function selecionarSubFerramenta(sub) {
       ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
         document.getElementById('subview-' + id)?.classList.add('hidden');
-        const btn = document.getElementById('btn-sub-' + id);
-        if (btn) btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
+        if (document.getElementById('btn-sub-' + id)) document.getElementById('btn-sub-' + id).className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
       });
       document.getElementById('subview-' + sub)?.classList.remove('hidden');
-      const btnAtivo = document.getElementById('btn-sub-' + sub);
-      if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
-      
-      if (sub === 'emprestimos') {
-        if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo();
-        renderizarPainelEmprestimos();
-      }
+      if (document.getElementById('btn-sub-' + sub)) document.getElementById('btn-sub-' + sub).className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
+      if (sub === 'emprestimos') { if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo(); renderizarPainelEmprestimos(); }
       if (sub === 'simulador') rodarSimuladorCompra();
       if (sub === 'rachadinha') { calcularRachadinha(); calcularRachadinhaDetalhada(); }
       if (sub === 'notas') renderizarNotasUI();
     }
 
     // ============================================================================
-    // UTILITÁRIOS: MOEDA, TEXTO, VIBRAÇÃO, AUTO-SCROLL E API C/ TIMEOUT
+    // UTILITÁRIOS BASE (Vibração, Máscaras e API)
     // ============================================================================
-
-    function vibrar(ms = 50) {
-      if (navigator.vibrate) navigator.vibrate(ms);
-    }
-
-    function ativarAutoScroll(el) {
-      if (window.innerWidth < 640) {
-        setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
-      }
-    }
-
-    function formatBRL(val) {
-      return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-
+    function vibrar(ms = 50) { if (navigator.vibrate) navigator.vibrate(ms); }
+    function ativarAutoScroll(el) { if (window.innerWidth < 640) setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }
+    function formatBRL(val) { return Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
     function lerValorMoeda(valOuInput) {
       let raw = '';
       if (typeof valOuInput === 'object' && valOuInput !== null) raw = valOuInput.value || '';
-      else if (typeof valOuInput === 'string') {
-        const el = document.getElementById(valOuInput);
-        raw = el ? (el.value || '') : valOuInput;
-      } else raw = String(valOuInput || '');
-      
-      let str = String(raw || '0').trim();
-      const isNeg = str.includes('-');
-      str = str.replace(/[^\d,\.]/g, '');
-      if (str.includes('.') && str.includes(',')) str = str.replace(/\./g, '');
-      str = str.replace(',', '.');
-      const num = parseFloat(str) || 0;
-      return isNeg ? -num : num;
+      else if (typeof valOuInput === 'string') { const el = document.getElementById(valOuInput); raw = el ? (el.value || '') : valOuInput; } 
+      else raw = String(valOuInput || '');
+      let str = String(raw || '0').trim(); const isNeg = str.includes('-');
+      str = str.replace(/[^\d,\.]/g, ''); if (str.includes('.') && str.includes(',')) str = str.replace(/\./g, ''); str = str.replace(',', '.');
+      const num = parseFloat(str) || 0; return isNeg ? -num : num;
     }
-
     function mascaraMoedaTeclado(input) {
-      if (!input) return;
-      const digitos = String(input.value || '').replace(/\D/g, '');
+      if (!input) return; const digitos = String(input.value || '').replace(/\D/g, '');
       if (!digitos || parseInt(digitos, 10) === 0) { input.value = ''; return; }
-      const valorFloat = parseInt(digitos, 10) / 100;
-      input.value = formatBRL(valorFloat);
+      input.value = formatBRL(parseInt(digitos, 10) / 100);
       try { const len = input.value.length; input.setSelectionRange(len, len); } catch (e) {}
     }
-
     function definirValorMoeda(inputOrId, valorFloat) {
       const el = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
-      if (!el) return;
-      const num = Math.abs(Number(valorFloat || 0)); // Impede valores negativos acidentais
-      if (num <= 0) { el.value = ''; return; }
-      const centavos = Math.round(num * 100);
-      el.value = formatBRL(centavos / 100);
+      if (!el) return; const num = Math.abs(Number(valorFloat || 0)); 
+      if (num <= 0) { el.value = ''; return; } el.value = formatBRL(Math.round(num * 100) / 100);
     }
-
-    function normalizarTexto(str) {
-      return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    }
-
-    const DICIONARIO_ACENTOS_PT = {
-      'acai': 'açaí', 'almoco': 'almoço', 'cafe': 'café', 'pao': 'pão', 'agua': 'água',
-      'farmacia': 'farmácia', 'remedio': 'remédio', 'remedios': 'remédios', 'racao': 'ração',
-      'veterinario': 'veterinário', 'combustivel': 'combustível', 'oleo': 'óleo',
-      'mecanico': 'mecânico', 'hamburguer': 'hambúrguer', 'aniversario': 'aniversário',
-      'condominio': 'condomínio', 'informatica': 'informática', 'eletronicos': 'eletrônicos',
-      'eletronico': 'eletrônico', 'servicos': 'serviços', 'servico': 'serviço',
-      'alimentacao': 'alimentação', 'saude': 'saúde', 'educacao': 'educação',
-      'vestuario': 'vestuário', 'cartao': 'cartão', 'salao': 'salão', 'acougue': 'açougue',
-      'sacolao': 'sacolão', 'pedagio': 'pedágio', 'taxi': 'táxi', 'clinica': 'clínica',
-      'estetica': 'estética', 'inscricao': 'inscrição', 'lampada': 'lâmpada',
-      'sache': 'sachê', 'atacadao': 'atacadão', 'assai': 'assaí', 'bistro': 'bistrô',
-      'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos',
-      'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó', 'tenis': 'tênis',
-      'relogio': 'relógio', 'rodizio': 'rodízio', 'porcao': 'porção', 'onibus': 'ônibus',
-      'gas': 'gás', 'ipva': 'ipva', 'iptu': 'iptu', 'cartorio': 'cartório'
-    };
-
+    function normalizarTexto(str) { return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+    const DICIONARIO_ACENTOS_PT = { 'acai': 'açaí', 'almoco': 'almoço', 'cafe': 'café', 'pao': 'pão', 'agua': 'água', 'farmacia': 'farmácia', 'remedio': 'remédio', 'remedios': 'remédios', 'racao': 'ração', 'veterinario': 'veterinário', 'combustivel': 'combustível', 'oleo': 'óleo', 'mecanico': 'mecânico', 'hamburguer': 'hambúrguer', 'aniversario': 'aniversário', 'condominio': 'condomínio', 'informatica': 'informática', 'eletronicos': 'eletrônicos', 'eletronico': 'eletrônico', 'servicos': 'serviços', 'servico': 'serviço', 'alimentacao': 'alimentação', 'saude': 'saúde', 'educacao': 'educação', 'vestuario': 'vestuário', 'cartao': 'cartão', 'salao': 'salão', 'acougue': 'açougue', 'sacolao': 'sacolão', 'pedagio': 'pedágio', 'taxi': 'táxi', 'clinica': 'clínica', 'estetica': 'estética', 'inscricao': 'inscrição', 'lampada': 'lâmpada', 'sache': 'sachê', 'atacadao': 'atacadão', 'assai': 'assaí', 'bistro': 'bistrô', 'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos', 'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó', 'tenis': 'tênis', 'relogio': 'relógio', 'rodizio': 'rodízio', 'porcao': 'porção', 'onibus': 'ônibus', 'gas': 'gás', 'ipva': 'ipva', 'iptu': 'iptu', 'cartorio': 'cartório' };
     function formatarTituloInteligente(texto) {
-      if (!texto) return '';
-      const normTotal = normalizarTexto(texto);
-      if (dicionarioAutofill[normTotal] && dicionarioAutofill[normTotal].original) {
-        return dicionarioAutofill[normTotal].original;
-      }
+      if (!texto) return ''; const normTotal = normalizarTexto(texto);
+      if (dicionarioAutofill[normTotal] && dicionarioAutofill[normTotal].original) return dicionarioAutofill[normTotal].original;
       const conectivos = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'por', 'para', 'e', 'ou', 'a', 'o', 'as', 'os', 'ao', 'aos', 'à', 'às']);
-      const palavras = String(texto).trim().replace(/\s+/g, ' ').split(' ');
-
-      return palavras.map((palavra, index) => {
-        if (!palavra) return '';
-        if (palavra === '-' || palavra === '–') return '-';
+      return String(texto).trim().replace(/\s+/g, ' ').split(' ').map((palavra, index) => {
+        if (!palavra) return ''; if (palavra === '-' || palavra === '–') return '-';
         if (palavra.length > 1 && palavra === palavra.toUpperCase() && /[A-Z]/.test(palavra)) return palavra;
-        let limpa = palavra.toLowerCase();
-        const semAcento = normalizarTexto(limpa);
-        if (dicionarioPrefixosAutofill[semAcento]) limpa = dicionarioPrefixosAutofill[semAcento];
-        const anterior = index > 0 ? palavras[index - 1] : '';
+        let limpa = palavra.toLowerCase(); const semAcento = normalizarTexto(limpa);
+        if (DICIONARIO_ACENTOS_PT[semAcento]) limpa = DICIONARIO_ACENTOS_PT[semAcento];
+        const anterior = index > 0 ? normalizarTexto(String(texto).trim().replace(/\s+/g, ' ').split(' ')[index - 1]) : '';
         if (index > 0 && anterior !== '-' && anterior !== '–' && conectivos.has(limpa)) return limpa;
         return limpa.charAt(0).toUpperCase() + limpa.slice(1);
       }).join(' ');
     }
-
-    function formatarTagsAutomaticamente(textoBruto) {
-      if (!textoBruto) return '';
-      return textoBruto.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0).map(t => t.startsWith('#') ? t : '#' + t).join(', ');
-    }
-
     function toggleBotaoLimpar(idInput, idBtn) {
-      const inp = document.getElementById(idInput);
-      const btn = document.getElementById(idBtn);
-      if (!inp || !btn) return;
-      if (inp.value.trim().length > 0) { btn.classList.remove('hidden'); btn.classList.add('flex'); }
-      else { btn.classList.add('hidden'); btn.classList.remove('flex'); }
+      const inp = document.getElementById(idInput), btn = document.getElementById(idBtn);
+      if (inp && btn) { if (inp.value.trim().length > 0) { btn.classList.remove('hidden'); btn.classList.add('flex'); } else { btn.classList.add('hidden'); btn.classList.remove('flex'); } }
     }
-
     let doubleTapTimerLimpar = 0;
     function limparCampoComRecalculo(idInput) {
       const inp = document.getElementById(idInput);
       if (inp) {
-        const agora = Date.now();
-        const duploToque = (agora - doubleTapTimerLimpar < 400);
-        doubleTapTimerLimpar = agora;
-
-        vibrar(20);
-        inp.value = '';
-        if (duploToque) {
-          inp.blur(); 
-        } else {
-          inp.focus({ preventScroll: true }); 
-        }
-        const event = new Event('input', { bubbles: true });
-        inp.dispatchEvent(event);
+        const duploToque = (Date.now() - doubleTapTimerLimpar < 400); doubleTapTimerLimpar = Date.now();
+        vibrar(20); inp.value = '';
+        if (duploToque) inp.blur(); else inp.focus({ preventScroll: true });
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
-
-    function pularComEnter(event, nextId) {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        const nextEl = document.getElementById(nextId);
-        if (nextEl) nextEl.focus({ preventScroll: true });
-      }
-    }
-
+    function pularComEnter(event, nextId) { if (event.key === 'Enter') { event.preventDefault(); document.getElementById(nextId)?.focus({ preventScroll: true }); } }
     function copiarTextoAreaTransferencia(texto, msgSucesso = 'Copiado para o WhatsApp!') {
       vibrar(30);
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(texto).then(() => mostrarAviso('Copiado 📋', msgSucesso));
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-        mostrarAviso('Copiado 📋', msgSucesso);
-      }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(texto).then(() => mostrarAviso('Copiado 📋', msgSucesso));
+      else { const ta = document.createElement('textarea'); ta.value = texto; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); mostrarAviso('Copiado 📋', msgSucesso); }
     }
-
-    // ============================================================================
-    // ALERTAS, CONFIRMAÇÕES E DESFAZER (UNDO)
-    // ============================================================================
 
     function mostrarAviso(titulo, mensagem, acaoDesfazer = null) {
       const toast = document.getElementById('toastNotificacao');
-      document.getElementById('toastTitulo').textContent = titulo;
-      document.getElementById('toastMensagem').textContent = mensagem;
+      document.getElementById('toastTitulo').textContent = titulo; document.getElementById('toastMensagem').textContent = mensagem;
       const btnDesfazer = document.getElementById('btnDesfazerToast');
-      
-      if (acaoDesfazer) {
-        btnDesfazer.classList.remove('hidden');
-        filaDesfazer = acaoDesfazer;
-      } else {
-        btnDesfazer.classList.add('hidden');
-        filaDesfazer = null;
-      }
-      
+      if (acaoDesfazer) { btnDesfazer.classList.remove('hidden'); filaDesfazer = acaoDesfazer; } 
+      else { btnDesfazer.classList.add('hidden'); filaDesfazer = null; }
       toast.classList.add('show');
       if (timerDesfazer) clearTimeout(timerDesfazer);
-      timerDesfazer = setTimeout(() => {
-        toast.classList.remove('show');
-        if (filaDesfazer) { processarFilaDesfazerNuvem(); }
-      }, acaoDesfazer ? 5000 : 3000);
+      timerDesfazer = setTimeout(() => { toast.classList.remove('show'); if (filaDesfazer) processarFilaDesfazerNuvem(); }, acaoDesfazer ? 5000 : 3000);
     }
-
     function executarDesfazer() {
-      if (filaDesfazer) {
-        vibrar(50);
-        filaDesfazer = null;
-        if (timerDesfazer) clearTimeout(timerDesfazer);
-        document.getElementById('toastNotificacao').classList.remove('show');
-        mostrarAviso('Cancelado', 'Ação desfeita com sucesso!');
-        carregarDados(); 
-      }
+      if (filaDesfazer) { vibrar(50); filaDesfazer = null; if (timerDesfazer) clearTimeout(timerDesfazer); document.getElementById('toastNotificacao').classList.remove('show'); mostrarAviso('Cancelado', 'Ação desfeita com sucesso!'); carregarDados(); }
     }
-
-    function processarFilaDesfazerNuvem() {
-      if (!filaDesfazer) return;
-      const payload = filaDesfazer;
-      filaDesfazer = null;
-      apiCall(payload.action, payload.param).then(() => carregarDados()).catch(e => mostrarAviso('Erro', e.message));
-    }
-
+    function processarFilaDesfazerNuvem() { if (!filaDesfazer) return; const payload = filaDesfazer; filaDesfazer = null; apiCall(payload.action, payload.param).then(() => carregarDados()).catch(e => mostrarAviso('Erro', e.message)); }
     function mostrarConfirmacao(titulo, mensagem, onSimCallback, exibirOpcaoParcelas = false) {
-      vibrar(30);
-      const modal = document.getElementById('modalConfirmacao');
-      document.getElementById('confTitle').textContent = titulo;
-      document.getElementById('confMensagem').textContent = mensagem;
-      const boxLote = document.getElementById('boxConfLoteParcelas');
-      const chkLote = document.getElementById('chkConfTodasParcelas');
+      vibrar(30); const modal = document.getElementById('modalConfirmacao');
+      document.getElementById('confTitle').textContent = titulo; document.getElementById('confMensagem').textContent = mensagem;
+      const boxLote = document.getElementById('boxConfLoteParcelas'), chkLote = document.getElementById('chkConfTodasParcelas');
       if (chkLote) chkLote.checked = false;
-      if (boxLote) {
-        if (exibirOpcaoParcelas) boxLote.classList.remove('hidden');
-        else boxLote.classList.add('hidden');
-      }
+      if (boxLote) exibirOpcaoParcelas ? boxLote.classList.remove('hidden') : boxLote.classList.add('hidden');
       modal.classList.remove('hidden');
-
-      const btnSim = document.getElementById('confBtnSim');
-      const btnNao = document.getElementById('confBtnNao');
-      const limparEventos = () => {
-        btnSim.replaceWith(btnSim.cloneNode(true));
-        btnNao.replaceWith(btnNao.cloneNode(true));
-        modal.classList.add('hidden');
-      };
-
-      document.getElementById('confBtnSim').addEventListener('click', () => {
-        vibrar(40);
-        const marcouTodas = chkLote ? chkLote.checked : false;
-        limparEventos();
-        if (onSimCallback) onSimCallback(marcouTodas);
-      });
+      const btnSim = document.getElementById('confBtnSim'), btnNao = document.getElementById('confBtnNao');
+      const limparEventos = () => { btnSim.replaceWith(btnSim.cloneNode(true)); btnNao.replaceWith(btnNao.cloneNode(true)); modal.classList.add('hidden'); };
+      document.getElementById('confBtnSim').addEventListener('click', () => { vibrar(40); const marcouTodas = chkLote ? chkLote.checked : false; limparEventos(); if (onSimCallback) onSimCallback(marcouTodas); });
       document.getElementById('confBtnNao').addEventListener('click', () => { vibrar(20); limparEventos(); });
     }
 
     async function apiCall(action, param = null, tentativas = 2) {
-      if (operacaoEmAndamento && action !== 'getDadosCompletos') {
-        throw new Error('Aguarde a operação atual finalizar...');
-      }
+      if (operacaoEmAndamento && action !== 'getDadosCompletos') throw new Error('Aguarde a operação atual finalizar...');
       if (action !== 'getDadosCompletos') operacaoEmAndamento = true;
-
       for (let i = 0; i < tentativas; i++) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); 
-
+        const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 15000); 
         try {
-          const response = await fetch(API_URL, {
-            method: 'POST',
-            redirect: 'follow',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: action, param: param }),
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-          if (!response.ok) throw new Error(`Falha HTTP ${response.status}`);
-          const data = await response.json();
-          if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
-          if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem.");
-          return data.dados;
+          const response = await fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, param: param }), signal: controller.signal });
+          clearTimeout(timeoutId); if (!response.ok) throw new Error(`Falha HTTP ${response.status}`);
+          const data = await response.json(); if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
+          if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem."); return data.dados;
         } catch (err) {
           clearTimeout(timeoutId);
-          if (err.name === 'AbortError') {
-            if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
-            throw new Error("Servidor demorou a responder (Rede Instável). Tente novamente.");
-          }
-          if (i === tentativas - 1) {
-            if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
-            throw err;
-          }
+          if (err.name === 'AbortError') { if (action !== 'getDadosCompletos') operacaoEmAndamento = false; throw new Error("Servidor demorou a responder (Rede Instável). Tente novamente."); }
+          if (i === tentativas - 1) { if (action !== 'getDadosCompletos') operacaoEmAndamento = false; throw err; }
           await new Promise(res => setTimeout(res, 800));
         }
       }
     }
 
     // ============================================================================
-    // DATAS E FATURAS (MÁSCARAS, LIMITES E SETINHAS DE MÊS)
+    // REGRAS DE DATAS E FATURAS
     // ============================================================================
-
-    function formatarZeroData(input, tamanho) {
-      if (!input) return;
-      let v = input.value.replace(/\D/g, '');
-      if (v.length > 0 && v.length < tamanho) input.value = v.padStart(tamanho, '0');
-    }
-
-    function atalhoBarraData(event, input, nextId, contexto) {
-      if (event.key === '/' || event.key === ' ') {
-        event.preventDefault();
-        formatarZeroData(input, 2);
-        validarLimitesDataTripla(contexto);
-        sincronizarDataTripla(contexto, true);
-        const nextEl = document.getElementById(nextId);
-        if (nextEl) { nextEl.focus({ preventScroll: true }); nextEl.select(); }
-      }
-    }
-
+    function formatarZeroData(input, tamanho) { if (!input) return; let v = input.value.replace(/\D/g, ''); if (v.length > 0 && v.length < tamanho) input.value = v.padStart(tamanho, '0'); }
     function validarLimitesDataTripla(contexto = 'novo') {
-      const mapIds = {
-        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno'],
-        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno'],
-        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno']
-      };
+      const mapIds = { 'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno'], 'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno'], 'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno'] };
       const [idDia, idMes, idAno] = mapIds[contexto] || mapIds['novo'];
       const elDia = document.getElementById(idDia), elMes = document.getElementById(idMes), elAno = document.getElementById(idAno);
       if (!elDia || !elMes || !elAno) return;
-
-      let m = parseInt(elMes.value, 10);
-      if (!isNaN(m)) {
-        if (m < 1) m = 1; if (m > 12) m = 12;
-        elMes.value = String(m).padStart(2, '0');
-      }
-      let a = parseInt(elAno.value, 10);
-      if (!isNaN(a) && elAno.value.length === 4) {
-        if (a < 2000) a = 2000; if (a > 2100) a = 2100;
-        elAno.value = String(a);
-      } else a = new Date().getFullYear();
-      let d = parseInt(elDia.value, 10);
-      if (!isNaN(d)) {
-        const maxDias = new Date(a, !isNaN(m) ? m : 1, 0).getDate();
-        if (d < 1) d = 1; if (d > maxDias) d = maxDias;
-        elDia.value = String(d).padStart(2, '0');
-      }
+      let m = parseInt(elMes.value, 10); if (!isNaN(m)) { if (m < 1) m = 1; if (m > 12) m = 12; elMes.value = String(m).padStart(2, '0'); }
+      let a = parseInt(elAno.value, 10); if (!isNaN(a) && elAno.value.length === 4) { if (a < 2000) a = 2000; if (a > 2100) a = 2100; elAno.value = String(a); } else a = new Date().getFullYear();
+      let d = parseInt(elDia.value, 10); if (!isNaN(d)) { const maxDias = new Date(a, !isNaN(m) ? m : 1, 0).getDate(); if (d < 1) d = 1; if (d > maxDias) d = maxDias; elDia.value = String(d).padStart(2, '0'); }
     }
-
-    function aoDigitarParteData(input, nextId, maxLen, contexto) {
-      let v = input.value.replace(/\D/g, '');
-      if (v.length > maxLen) v = v.substring(0, maxLen);
-      input.value = v;
-      sincronizarDataTripla(contexto, true);
-      if (v.length === maxLen && nextId) {
-        validarLimitesDataTripla(contexto);
-        const nextEl = document.getElementById(nextId);
-        if (nextEl) { nextEl.focus({ preventScroll: true }); nextEl.select(); }
-      }
-    }
-
-    function voltarParteData(event, input, prevId) {
-      if (event.key === 'Backspace' && input.value.length === 0 && prevId) {
-        const prevEl = document.getElementById(prevId);
-        if (prevEl) { event.preventDefault(); prevEl.focus({ preventScroll: true }); prevEl.select(); }
-      }
-    }
-
     function sincronizarDataTripla(contexto = 'novo', dispararRegras = true) {
-      const mapIds = {
-        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
-        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
-        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData']
-      };
+      const mapIds = { 'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'], 'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'], 'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'] };
       const [idDia, idMes, idAno, idHidden] = mapIds[contexto] || mapIds['novo'];
-      const d = (document.getElementById(idDia)?.value || '').replace(/\D/g, '');
-      const m = (document.getElementById(idMes)?.value || '').replace(/\D/g, '');
-      const a = (document.getElementById(idAno)?.value || '').replace(/\D/g, '');
+      const d = (document.getElementById(idDia)?.value || '').replace(/\D/g, ''), m = (document.getElementById(idMes)?.value || '').replace(/\D/g, ''), a = (document.getElementById(idAno)?.value || '').replace(/\D/g, '');
       const hiddenEl = document.getElementById(idHidden);
       if (d.length >= 1 && m.length >= 1 && a.length === 4) {
         if (hiddenEl) hiddenEl.value = `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${a}`;
@@ -1988,446 +1737,222 @@
         if (contexto === 'emp' && dispararRegras) atualizarFaturaEmprestimo();
       }
     }
-
+    function atalhoBarraData(event, input, nextId, contexto) { if (event.key === '/' || event.key === ' ') { event.preventDefault(); formatarZeroData(input, 2); validarLimitesDataTripla(contexto); sincronizarDataTripla(contexto, true); document.getElementById(nextId)?.focus({ preventScroll: true }); } }
+    function aoDigitarParteData(input, nextId, maxLen, contexto) { let v = input.value.replace(/\D/g, ''); if (v.length > maxLen) v = v.substring(0, maxLen); input.value = v; sincronizarDataTripla(contexto, true); if (v.length === maxLen && nextId) { validarLimitesDataTripla(contexto); document.getElementById(nextId)?.focus({ preventScroll: true }); } }
+    function voltarParteData(event, input, prevId) { if (event.key === 'Backspace' && input.value.length === 0 && prevId) { event.preventDefault(); document.getElementById(prevId)?.focus({ preventScroll: true }); } }
     function preencherDataTripla(contexto, dataStr) {
-      const mapIds = {
-        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
-        'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
-        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData']
-      };
-      const [idDia, idMes, idAno, idHidden] = mapIds[contexto] || mapIds['novo'];
-      const partes = String(dataStr || '').replace(/^'/, '').trim().split('/');
-      if (partes.length === 3) {
-        const d = partes[0].padStart(2, '0'), m = partes[1].padStart(2, '0'), a = partes[2];
-        if (document.getElementById(idDia)) document.getElementById(idDia).value = d;
-        if (document.getElementById(idMes)) document.getElementById(idMes).value = m;
-        if (document.getElementById(idAno)) document.getElementById(idAno).value = a;
-        if (document.getElementById(idHidden)) document.getElementById(idHidden).value = `${d}/${m}/${a}`;
-      }
+      const mapIds = { 'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'], 'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'], 'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'] };
+      const [idDia, idMes, idAno, idHidden] = mapIds[contexto]; const partes = String(dataStr || '').replace(/^'/, '').trim().split('/');
+      if (partes.length === 3) { document.getElementById(idDia).value = partes[0].padStart(2, '0'); document.getElementById(idMes).value = partes[1].padStart(2, '0'); document.getElementById(idAno).value = partes[2]; document.getElementById(idHidden).value = `${partes[0].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[2]}`; }
     }
-
-    function definirDataOffset(diasOffset = 0) {
-      vibrar(20);
-      const dt = new Date(); dt.setDate(dt.getDate() + diasOffset);
-      const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
-      preencherDataTripla('novo', str); atualizarRegrasForma();
-    }
-    
-    function definirDataOffsetEdicao(diasOffset = 0) {
-      vibrar(20);
-      const dt = new Date(); dt.setDate(dt.getDate() + diasOffset);
-      const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
-      preencherDataTripla('edicao', str);
-    }
-    function definirDataHojeEmprestimo() {
-      vibrar(20);
-      const dt = new Date();
-      const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
-      preencherDataTripla('emp', str); atualizarFaturaEmprestimo();
-    }
+    function definirDataOffset(diasOffset = 0) { vibrar(20); const dt = new Date(); dt.setDate(dt.getDate() + diasOffset); preencherDataTripla('novo', `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`); atualizarRegrasForma(); }
+    function definirDataOffsetEdicao(diasOffset = 0) { vibrar(20); const dt = new Date(); dt.setDate(dt.getDate() + diasOffset); preencherDataTripla('edicao', `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`); }
+    function definirDataHojeEmprestimo() { vibrar(20); const dt = new Date(); preencherDataTripla('emp', `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`); atualizarFaturaEmprestimo(); }
     function definirDataHoje() { definirDataOffset(0); }
     function aoDigitarParteDataEmp(input, nextId, maxLen) { aoDigitarParteData(input, nextId, maxLen, 'emp'); }
     function sincronizarDataEmp() { validarLimitesDataTripla('emp'); sincronizarDataTripla('emp', true); }
-
-    function mascaraMesFatura(input) {
-      if (!input) return;
-      let v = input.value.replace(/\D/g, '');
-      if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2, 6);
-      input.value = v;
-    }
-    
-    function formatarMesFaturaFinal(input) {
-      if (!input) return;
-      let v = input.value;
-      if (v.includes('/')) {
-        let p = v.split('/');
-        if (p[0] && p[0].length === 1) p[0] = '0' + p[0];
-        if (p[1] && p[1].length === 2) p[1] = '20' + p[1];
-        input.value = p.join('/');
-      } else if (v.length === 6) {
-        input.value = v.substring(0, 2) + '/' + v.substring(2, 6);
-      }
-    }
-
+    function mascaraMesFatura(input) { if (!input) return; let v = input.value.replace(/\D/g, ''); if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2, 6); input.value = v; }
+    function formatarMesFaturaFinal(input) { if (!input) return; let v = input.value; if (v.includes('/')) { let p = v.split('/'); if (p[0] && p[0].length === 1) p[0] = '0' + p[0]; if (p[1] && p[1].length === 2) p[1] = '20' + p[1]; input.value = p.join('/'); } else if (v.length === 6) { input.value = v.substring(0, 2) + '/' + v.substring(2, 6); } }
     function ajustarMesFatura(idInput, deltaMes) {
-      vibrar(20);
-      const inp = document.getElementById(idInput);
-      if (!inp) return;
-      let val = inp.value || evolucaoMesAtual;
-      if (!val || !val.includes('/')) return;
-      let [m, a] = val.split('/').map(Number);
-      
-      let dataTeste = new Date(a, m - 1 + deltaMes, 1);
-      const mNovo = String(dataTeste.getMonth() + 1).padStart(2, '0');
-      const aNovo = dataTeste.getFullYear();
-      inp.value = `${mNovo}/${aNovo}`;
-      if (idInput === 'inpMesFat') atualizarVisorMetaCategoria();
+      vibrar(20); const inp = document.getElementById(idInput); if (!inp) return; let val = inp.value || evolucaoMesAtual; if (!val || !val.includes('/')) return;
+      let [m, a] = val.split('/').map(Number); let dataTeste = new Date(a, m - 1 + deltaMes, 1);
+      inp.value = `${String(dataTeste.getMonth() + 1).padStart(2, '0')}/${dataTeste.getFullYear()}`;
     }
 
     // ============================================================================
-    // NOVO REGISTRO (AUTOPREENCHIMENTO, TAGS, PARCELAS E GRAVAÇÃO)
+    // NOVO REGISTRO: ENVIO, TAGS, PARCELAS E REGRAS DE FORMA
     // ============================================================================
-
     function verificarLeituraPix(textoDescricao) {
       const txt = String(textoDescricao || '');
       if (txt.toLowerCase().includes('transferência') || txt.toLowerCase().includes('pix') || txt.includes('R$')) {
-        const regexVal = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/i;
-        const match = txt.match(regexVal);
+        const regexVal = /R\$\s?(\d{1,3}(?:\.\d{3})*,\d{2})/i; const match = txt.match(regexVal);
         if (match && match[1]) {
           const valDetectado = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
-          if (valDetectado > 0) {
-            definirValorMoeda('inpValor', valDetectado);
-            atualizarPreviewParcelas();
-            const selForma = document.getElementById('selForma');
-            if (selForma) {
-              const opPix = Array.from(selForma.options).find(o => o.value.toLowerCase().includes('pix'));
-              if (opPix) { selForma.value = opPix.value; atualizarRegrasForma(); }
-            }
-            document.getElementById('inpDesc').value = 'Pix';
-            mostrarAviso('Pix Detectado ⚡', `Valor ${formatBRL(valDetectado)} extraído do texto!`);
-          }
+          if (valDetectado > 0) { definirValorMoeda('inpValor', valDetectado); atualizarPreviewParcelas(); const selForma = document.getElementById('selForma'); if (selForma) { const opPix = Array.from(selForma.options).find(o => o.value.toLowerCase().includes('pix')); if (opPix) { selForma.value = opPix.value; atualizarRegrasForma(); } } document.getElementById('inpDesc').value = 'Pix'; mostrarAviso('Pix Detectado ⚡', `Valor ${formatBRL(valDetectado)} extraído!`); }
         }
       }
     }
 
     function renderizarChipsTags() {
-      const boxNovo = document.getElementById('chipsTagsNovo');
-      const boxEd = document.getElementById('chipsTagsEdicao');
-      if (!boxNovo && !boxEd) return;
-
       const tagsParaExibir = opcoesTagsGlobal.slice(0, 14);
-      const gerarHtml = (ctx) => tagsParaExibir.map(t => {
-        const tSafe = t.replace(/'/g, "\\'");
-        return `<button type="button" data-tag="${t}" onclick="toggleTagChip('${tSafe}', '${ctx}')" class="chip-tag-${ctx} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95 shadow-sm">${t}</button>`;
-      }).join('');
-
-      if (boxNovo) boxNovo.innerHTML = gerarHtml('novo');
-      if (boxEd) boxEd.innerHTML = gerarHtml('edicao');
-      sincronizarChipsTags('novo');
-      sincronizarChipsTags('edicao');
+      const gerarHtml = (ctx) => tagsParaExibir.map(t => `<button type="button" data-tag="${t}" onclick="toggleTagChip('${t.replace(/'/g, "\\'")}', '${ctx}')" class="chip-tag-${ctx} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95 shadow-sm">${t}</button>`).join('');
+      if (document.getElementById('chipsTagsNovo')) document.getElementById('chipsTagsNovo').innerHTML = gerarHtml('novo');
+      if (document.getElementById('chipsTagsEdicao')) document.getElementById('chipsTagsEdicao').innerHTML = gerarHtml('edicao');
+      sincronizarChipsTags('novo'); sincronizarChipsTags('edicao');
     }
 
     function sincronizarChipsTags(contexto = 'novo') {
       const idInput = contexto === 'novo' ? 'inpTags' : 'inpEdTags';
-      const raw = document.getElementById(idInput)?.value || '';
-      const ativas = new Set(raw.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean));
-
+      const ativas = new Set((document.getElementById(idInput)?.value || '').split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean));
       document.querySelectorAll(`.chip-tag-${contexto}`).forEach(btn => {
         const tagBtn = String(btn.getAttribute('data-tag') || '').replace(/^#/, '').toLowerCase();
-        if (ativas.has(tagBtn)) {
-          btn.className = `chip-tag-${contexto} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-indigo-500 bg-indigo-600/30 text-indigo-200 shadow-sm transition active:scale-95`;
-        } else {
-          btn.className = `chip-tag-${contexto} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95`;
-        }
+        btn.className = ativas.has(tagBtn) ? `chip-tag-${contexto} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-indigo-500 bg-indigo-600/30 text-indigo-200 shadow-sm transition active:scale-95` : `chip-tag-${contexto} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95`;
       });
-
-      if (contexto === 'novo') {
-        const btnSugDiv = document.getElementById('btnSugestaoDivididoRapido');
-        const valAtual = lerValorMoeda('inpValor');
-        if (btnSugDiv) {
-          if (ativas.has('dividido') && valAtual > 0 && valorOriginalAntesMetade === null) btnSugDiv.classList.remove('hidden');
-          else btnSugDiv.classList.add('hidden');
-        }
+      if (contexto === 'novo' && document.getElementById('btnSugestaoDivididoRapido')) {
+        document.getElementById('btnSugestaoDivididoRapido').classList[ativas.has('dividido') && lerValorMoeda('inpValor') > 0 && valorOriginalAntesMetade === null ? 'remove' : 'add']('hidden');
       }
     }
 
     function toggleTagChip(tagComHash, contexto = 'novo') {
-      vibrar(20);
-      const idInput = contexto === 'novo' ? 'inpTags' : 'inpEdTags';
-      const inp = document.getElementById(idInput);
-      if (!inp) return;
-      const tagLimpa = tagComHash.replace(/^#/, '').toLowerCase();
-      let lista = inp.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean);
-
-      if (lista.includes(tagLimpa)) lista = lista.filter(t => t !== tagLimpa);
-      else lista.push(tagLimpa);
-
-      inp.value = lista.map(t => '#' + t).join(', ');
-      if (contexto === 'novo') toggleBotaoLimpar('inpTags', 'btnLimparTags');
-      sincronizarChipsTags(contexto);
+      vibrar(20); const inp = document.getElementById(contexto === 'novo' ? 'inpTags' : 'inpEdTags'); if (!inp) return;
+      const tagLimpa = tagComHash.replace(/^#/, '').toLowerCase(); let lista = inp.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean);
+      if (lista.includes(tagLimpa)) lista = lista.filter(t => t !== tagLimpa); else lista.push(tagLimpa);
+      inp.value = lista.map(t => '#' + t).join(', '); if (contexto === 'novo') toggleBotaoLimpar('inpTags', 'btnLimparTags'); sincronizarChipsTags(contexto);
     }
 
     function alternarMetadeValor() {
-      vibrar(30);
-      const inp = document.getElementById('inpValor');
-      const btn = document.getElementById('btnDividirMetade');
-      const valAtual = lerValorMoeda(inp);
+      vibrar(30); const inp = document.getElementById('inpValor'), btn = document.getElementById('btnDividirMetade'); const valAtual = lerValorMoeda(inp);
       if (valAtual <= 0) { mostrarAviso('Atenção', 'Digite o valor total primeiro para dividir por 2.'); return; }
-
       if (valorOriginalAntesMetade === null) {
-        valorOriginalAntesMetade = valAtual;
-        definirValorMoeda(inp, valAtual / 2);
+        valorOriginalAntesMetade = valAtual; definirValorMoeda(inp, valAtual / 2);
         if (btn) { btn.textContent = '×2 Voltar Cheio'; btn.className = 'text-[10px] font-bold bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 transition shadow-sm'; }
-        const inpTags = document.getElementById('inpTags');
-        if (inpTags) {
-          let lista = inpTags.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean);
-          if (!lista.includes('dividido')) {
-            lista.push('dividido'); inpTags.value = lista.map(t => '#' + t).join(', '); toggleBotaoLimpar('inpTags', 'btnLimparTags');
-          }
-        }
+        const inpTags = document.getElementById('inpTags'); if (inpTags) { let lista = inpTags.value.split(',').map(t => t.trim().toLowerCase().replace(/^#/, '')).filter(Boolean); if (!lista.includes('dividido')) { lista.push('dividido'); inpTags.value = lista.map(t => '#' + t).join(', '); toggleBotaoLimpar('inpTags', 'btnLimparTags'); } }
       } else {
-        definirValorMoeda(inp, valorOriginalAntesMetade);
-        valorOriginalAntesMetade = null;
+        definirValorMoeda(inp, valorOriginalAntesMetade); valorOriginalAntesMetade = null;
         if (btn) { btn.textContent = '÷2 Metade'; btn.className = 'text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95 shadow-sm'; }
       }
       sincronizarChipsTags('novo'); atualizarPreviewParcelas();
     }
 
     function atualizarPreviewParcelas() {
-      const lbl = document.getElementById('lblPreviewParcelas');
-      if (!lbl) return;
-      const val = lerValorMoeda('inpValor');
-      const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
-      if (qtd <= 1) lbl.textContent = 'À vista';
-      else if (val > 0) lbl.textContent = `${qtd}x de ${formatBRL(val / qtd)}`;
-      else lbl.textContent = `${qtd}x`;
+      const lbl = document.getElementById('lblPreviewParcelas'); if (!lbl) return;
+      const val = lerValorMoeda('inpValor'), qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
+      lbl.textContent = qtd <= 1 ? 'À vista' : (val > 0 ? `${qtd}x de ${formatBRL(val / qtd)}` : `${qtd}x`);
     }
 
-    function setParcelasNovoGasto(n) {
-      vibrar(20);
-      const inp = document.getElementById('inpParc');
-      if (inp) { inp.value = n; atualizarLayoutParcelas(); atualizarPreviewParcelas(); }
-    }
-
-    function setParcelasEmprestimo(n) {
-      vibrar(20);
-      const inp = document.getElementById('inpEmpParc');
-      if (inp) { inp.value = n; atualizarLayoutParcelasEmp(); atualizarPreviewParcEmp(); }
-    }
+    function setParcelasNovoGasto(n) { vibrar(20); const inp = document.getElementById('inpParc'); if (inp) { inp.value = n; atualizarLayoutParcelas(); atualizarPreviewParcelas(); } }
+    function setParcelasEmprestimo(n) { vibrar(20); const inp = document.getElementById('inpEmpParc'); if (inp) { inp.value = n; atualizarLayoutParcelasEmp(); atualizarPreviewParcEmp(); } }
 
     function atualizarLayoutParcelas() {
-      const chkAss = document.getElementById('checkAssinatura')?.checked;
-      const nomeForma = (document.getElementById('selForma')?.value || '').toLowerCase();
-      const isPix = nomeForma.includes('pix');
-      const grid = document.getElementById('gridValorParcelas');
-      const boxValor = document.getElementById('boxValor');
-      const boxParc = document.getElementById('boxParc');
-      const boxParcIni = document.getElementById('boxParcIni');
-      const inpParc = document.getElementById('inpParc');
-      const inpParcIni = document.getElementById('inpParcIni');
+      const chkAss = document.getElementById('checkAssinatura')?.checked, isPix = (document.getElementById('selForma')?.value || '').toLowerCase().includes('pix');
+      const grid = document.getElementById('gridValorParcelas'), boxValor = document.getElementById('boxValor'), boxParc = document.getElementById('boxParc'), boxParcIni = document.getElementById('boxParcIni'), inpParc = document.getElementById('inpParc'), inpParcIni = document.getElementById('inpParcIni');
       if (!grid || !boxValor || !boxParc || !boxParcIni || !inpParc || !inpParcIni) return;
-
-      if (chkAss || isPix) {
-        inpParc.value = 1; inpParcIni.value = 1;
-        boxParc.classList.add('hidden'); boxParcIni.classList.add('hidden');
-        grid.className = 'grid grid-cols-1 gap-3 pt-1'; boxValor.className = 'col-span-1';
-      } else {
-        boxParc.classList.remove('hidden');
-        const qtd = parseInt(inpParc.value, 10) || 1;
-        if (qtd > 1) {
-          boxParcIni.classList.remove('hidden');
-          grid.className = 'grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1'; boxValor.className = 'col-span-2 sm:col-span-1';
-        } else {
-          inpParcIni.value = 1; boxParcIni.classList.add('hidden');
-          grid.className = 'grid grid-cols-2 gap-3 pt-1'; boxValor.className = 'col-span-1';
-        }
+      if (chkAss || isPix) { inpParc.value = 1; inpParcIni.value = 1; boxParc.classList.add('hidden'); boxParcIni.classList.add('hidden'); grid.className = 'grid grid-cols-1 gap-3 pt-1'; boxValor.className = 'col-span-1'; } 
+      else {
+        boxParc.classList.remove('hidden'); const qtd = parseInt(inpParc.value, 10) || 1;
+        if (qtd > 1) { boxParcIni.classList.remove('hidden'); grid.className = 'grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1'; boxValor.className = 'col-span-2 sm:col-span-1'; } 
+        else { inpParcIni.value = 1; boxParcIni.classList.add('hidden'); grid.className = 'grid grid-cols-2 gap-3 pt-1'; boxValor.className = 'col-span-1'; }
       }
       atualizarPreviewParcelas();
     }
 
     function atualizarLayoutParcelasEmp() {
-      const boxParcIni = document.getElementById('boxEmpParcIni');
-      const inpParc = document.getElementById('inpEmpParc');
-      const inpParcIni = document.getElementById('inpEmpParcIni');
+      const boxParcIni = document.getElementById('boxEmpParcIni'), inpParc = document.getElementById('inpEmpParc'), inpParcIni = document.getElementById('inpEmpParcIni');
       if (!boxParcIni || !inpParc || !inpParcIni) return;
-      const qtd = parseInt(inpParc.value, 10) || 1;
-      if (qtd > 1) boxParcIni.classList.remove('hidden');
-      else { inpParcIni.value = 1; boxParcIni.classList.add('hidden'); }
+      if ((parseInt(inpParc.value, 10) || 1) > 1) boxParcIni.classList.remove('hidden'); else { inpParcIni.value = 1; boxParcIni.classList.add('hidden'); }
     }
 
     function alternarModoAssinatura() { atualizarLayoutParcelas(); atualizarRegrasForma(); }
 
     function calcularMesFaturaCartao(formaObj, dataCompraStr) {
-      const partes = String(dataCompraStr || '').split('/');
-      if (partes.length !== 3) return { mesFat: '', fechou: false, diaFech: '' };
+      const partes = String(dataCompraStr || '').split('/'); if (partes.length !== 3) return { mesFat: '', fechou: false, diaFech: '' };
       if (formaObj.nome.toLowerCase().includes('pix')) return { mesFat: `${partes[1]}/${partes[2]}`, fechou: false, diaFech: '' };
-
-      const diaVencOrig = parseInt(formaObj.vencimento, 10) || 10;
-      const diaFechOrig = parseInt(formaObj.fechamento, 10);
+      const diaVencOrig = parseInt(formaObj.vencimento, 10) || 10, diaFechOrig = parseInt(formaObj.fechamento, 10);
       const dataCompra = new Date(parseInt(partes[2], 10), parseInt(partes[1], 10) - 1, parseInt(partes[0], 10), 0, 0, 0, 0);
-      let mesTentar = dataCompra.getMonth();
-      let anoTentar = dataCompra.getFullYear();
-
-      function obterDataFechamentoDaFatura(anoFat, mesFatZeroIdx) {
+      let mesTentar = dataCompra.getMonth(), anoTentar = dataCompra.getFullYear();
+      
+      const obterFechamento = (a, m) => {
         if (!isNaN(diaFechOrig) && diaFechOrig >= 1 && diaFechOrig <= 31) {
-          const offsetMesFech = (diaFechOrig >= diaVencOrig) ? -1 : 0;
-          const dBase = new Date(anoFat, mesFatZeroIdx + offsetMesFech, 1);
-          const maxDia = new Date(dBase.getFullYear(), dBase.getMonth() + 1, 0).getDate();
-          return new Date(dBase.getFullYear(), dBase.getMonth(), Math.min(diaFechOrig, maxDia), 0, 0, 0, 0);
+          const dBase = new Date(a, m + (diaFechOrig >= diaVencOrig ? -1 : 0), 1);
+          return new Date(dBase.getFullYear(), dBase.getMonth(), Math.min(diaFechOrig, new Date(dBase.getFullYear(), dBase.getMonth() + 1, 0).getDate()), 0, 0, 0, 0);
         } else {
-          const maxDiaVenc = new Date(anoFat, mesFatZeroIdx + 1, 0).getDate();
-          const venc = new Date(anoFat, mesFatZeroIdx, Math.min(diaVencOrig, maxDiaVenc), 0, 0, 0, 0);
-          const fech = new Date(venc); fech.setDate(venc.getDate() - 7); fech.setHours(0, 0, 0, 0);
-          return fech;
-        }
-      }
-
-      let dtFechamento = obterDataFechamentoDaFatura(anoTentar, mesTentar);
-      let loops = 0;
-      while (dataCompra.getTime() >= dtFechamento.getTime() && loops < 3) {
-        mesTentar++; if (mesTentar > 11) { mesTentar = 0; anoTentar++; }
-        dtFechamento = obterDataFechamentoDaFatura(anoTentar, mesTentar); loops++;
-      }
-
-      const mesCompraStr = `${partes[1]}/${partes[2]}`;
-      const mesFatCalc = `${String(mesTentar + 1).padStart(2, '0')}/${anoTentar}`;
-      return { mesFat: mesFatCalc, fechou: mesFatCalc !== mesCompraStr, diaFech: !isNaN(diaFechOrig) ? diaFechOrig : '' };
-    }
-
-    function atualizarRegrasForma() {
-      sincronizarDataTripla('novo', false);
-      atualizarLayoutParcelas();
-
-      const nomeSelecionado = document.getElementById('selForma')?.value || '';
-      const dataCompraStr = document.getElementById('inpData')?.value || '';
-      const inpMesFat = document.getElementById('inpMesFat');
-      const boxInfo = document.getElementById('infoCartaoSelecionado');
-
-      if (!nomeSelecionado) {
-        if (inpMesFat) inpMesFat.value = '';
-        if (boxInfo) boxInfo.classList.add('hidden');
-        atualizarVisorMetaCategoria(); return;
-      }
-
-      const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado);
-      if (!formaObj || dataCompraStr.length !== 10) return;
-
-      const calc = calcularMesFaturaCartao(formaObj, dataCompraStr);
-      if (inpMesFat) inpMesFat.value = calc.mesFat;
-
-      if (boxInfo) {
-        boxInfo.classList.remove('hidden');
-        if (nomeSelecionado.toLowerCase().includes('pix')) {
-          boxInfo.innerHTML = `<span class="text-emerald-400">⚡ Pix • Gasto no mês: ${formaObj.utilizado || 'R$ 0,00'}</span>`;
-        } else if (calc.fechou) {
-          boxInfo.innerHTML = `<span class="text-sky-400">🚀 Fatura fechada ➔ vai p/ <strong>${calc.mesFat}</strong> • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
-        } else {
-          const txtFech = calc.diaFech ? ` (fecha dia ${calc.diaFech})` : '';
-          boxInfo.innerHTML = `<span class="text-slate-300">🟢 Fatura aberta${txtFech} • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
-        }
-      }
-      atualizarVisorMetaCategoria();
-    }
-
-    function checarAutopreenchimento() {
-      const descRaw = document.getElementById('inpDesc')?.value || '';
-      verificarLeituraPix(descRaw);
-      const descNorm = normalizarTexto(descRaw);
-      const btnUltVal = document.getElementById('btnSugestaoUltimoValor');
-      if (!descNorm) { if (btnUltVal) btnUltVal.classList.add('hidden'); return; }
-
-      const selForma = document.getElementById('selForma');
-      const selCat = document.getElementById('selCat');
-
-      const aplicarSugestao = (formaSug, catSug, ultValor = 0) => {
-        if (formaSug && selForma && [...selForma.options].some(o => o.value === formaSug)) {
-          if (selForma.value !== formaSug) { selForma.value = formaSug; atualizarRegrasForma(); }
-        }
-        if (catSug && selCat && [...selCat.options].some(o => o.value === catSug)) {
-          selCat.value = catSug; atualizarVisorMetaCategoria();
-        }
-        if (btnUltVal) {
-          if (ultValor > 0) {
-            ultimoValorSugeridoTemp = ultValor; btnUltVal.textContent = `💡 Último: ${formatBRL(ultValor)}`; btnUltVal.classList.remove('hidden');
-          } else btnUltVal.classList.add('hidden');
+          const venc = new Date(a, m, Math.min(diaVencOrig, new Date(a, m + 1, 0).getDate()), 0, 0, 0, 0);
+          return new Date(venc.getFullYear(), venc.getMonth(), venc.getDate() - 7, 0, 0, 0, 0);
         }
       };
 
-      if (dicionarioAutofill[descNorm]) {
-        const item = dicionarioAutofill[descNorm]; aplicarSugestao(item.forma, item.categoria, item.ultimoValor); return;
-      }
-      if (btnUltVal) btnUltVal.classList.add('hidden');
+      let dtFechamento = obterFechamento(anoTentar, mesTentar), loops = 0;
+      while (dataCompra.getTime() >= dtFechamento.getTime() && loops < 3) { mesTentar++; if (mesTentar > 11) { mesTentar = 0; anoTentar++; } dtFechamento = obterFechamento(anoTentar, mesTentar); loops++; }
+      const mesFatCalc = `${String(mesTentar + 1).padStart(2, '0')}/${anoTentar}`;
+      return { mesFat: mesFatCalc, fechou: mesFatCalc !== `${partes[1]}/${partes[2]}`, diaFech: !isNaN(diaFechOrig) ? diaFechOrig : '' };
+    }
 
-      const partesTraco = descNorm.split(/\s*[-–]\s*/);
-      const prefixo = partesTraco[0].trim();
-      if (prefixo && dicionarioPrefixosAutofill[prefixo]) {
-        aplicarSugestao(dicionarioPrefixosAutofill[prefixo].forma, dicionarioPrefixosAutofill[prefixo].categoria, 0); return;
+    function atualizarRegrasForma() {
+      sincronizarDataTripla('novo', false); atualizarLayoutParcelas();
+      const nomeSelecionado = document.getElementById('selForma')?.value || '', dataCompraStr = document.getElementById('inpData')?.value || '', inpMesFat = document.getElementById('inpMesFat'), boxInfo = document.getElementById('infoCartaoSelecionado');
+      if (!nomeSelecionado) { if (inpMesFat) inpMesFat.value = ''; if (boxInfo) boxInfo.classList.add('hidden'); return; }
+      const formaObj = formasGlobais.find(f => f.nome === nomeSelecionado); if (!formaObj || dataCompraStr.length !== 10) return;
+      const calc = calcularMesFaturaCartao(formaObj, dataCompraStr); if (inpMesFat) inpMesFat.value = calc.mesFat;
+      if (boxInfo) {
+        boxInfo.classList.remove('hidden');
+        if (nomeSelecionado.toLowerCase().includes('pix')) boxInfo.innerHTML = `<span class="text-emerald-400">⚡ Pix • Gasto no mês: ${formaObj.utilizado || 'R$ 0,00'}</span>`;
+        else if (calc.fechou) boxInfo.innerHTML = `<span class="text-sky-400">🚀 Fatura fechada ➔ vai p/ <strong>${calc.mesFat}</strong> • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
+        else boxInfo.innerHTML = `<span class="text-slate-300">🟢 Fatura aberta${calc.diaFech ? ` (fecha dia ${calc.diaFech})` : ''} • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
       }
     }
 
+    function checarAutopreenchimento() {
+      const descRaw = document.getElementById('inpDesc')?.value || ''; verificarLeituraPix(descRaw);
+      const descNorm = normalizarTexto(descRaw), btnUltVal = document.getElementById('btnSugestaoUltimoValor');
+      if (!descNorm) { if (btnUltVal) btnUltVal.classList.add('hidden'); return; }
+      const selForma = document.getElementById('selForma'), selCat = document.getElementById('selCat');
+
+      const aplicarSugestao = (formaSug, catSug, ultValor = 0) => {
+        if (formaSug && selForma && [...selForma.options].some(o => o.value === formaSug)) { if (selForma.value !== formaSug) { selForma.value = formaSug; atualizarRegrasForma(); } }
+        if (catSug && selCat && [...selCat.options].some(o => o.value === catSug)) { selCat.value = catSug; }
+        if (btnUltVal) { if (ultValor > 0) { btnUltVal.textContent = `💡 Último: ${formatBRL(ultValor)}`; btnUltVal.classList.remove('hidden'); btnUltVal.dataset.val = ultValor; } else btnUltVal.classList.add('hidden'); }
+      };
+
+      if (dicionarioAutofill[descNorm]) { aplicarSugestao(dicionarioAutofill[descNorm].forma, dicionarioAutofill[descNorm].categoria, dicionarioAutofill[descNorm].ultimoValor); return; }
+      if (btnUltVal) btnUltVal.classList.add('hidden');
+      const prefixo = descNorm.split(/\s*[-–]\s*/)[0].trim();
+      if (prefixo && dicionarioPrefixosAutofill[prefixo]) { aplicarSugestao(dicionarioPrefixosAutofill[prefixo].forma, dicionarioPrefixosAutofill[prefixo].categoria, 0); return; }
+    }
+
+    function aplicarUltimoValorSugerido() {
+      vibrar(20); const btn = document.getElementById('btnSugestaoUltimoValor');
+      if (btn && btn.dataset.val) { definirValorMoeda('inpValor', btn.dataset.val); atualizarPreviewParcelas(); }
+    }
+
     function limparFormularioNovoGasto() {
-      vibrar(20);
-      document.getElementById('formGasto')?.reset();
-      document.getElementById('selForma').value = ''; document.getElementById('selCat').value = '';
-      document.getElementById('inpMesFat').value = ''; document.getElementById('inpValor').value = '';
-      document.getElementById('inpTags').value = ''; document.getElementById('inpParc').value = '1';
-      document.getElementById('inpParcIni').value = '1'; document.getElementById('checkAssinatura').checked = false;
+      vibrar(20); document.getElementById('formGasto')?.reset();
+      document.getElementById('selForma').value = ''; document.getElementById('selCat').value = ''; document.getElementById('inpMesFat').value = ''; document.getElementById('inpValor').value = ''; document.getElementById('inpTags').value = ''; document.getElementById('inpParc').value = '1'; document.getElementById('inpParcIni').value = '1'; document.getElementById('checkAssinatura').checked = false;
       valorOriginalAntesMetade = null;
-      const btnMet = document.getElementById('btnDividirMetade');
-      if (btnMet) { btnMet.textContent = '÷2 Metade'; btnMet.className = 'text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95 shadow-sm'; }
-      document.getElementById('btnSugestaoUltimoValor')?.classList.add('hidden');
-      document.getElementById('btnSugestaoDivididoRapido')?.classList.add('hidden');
-      document.getElementById('infoCartaoSelecionado')?.classList.add('hidden');
-      document.getElementById('infoMetaCategoria')?.classList.add('hidden');
+      const btnMet = document.getElementById('btnDividirMetade'); if (btnMet) { btnMet.textContent = '÷2 Metade'; btnMet.className = 'text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95 shadow-sm'; }
+      ['btnSugestaoUltimoValor', 'btnSugestaoDivididoRapido', 'infoCartaoSelecionado'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
       toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); toggleBotaoLimpar('inpValor', 'btnLimparValor'); toggleBotaoLimpar('inpTags', 'btnLimparTags');
       definirDataHoje(); atualizarLayoutParcelas(); sincronizarChipsTags('novo');
+    }
+
+    function formatarTagsAutomaticamente(textoBruto) {
+      if (!textoBruto) return '';
+      return textoBruto.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0).map(t => t.startsWith('#') ? t : '#' + t).join(', ');
     }
 
     function enviarGasto(e) {
       e.preventDefault();
       if (salvandoGastoTrava) return;
+      formatarZeroData(document.getElementById('inpDataDia'), 2); formatarZeroData(document.getElementById('inpDataMes'), 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', false);
 
-      formatarZeroData(document.getElementById('inpDataDia'), 2); formatarZeroData(document.getElementById('inpDataMes'), 2);
-      validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', false);
+      const descInput = document.getElementById('inpDesc'); descInput.value = formatarTituloInteligente(descInput.value);
+      const valorFloat = lerValorMoeda('inpValor'), catVal = document.getElementById('selCat').value, tagsVal = document.getElementById('inpTags').value;
+      if (valorFloat <= 0 && !(normalizarTexto(catVal).includes('renda') || normalizarTexto(tagsVal).includes('gratis') || normalizarTexto(tagsVal).includes('pontos'))) { mostrarAviso('Atenção', 'Informe um valor ou marque como #gratis.'); return; }
 
-      const descInput = document.getElementById('inpDesc');
-      descInput.value = formatarTituloInteligente(descInput.value);
-
-      const valorFloat = lerValorMoeda('inpValor');
-      const catVal = document.getElementById('selCat').value;
-      const tagsVal = document.getElementById('inpTags').value;
-      const isRendaOuGratis = (normalizarTexto(catVal).includes('renda') || normalizarTexto(tagsVal).includes('gratis') || normalizarTexto(tagsVal).includes('pontos'));
-      
-      if (valorFloat <= 0 && !isRendaOuGratis) { mostrarAviso('Atenção', 'Informe um valor maior que R$ 0,00 ou marque como #gratis.'); return; }
-
-      vibrar(30);
-      salvandoGastoTrava = true;
-      const btn = document.getElementById('btnSalvar'); btn.textContent = 'Salvando...'; btn.disabled = true;
-
-      const tagsTratadas = formatarTagsAutomaticamente(tagsVal);
-      const formaVal = document.getElementById('selForma').value;
-      const isAssinatura = document.getElementById('checkAssinatura').checked;
-      const isPix = formaVal.toLowerCase().includes('pix');
-      const manterData = document.getElementById('chkManterDataCartao')?.checked;
-
-      let qtdParc = (isAssinatura || isPix) ? 1 : (parseInt(document.getElementById('inpParc').value, 10) || 1);
-      let iniParc = (qtdParc <= 1) ? 1 : (parseInt(document.getElementById('inpParcIni').value, 10) || 1);
-      if (iniParc > qtdParc) iniParc = 1;
+      vibrar(30); salvandoGastoTrava = true; const btn = document.getElementById('btnSalvar'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      const isAssinatura = document.getElementById('checkAssinatura').checked, isPix = document.getElementById('selForma').value.toLowerCase().includes('pix');
+      let qtdParc = (isAssinatura || isPix) ? 1 : (parseInt(document.getElementById('inpParc').value, 10) || 1), iniParc = (qtdParc <= 1) ? 1 : (parseInt(document.getElementById('inpParcIni').value, 10) || 1); if (iniParc > qtdParc) iniParc = 1;
 
       const payload = {
         action: 'salvarLancamentoWeb',
         param: {
-          dataCompra: document.getElementById('inpData').value,
-          mesPrimeiraFatura: document.getElementById('inpMesFat').value,
-          descricao: descInput.value,
-          formaPagto: formaVal,
-          categoria: catVal,
-          tags: tagsTratadas,
-          valorTotal: valorFloat,
-          numParcelas: qtdParc,
-          parcelaInicial: iniParc,
-          statusInicial: isAssinatura ? 'Assinatura Ativa' : (isPix ? 'Pago' : 'Em Aberto'),
-          isAssinatura: isAssinatura
+          dataCompra: document.getElementById('inpData').value, mesPrimeiraFatura: document.getElementById('inpMesFat').value, descricao: descInput.value, formaPagto: document.getElementById('selForma').value, categoria: catVal, tags: formatarTagsAutomaticamente(tagsVal), valorTotal: valorFloat, numParcelas: qtdParc, parcelaInicial: iniParc, statusInicial: isAssinatura ? 'Assinatura Ativa' : (isPix ? 'Pago' : 'Em Aberto'), isAssinatura: isAssinatura
         }
       };
 
       if (!navigator.onLine) {
-        let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
-        payload.param.tipoFila = 'pessoal'; 
-        fila.push(payload.param); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
+        let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); payload.param.tipoFila = 'pessoal'; fila.push(payload.param); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
         mostrarAviso('Offline ⚡', 'Gasto salvo no aparelho! Sincronizará quando voltar a rede.');
-        if (manterData) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
-        atualizarIndicadorOffline(); btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false;
-        return;
+        if (document.getElementById('chkManterDataCartao')?.checked) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
+        btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false; atualizarIndicadorOffline(); return;
       }
 
       mostrarAviso('Processando', 'Registrando na nuvem...', payload);
-      if (manterData) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
+      if (document.getElementById('chkManterDataCartao')?.checked) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
       btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false;
     }
 
     // ============================================================================
-    // HISTÓRICO GERAL E EXTRATO AGRUPADO
+    // HISTÓRICO GERAL (SOMA, BADGES, EDIÇÃO DE CARDS E FILTROS)
     // ============================================================================
 
     function obterClasseBadgeStatus(statusStr) {
@@ -2442,487 +1967,59 @@
     function formatarInfoParcelaCard(parcStr, resParcObj) {
       const limpa = String(parcStr || '').replace(/^'/, '').trim();
       if (limpa === '∞/∞') return 'Fixo Mensal (∞)';
-      if (limpa.includes('/') && !limpa.endsWith('/1')) {
-        if (resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes) {
-          return `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>`;
-        }
-        return `Parc: ${limpa}`;
-      }
+      if (limpa.includes('/') && !limpa.endsWith('/1')) return resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes ? `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>` : `Parc: ${limpa}`;
       return `Parc: ${limpa || '1/1'}`;
     }
 
-    function renderTabelaLancamentos(lista, append = false) {
-      if (!append) itensFiltradosAtualCache = [...lista];
-      else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
+    function toggleAuditoriaRisco(el) {
+      vibrar(10);
+      if (el.classList.contains('line-through')) el.classList.remove('line-through', 'opacity-40');
+      else el.classList.add('line-through', 'opacity-40');
+    }
 
-      let htmlL = '';
-      let dataAtualBloco = '';
+    function renderTabelaLancamentos(lista, append = false) {
+      if (!append) itensFiltradosAtualCache = [...lista]; else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
+      let htmlL = '', dataAtualBloco = '';
 
       lista.forEach(l => {
-        const badgeColor = obterClasseBadgeStatus(l[9]);
-        const isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
-        const descSafe = String(l[1]).replace(/'/g, "\\'");
-        const formaSafe = String(l[2]).replace(/'/g, "\\'");
-        const catSafe = String(l[3]).replace(/'/g, "\\'");
-        const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
-        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
-        const dtSafe = String(l[0] || '').replace(/'/g, "\\'");
-        const mSafe = String(l[8] || '').replace(/'/g, "\\'");
-        const resParc = l[12] || null;
+        const badgeColor = obterClasseBadgeStatus(l[9]), isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
+        const descSafe = String(l[1]).replace(/'/g, "\\'"), formaSafe = String(l[2]).replace(/'/g, "\\'"), catSafe = String(l[3]).replace(/'/g, "\\'"), tagSafe = String(l[11] || '').replace(/'/g, "\\'"), parcSafe = String(l[6] || '').replace(/'/g, "\\'"), dtSafe = String(l[0] || '').replace(/'/g, "\\'"), mSafe = String(l[8] || '').replace(/'/g, "\\'");
+        
+        if (l[0] && l[0] !== dataAtualBloco && !append) { dataAtualBloco = l[0]; htmlL += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`; }
+        let tagsHtml = ''; if (l[11]) { String(l[11]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => { tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${t.replace(/'/g, "\\'")}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95 shadow-sm" title="Toque para filtrar por ${t}">${t}</button>`; }); }
 
-        const dataLinha = l[0] || 'Sem data';
-        if (dataLinha !== dataAtualBloco && !append) {
-          dataAtualBloco = dataLinha;
-          htmlL += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`;
-        }
-
-        let tagsHtml = '';
-        if (l[11]) {
-          String(l[11]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
-            const tSafeClick = t.replace(/'/g, "\\'");
-            tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${tSafeClick}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95 shadow-sm" title="Toque para filtrar por ${t}">${t}</button>`;
-          });
-        }
-
-        const btnEmpurrar = isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-sky-900/20 hover:bg-sky-600 rounded-xl transition active:scale-95 border border-sky-500/20" title="Avançar para o próximo mês">⏩ Empurrar</button>` : '';
-
-        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition">
-          <div class="flex justify-between items-start gap-2">
-            <div class="min-w-0 pr-2">
-              <div class="text-white font-bold text-base mt-0.5 leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div>
-              <div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div>
-              <div>${tagsHtml}</div>
-            </div>
-            <div class="text-right flex flex-col items-end shrink-0">
-              <div class="valor-auditoria text-emerald-400 font-bold text-lg leading-tight tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div>
-              <div class="text-[10px] text-slate-400 mt-1 font-bold uppercase border border-slate-800 px-1.5 py-0.5 bg-slate-900 rounded-md shadow-sm">${formatarInfoParcelaCard(l[6], resParc)}</div>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
-            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm ${badgeColor}">${l[9]}</span>
-            <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
-          </div>
-          <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50">
-            <button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
-            ${btnEmpurrar}
-            <button onclick="abrirModalEdicaoLanc('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
-          </div>
-        </div>`;
+        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition"><div class="flex justify-between items-start gap-2"><div class="min-w-0 pr-2"><div class="text-white font-bold text-base mt-0.5 leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div><div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end shrink-0"><div class="valor-auditoria text-emerald-400 font-bold text-lg leading-tight tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div><div class="text-[10px] text-slate-400 mt-1 font-bold uppercase border border-slate-800 px-1.5 py-0.5 bg-slate-900 rounded-md shadow-sm">${formatarInfoParcelaCard(l[6], l[12] || null)}</div></div></div><div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm ${badgeColor}">${l[9]}</span><span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span></div><div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50"><button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>${isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-sky-900/20 hover:bg-sky-600 rounded-xl transition active:scale-95 border border-sky-500/20" title="Avançar para o próximo mês">⏩ Empurrar</button>` : ''}<button onclick="abrirModalEdicaoLanc('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button></div></div>`;
       });
 
-      if (lista.length === 0 && !append) {
-        htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado para este filtro.</div>';
-      }
-      const boxLanc = document.getElementById('lista-lancamentos');
-      if (boxLanc) {
-        if (append) boxLanc.insertAdjacentHTML('beforeend', htmlL);
-        else boxLanc.innerHTML = htmlL;
-      }
+      if (lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado.</div>';
+      if (document.getElementById('lista-lancamentos')) append ? document.getElementById('lista-lancamentos').insertAdjacentHTML('beforeend', htmlL) : document.getElementById('lista-lancamentos').innerHTML = htmlL;
     }
 
     function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
-      vibrar(20);
-      limparFormularioNovoGasto();
-      document.getElementById('inpDesc').value = desc;
-      document.getElementById('selForma').value = forma;
-      document.getElementById('selCat').value = cat;
-      definirValorMoeda('inpValor', lerValorMoeda(valorParcelaStr));
-      document.getElementById('inpTags').value = tags || '';
-      toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); toggleBotaoLimpar('inpValor', 'btnLimparValor'); toggleBotaoLimpar('inpTags', 'btnLimparTags');
-      atualizarRegrasForma();
-      sincronizarChipsTags('novo');
-      setAba('novo');
-      mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje! Confira e clique em Lançar.');
+      vibrar(20); limparFormularioNovoGasto(); document.getElementById('inpDesc').value = desc; document.getElementById('selForma').value = forma; document.getElementById('selCat').value = cat; definirValorMoeda('inpValor', lerValorMoeda(valorParcelaStr)); document.getElementById('inpTags').value = tags || ''; toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); toggleBotaoLimpar('inpValor', 'btnLimparValor'); toggleBotaoLimpar('inpTags', 'btnLimparTags'); atualizarRegrasForma(); sincronizarChipsTags('novo'); setAba('novo'); mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje!');
     }
 
-    function filtrarPorTagRapida(tag) {
-      vibrar(10); setAba('lancamentos');
-      document.getElementById('filtTag').value = tag.replace(/^#/, '');
-      aplicarFiltros();
-    }
-
-    function auditarItemAnual(tipo, valor) {
-      vibrar(15); setAba('lancamentos');
-      document.getElementById('inpBusca').value = '';
-      document.getElementById('filtMes').value = '';
-      document.getElementById('filtForma').value = tipo === 'forma' ? valor : '';
-      document.getElementById('filtCat').value = tipo === 'categoria' ? valor : '';
-      document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : '';
-      document.getElementById('filtStatus').value = '';
-      filtrosAtuais.tipoRapido = '';
-      atualizarEstiloChipsRapidosHist('');
-      aplicarFiltros();
-    }
-
+    function filtrarPorTagRapida(tag) { vibrar(10); setAba('lancamentos'); document.getElementById('filtTag').value = tag.replace(/^#/, ''); aplicarFiltros(); }
+    function auditarItemAnual(tipo, valor) { vibrar(15); setAba('lancamentos'); document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = tipo === 'forma' ? valor : ''; document.getElementById('filtCat').value = tipo === 'categoria' ? valor : ''; document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : ''; document.getElementById('filtStatus').value = ''; filtrosAtuais.tipoRapido = ''; atualizarEstiloChipsRapidosHist(''); aplicarFiltros(); }
+    
     function atualizarEstiloChipsRapidosHist(tipoAtivo) {
       const mapa = { '': 'chip-hist-todos', 'mesatual': 'chip-hist-mesatual', 'apagar': 'chip-hist-apagar', 'parcelados': 'chip-hist-parcelados', 'fixos': 'chip-hist-fixos', 'pix': 'chip-hist-pix' };
-      Object.keys(mapa).forEach(k => {
-        const el = document.getElementById(mapa[k]);
-        if (!el) return;
-        if (k === tipoAtivo) el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition active:scale-95';
-        else el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition active:scale-95';
-      });
+      Object.keys(mapa).forEach(k => { const el = document.getElementById(mapa[k]); if (el) el.className = k === tipoAtivo ? 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition active:scale-95' : 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition active:scale-95'; });
     }
-
-    function aplicarFiltroRapidoHist(tipo) {
-      vibrar(15); filtrosAtuais.tipoRapido = tipo;
-      atualizarEstiloChipsRapidosHist(tipo); aplicarFiltros();
-    }
+    function aplicarFiltroRapidoHist(tipo) { vibrar(15); filtrosAtuais.tipoRapido = tipo; atualizarEstiloChipsRapidosHist(tipo); aplicarFiltros(); }
 
     function abrirModalFiltros() { vibrar(10); document.getElementById('modalFiltros').classList.remove('hidden'); }
     function fecharModalFiltros() { document.getElementById('modalFiltros').classList.add('hidden'); }
 
     function limparFiltros() {
-      vibrar(20);
-      document.getElementById('inpBusca').value = '';
-      document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = '';
-      document.getElementById('filtCat').value = ''; document.getElementById('filtTag').value = '';
-      document.getElementById('filtStatus').value = '';
-      toggleBotaoLimpar('inpBusca', 'btnLimparBusca'); toggleBotaoLimpar('filtTag', 'btnLimpFiltTag');
-      filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' };
-      atualizarEstiloChipsRapidosHist('');
-      document.getElementById('barraSomaFiltro')?.classList.add('hidden');
-      renderTabelaLancamentos(ultimosLancamentosCache, false);
+      vibrar(20); document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = ''; document.getElementById('filtCat').value = ''; document.getElementById('filtTag').value = ''; document.getElementById('filtStatus').value = ''; toggleBotaoLimpar('inpBusca', 'btnLimparBusca'); toggleBotaoLimpar('filtTag', 'btnLimpFiltTag'); filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' }; atualizarEstiloChipsRapidosHist(''); document.getElementById('barraSomaFiltro')?.classList.add('hidden'); renderTabelaLancamentos(ultimosLancamentosCache, false);
     }
 
-    function temAlgumFiltroAtivo() {
-      return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido);
-    }
+    function temAlgumFiltroAtivo() { return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido); }
 
     function aplicarFiltros() {
-      vibrar(20);
-      filtrosAtuais.termo = document.getElementById('inpBusca').value.trim();
-      filtrosAtuais.mes = document.getElementById('filtMes').value;
-      filtrosAtuais.forma = document.getElementById('filtForma').value;
-      filtrosAtuais.categoria = document.getElementById('filtCat').value;
-      filtrosAtuais.tag = document.getElementById('filtTag').value.trim();
-      filtrosAtuais.status = document.getElementById('filtStatus').value;
-
-      offsetAtual = 0;
-      document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Filtrando registros...</div>';
-      document.getElementById('boxCarregarMais').classList.add('hidden');
-      fecharModalFiltros();
-      chamarFiltroBackend();
+      vibrar(20); filtrosAtuais.termo = document.getElementById('inpBusca').value.trim(); filtrosAtuais.mes = document.getElementById('filtMes').value; filtrosAtuais.forma = document.getElementById('filtForma').value; filtrosAtuais.categoria = document.getElementById('filtCat').value; filtrosAtuais.tag = document.getElementById('filtTag').value.trim(); filtrosAtuais.status = document.getElementById('filtStatus').value; offsetAtual = 0; document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Filtrando registros...</div>'; document.getElementById('boxCarregarMais').classList.add('hidden'); fecharModalFiltros(); chamarFiltroBackend();
     }
-
-    function carregarMaisLancamentos() {
-      vibrar(10);
-      offsetAtual += LIMITE_PAGINA;
-      const btn = document.querySelector('#boxCarregarMais button');
-      if (btn) btn.textContent = 'Baixando...';
-      chamarFiltroBackend(true);
-    }
-
-    function chamarFiltroBackend(append = false) {
-      apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA })
-        .then(res => {
-          if (!append) document.getElementById('lista-lancamentos').innerHTML = '';
-          renderTabelaLancamentos(res.itens, append);
-          ultimoResumoSomaFiltro = res;
-
-          const barraSoma = document.getElementById('barraSomaFiltro');
-          if (barraSoma) {
-            if (temAlgumFiltroAtivo() && res.qtdTotal > 0) {
-              barraSoma.classList.remove('hidden');
-              barraSoma.classList.add('flex');
-              document.getElementById('txtSomaQtd').textContent = `📊 ${res.qtdTotal} ${res.qtdTotal === 1 ? 'item' : 'itens'}`;
-              document.getElementById('txtSomaTotal').textContent = res.somaTotal;
-              const badgeMetade = document.getElementById('badgeSomaMetade');
-              if (badgeMetade) badgeMetade.textContent = `➗ 50%: ${res.somaMetade}`;
-            } else {
-              barraSoma.classList.add('hidden');
-              barraSoma.classList.remove('flex');
-            }
-          }
-
-          const box = document.getElementById('boxCarregarMais');
-          if (res.temMais) {
-            box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇';
-          } else { box.classList.add('hidden'); }
-        })
-        .catch(err => mostrarAviso('Erro', 'Erro na busca: ' + err.message));
-    }
-
-    function copiarResumoFiltroWhats() {
-      vibrar(30);
-      if (!itensFiltradosAtualCache || itensFiltradosAtualCache.length === 0) return;
-      let linhas = [`📋 *Resumo de Gastos Filtrados*`];
-      if (filtrosAtuais.mes) linhas.push(`📅 Fatura: *${filtrosAtuais.mes}*`);
-      if (filtrosAtuais.tag) linhas.push(`🏷️ Tag: *#${filtrosAtuais.tag.replace(/^#/, '')}*`);
-      linhas.push('');
-
-      itensFiltradosAtualCache.forEach(item => {
-        const parc = (item[6] && item[6] !== '1/1' && item[6] !== '∞/∞') ? ` (${item[6]})` : '';
-        linhas.push(`• ${item[0].substring(0, 5)} - ${item[1]}${parc}: *${item[7]}*`);
-      });
-
-      linhas.push('');
-      const somaTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaTotal : '';
-      const metadeTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaMetade : '';
-      linhas.push(`💰 *Total:* ${somaTxt}`);
-      linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
-
-      copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo copiado p/ o WhatsApp!');
-    }
-
-    // ============================================================================
-    // EDIÇÃO, EXCLUSÃO E CONTEXTO DE MODAIS
-    // ============================================================================
-
-    function excluirLancamentoLocal(linha, descricao, parcela = '', mesFat = '') {
-      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
-      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
-
-      mostrarConfirmacao("Excluir Lançamento Pessoal", `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?`, (excluirTodasParcelas) => {
-        const payload = { action: 'excluirLancamentoWeb', param: { linha, descricao, parcela: pLimpa, mesFatura: mesFat, excluirTodasParcelas: Boolean(excluirTodasParcelas) } };
-        mostrarAviso('Processando', 'Excluindo o seu lançamento...', payload);
-      }, ehParcelado);
-    }
-
-    function excluirDoModalEdicao() {
-      vibrar(30);
-      const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal';
-      const linha = document.getElementById('inpEdLinha').value;
-      const desc = document.getElementById('inpEdDescOrig').value;
-      const mes = document.getElementById('inpEdMesOrig').value;
-      const parc = document.getElementById('inpEdParcelaStr').value;
-      
-      if (contexto === 'pessoal') {
-        fecharModalEdicaoLanc(); excluirLancamentoLocal(linha, desc, parc, mes);
-      } else {
-        const pessoa = document.getElementById('inpEdPessoa').value;
-        fecharModalEdicaoLanc(); excluirItemEmprestimo(linha, pessoa, desc, parc);
-      }
-    }
-
-    function aoMudarFormaEdicao() {
-      const formaVal = (document.getElementById('selEdForma')?.value || '').toLowerCase();
-      const selStatus = document.getElementById('selEdStatus');
-      const parcStr = document.getElementById('inpEdParcelaStr')?.value || '';
-      if (!selStatus || parcStr === '∞/∞') return;
-      if (formaVal.includes('pix') && document.getElementById('inpEdContexto').value === 'pessoal') selStatus.value = 'Pago';
-      else if (selStatus.value === 'Pago') selStatus.value = 'Em Aberto';
-    }
-
-    function marcarPropagacaoValorSeParcelado() {
-      const chk = document.getElementById('chkPropagarValorParc');
-      if (chk) chk.checked = true;
-    }
-
-    function togglePainelAdiantar() {
-      vibrar(10);
-      const p = document.getElementById('painelAdiantarCampos');
-      const s = document.getElementById('setaAdiantar');
-      if (!p) return;
-      if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
-      else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
-    }
-
-    function togglePainelMoverContexto() {
-      vibrar(10);
-      const p = document.getElementById('painelMoverContextoCampos');
-      const s = document.getElementById('setaMoverCtx');
-      if (!p) return;
-      if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
-      else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
-    }
-
-    function executarMoverContexto() {
-      vibrar(30);
-      const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal';
-      if (contexto === 'pessoal') {
-        const pessoa = (document.getElementById('inpMoverPessoa')?.value || '').trim();
-        if (!pessoa) { mostrarAviso('Atenção', 'Digite o nome da pessoa.'); return; }
-        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
-        apiCall('moverParaEmprestimosWeb', {
-          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
-          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
-          pessoa: pessoa
-        }).then(res => {
-          btn.textContent = 'Transferir 🤝'; btn.disabled = false; fecharModalEdicaoLanc();
-          mostrarAviso('Sucesso 🤝', `Movido para Empréstimos (${res.pessoa})!`); carregarDados();
-        }).catch(err => { btn.textContent = 'Transferir 🤝'; btn.disabled = false; mostrarAviso('Erro', err.message); });
-      } else {
-        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
-        apiCall('moverParaGastosPessoaisWeb', {
-          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
-          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
-          categoria: document.getElementById('selEdCat').value, tags: document.getElementById('inpEdTags').value
-        }).then(res => {
-          btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; fecharModalEdicaoLanc();
-          mostrarAviso('Sucesso ➕', `Movido para os seus Gastos!`); carregarDados();
-        }).catch(err => { btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; mostrarAviso('Erro', err.message); });
-      }
-    }
-
-    function executarAdiantamentoParcelas() {
-      vibrar(30);
-      const linha = document.getElementById('inpEdLinha').value;
-      const descOrig = document.getElementById('inpEdDescOrig').value;
-      const mesOrig = document.getElementById('inpEdMesOrig').value;
-      const parcOrig = document.getElementById('inpEdParcelaStr').value;
-      const mesDestino = document.getElementById('inpAdiantarMes').value.trim();
-      const qtdAdiantar = document.getElementById('inpAdiantarQtd').value;
-      const descontoTotal = lerValorMoeda('inpAdiantarDesconto');
-      const marcarComoPago = document.getElementById('chkAdiantarJaPago')?.checked;
-
-      if (!mesDestino || !mesDestino.includes('/')) { mostrarAviso('Atenção', 'Informe a Fatura Destino no formato MM/AAAA.'); return; }
-
-      const btn = document.getElementById('btnExecutarAdiantar'); btn.textContent = 'Processando...'; btn.disabled = true;
-      apiCall('adiantarParcelasWeb', {
-        linha: linha, descOriginal: descOrig, mesOriginal: mesOrig, parcelaOriginal: parcOrig,
-        mesDestino: mesDestino, qtdAdiantar: qtdAdiantar, descontoTotal: descontoTotal, marcarComoPago: Boolean(marcarComoPago)
-      }).then(res => {
-        btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; fecharModalEdicaoLanc();
-        mostrarAviso('Sucesso ⚡', `${res.qtdAdiantada} parcela(s) adiantada(s) para ${mesDestino}!`); carregarDados();
-      }).catch(err => { btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; mostrarAviso('Aviso', err.message); });
-    }
-
-    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') {
-      vibrar(20);
-      document.getElementById('modalEdTitle').innerHTML = '✏️ Editar Gasto Pessoal';
-      document.getElementById('inpEdContexto').value = 'pessoal';
-      document.getElementById('inpEdLinha').value = linha;
-      document.getElementById('inpEdParcelaStr').value = parcela;
-      document.getElementById('inpEdDescOrig').value = desc;
-      document.getElementById('inpEdMesOrig').value = mes;
-      
-      preencherDataTripla('edicao', data);
-      document.getElementById('boxEdPessoa').classList.add('hidden');
-      document.getElementById('boxEdPessoa').classList.remove('block');
-      
-      document.getElementById('inpEdDesc').value = desc;
-      document.getElementById('selEdForma').value = forma;
-      document.getElementById('boxEdCat').classList.remove('hidden');
-      document.getElementById('selEdCat').value = cat;
-      
-      definirValorMoeda('inpEdValor', lerValorMoeda(valor));
-      document.getElementById('inpEdMesFat').value = mes;
-      
-      const selStatus = document.getElementById('selEdStatus');
-      document.getElementById('optGrpPessoal').classList.remove('hidden');
-      document.getElementById('optGrpEmprestimos').classList.add('hidden');
-      selStatus.value = status;
-      
-      document.getElementById('boxEdTagsObs').classList.remove('hidden');
-      document.getElementById('lblEdTagsObs').textContent = 'Tags';
-      document.getElementById('inpEdTags').value = tag || '';
-      sincronizarChipsTags('edicao');
-
-      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
-      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
-      
-      const boxPropagar = document.getElementById('boxPropagarValorParc');
-      const chkPropagar = document.getElementById('chkPropagarValorParc');
-      if (chkPropagar) chkPropagar.checked = false;
-
-      document.getElementById('painelAdiantarCampos')?.classList.add('hidden');
-      if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
-      document.getElementById('painelMoverContextoCampos')?.classList.add('hidden');
-      
-      document.getElementById('txtBtnToggleMover').textContent = '🤝 Era de terceiro? Mover p/ Empréstimos';
-      document.getElementById('txtExplicacaoMover').innerHTML = 'Transfere esta compra para a aba <strong>Empréstimos</strong>.';
-      document.getElementById('inpMoverPessoa').classList.remove('hidden');
-      document.getElementById('btnExecutarMoverCtx').textContent = 'Transferir p/ Empréstimos 🤝';
-      if (document.getElementById('setaMoverCtx')) document.getElementById('setaMoverCtx').textContent = '▼';
-      if (document.getElementById('inpMoverPessoa')) document.getElementById('inpMoverPessoa').value = '';
-
-      document.getElementById('boxDividirParcEmp')?.classList.add('hidden');
-
-      if (ehParcelado) {
-        document.getElementById('boxAdiantarContainer')?.classList.remove('hidden');
-        boxPropagar?.classList.remove('hidden');
-        document.getElementById('inpAdiantarMes').value = evolucaoMesAtual || mes;
-        document.getElementById('inpAdiantarQtd').value = '';
-        document.getElementById('inpAdiantarDesconto').value = '';
-        if (document.getElementById('chkAdiantarJaPago')) document.getElementById('chkAdiantarJaPago').checked = false;
-      } else {
-        document.getElementById('boxAdiantarContainer')?.classList.add('hidden');
-        boxPropagar?.classList.add('hidden');
-      }
-
-      document.getElementById('boxMoverContextoContainer')?.classList.remove('hidden');
-      document.getElementById('modalEdicaoLanc').classList.remove('hidden');
-    }
-
-    function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
-
-    function salvarEdicaoLanc(e) {
-      e.preventDefault();
-      vibrar(30);
-      formatarZeroData(document.getElementById('inpEdDataDia'), 2);
-      formatarZeroData(document.getElementById('inpEdDataMes'), 2);
-      validarLimitesDataTripla('edicao');
-      sincronizarDataTripla('edicao', false);
-
-      const edDescEl = document.getElementById('inpEdDesc');
-      edDescEl.value = formatarTituloInteligente(edDescEl.value);
-      const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Salvando...'; btn.disabled = true;
-      const contexto = document.getElementById('inpEdContexto').value;
-
-      if (contexto === 'pessoal') {
-        const tagsEdTratadas = formatarTagsAutomaticamente(document.getElementById('inpEdTags').value);
-        apiCall('editarLancamentoLinhaWeb', {
-          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
-          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
-          dataCompra: document.getElementById('inpEdData').value, descricao: edDescEl.value,
-          formaPagto: document.getElementById('selEdForma').value, categoria: document.getElementById('selEdCat').value,
-          valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked),
-          mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value,
-          tags: tagsEdTratadas
-        }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Lançamento atualizado!'); })
-          .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
-      } else {
-        const obsEdTratadas = document.getElementById('inpEdTags').value; 
-        apiCall('editarEmprestimoLinhaWeb', {
-          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
-          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
-          dataCompra: document.getElementById('inpEdData').value,
-          pessoa: document.getElementById('inpEdPessoa').value, descricao: edDescEl.value,
-          formaPagto: document.getElementById('selEdForma').value,
-          valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked),
-          mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value,
-          observacoes: obsEdTratadas
-        }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Empréstimo atualizado!'); })
-          .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
-      }
-    }
-
-    function abrirModalEdicaoAss(desc, forma, cat, valor) {
-      vibrar(20);
-      document.getElementById('inpAssDescOrig').value = desc;
-      document.getElementById('inpAssFormaOrig').value = forma;
-      document.getElementById('inpAssDesc').value = desc;
-      document.getElementById('selAssForma').value = forma;
-      document.getElementById('selAssCat').value = cat;
-      definirValorMoeda('inpAssValor', lerValorMoeda(valor));
-      document.getElementById('modalEdicaoAss').classList.remove('hidden');
-    }
-
-    function fecharModalEdicaoAss() { document.getElementById('modalEdicaoAss').classList.add('hidden'); }
-
-    function salvarEdicaoAss(e) {
-      e.preventDefault();
-      const assDescEl = document.getElementById('inpAssDesc');
-      assDescEl.value = formatarTituloInteligente(assDescEl.value);
-      const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Salvando...'; btn.disabled = true;
-      apiCall('editarAssinaturaWeb', {
-        descOriginal: document.getElementById('inpAssDescOrig').value,
-        formaOriginal: document.getElementById('inpAssFormaOrig').value,
-        novaDesc: assDescEl.value,
-        novaForma: document.getElementById('selAssForma').value,
-        novaCat: document.getElementById('selAssCat').value,
-        novaValor: lerValorMoeda('inpAssValor')
-      }).then(() => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; mostrarAviso('Sucesso', 'Assinatura atualizada!'); carregarDados(); })
-        .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; });
-    }
-
-    function cancelarAssinaturaLocal(descricao, forma) {
-      mostrarConfirmacao("Desativar Assinatura", `Deseja desativar "${descricao}"?`, () => {
-        apiCall('cancelarAssinaturaWeb', { descricao, forma }).then(() => carregarDados()).catch(err => mostrarAviso('Erro', err.message));
-      });
-    }
-
     // ============================================================================
     // FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS)
     // ============================================================================
@@ -3445,10 +2542,10 @@
       } else {
         limparFormularioEmprestimo();
         selecionarSubFerramenta('emprestimos');
+        document.getElementById('inpEmpPessoa').value = formatarTituloInteligente(nomePessoa);
         document.getElementById('inpEmpDesc').value = formatarTituloInteligente(local);
         definirValorMoeda('inpEmpValor', valLancamento);
         document.getElementById('inpEmpObs').value = 'Rachadinha';
-        document.getElementById('inpEmpPessoa')?.focus();
         mostrarAviso('Empréstimo 🤝', `Valor de ${formatBRL(valLancamento)} preenchido! Digite o nome do amigo.`);
       }
     }
@@ -4049,6 +3146,168 @@
     }
 
     // ============================================================================
+    // MOTOR DE RENDERIZAÇÃO PRINCIPAL (INJEÇÃO DE DADOS NA TELA)
+    // ============================================================================
+
+    function renderizarDados(dados) {
+      dadosCarregadosIniciais = true;
+      document.getElementById('kpi-aberto').textContent = dados.kpis?.totalAberto || 'R$ 0,00';
+      document.getElementById('kpi-pago').textContent = dados.kpis?.totalPago || 'R$ 0,00';
+      document.getElementById('kpi-comp').textContent = dados.kpis?.comprometimentoMes || 'R$ 0,00';
+      document.getElementById('kpi-geral').textContent = dados.kpis?.totalGeral || 'R$ 0,00';
+
+      formasGlobais = dados.formasPagamento || [];
+      cartaoMaisFrequenteGlobal = dados.cartaoMaisFrequente || '';
+      categoriasGlobaisEdit = dados.configCategorias || [];
+      consumoCategoriasPorMesGlobal = dados.consumoCategoriasPorMes || {};
+      opcoesTagsGlobal = dados.opcoesTags || [];
+      dicionarioAutofill = dados.autofill || {};
+      dicionarioPrefixosAutofill = dados.autofillPrefixos || {};
+      arvoreMesesAno = dados.estruturaMesesAno || {};
+      evolucaoMeses = dados.faturas?.mesesGlobais || [];
+      evolucaoPivot = dados.faturas?.pivot || {};
+      evolucaoMesAtual = dados.faturas?.mesAtual || '';
+      evolucaoIdx = 0;
+      notasGlobais = dados.anotacoes || [];
+      emprestimosGlobal = dados.emprestimos || { kpis: {}, pessoasFrequentes: [], itens: [] };
+
+      // POPULANDO OS DROPDOWNS DO FORMULÁRIO (BLINDAGEM COM TRY/CATCH)
+      try {
+        const selForma = document.getElementById('selForma');
+        const selCat = document.getElementById('selCat');
+        const selEdForma = document.getElementById('selEdForma');
+        const selEdCat = document.getElementById('selEdCat');
+        const selEmpForma = document.getElementById('selEmpForma');
+        const simCartao = document.getElementById('simCartao');
+        const filtForma = document.getElementById('filtForma');
+        const selAssForma = document.getElementById('selAssForma');
+        const selAssCat = document.getElementById('selAssCat');
+
+        const opcoesFormsFiltradas = dados.opcoesFormas || [];
+
+        if (selForma) {
+          const valAntigoForma = selForma.value; selForma.innerHTML = '<option value="">Selecione...</option>';
+          opcoesFormsFiltradas.forEach(f => selForma.innerHTML += `<option value="${f}">${f}</option>`);
+          selForma.value = valAntigoForma;
+        }
+        if (selEdForma) { selEdForma.innerHTML = ''; opcoesFormsFiltradas.forEach(f => selEdForma.innerHTML += `<option value="${f}">${f}</option>`); }
+        if (selEmpForma) { selEmpForma.innerHTML = '<option value="">Selecione o cartão...</option>'; formasGlobais.filter(f => !f.nome.toLowerCase().includes('pix') && !f.nome.toLowerCase().includes('total') && !f.arquivado).forEach(f => selEmpForma.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
+        if (selAssForma) { selAssForma.innerHTML = ''; opcoesFormsFiltradas.forEach(f => selAssForma.innerHTML += `<option value="${f}">${f}</option>`); }
+        if (filtForma) { filtForma.innerHTML = '<option value="">Todos</option>'; (dados.formasPagamento || []).filter(f => !f.arquivado).forEach(f => filtForma.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
+        if (simCartao) { simCartao.innerHTML = '<option value="">📊 Comparar Todos os Cartões</option>'; formasGlobais.filter(f => !f.arquivado && !f.nome.toLowerCase().includes('pix') && !f.nome.toLowerCase().includes('total')).forEach(f => simCartao.innerHTML += `<option value="${f.nome}">${f.nome}</option>`); }
+
+        const opcoesCats = dados.opcoesCategorias || [];
+        if (selCat) {
+          const valAntigoCat = selCat.value; selCat.innerHTML = '<option value="">Selecione...</option>';
+          opcoesCats.forEach(c => selCat.innerHTML += `<option value="${c}">${c}</option>`);
+          selCat.value = valAntigoCat;
+        }
+        if (selEdCat) { selEdCat.innerHTML = ''; opcoesCats.forEach(c => selEdCat.innerHTML += `<option value="${c}">${c}</option>`); }
+        if (selAssCat) { selAssCat.innerHTML = ''; opcoesCats.forEach(c => selAssCat.innerHTML += `<option value="${c}">${c}</option>`); }
+
+        renderizarListaCategorias();
+        renderListaFormas();
+      } catch (e) { console.error("Erro ao preencher opções de dropdown:", e); }
+
+      // PREENCHIMENTO VISUAL (LISTAS, FILTROS, GRÁFICO DASHBOARD, HORIZONTE)
+      try {
+        renderizarChipsTags();
+        const listaLanc = dados.lancamentos || [];
+        if (abaAtivaAtual === 'lancamentos' && !temAlgumFiltroAtivo()) {
+          ultimosLancamentosCache = listaLanc;
+          renderTabelaLancamentos(ultimosLancamentosCache, false);
+          const box = document.getElementById('boxCarregarMais');
+          if (box) { if (dados.temMaisLancamentos) box.classList.remove('hidden'); else box.classList.add('hidden'); }
+        }
+
+        renderTabelaEvolucao();
+
+        const [mAtual, aAtual] = evolucaoMesAtual.split('/');
+        preencherSeletoresInteligentes(aAtual, mAtual, false);
+
+        const filtMes = document.getElementById('filtMes');
+        if (filtMes) { filtMes.innerHTML = '<option value="">Todos</option>'; (dados.mesesDisponiveis || []).forEach(m => filtMes.innerHTML += `<option value="${m}">${m}</option>`); }
+
+        const chartCanvas = document.getElementById('chartCategorias');
+        if (chartCanvas) {
+          if (chartGlobal) chartGlobal.destroy();
+          const categorias = dados.categorias || [];
+          if (categorias.length > 0) {
+            chartGlobal = new Chart(chartCanvas.getContext('2d'), {
+              type: 'doughnut',
+              data: { labels: categorias.map(c => c.nome), datasets: [{ data: categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0, hoverOffset: 4 }] },
+              options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', boxWidth: 12, padding: 15, font: { size: 11, family: "'Plus Jakarta Sans', sans-serif" } } } } }
+            });
+          }
+        }
+
+        const listaAssAtivas = document.getElementById('lista-assinaturas-ativas');
+        const listaAssInativas = document.getElementById('lista-assinaturas-inativas');
+        if (listaAssAtivas && listaAssInativas) {
+          let htmlAtivas = '', htmlInativas = '';
+          (dados.assinaturas || []).forEach(ass => {
+            const descSafe = String(ass.descricao).replace(/'/g, "\\'");
+            const formaSafe = String(ass.forma).replace(/'/g, "\\'");
+            const catSafe = String(ass.categoria).replace(/'/g, "\\'");
+            const isAtiva = (ass.status.toLowerCase() === 'assinatura ativa' || ass.status.toLowerCase() === 'assinatura paga');
+            
+            const btnEditar = isAtiva ? `<button onclick="abrirModalEdicaoAss('${descSafe}', '${formaSafe}', '${catSafe}', '${ass.valorRaw}')" class="text-indigo-400 hover:text-white px-2 py-1.5 bg-indigo-500/10 hover:bg-indigo-600 rounded-lg text-[10px] font-bold transition">Editar</button>` : '';
+            const btnAcao = isAtiva ? `<button onclick="cancelarAssinaturaLocal('${descSafe}', '${formaSafe}')" class="text-rose-400 hover:text-white px-2 py-1.5 bg-rose-500/10 hover:bg-rose-600 rounded-lg text-[10px] font-bold transition">Desativar</button>` : `<span class="text-rose-400 text-[10px] font-bold">Cancelada em ${ass.mesUltimaFat}</span>`;
+            
+            const card = `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between shadow-sm relative"><div class="flex justify-between items-start mb-3"><div class="pr-2"><h3 class="text-white font-bold text-sm leading-tight">${ass.descricao}</h3><div class="text-[10px] text-slate-400 mt-1 font-medium bg-slate-900 px-2 py-1 rounded-md inline-block border border-slate-800">💳 ${ass.forma} • 🏷️ ${ass.categoria}</div></div><div class="text-right shrink-0"><span class="text-emerald-400 font-bold text-base block">${ass.valor}</span><span class="text-[9px] text-slate-500">/ mês</span></div></div><div class="flex justify-between items-center pt-2 border-t border-slate-700/50"><div class="flex gap-2">${btnAcao}${btnEditar}</div><span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${isAtiva ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-500'}">${ass.status}</span></div></div>`;
+            if (isAtiva) htmlAtivas += card; else htmlInativas += card;
+          });
+          listaAssAtivas.innerHTML = htmlAtivas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura ativa.</div>';
+          listaAssInativas.innerHTML = htmlInativas || '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma assinatura cancelada.</div>';
+        }
+
+        const bannerEmpDash = document.getElementById('bannerEmprestimosDash');
+        if (bannerEmpDash) {
+          const empKpi = emprestimosGlobal.kpis || {};
+          if (empKpi.atrasadosRaw > 0) {
+            document.getElementById('txtBannerEmprestimosDash').textContent = `Você tem ${empKpi.atrasadosFmt} de empréstimos em atraso!`;
+            bannerEmpDash.classList.remove('hidden'); bannerEmpDash.classList.add('flex');
+          } else {
+            bannerEmpDash.classList.add('hidden'); bannerEmpDash.classList.remove('flex');
+          }
+        }
+
+        renderizarMenusNavegacao();
+        atualizarIndicadorOffline();
+        
+        if (abaAtivaAtual === 'relatorio' && dadosCarregadosIniciais) dispararBuscaRelatorioMensal();
+        if (abaAtivaAtual === 'anual' && dadosCarregadosIniciais) carregarRelatorioAnual();
+        if (abaAtivaAtual === 'ferramentas') {
+          if (!document.getElementById('subview-emprestimos').classList.contains('hidden')) renderizarPainelEmprestimos();
+          if (!document.getElementById('subview-notas').classList.contains('hidden')) renderizarNotasUI();
+        }
+
+      } catch (e) { console.error("Erro na renderização visual:", e); }
+    }
+
+    function atualizarVisorMetaCategoria() {
+      const catVal = document.getElementById('selCat')?.value || '';
+      const inpMesFat = document.getElementById('inpMesFat')?.value || '';
+      const box = document.getElementById('infoMetaCategoria');
+      if (!catVal || !box || !inpMesFat) { if (box) box.classList.add('hidden'); return; }
+
+      const configCat = categoriasGlobaisEdit.find(c => c.nome === catVal);
+      const meta = configCat ? configCat.meta : 0;
+      if (meta <= 0) { box.classList.add('hidden'); return; }
+
+      const gastoAtual = (consumoCategoriasPorMesGlobal[inpMesFat] && consumoCategoriasPorMesGlobal[inpMesFat][catVal]) ? consumoCategoriasPorMesGlobal[inpMesFat][catVal] : 0;
+      const valLancamento = lerValorMoeda('inpValor');
+      const gastoFuturo = gastoAtual + valLancamento;
+      const pctAtual = Math.min((gastoAtual / meta) * 100, 100).toFixed(0);
+      const pctFuturo = Math.min((gastoFuturo / meta) * 100, 100).toFixed(0);
+
+      box.classList.remove('hidden');
+      if (gastoFuturo > meta) { box.innerHTML = `<span class="text-rose-400">⚠️ Meta estourada: ${pctFuturo}% consumido de ${formatBRL(meta)} no mês.</span>`; } 
+      else if (gastoFuturo >= meta * 0.8) { box.innerHTML = `<span class="text-amber-400">Atenção: ${pctFuturo}% consumido de ${formatBRL(meta)} no mês.</span>`; } 
+      else { box.innerHTML = `<span class="text-emerald-400">Meta OK: ${pctAtual}% ➔ ${pctFuturo}% de ${formatBRL(meta)}.</span>`; }
+    }
+
+    // ============================================================================
     // INICIALIZAÇÃO DO APLICATIVO
     // ============================================================================
 
@@ -4057,7 +3316,7 @@
       if (cacheP && !dadosCarregadosIniciais) {
         try { renderizarDados(JSON.parse(cacheP)); } catch (e) { console.error(e); }
       }
-      const notasS = localStorage.getItem('notasLocaisGestorV11');
+      const notasS = localStorage.getItem('notasLocaisGestorV12');
       if (notasS && notasGlobais.length === 0) {
         try { notasGlobais = JSON.parse(notasS); } catch (e) {}
       }
