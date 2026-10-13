@@ -1464,7 +1464,7 @@
       </form>
     </div>
   </div>
-  <script>
+<script>
     // ============================================================================
     // SERVICE WORKER E ATUALIZAÇÃO FORÇADA DE CACHE (APP NATIVO)
     // ============================================================================
@@ -1543,6 +1543,104 @@
       { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300', principal: false }
     ];
 
+    function renderizarMenusNavegacao() {
+      const navDesktop = document.getElementById('barraNavegacaoDesktop');
+      const navMobile = document.getElementById('barraNavegacaoMobile');
+      if (!navDesktop || !navMobile) return;
+      navDesktop.innerHTML = ''; navMobile.innerHTML = '';
+
+      const abasPrincipais = ['novo', 'dashboard', 'lancamentos', 'relatorio'];
+      abasPrincipais.forEach(id => {
+        const config = abasConfig.find(a => a.id === id);
+        navDesktop.innerHTML += `<button onclick="setAba('${id}')" id="btn-desk-${id}" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs ${config.cor} hover:text-white transition cursor-pointer active:scale-95">${config.icone} ${config.titulo}</button>`;
+        navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl ${config.cor} transition active:scale-95"><span class="text-lg mb-0.5 leading-none">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
+      });
+
+      navDesktop.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-desk-menu" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs text-slate-300 hover:text-white transition cursor-pointer active:scale-95">☰ <span id="txt-desk-menu">Menu</span></button>`;
+      navMobile.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-mob-menu" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-slate-300 transition active:scale-95"><span class="text-lg mb-0.5 leading-none">☰</span><span id="txt-mob-menu" class="text-[10px] font-bold tracking-tight">Menu</span></button>`;
+    }
+
+    function setAba(aba, salvar = true) {
+      fecharMenuMobile();
+      abaAtivaAtual = aba;
+      if (salvar) localStorage.setItem('abaAtivaGestorV12', aba);
+
+      const configAtiva = abasConfig.find(a => a.id === aba);
+      const subMobile = document.getElementById('subtituloMobileAba');
+      if (subMobile && configAtiva) subMobile.textContent = configAtiva.tituloD;
+
+      abasConfig.forEach(a => {
+        const view = document.getElementById('view-' + a.id); if (view) view.classList.add('hidden');
+        const btnD = document.getElementById('btn-desk-' + a.id);
+        const btnM = document.getElementById('btn-mob-' + a.id);
+        const btnMenuModal = document.getElementById('btn-menu-' + a.id);
+
+        if (btnD) { btnD.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnD.classList.add(a.cor); }
+        if (btnM) { btnM.classList.remove('bg-blue-600', 'bg-emerald-600', 'text-white', 'shadow-md'); btnM.classList.add(a.cor); }
+        if (btnMenuModal) { btnMenuModal.classList.remove('border-blue-500', 'bg-blue-950/40'); btnMenuModal.classList.add('border-slate-700/80', 'bg-slate-800/80'); }
+      });
+
+      const viewShow = document.getElementById('view-' + aba); if (viewShow) viewShow.classList.remove('hidden');
+      const btnShowD = document.getElementById('btn-desk-' + aba);
+      const btnShowM = document.getElementById('btn-mob-' + aba);
+      const btnMenuD = document.getElementById('btn-desk-menu');
+      const btnMenuM = document.getElementById('btn-mob-menu');
+      const btnMenuModalAtivo = document.getElementById('btn-menu-' + aba);
+
+      const corAtiva = (aba === 'novo') ? 'bg-emerald-600' : 'bg-blue-600';
+
+      if (btnShowD && btnShowM) {
+        btnShowD.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowD.classList.remove('text-slate-300', 'text-emerald-400');
+        btnShowM.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowM.classList.remove('text-slate-300', 'text-emerald-400');
+        if (btnMenuD) { btnMenuD.classList.remove('bg-blue-600', 'text-white', 'shadow-md'); btnMenuD.classList.add('text-slate-300'); document.getElementById('txt-desk-menu').textContent = 'Menu'; }
+        if (btnMenuM) { btnMenuM.classList.remove('bg-blue-600', 'text-white', 'shadow-md'); btnMenuM.classList.add('text-slate-300'); document.getElementById('txt-mob-menu').textContent = 'Menu'; }
+      } else if (configAtiva) {
+        if (btnMenuD) { btnMenuD.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuD.classList.remove('text-slate-300'); document.getElementById('txt-desk-menu').textContent = configAtiva.titulo; }
+        if (btnMenuM) { btnMenuM.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuM.classList.remove('text-slate-300'); document.getElementById('txt-mob-menu').textContent = configAtiva.titulo; }
+        if (btnMenuModalAtivo) { btnMenuModalAtivo.classList.remove('border-slate-700/80', 'bg-slate-800/80'); btnMenuModalAtivo.classList.add('border-blue-500', 'bg-blue-950/40'); }
+      }
+
+      if (aba === 'relatorio' && relatorioMensalPendente && dadosCarregadosIniciais) {
+        relatorioMensalPendente = false; dispararBuscaRelatorioMensal();
+      } else if (aba === 'anual' && relatorioAnualPendente && dadosCarregadosIniciais) {
+        relatorioAnualPendente = false; carregarRelatorioAnual();
+      }
+      
+      if (aba === 'novo') { setTimeout(() => document.getElementById('inpDesc')?.focus({ preventScroll: true }), 100); }
+    }
+
+    function abrirMenuMobile() {
+      const m = document.getElementById('modalMenuMobile');
+      m.classList.remove('hidden'); m.classList.add('flex');
+    }
+    function fecharMenuMobile() {
+      const m = document.getElementById('modalMenuMobile');
+      m.classList.add('hidden'); m.classList.remove('flex');
+    }
+
+    function abrirFerramenta(sub) {
+      setAba('ferramentas'); selecionarSubFerramenta(sub);
+    }
+
+    function selecionarSubFerramenta(sub) {
+      ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
+        document.getElementById('subview-' + id)?.classList.add('hidden');
+        const btn = document.getElementById('btn-sub-' + id);
+        if (btn) btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
+      });
+      document.getElementById('subview-' + sub)?.classList.remove('hidden');
+      const btnAtivo = document.getElementById('btn-sub-' + sub);
+      if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
+      
+      if (sub === 'emprestimos') {
+        if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo();
+        renderizarPainelEmprestimos();
+      }
+      if (sub === 'simulador') rodarSimuladorCompra();
+      if (sub === 'rachadinha') { calcularRachadinha(); calcularRachadinhaDetalhada(); }
+      if (sub === 'notas') renderizarNotasUI();
+    }
+
     // ============================================================================
     // UTILITÁRIOS: MOEDA, TEXTO, VIBRAÇÃO, AUTO-SCROLL E API C/ TIMEOUT
     // ============================================================================
@@ -1553,9 +1651,7 @@
 
     function ativarAutoScroll(el) {
       if (window.innerWidth < 640) {
-        setTimeout(() => {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 300);
+        setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
       }
     }
 
@@ -1592,7 +1688,7 @@
     function definirValorMoeda(inputOrId, valorFloat) {
       const el = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
       if (!el) return;
-      const num = Math.abs(Number(valorFloat || 0)); // Impede -R$ 50
+      const num = Math.abs(Number(valorFloat || 0)); // Impede valores negativos acidentais
       if (num <= 0) { el.value = ''; return; }
       const centavos = Math.round(num * 100);
       el.value = formatBRL(centavos / 100);
@@ -1642,6 +1738,11 @@
       }).join(' ');
     }
 
+    function formatarTagsAutomaticamente(textoBruto) {
+      if (!textoBruto) return '';
+      return textoBruto.split(',').map(t => t.trim().toLowerCase()).filter(t => t.length > 0).map(t => t.startsWith('#') ? t : '#' + t).join(', ');
+    }
+
     function toggleBotaoLimpar(idInput, idBtn) {
       const inp = document.getElementById(idInput);
       const btn = document.getElementById(idBtn);
@@ -1650,12 +1751,21 @@
       else { btn.classList.add('hidden'); btn.classList.remove('flex'); }
     }
 
+    let doubleTapTimerLimpar = 0;
     function limparCampoComRecalculo(idInput) {
       const inp = document.getElementById(idInput);
       if (inp) {
+        const agora = Date.now();
+        const duploToque = (agora - doubleTapTimerLimpar < 400);
+        doubleTapTimerLimpar = agora;
+
         vibrar(20);
         inp.value = '';
-        inp.focus({ preventScroll: true });
+        if (duploToque) {
+          inp.blur(); // Esconde o teclado
+        } else {
+          inp.focus({ preventScroll: true }); // Devolve o foco sem saltar a tela
+        }
         const event = new Event('input', { bubbles: true });
         inp.dispatchEvent(event);
       }
@@ -1665,7 +1775,7 @@
       if (event.key === 'Enter') {
         event.preventDefault();
         const nextEl = document.getElementById(nextId);
-        if (nextEl) nextEl.focus();
+        if (nextEl) nextEl.focus({ preventScroll: true });
       }
     }
 
@@ -1713,7 +1823,7 @@
         if (timerDesfazer) clearTimeout(timerDesfazer);
         document.getElementById('toastNotificacao').classList.remove('show');
         mostrarAviso('Cancelado', 'Ação desfeita com sucesso!');
-        carregarDados(); // Restaura a visão da tela
+        carregarDados(); 
       }
     }
 
@@ -1777,17 +1887,17 @@
           clearTimeout(timeoutId);
           if (!response.ok) throw new Error(`Falha HTTP ${response.status}`);
           const data = await response.json();
-          operacaoEmAndamento = false;
+          if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
           if (!data.sucesso) throw new Error(data.erro || "Erro no servidor da nuvem.");
           return data.dados;
         } catch (err) {
           clearTimeout(timeoutId);
           if (err.name === 'AbortError') {
-            operacaoEmAndamento = false;
+            if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
             throw new Error("Servidor demorou a responder (Rede Instável). Tente novamente.");
           }
           if (i === tentativas - 1) {
-            operacaoEmAndamento = false;
+            if (action !== 'getDadosCompletos') operacaoEmAndamento = false;
             throw err;
           }
           await new Promise(res => setTimeout(res, 800));
@@ -1812,7 +1922,7 @@
         validarLimitesDataTripla(contexto);
         sincronizarDataTripla(contexto, true);
         const nextEl = document.getElementById(nextId);
-        if (nextEl) { nextEl.focus(); nextEl.select(); }
+        if (nextEl) { nextEl.focus({ preventScroll: true }); nextEl.select(); }
       }
     }
 
@@ -1852,14 +1962,14 @@
       if (v.length === maxLen && nextId) {
         validarLimitesDataTripla(contexto);
         const nextEl = document.getElementById(nextId);
-        if (nextEl) { nextEl.focus(); nextEl.select(); }
+        if (nextEl) { nextEl.focus({ preventScroll: true }); nextEl.select(); }
       }
     }
 
     function voltarParteData(event, input, prevId) {
       if (event.key === 'Backspace' && input.value.length === 0 && prevId) {
         const prevEl = document.getElementById(prevId);
-        if (prevEl) { event.preventDefault(); prevEl.focus(); prevEl.select(); }
+        if (prevEl) { event.preventDefault(); prevEl.focus({ preventScroll: true }); prevEl.select(); }
       }
     }
 
@@ -1949,6 +2059,8 @@
       let val = inp.value || evolucaoMesAtual;
       if (!val || !val.includes('/')) return;
       let [m, a] = val.split('/').map(Number);
+      
+      // Controle do mês bissexto para faturas
       let dataTeste = new Date(a, m - 1 + deltaMes, 1);
       const mNovo = String(dataTeste.getMonth() + 1).padStart(2, '0');
       const aNovo = dataTeste.getFullYear();
@@ -1956,7 +2068,7 @@
       if (idInput === 'inpMesFat') atualizarVisorMetaCategoria();
     }
 
-    // LEITOR DE PIX (COPIA E COLA)
+    // LEITOR DE PIX E COMPROVANTES (COPIA E COLA INTELIGENTE)
     function verificarLeituraPix(textoDescricao) {
       const txt = String(textoDescricao || '');
       if (txt.toLowerCase().includes('transferência') || txt.toLowerCase().includes('pix') || txt.includes('R$')) {
@@ -2279,7 +2391,7 @@
       document.getElementById('rachaAbaterBebida').checked = false;
       ['btnLimparRachaLocal','btnLimparRachaValTot','btnLimparRachaBeb'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
       limparRachadinhaDetalhada();
-      rachaDetPessoas = ['Eu', 'Amigo']; renderizarPessoasRachaDet();
+      rachaDetPessoas = ['Eu', 'Amigo 1']; renderizarPessoasRachaDet();
       calcularRachadinha();
     }
 
@@ -2341,6 +2453,7 @@
 
       if (!navigator.onLine) {
         let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+        payload.param.tipoFila = 'pessoal'; 
         fila.push(payload.param); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
         mostrarAviso('Offline ⚡', 'Gasto salvo no aparelho! Sincronizará quando voltar a rede.');
         if (manterData) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
@@ -2348,11 +2461,503 @@
         return;
       }
 
-      mostrarAviso('Processando', 'Enviando para a nuvem...', payload);
+      mostrarAviso('Processando', 'Registrando na nuvem...', payload);
       if (manterData) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
       btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false;
     }
+
     // ============================================================================
+    // HISTÓRICO GERAL (SOMA, BADGES, EDIÇÃO DE CARDS E FILTROS RAPIDOS)
+    // ============================================================================
+
+    function obterClasseBadgeStatus(statusStr) {
+      const s = String(statusStr || '').trim();
+      if (s === 'Pago' || s === 'Assinatura Paga' || s === 'Pago (Cancelada)' || s === 'Recebido') return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      if (s === 'Agendado') return 'bg-sky-500/20 text-sky-400 border border-sky-500/30';
+      if (s === 'Assinatura Ativa') return 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
+      if (s === 'Assinatura Cancelada') return 'bg-rose-500/20 text-rose-400';
+      return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+    }
+
+    function formatarInfoParcelaCard(parcStr, resParcObj) {
+      const limpa = String(parcStr || '').replace(/^'/, '').trim();
+      if (limpa === '∞/∞') return 'Fixo Mensal (∞)';
+      if (limpa.includes('/') && !limpa.endsWith('/1')) {
+        if (resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes) {
+          return `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>`;
+        }
+        return `Parc: ${limpa}`;
+      }
+      return `Parc: ${limpa || '1/1'}`;
+    }
+
+    function renderTabelaLancamentos(lista, append = false) {
+      if (!append) itensFiltradosAtualCache = [...lista];
+      else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
+
+      let htmlL = '';
+      let dataAtualBloco = '';
+
+      lista.forEach(l => {
+        const badgeColor = obterClasseBadgeStatus(l[9]);
+        const isAberto = String(l[9] || '').toLowerCase() === 'em aberto';
+        const descSafe = String(l[1]).replace(/'/g, "\\'");
+        const formaSafe = String(l[2]).replace(/'/g, "\\'");
+        const catSafe = String(l[3]).replace(/'/g, "\\'");
+        const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
+        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
+        const dtSafe = String(l[0] || '').replace(/'/g, "\\'");
+        const mSafe = String(l[8] || '').replace(/'/g, "\\'");
+        const resParc = l[12] || null;
+
+        const dataLinha = l[0] || 'Sem data';
+        if (dataLinha !== dataAtualBloco && !append) {
+          dataAtualBloco = dataLinha;
+          htmlL += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`;
+        }
+
+        let tagsHtml = '';
+        if (l[11]) {
+          String(l[11]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
+            const tSafeClick = t.replace(/'/g, "\\'");
+            tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${tSafeClick}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95 shadow-sm" title="Toque para filtrar por ${t}">${t}</button>`;
+          });
+        }
+
+        const btnEmpurrar = isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-sky-900/20 hover:bg-sky-600 rounded-xl transition active:scale-95 border border-sky-500/20" title="Avançar para o próximo mês">⏩ Empurrar</button>` : '';
+
+        htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition">
+          <div class="flex justify-between items-start gap-2">
+            <div class="min-w-0 pr-2">
+              <div class="text-white font-bold text-base mt-0.5 leading-tight break-words cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div>
+              <div class="text-[11px] text-slate-400 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div>
+              <div>${tagsHtml}</div>
+            </div>
+            <div class="text-right flex flex-col items-end shrink-0">
+              <div class="valor-auditoria text-emerald-400 font-bold text-lg leading-tight tracking-tight cursor-pointer select-none transition-all duration-300" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent, 'Copiado!')">${l[7]}</div>
+              <div class="text-[10px] text-slate-400 mt-1 font-bold uppercase border border-slate-800 px-1.5 py-0.5 bg-slate-900 rounded-md shadow-sm">${formatarInfoParcelaCard(l[6], resParc)}</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
+            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider shadow-sm ${badgeColor}">${l[9]}</span>
+            <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
+          </div>
+          <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50">
+            <button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
+            ${btnEmpurrar}
+            <button onclick="abrirModalEdicaoLanc('${l[10]}','${dtSafe}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${mSafe}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-[11px] font-bold px-2 py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
+          </div>
+        </div>`;
+      });
+
+      if (lista.length === 0 && !append) {
+        htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado para este filtro.</div>';
+      }
+      const boxLanc = document.getElementById('lista-lancamentos');
+      if (boxLanc) {
+        if (append) boxLanc.insertAdjacentHTML('beforeend', htmlL);
+        else boxLanc.innerHTML = htmlL;
+      }
+    }
+
+    function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
+      vibrar(20);
+      limparFormularioNovoGasto();
+      document.getElementById('inpDesc').value = desc;
+      document.getElementById('selForma').value = forma;
+      document.getElementById('selCat').value = cat;
+      definirValorMoeda('inpValor', lerValorMoeda(valorParcelaStr));
+      document.getElementById('inpTags').value = tags || '';
+      toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); toggleBotaoLimpar('inpValor', 'btnLimparValor'); toggleBotaoLimpar('inpTags', 'btnLimparTags');
+      atualizarRegrasForma();
+      sincronizarChipsTags('novo');
+      setAba('novo');
+      mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje! Confira e clique em Lançar.');
+    }
+
+    function filtrarPorTagRapida(tag) {
+      vibrar(10); setAba('lancamentos');
+      document.getElementById('filtTag').value = tag.replace(/^#/, '');
+      aplicarFiltros();
+    }
+
+    function auditarItemAnual(tipo, valor) {
+      vibrar(15); setAba('lancamentos');
+      document.getElementById('inpBusca').value = '';
+      document.getElementById('filtMes').value = '';
+      document.getElementById('filtForma').value = tipo === 'forma' ? valor : '';
+      document.getElementById('filtCat').value = tipo === 'categoria' ? valor : '';
+      document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : '';
+      document.getElementById('filtStatus').value = '';
+      filtrosAtuais.tipoRapido = '';
+      atualizarEstiloChipsRapidosHist('');
+      aplicarFiltros();
+    }
+
+    function atualizarEstiloChipsRapidosHist(tipoAtivo) {
+      const mapa = { '': 'chip-hist-todos', 'mesatual': 'chip-hist-mesatual', 'apagar': 'chip-hist-apagar', 'parcelados': 'chip-hist-parcelados', 'fixos': 'chip-hist-fixos', 'pix': 'chip-hist-pix' };
+      Object.keys(mapa).forEach(k => {
+        const el = document.getElementById(mapa[k]);
+        if (!el) return;
+        if (k === tipoAtivo) el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition active:scale-95';
+        else el.className = 'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition active:scale-95';
+      });
+    }
+
+    function aplicarFiltroRapidoHist(tipo) {
+      vibrar(15); filtrosAtuais.tipoRapido = tipo;
+      atualizarEstiloChipsRapidosHist(tipo); aplicarFiltros();
+    }
+
+    function abrirModalFiltros() { vibrar(10); document.getElementById('modalFiltros').classList.remove('hidden'); }
+    function fecharModalFiltros() { document.getElementById('modalFiltros').classList.add('hidden'); }
+
+    function limparFiltros() {
+      vibrar(20);
+      document.getElementById('inpBusca').value = '';
+      document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = '';
+      document.getElementById('filtCat').value = ''; document.getElementById('filtTag').value = '';
+      document.getElementById('filtStatus').value = '';
+      toggleBotaoLimpar('inpBusca', 'btnLimparBusca'); toggleBotaoLimpar('filtTag', 'btnLimpFiltTag');
+      filtrosAtuais = { termo: '', mes: '', forma: '', categoria: '', status: '', tag: '', tipoRapido: '' };
+      atualizarEstiloChipsRapidosHist('');
+      document.getElementById('barraSomaFiltro')?.classList.add('hidden');
+      renderTabelaLancamentos(ultimosLancamentosCache, false);
+    }
+
+    function temAlgumFiltroAtivo() {
+      return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido);
+    }
+
+    function aplicarFiltros() {
+      vibrar(20);
+      filtrosAtuais.termo = document.getElementById('inpBusca').value.trim();
+      filtrosAtuais.mes = document.getElementById('filtMes').value;
+      filtrosAtuais.forma = document.getElementById('filtForma').value;
+      filtrosAtuais.categoria = document.getElementById('filtCat').value;
+      filtrosAtuais.tag = document.getElementById('filtTag').value.trim();
+      filtrosAtuais.status = document.getElementById('filtStatus').value;
+
+      offsetAtual = 0;
+      document.getElementById('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-slate-500">Filtrando registros...</div>';
+      document.getElementById('boxCarregarMais').classList.add('hidden');
+      fecharModalFiltros();
+      chamarFiltroBackend();
+    }
+
+    function carregarMaisLancamentos() {
+      vibrar(10);
+      offsetAtual += LIMITE_PAGINA;
+      const btn = document.querySelector('#boxCarregarMais button');
+      if (btn) btn.textContent = 'Baixando...';
+      chamarFiltroBackend(true);
+    }
+
+    function chamarFiltroBackend(append = false) {
+      apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA })
+        .then(res => {
+          if (!append) document.getElementById('lista-lancamentos').innerHTML = '';
+          renderTabelaLancamentos(res.itens, append);
+          ultimoResumoSomaFiltro = res;
+
+          const barraSoma = document.getElementById('barraSomaFiltro');
+          if (barraSoma) {
+            if (temAlgumFiltroAtivo() && res.qtdTotal > 0) {
+              barraSoma.classList.remove('hidden');
+              barraSoma.classList.add('flex');
+              document.getElementById('txtSomaQtd').textContent = `📊 ${res.qtdTotal} ${res.qtdTotal === 1 ? 'item' : 'itens'}`;
+              document.getElementById('txtSomaTotal').textContent = res.somaTotal;
+              const badgeMetade = document.getElementById('badgeSomaMetade');
+              if (badgeMetade) badgeMetade.textContent = `➗ 50%: ${res.somaMetade}`;
+            } else {
+              barraSoma.classList.add('hidden');
+              barraSoma.classList.remove('flex');
+            }
+          }
+
+          const box = document.getElementById('boxCarregarMais');
+          if (res.temMais) {
+            box.classList.remove('hidden'); box.querySelector('button').textContent = 'Carregar mais antigas 👇';
+          } else { box.classList.add('hidden'); }
+        })
+        .catch(err => mostrarAviso('Erro', 'Erro na busca: ' + err.message));
+    }
+
+    function copiarResumoFiltroWhats() {
+      vibrar(30);
+      if (!itensFiltradosAtualCache || itensFiltradosAtualCache.length === 0) return;
+      let linhas = [`📋 *Resumo de Gastos Filtrados*`];
+      if (filtrosAtuais.mes) linhas.push(`📅 Fatura: *${filtrosAtuais.mes}*`);
+      if (filtrosAtuais.tag) linhas.push(`🏷️ Tag: *#${filtrosAtuais.tag.replace(/^#/, '')}*`);
+      linhas.push('');
+
+      itensFiltradosAtualCache.forEach(item => {
+        const parc = (item[6] && item[6] !== '1/1' && item[6] !== '∞/∞') ? ` (${item[6]})` : '';
+        linhas.push(`• ${item[0].substring(0, 5)} - ${item[1]}${parc}: *${item[7]}*`);
+      });
+
+      linhas.push('');
+      const somaTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaTotal : '';
+      const metadeTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaMetade : '';
+      linhas.push(`💰 *Total:* ${somaTxt}`);
+      linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
+
+      copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo copiado p/ o WhatsApp!');
+    }
+
+    // ============================================================================
+    // EDIÇÃO, EXCLUSÃO E CONTEXTO DE MODAIS
+    // ============================================================================
+
+    function excluirLancamentoLocal(linha, descricao, parcela = '', mesFat = '') {
+      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
+      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
+
+      mostrarConfirmacao("Excluir Lançamento Pessoal", `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?`, (excluirTodasParcelas) => {
+        const payload = { action: 'excluirLancamentoWeb', param: { linha, descricao, parcela: pLimpa, mesFatura: mesFat, excluirTodasParcelas: Boolean(excluirTodasParcelas) } };
+        mostrarAviso('Processando', 'Excluindo o seu lançamento...', payload);
+      }, ehParcelado);
+    }
+
+    function excluirDoModalEdicao() {
+      vibrar(30);
+      const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal';
+      const linha = document.getElementById('inpEdLinha').value;
+      const desc = document.getElementById('inpEdDescOrig').value;
+      const mes = document.getElementById('inpEdMesOrig').value;
+      const parc = document.getElementById('inpEdParcelaStr').value;
+      
+      if (contexto === 'pessoal') {
+        fecharModalEdicaoLanc(); excluirLancamentoLocal(linha, desc, parc, mes);
+      } else {
+        const pessoa = document.getElementById('inpEdPessoa').value;
+        fecharModalEdicaoLanc(); excluirItemEmprestimo(linha, pessoa, desc, parc);
+      }
+    }
+
+    function aoMudarFormaEdicao() {
+      const formaVal = (document.getElementById('selEdForma')?.value || '').toLowerCase();
+      const selStatus = document.getElementById('selEdStatus');
+      const parcStr = document.getElementById('inpEdParcelaStr')?.value || '';
+      if (!selStatus || parcStr === '∞/∞') return;
+      if (formaVal.includes('pix') && document.getElementById('inpEdContexto').value === 'pessoal') selStatus.value = 'Pago';
+      else if (selStatus.value === 'Pago') selStatus.value = 'Em Aberto';
+    }
+
+    function marcarPropagacaoValorSeParcelado() {
+      const chk = document.getElementById('chkPropagarValorParc');
+      if (chk) chk.checked = true;
+    }
+
+    function togglePainelAdiantar() {
+      vibrar(10);
+      const p = document.getElementById('painelAdiantarCampos');
+      const s = document.getElementById('setaAdiantar');
+      if (!p) return;
+      if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
+      else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
+    }
+
+    function togglePainelMoverContexto() {
+      vibrar(10);
+      const p = document.getElementById('painelMoverContextoCampos');
+      const s = document.getElementById('setaMoverCtx');
+      if (!p) return;
+      if (p.classList.contains('hidden')) { p.classList.remove('hidden'); if (s) s.textContent = '▲'; }
+      else { p.classList.add('hidden'); if (s) s.textContent = '▼'; }
+    }
+
+    function executarMoverContexto() {
+      vibrar(30);
+      const contexto = document.getElementById('inpEdContexto')?.value || 'pessoal';
+      if (contexto === 'pessoal') {
+        const pessoa = (document.getElementById('inpMoverPessoa')?.value || '').trim();
+        if (!pessoa) { mostrarAviso('Atenção', 'Digite o nome da pessoa.'); return; }
+        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
+        apiCall('moverParaEmprestimosWeb', {
+          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
+          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
+          pessoa: pessoa
+        }).then(res => {
+          btn.textContent = 'Transferir 🤝'; btn.disabled = false; fecharModalEdicaoLanc();
+          mostrarAviso('Sucesso 🤝', `Movido para Empréstimos (${res.pessoa})!`); carregarDados();
+        }).catch(err => { btn.textContent = 'Transferir 🤝'; btn.disabled = false; mostrarAviso('Erro', err.message); });
+      } else {
+        const btn = document.getElementById('btnExecutarMoverCtx'); btn.textContent = 'Transferindo...'; btn.disabled = true;
+        apiCall('moverParaGastosPessoaisWeb', {
+          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
+          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
+          categoria: document.getElementById('selEdCat').value, tags: document.getElementById('inpEdTags').value
+        }).then(res => {
+          btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; fecharModalEdicaoLanc();
+          mostrarAviso('Sucesso ➕', `Movido para os seus Gastos!`); carregarDados();
+        }).catch(err => { btn.textContent = 'Transferir p/ Meus Gastos ➕'; btn.disabled = false; mostrarAviso('Erro', err.message); });
+      }
+    }
+
+    function executarAdiantamentoParcelas() {
+      vibrar(30);
+      const linha = document.getElementById('inpEdLinha').value;
+      const descOrig = document.getElementById('inpEdDescOrig').value;
+      const mesOrig = document.getElementById('inpEdMesOrig').value;
+      const parcOrig = document.getElementById('inpEdParcelaStr').value;
+      const mesDestino = document.getElementById('inpAdiantarMes').value.trim();
+      const qtdAdiantar = document.getElementById('inpAdiantarQtd').value;
+      const descontoTotal = lerValorMoeda('inpAdiantarDesconto');
+      const marcarComoPago = document.getElementById('chkAdiantarJaPago')?.checked;
+
+      if (!mesDestino || !mesDestino.includes('/')) { mostrarAviso('Atenção', 'Informe a Fatura Destino no formato MM/AAAA.'); return; }
+
+      const btn = document.getElementById('btnExecutarAdiantar'); btn.textContent = 'Processando...'; btn.disabled = true;
+      apiCall('adiantarParcelasWeb', {
+        linha: linha, descOriginal: descOrig, mesOriginal: mesOrig, parcelaOriginal: parcOrig,
+        mesDestino: mesDestino, qtdAdiantar: qtdAdiantar, descontoTotal: descontoTotal, marcarComoPago: Boolean(marcarComoPago)
+      }).then(res => {
+        btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; fecharModalEdicaoLanc();
+        mostrarAviso('Sucesso ⚡', `${res.qtdAdiantada} parcela(s) adiantada(s) para ${mesDestino}!`); carregarDados();
+      }).catch(err => { btn.textContent = 'Confirmar Antecipação ⚡'; btn.disabled = false; mostrarAviso('Aviso', err.message); });
+    }
+
+    function abrirModalEdicaoLanc(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') {
+      vibrar(20);
+      document.getElementById('modalEdTitle').innerHTML = '✏️ Editar Gasto Pessoal';
+      document.getElementById('inpEdContexto').value = 'pessoal';
+      document.getElementById('inpEdLinha').value = linha;
+      document.getElementById('inpEdParcelaStr').value = parcela;
+      document.getElementById('inpEdDescOrig').value = desc;
+      document.getElementById('inpEdMesOrig').value = mes;
+      
+      preencherDataTripla('edicao', data);
+      document.getElementById('boxEdPessoa').classList.add('hidden');
+      document.getElementById('boxEdPessoa').classList.remove('block');
+      
+      document.getElementById('inpEdDesc').value = desc;
+      document.getElementById('selEdForma').value = forma;
+      document.getElementById('boxEdCat').classList.remove('hidden');
+      document.getElementById('selEdCat').value = cat;
+      
+      definirValorMoeda('inpEdValor', lerValorMoeda(valor));
+      document.getElementById('inpEdMesFat').value = mes;
+      
+      const selStatus = document.getElementById('selEdStatus');
+      document.getElementById('optGrpPessoal').classList.remove('hidden');
+      document.getElementById('optGrpEmprestimos').classList.add('hidden');
+      selStatus.value = status;
+      
+      document.getElementById('boxEdTagsObs').classList.remove('hidden');
+      document.getElementById('lblEdTagsObs').textContent = 'Tags';
+      document.getElementById('inpEdTags').value = tag || '';
+      sincronizarChipsTags('edicao');
+
+      const pLimpa = String(parcela || '').replace(/^'/, '').trim();
+      const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
+      
+      const boxPropagar = document.getElementById('boxPropagarValorParc');
+      const chkPropagar = document.getElementById('chkPropagarValorParc');
+      if (chkPropagar) chkPropagar.checked = false;
+
+      document.getElementById('painelAdiantarCampos')?.classList.add('hidden');
+      if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
+      document.getElementById('painelMoverContextoCampos')?.classList.add('hidden');
+      
+      document.getElementById('txtBtnToggleMover').textContent = '🤝 Era de terceiro? Mover p/ Empréstimos';
+      document.getElementById('txtExplicacaoMover').innerHTML = 'Transfere esta compra para a aba <strong>Empréstimos</strong>.';
+      document.getElementById('inpMoverPessoa').classList.remove('hidden');
+      document.getElementById('btnExecutarMoverCtx').textContent = 'Transferir p/ Empréstimos 🤝';
+      if (document.getElementById('setaMoverCtx')) document.getElementById('setaMoverCtx').textContent = '▼';
+      if (document.getElementById('inpMoverPessoa')) document.getElementById('inpMoverPessoa').value = '';
+
+      document.getElementById('boxDividirParcEmp')?.classList.add('hidden');
+
+      if (ehParcelado) {
+        document.getElementById('boxAdiantarContainer')?.classList.remove('hidden');
+        boxPropagar?.classList.remove('hidden');
+        document.getElementById('inpAdiantarMes').value = evolucaoMesAtual || mes;
+        document.getElementById('inpAdiantarQtd').value = '';
+        document.getElementById('inpAdiantarDesconto').value = '';
+        if (document.getElementById('chkAdiantarJaPago')) document.getElementById('chkAdiantarJaPago').checked = false;
+      } else {
+        document.getElementById('boxAdiantarContainer')?.classList.add('hidden');
+        boxPropagar?.classList.add('hidden');
+      }
+
+      document.getElementById('boxMoverContextoContainer')?.classList.remove('hidden');
+      document.getElementById('modalEdicaoLanc').classList.remove('hidden');
+    }
+
+    function fecharModalEdicaoLanc() { document.getElementById('modalEdicaoLanc').classList.add('hidden'); }
+
+    function salvarEdicaoLanc(e) {
+      e.preventDefault();
+      vibrar(30);
+      formatarZeroData(document.getElementById('inpEdDataDia'), 2);
+      formatarZeroData(document.getElementById('inpEdDataMes'), 2);
+      validarLimitesDataTripla('edicao');
+      sincronizarDataTripla('edicao', false);
+
+      const edDescEl = document.getElementById('inpEdDesc');
+      edDescEl.value = formatarTituloInteligente(edDescEl.value);
+      const btn = document.getElementById('btnSalvarEdLanc'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      const contexto = document.getElementById('inpEdContexto').value;
+
+      if (contexto === 'pessoal') {
+        const tagsEdTratadas = formatarTagsAutomaticamente(document.getElementById('inpEdTags').value);
+        apiCall('editarLancamentoLinhaWeb', {
+          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
+          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
+          dataCompra: document.getElementById('inpEdData').value, descricao: edDescEl.value,
+          formaPagto: document.getElementById('selEdForma').value, categoria: document.getElementById('selEdCat').value,
+          valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked),
+          mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value,
+          tags: tagsEdTratadas
+        }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Lançamento atualizado!'); })
+          .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+      } else {
+        const obsEdTratadas = document.getElementById('inpEdTags').value; 
+        apiCall('editarEmprestimoLinhaWeb', {
+          linha: document.getElementById('inpEdLinha').value, descOriginal: document.getElementById('inpEdDescOrig').value,
+          mesOriginal: document.getElementById('inpEdMesOrig').value, parcelaOriginal: document.getElementById('inpEdParcelaStr').value,
+          dataCompra: document.getElementById('inpEdData').value,
+          pessoa: document.getElementById('inpEdPessoa').value, descricao: edDescEl.value,
+          formaPagto: document.getElementById('selEdForma').value,
+          valorParcela: lerValorMoeda('inpEdValor'), propagarValorParcelas: Boolean(document.getElementById('chkPropagarValorParc')?.checked),
+          mesFatura: document.getElementById('inpEdMesFat').value, status: document.getElementById('selEdStatus').value,
+          observacoes: obsEdTratadas
+        }).then(() => { fecharModalEdicaoLanc(); carregarDados(); btn.textContent = 'Atualizar'; btn.disabled = false; mostrarAviso('Sucesso', 'Empréstimo atualizado!'); })
+          .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
+      }
+    }
+
+    // ============================================================================
+    // INICIALIZAÇÃO
+    // ============================================================================
+
+    function carregarDados() {
+      const cacheP = localStorage.getItem('cacheDadosGestorV12');
+      if (cacheP && !dadosCarregadosIniciais) {
+        try { renderizarDados(JSON.parse(cacheP)); } catch (e) { console.error(e); }
+      }
+      const notasS = localStorage.getItem('notasLocaisGestorV11');
+      if (notasS && notasGlobais.length === 0) {
+        try { notasGlobais = JSON.parse(notasS); } catch (e) {}
+      }
+
+      apiCall('getDadosCompletos')
+        .then(dados => {
+          localStorage.setItem('cacheDadosGestorV12', JSON.stringify(dados));
+          renderizarDados(dados);
+        })
+        .catch(err => {
+          if (!cacheP) mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message);
+        });
+    }
+
+    window.onload = carregarDados;
+
+  </script>
+</body>
+</html>
+// ============================================================================
     // FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS)
     // ============================================================================
 
@@ -2428,7 +3033,6 @@
 
       if (!navigator.onLine) {
         let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
-        // Adiciona um marcador de tipo para diferenciar Empréstimo de Gasto Pessoal
         payload.param.tipoFila = 'emprestimo'; 
         fila.push(payload.param);
         localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
@@ -2439,7 +3043,7 @@
         return;
       }
 
-      mostrarAviso('Processando', 'Registando na nuvem...', payload);
+      mostrarAviso('Processando', 'Registrando na nuvem...', payload);
       limparFormularioEmprestimo();
       btn.textContent = '💾 Registrar Empréstimo no Cartão'; btn.disabled = false;
     }
@@ -2456,7 +3060,7 @@
       if (chipsPessoas) {
         chipsPessoas.innerHTML = pFreq.slice(0, 8).map(p => {
           const pSafe = p.replace(/'/g, "\\'");
-          return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition active:scale-95">👤 ${p}</button>`;
+          return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition active:scale-95 shadow-sm">👤 ${p}</button>`;
         }).join('');
       }
 
@@ -2624,7 +3228,7 @@
       
       document.getElementById('inpEdDesc').value = desc;
       document.getElementById('selEdForma').value = forma;
-      document.getElementById('boxEdCat').classList.add('hidden'); // Oculta Categoria
+      document.getElementById('boxEdCat').classList.add('hidden');
       
       definirValorMoeda('inpEdValor', lerValorMoeda(valor));
       document.getElementById('inpEdMesFat').value = mes;
@@ -2634,7 +3238,7 @@
       document.getElementById('optGrpEmprestimos').classList.remove('hidden');
       selStatus.value = status;
       
-      document.getElementById('boxEdTagsObs').classList.add('hidden'); // Esconde Tags
+      document.getElementById('boxEdTagsObs').classList.add('hidden');
 
       const pLimpa = String(parcela || '').replace(/^'/, '').trim();
       const ehParcelado = pLimpa.includes('/') && pLimpa !== '∞/∞' && (parseInt(pLimpa.split('/')[1], 10) > 1);
@@ -2643,7 +3247,6 @@
       const chkPropagar = document.getElementById('chkPropagarValorParc');
       if (chkPropagar) chkPropagar.checked = false;
 
-      // Restaura painéis para fechado
       document.getElementById('painelAdiantarCampos')?.classList.add('hidden');
       if (document.getElementById('setaAdiantar')) document.getElementById('setaAdiantar').textContent = '▼';
       
@@ -2670,9 +3273,7 @@
         boxPropagar?.classList.add('hidden');
       }
 
-      // Painel de Baixa Parcial
       document.getElementById('boxDividirParcEmp')?.classList.remove('hidden');
-
       document.getElementById('boxMoverContextoContainer')?.classList.remove('hidden');
       document.getElementById('modalEdicaoLanc').classList.remove('hidden');
     }
@@ -2719,7 +3320,7 @@
     }
 
     // ============================================================================
-    // FERRAMENTA 2: RACHADINHA (MODO RÁPIDO COMIDA X BEBIDA + MODO DETALHADO)
+    // FERRAMENTA 2: RACHADINHA (MODO RÁPIDO E MODO DETALHADO)
     // ============================================================================
 
     let modoRachadinhaAtual = 'rapido';
@@ -2777,7 +3378,7 @@
       if (abaterBebida && valBebida > 0 && valInput > valBebida) {
         valComida = valInput - valBebida;
       } else if (abaterBebida && valInput > 0 && valInput <= valBebida) {
-        valComida = 0; // Previne erro se o valor da bebida for igual ao total
+        valComida = 0;
       }
 
       const com10 = Boolean(document.getElementById('rachaTaxa10')?.checked);
@@ -3315,12 +3916,10 @@
     }
 
     // ============================================================================
-    // FERRAMENTAS 4 E 5: CALCULADORA FINANCEIRA E BLOCO DE NOTAS (MULTI-LINHA)
+    // FERRAMENTAS 4 E 5: CALCULADORA FINANCEIRA E BLOCO DE NOTAS (TEXTAREA)
     // ============================================================================
 
     let calcExprStr = '';
-    
-    // Suporte ao clique duplo no botão de igualdade da Calculadora
     let lastEqualTime = 0;
 
     function calcDigito(d) { vibrar(10); calcExprStr += d; atualizarVisorCalc(); }
@@ -3370,7 +3969,7 @@
       vibrar(30);
       const valBruto = avaliarExpressaoCalc(calcExprStr);
       if (!valBruto || isNaN(valBruto)) { mostrarAviso('Atenção', 'Calcule um valor válido primeiro.'); return; }
-      const val = Math.abs(valBruto); // Protege contra enviar valor negativo (-R$ 50) para os formulários
+      const val = Math.abs(valBruto);
 
       if (destino === 'novo') {
         definirValorMoeda('inpValor', val); atualizarPreviewParcelas(); setAba('novo');
@@ -3439,7 +4038,7 @@
       document.getElementById('inpIdNotaEdit').value = id;
       const tArea = document.getElementById('inpNovaNotaTexto');
       tArea.value = item.texto;
-      tArea.focus();
+      tArea.focus({ preventScroll: true });
       document.getElementById('btnAdicionarNota').textContent = '💾 Atualizar Nota';
       document.getElementById('btnCancelarEdicaoNota').classList.remove('hidden');
     }
@@ -3457,7 +4056,7 @@
       if (!item) return;
       limparFormularioNovoGasto();
       document.getElementById('inpDesc').value = item.texto;
-      verificarLeituraPix(item.texto); // Tenta garimpar um R$ 0,00 da nota automaticamente
+      verificarLeituraPix(item.texto);
       checarAutopreenchimento();
       setAba('novo');
       mostrarAviso('Nota Lida ⚡', 'Texto enviado p/ Novo Registro!');
@@ -3476,7 +4075,7 @@
     }
 
     function sincronizarNotasNuvem() {
-      localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+      localStorage.setItem('notasLocaisGestorV12', JSON.stringify(notasGlobais));
       if (navigator.onLine) apiCall('salvarNotasWeb', notasGlobais).catch(e => console.warn(e));
     }
 
@@ -3508,7 +4107,7 @@
       if (modoEdicaoCategorias) {
         btn.classList.replace('bg-slate-700', 'bg-amber-500'); btn.textContent = '❌ Cancelar';
         boxNova.classList.replace('hidden', 'flex'); btnSalvar.classList.remove('hidden'); infoText.classList.remove('hidden');
-        document.body.style.overscrollBehaviorY = 'contain'; // Impede o "Pull to Refresh"
+        document.body.style.overscrollBehaviorY = 'contain';
       } else {
         btn.classList.replace('bg-amber-500', 'bg-slate-700'); btn.textContent = '⚙️ Organizar';
         boxNova.classList.replace('flex', 'hidden'); btnSalvar.classList.add('hidden'); infoText.classList.add('hidden');
@@ -3645,7 +4244,7 @@
       const isArqAtual = document.getElementById('inpFpArquivado').value === 'true';
       document.getElementById('inpFpArquivado').value = isArqAtual ? 'false' : 'true';
       const fakeEvent = { preventDefault: () => {} };
-      salvarForma(fakeEvent); // Salva as edições e o status de arquivamento
+      salvarForma(fakeEvent); 
     }
 
     function salvarForma(e) {
@@ -3761,11 +4360,46 @@
       }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = '💾 Salvar Modificações'; btn.disabled = false; });
     }
 
+    function abrirModalEdicaoAss(desc, forma, cat, valor) {
+      vibrar(20);
+      document.getElementById('inpAssDescOrig').value = desc;
+      document.getElementById('inpAssFormaOrig').value = forma;
+      document.getElementById('inpAssDesc').value = desc;
+      document.getElementById('selAssForma').value = forma;
+      document.getElementById('selAssCat').value = cat;
+      definirValorMoeda('inpAssValor', lerValorMoeda(valor));
+      document.getElementById('modalEdicaoAss').classList.remove('hidden');
+    }
+
+    function fecharModalEdicaoAss() { document.getElementById('modalEdicaoAss').classList.add('hidden'); }
+
+    function salvarEdicaoAss(e) {
+      e.preventDefault();
+      const assDescEl = document.getElementById('inpAssDesc');
+      assDescEl.value = formatarTituloInteligente(assDescEl.value);
+      const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      apiCall('editarAssinaturaWeb', {
+        descOriginal: document.getElementById('inpAssDescOrig').value,
+        formaOriginal: document.getElementById('inpAssFormaOrig').value,
+        novaDesc: assDescEl.value,
+        novaForma: document.getElementById('selAssForma').value,
+        novaCat: document.getElementById('selAssCat').value,
+        novaValor: lerValorMoeda('inpAssValor')
+      }).then(() => { fecharModalEdicaoAss(); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; mostrarAviso('Sucesso', 'Assinatura atualizada!'); carregarDados(); })
+        .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; });
+    }
+
+    function cancelarAssinaturaLocal(descricao, forma) {
+      mostrarConfirmacao("Desativar Assinatura", `Deseja desativar "${descricao}"?`, () => {
+        apiCall('cancelarAssinaturaWeb', { descricao, forma }).then(() => carregarDados()).catch(err => mostrarAviso('Erro', err.message));
+      });
+    }
+
     // ============================================================================
-    // TABELA HORIZONTE DO PAINEL (CHAVE "PESSOAL" VS "TOTAL BANCO") E EVOLUÇÃO
+    // TABELA HORIZONTE DO PAINEL E EVOLUÇÃO
     // ============================================================================
 
-    let visaoEvolucaoAtual = 'pessoal'; // 'pessoal' ou 'banco'
+    let visaoEvolucaoAtual = 'pessoal'; 
     function alternarVisaoEvolucao(tipo) {
       vibrar(20);
       visaoEvolucaoAtual = tipo;
@@ -3856,20 +4490,15 @@
     }
 
     // ============================================================================
-    // RELATÓRIO MENSAL, ANUAL, AUDITORIA VISUAL, EMPURRAR MÊS E EXTRATO AGRUPADO
+    // RELATÓRIO MENSAL, ANUAL E EXTRATO AGRUPADO
     // ============================================================================
 
-    // Toggle de Auditoria Visual (Risco) na aba Mensal e Histórico
     function toggleAuditoriaRisco(el) {
       vibrar(10);
-      if (el.classList.contains('line-through')) {
-        el.classList.remove('line-through', 'opacity-40');
-      } else {
-        el.classList.add('line-through', 'opacity-40');
-      }
+      if (el.classList.contains('line-through')) el.classList.remove('line-through', 'opacity-40');
+      else el.classList.add('line-through', 'opacity-40');
     }
 
-    // Atalho: Empurrar 1 Mês para a frente (A Pagar)
     function empurrarGastoUmMes(linha, descricao, dtAntiga, mesAntigo, parcAntiga) {
       vibrar(30);
       let pLimpa = String(parcAntiga || '').replace(/^'/, '').trim();
@@ -3878,29 +4507,22 @@
 
       if (!dAntiga.includes('/') || !mAntigo.includes('/')) return;
 
-      // Avança a Data de Compra em 1 mês (Proteção de dia 31 p/ fev)
       let [d1, m1, a1] = dAntiga.split('/').map(Number);
-      let dtNova = new Date(a1, m1, 1); // soma 1 mês no índice
+      let dtNova = new Date(a1, m1, 1);
       let maxDiaNovo = new Date(dtNova.getFullYear(), dtNova.getMonth() + 1, 0).getDate();
       let diaSeguro = Math.min(d1, maxDiaNovo);
       let novaDataFmt = `${String(diaSeguro).padStart(2, '0')}/${String(dtNova.getMonth() + 1).padStart(2, '0')}/${dtNova.getFullYear()}`;
 
-      // Avança o Mês Fatura em 1 mês
       let [m2, a2] = mAntigo.split('/').map(Number);
       let fatNova = new Date(a2, m2, 1);
       let novoMesFmt = `${String(fatNova.getMonth() + 1).padStart(2, '0')}/${fatNova.getFullYear()}`;
 
       const payload = { action: 'editarLancamentoLinhaWeb', param: {
         linha: linha, descOriginal: descricao, mesOriginal: mAntigo, parcelaOriginal: pLimpa,
-        dataCompra: novaDataFmt, descricao: descricao, mesFatura: novoMesFmt,
-        propagarValorParcelas: false // Como não sabemos todos os campos, não propagamos para a compra toda
+        dataCompra: novaDataFmt, descricao: descricao, mesFatura: novoMesFmt, propagarValorParcelas: false
       }};
 
       mostrarAviso('Empurrando ⏩', `Avançando vencimento de ${descricao} para ${novoMesFmt}...`, payload);
-      // Obs: A API no backend precisará do 'formaPagto', 'categoria', etc. 
-      // Como é um atalho direto da tela e não temos todos os dados crus no HTML (temos apenas display), 
-      // para o atalho de 1 clique funcionar 100% ele requereria abrir o backend e ler a linha completa.
-      // Solução híbrida segura: O botão chama abrirModalEdicaoLanc() e simula o clique no botão de avançar mês!
     }
 
     function atalhoEmpurrarModalEdicao(linha, data, desc, forma, cat, valor, mes, status, tag, parcela = '') {
@@ -4040,14 +4662,12 @@
         if (banner) { banner.classList.add('hidden'); banner.classList.remove('flex'); }
       }
 
-      // Agrupamento por Data (Nível Nativo)
       let html = '';
       let dataAtualBloco = '';
 
       filtrados.forEach((l, idx) => {
         const dataLinha = l[0] || 'Sem data';
         
-        // Verifica se mudou a data para criar o cabeçalho divisor
         if (dataLinha !== dataAtualBloco) {
           dataAtualBloco = dataLinha;
           html += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${dataAtualBloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`;
@@ -4268,7 +4888,7 @@
         const ano = document.getElementById('selFiltroAnoSimples').value;
         nomeArquivo = `Balanco_Anual_${ano}.pdf`;
         const totalRaw = d.totalRaw || 0;
-        let linhasCat = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
+        let linhasCat = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
         htmlDoc = `<div style="font-family:Arial,sans-serif;color:#0f172a;background:#fff;padding:16px;"><h1>Balanço Anual — ${ano}</h1><p>Total: <strong>${d.total}</strong> • Média/Mês: <strong>${d.media}</strong> • Pico: <strong>${d.maiorMes}</strong></p><table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;"><tbody>${linhasCat}</tbody></table></div>`;
       }
 
@@ -4277,6 +4897,7 @@
     }
 
     window.onload = carregarDados;
+
   </script>
 </body>
 </html>
