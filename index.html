@@ -781,16 +781,22 @@
             <h2 class="text-base font-bold text-white flex items-center gap-2">🍻 Dividir Gastos com a Galera</h2>
             <p class="text-xs text-slate-400 mt-0.5">Divida separando quem bebeu de quem não bebeu ou item por item.</p>
           </div>
-          <div class="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700 w-full sm:w-auto">
-            <button type="button" id="btnModoRachaRapido" onclick="alternarModoRachadinha('rapido')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition">⚡ Comida vs. Bebida</button>
-            <button type="button" id="btnModoRachaDetalhado" onclick="alternarModoRachadinha('detalhado')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">🧾 Itens por Pessoa</button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <div class="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700 flex-1 sm:flex-none">
+              <button type="button" id="btnModoRachaRapido" onclick="alternarModoRachadinha('rapido')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition">⚡ Comida vs. Bebida</button>
+              <button type="button" id="btnModoRachaDetalhado" onclick="alternarModoRachadinha('detalhado')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">🧾 Itens por Pessoa</button>
+            </div>
+            <button type="button" onclick="limparRachadinhaTudo()" class="shrink-0 text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-lg border border-slate-700 transition shadow-sm">🧹 Limpar</button>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Local / Evento (Opcional)</label>
-            <input type="text" id="rachaLocal" autocapitalize="words" oninput="calcularRachadinha(); calcularRachadinhaDetalhada()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria, Churrasco, Bar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-emerald-500">
+            <div class="relative">
+              <input type="text" id="rachaLocal" autocapitalize="words" oninput="toggleBotaoLimpar('rachaLocal', 'btnLimparRachaLocal'); calcularRachadinha(); calcularRachadinhaDetalhada()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria, Churrasco, Bar" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm outline-none focus:border-emerald-500">
+              <button type="button" id="btnLimparRachaLocal" onclick="limparCampoTexto('rachaLocal', 'btnLimparRachaLocal'); calcularRachadinha(); calcularRachadinhaDetalhada()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
+            </div>
           </div>
           <div class="flex items-end">
             <label class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between cursor-pointer">
@@ -915,13 +921,19 @@
             <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras e Parcelamento</h2>
             <p class="text-xs text-slate-400 mt-0.5">Calcula automaticamente enquanto você digita e compara seus cartões.</p>
           </div>
-          <button type="button" id="btnAtalhoCartaoMaisUsado" onclick="selecionarCartaoMaisUsadoSimulador()" class="hidden text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition active:scale-95"></button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnAtalhoCartaoMaisUsado" onclick="selecionarCartaoMaisUsadoSimulador()" class="hidden text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition active:scale-95"></button>
+            <button type="button" onclick="limparSimuladorTudo()" class="shrink-0 text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition shadow-sm">🧹 Limpar</button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Valor da Compra (R$)</label>
-            <input type="text" id="simValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sky-400 font-bold text-base outline-none focus:border-sky-500">
+            <div class="relative">
+              <input type="text" id="simValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); toggleBotaoLimpar('simValor', 'btnLimparSimValor'); rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-sky-400 font-bold text-base outline-none focus:border-sky-500">
+              <button type="button" id="btnLimparSimValor" onclick="limparCampoTexto('simValor', 'btnLimparSimValor'); rodarSimuladorCompra()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
+            </div>
           </div>
           <div>
             <div class="flex justify-between items-center mb-1">
@@ -4625,7 +4637,39 @@ function limparFormularioEmprestimo() {
       document.getElementById('inpEdTags').value = ''; 
       sincronizarChipsTags('edicao');
     };
+
+function limparSimuladorTudo() {
+      const inpVal = document.getElementById('simValor');
+      if (inpVal) inpVal.value = '';
+      document.getElementById('simParcelas').value = '1';
+      document.getElementById('simCartao').value = '';
+      toggleBotaoLimpar('simValor', 'btnLimparSimValor');
+      rodarSimuladorCompra();
+      mostrarAviso('Limpo', 'Simulador zerado!');
+    }
+
+    function limparRachadinhaTudo() {
+      document.getElementById('rachaLocal').value = '';
+      document.getElementById('rachaTaxa10').checked = false;
+      document.getElementById('rachaValorTotal').value = '';
+      document.getElementById('rachaValorBebida').value = '';
+      document.getElementById('rachaQtdPessoas').value = '2';
+      document.getElementById('rachaQtdBebeu').value = '1';
+      document.getElementById('inpNovoNomeRacha').value = '';
+      document.getElementById('inpItemDescRacha').value = '';
+      document.getElementById('inpItemValRacha').value = '';
       
+      toggleBotaoLimpar('rachaLocal', 'btnLimparRachaLocal');
+      
+      // Reseta as listas
+      rachaDetPessoas = ['Eu', 'Amigo 2'];
+      limparRachadinhaDetalhada(); // Limpa os itens
+      renderizarPessoasRachaDet();
+      calcularRachadinha(); // Recalcula os painéis em branco
+      
+      mostrarAviso('Limpo', 'Dados da conta eliminados!');
+    }
+  
     window.onload = carregarDados;
   </script>
 </body>
