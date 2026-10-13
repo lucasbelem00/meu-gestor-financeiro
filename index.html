@@ -248,7 +248,7 @@
                   <button type="button" onclick="definirDataOffset(0)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Hoje</button>
                 </div>
               </div>
-              <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
+              <div class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
                 <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
                   onfocus="this.select()"
                   onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')"
@@ -274,7 +274,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Mês Fatura</label>
-              <input type="text" id="inpMesFat" placeholder="MM/AAAA" oninput="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              <input type="text" id="inpMesFat" placeholder="MM/AAAA" oninput="atualizarVisorMetaCategoria()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             </div>
           </div>
 
@@ -674,7 +674,7 @@
                     <button type="button" onclick="definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold transition">Hoje</button>
                   </div>
                 </div>
-                <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1">
+                <div class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1">
                   <input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
                   <span class="text-slate-500">/</span>
                   <input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
@@ -686,9 +686,9 @@
 
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">1ª Fatura</label>
-                <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
+                <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
               </div>
-
+              
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
                 <div class="relative">
@@ -1026,7 +1026,7 @@
         </div>
 
        <div class="flex flex-col sm:flex-row gap-3">
-          <textarea id="inpNovaNotaTexto" placeholder="Ex: Lembrar de pagar o IPVA... (Pressione Enter p/ pular linha)" rows="2" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500 resize-none"></textarea>
+          <textarea id="inpNovaNotaTexto" placeholder="Ex: Lembrar de pagar o IPVA... (Pressione Enter p/ pular linha)" rows="5" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500 resize-y"></textarea>
           <button type="button" onclick="adicionarNotaRapida()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-xl text-xs sm:text-sm transition active:scale-95 shadow-md">Adicionar Lembrete</button>
         </div>
 
@@ -4162,11 +4162,25 @@ function chamarFiltroBackend(append = false) {
 
     function aplicarFiltroInternoMensal(tipo, valor) {
       if (!ultimoRelatorioMensalCache) return;
+      
+      // Se clicou no que já estava ativo, desativa. Se não, ativa o novo.
       if (filtroInternoMensalAtivo.tipo === tipo && filtroInternoMensalAtivo.valor === valor && tipo !== 'todos') {
         filtroInternoMensalAtivo = { tipo: 'todos', valor: '' };
       } else {
         filtroInternoMensalAtivo = { tipo, valor };
       }
+
+      // ESTILO VISUAL: Destacar o cartão selecionado e apagar os outros
+      document.querySelectorAll('.card-filtro-mensal').forEach(card => {
+        if (filtroInternoMensalAtivo.tipo === 'forma' && card.dataset.forma === filtroInternoMensalAtivo.valor) {
+          card.classList.replace('border-slate-800', 'border-blue-500');
+          card.classList.replace('bg-slate-900/50', 'bg-blue-900/30');
+        } else {
+          card.classList.replace('border-blue-500', 'border-slate-800');
+          card.classList.replace('bg-blue-900/30', 'bg-slate-900/50');
+        }
+      });
+
       renderizarListaItensFaturaMensal();
     }
 
@@ -4200,7 +4214,7 @@ function chamarFiltroBackend(append = false) {
       }
 
       let html = '';
-      filtrados.forEach(l => {
+      filtrados.slice().reverse().forEach(l => {
         const badge = obterClasseBadgeStatus(l[9]);
         const descSafe = String(l[1]).replace(/'/g, "\\'");
         const formaSafe = String(l[2]).replace(/'/g, "\\'");
@@ -4277,7 +4291,8 @@ function chamarFiltroBackend(append = false) {
           const infoTerc = (f.terceiros > 0)
             ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>Total Banco: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
             : '';
-          htmlFormas += `<div onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
+          // ADICIONADO data-forma e card-filtro-mensal para o efeito visual de selecao
+          htmlFormas += `<div data-forma="${fSafe}" onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="card-filtro-mensal bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
         });
         document.getElementById('rel-formas-usadas').innerHTML = htmlFormas || '<p class="text-xs text-slate-500 text-center">Nenhuma forma utilizada.</p>';
 
