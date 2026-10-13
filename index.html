@@ -249,30 +249,15 @@
                 </div>
               </div>
               <div class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
-                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
-                  onfocus="this.select()"
-                  onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')"
-                  oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')"
-                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
-                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')" oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
-                  onfocus="this.select()"
-                  onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')"
-                  oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')"
-                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
-                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')" oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
-                  onfocus="this.select()"
-                  onkeydown="voltarParteData(event, this, 'inpDataMes')"
-                  oninput="aoDigitarParteData(this, null, 4, 'novo')"
-                  onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
-                  class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataMes')" oninput="aoDigitarParteData(this, null, 4, 'novo')" onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               </div>
               <input type="hidden" id="inpData">
             </div>
-            <div>
+            <div class="flex flex-col justify-end">
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Mês Fatura</label>
               <input type="text" id="inpMesFat" placeholder="MM/AAAA" oninput="atualizarVisorMetaCategoria()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             </div>
@@ -322,14 +307,19 @@
             </div>
             <div id="boxParc">
               <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
-                <span id="lblPreviewParcelas" class="text-[10px] font-bold text-sky-400">À vista</span>
+                <div class="flex items-center gap-1.5">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
+                  <span id="lblPreviewParcelas" class="text-[9px] font-bold text-sky-400">À vista</span>
+                </div>
+                <div class="flex gap-0.5 sm:gap-1">
+                  <button type="button" onclick="document.getElementById('inpParc').value='2'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">2x</button>
+                  <button type="button" onclick="document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
+                  <button type="button" onclick="document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
+                  <button type="button" onclick="document.getElementById('inpParc').value='10'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
+                  <button type="button" onclick="document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
+                </div>
               </div>
               <input type="number" id="inpParc" value="1" min="1" oninput="atualizarLayoutParcelas(); atualizarPreviewParcelas()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
-            </div>
-            <div id="boxParcIni" class="hidden">
-              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
-              <input type="number" id="inpParcIni" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
             </div>
           </div>
 
@@ -665,7 +655,7 @@
           </div>
 
           <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-3.5">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Data Compra</label>
@@ -684,15 +674,15 @@
                 <input type="hidden" id="inpEmpData">
               </div>
 
-              <div>
+              <div class="flex flex-col justify-end">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">1ª Fatura</label>
                 <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
               </div>
-              
+
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
-                <div class="relative">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa')" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
+                <div class="relative flex flex-col justify-end h-full">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa')" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="limparCampoTexto('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-5 h-5 rounded-full items-center justify-center">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -722,14 +712,19 @@
               </div>
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
-                  <span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">1x</span>
+                  <div class="flex items-center gap-1">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
+                    <span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">1x</span>
+                  </div>
+                  <div class="flex gap-0.5 sm:gap-1">
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='2'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">2x</button>
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='3'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='6'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='10'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='12'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
+                  </div>
                 </div>
                 <input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
-                <input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
               </div>
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label>
@@ -939,11 +934,11 @@
             <div class="flex justify-between items-center mb-1">
               <label class="text-xs font-bold text-slate-400 uppercase">Nº de Parcelas</label>
               <div class="flex gap-1">
-                <button type="button" onclick="setParcelasSimulador(1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">1x</button>
-                <button type="button" onclick="setParcelasSimulador(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3x</button>
-                <button type="button" onclick="setParcelasSimulador(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6x</button>
-                <button type="button" onclick="setParcelasSimulador(10)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">10x</button>
-                <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">12x</button>
+                <button type="button" onclick="setParcelasSimulador(2)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">2x</button>
+                <button type="button" onclick="setParcelasSimulador(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
+                <button type="button" onclick="setParcelasSimulador(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
+                <button type="button" onclick="setParcelasSimulador(10)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
+                <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
               </div>
             </div>
             <input type="number" id="simParcelas" value="1" min="1" max="48" oninput="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500">
@@ -4022,7 +4017,7 @@ function chamarFiltroBackend(append = false) {
         tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
 
-      formasTotal.forEach(forma => {
+   formasTotal.forEach(forma => {
         let totalLinha = 0;
         let cols = mToShow.map(m => {
           const val = evolucaoPivot[forma][m] || 0;
@@ -4030,8 +4025,8 @@ function chamarFiltroBackend(append = false) {
           return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
         });
         
-        // CORREÇÃO: Troca o nome técnico pela versão amigável na interface
-        const nomeExibicao = forma === '__BANCO_TOTAL__' ? '🏦 Total Banco (c/ Terceiros)' : forma;
+        // Remove a chave secreta e exibe o nome enxuto sem emoji
+        const nomeExibicao = forma === '__BANCO_TOTAL__' ? 'Fatura Real' : forma;
         
         tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">${nomeExibicao}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
