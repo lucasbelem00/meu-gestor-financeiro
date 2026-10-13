@@ -40,8 +40,6 @@
     .btn-acao-lanc { display: none; }
     .modo-edicao-lanc .btn-acao-lanc { display: flex; }
     
-    .drag-handle-cat, .drag-handle-fp { touch-action: none; }
-    
     select.minimal {
       appearance: none;
       background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
@@ -64,19 +62,18 @@
 </head>
 <body class="min-h-screen flex flex-col relative">
 
-  <div id="toastNotificacao" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4 pointer-events-auto max-w-sm w-[90%]">
-    <div class="flex items-center gap-3.5 pointer-events-none">
-      <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
-      <div>
-        <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
-        <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
-      </div>
+  <!-- TOAST FLUTUANTE CENTRALIZADO -->
+  <div id="toastNotificacao" class="fixed top-20 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 pointer-events-none max-w-sm w-[90%]">
+    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
+    <div>
+      <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
+      <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
     </div>
-    <button id="btnDesfazerToast" onclick="executarDesfazer()" class="hidden text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-600 px-3 py-2 rounded-lg transition active:scale-95 whitespace-nowrap shadow-sm">⏪ Desfazer (5s)</button>
   </div>
 
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (COM OPÇÃO DE LOTE PARA PARCELADOS) -->
   <div id="modalConfirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[210] hidden px-4">
-    <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center my-auto overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
       <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
       <h3 id="confTitle" class="text-base font-bold text-white mb-2">Confirmação</h3>
       <p id="confMensagem" class="text-xs text-slate-300 mb-4 leading-relaxed">Tem certeza que deseja executar esta ação?</p>
@@ -95,37 +92,119 @@
     </div>
   </div>
 
+  <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
   <div id="modalMenuMobile" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
     <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-24 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <div class="flex items-center gap-2"><span class="text-lg">🧭</span><h3 class="text-sm font-bold text-white uppercase tracking-wider">Central de Navegação</h3></div>
         <div class="flex items-center gap-2">
-          <button onclick="forcarAtualizacaoApp()" class="text-sky-400 hover:text-white bg-sky-500/15 border border-sky-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95">🔄 Atualizar App</button>
+          <span class="text-lg">🧭</span>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Central de Navegação</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="forcarAtualizacaoApp()" class="text-sky-400 hover:text-white bg-sky-500/15 border border-sky-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95" title="Limpa o cache do aparelho e busca a versão mais recente">🔄 Atualizar App</button>
           <button onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">✕</button>
         </div>
       </div>
+
+      <!-- Grupo 1: Ferramentas Práticas e Empréstimos -->
       <div>
         <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2.5 px-1">🧰 Ferramentas e Controle de Terceiros</span>
         <div class="grid grid-cols-2 gap-2.5">
-          <button onclick="abrirFerramenta('emprestimos')" class="col-span-2 flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition active:scale-95"><div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">🤝</div><div class="min-w-0"><div class="text-sm font-bold text-amber-300 truncate">Empréstimos de Cartão</div><div class="text-[11px] text-slate-300 truncate">Desconta do limite sem entrar nos seus gastos</div></div></div><span class="text-amber-400 text-xs font-bold shrink-0 ml-2">➔</span></button>
-          <button onclick="abrirFerramenta('rachadinha')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95"><div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">🍻</div><div class="min-w-0"><div class="text-xs sm:text-sm font-bold text-white truncate">Dividir c/ Galera</div><div class="text-[10px] text-slate-400 truncate">Comida x Bebida</div></div></button>
-          <button onclick="abrirFerramenta('simulador')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95"><div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-lg shrink-0">🛍️</div><div class="min-w-0"><div class="text-xs sm:text-sm font-bold text-white truncate">Simular Compra</div><div class="text-[10px] text-slate-400 truncate">Impacto + WhatsApp</div></div></button>
-          <button onclick="abrirFerramenta('calculadora')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95"><div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg shrink-0">🧮</div><div class="min-w-0"><div class="text-xs sm:text-sm font-bold text-white truncate">Calculadora</div><div class="text-[10px] text-slate-400 truncate">Cálculo rápido e %</div></div></button>
-          <button onclick="abrirFerramenta('notas')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95"><div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg shrink-0">📝</div><div class="min-w-0"><div class="text-xs sm:text-sm font-bold text-white truncate">Bloco de Notas</div><div class="text-[10px] text-slate-400 truncate">Anotações na nuvem</div></div></button>
+          <button onclick="abrirFerramenta('emprestimos')" class="col-span-2 flex items-center justify-between p-3.5 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-left transition active:scale-95">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">🤝</div>
+              <div class="min-w-0">
+                <div class="text-sm font-bold text-amber-300 truncate">Empréstimos de Cartão (Terceiros)</div>
+                <div class="text-[11px] text-slate-300 truncate">Desconta do limite sem entrar nos seus gastos</div>
+              </div>
+            </div>
+            <span class="text-amber-400 text-xs font-bold shrink-0 ml-2">➔</span>
+          </button>
+
+          <button onclick="abrirFerramenta('rachadinha')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">🍻</div>
+            <div class="min-w-0">
+              <div class="text-xs sm:text-sm font-bold text-white truncate">Dividir c/ Galera</div>
+              <div class="text-[10px] text-slate-400 truncate">Comida x Bebida / Itens</div>
+            </div>
+          </button>
+
+          <button onclick="abrirFerramenta('simulador')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-lg shrink-0">🛍️</div>
+            <div class="min-w-0">
+              <div class="text-xs sm:text-sm font-bold text-white truncate">Simular Compra</div>
+              <div class="text-[10px] text-slate-400 truncate">Impacto + WhatsApp</div>
+            </div>
+          </button>
+
+          <button onclick="abrirFerramenta('calculadora')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg shrink-0">🧮</div>
+            <div class="min-w-0">
+              <div class="text-xs sm:text-sm font-bold text-white truncate">Calculadora</div>
+              <div class="text-[10px] text-slate-400 truncate">Cálculo rápido e %</div>
+            </div>
+          </button>
+
+          <button onclick="abrirFerramenta('notas')" class="flex items-center gap-3 p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-lg shrink-0">📝</div>
+            <div class="min-w-0">
+              <div class="text-xs sm:text-sm font-bold text-white truncate">Bloco de Notas</div>
+              <div class="text-[10px] text-slate-400 truncate">Lembretes na nuvem</div>
+            </div>
+          </button>
         </div>
       </div>
+
+      <!-- Grupo 2: Relatórios -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Relatórios e Análises</span>
         <div class="grid grid-cols-1 gap-2.5">
-          <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">📆</div><div><div class="text-sm font-bold text-white">Balanço Anual</div><div class="text-[11px] text-slate-400">Evolução, média e ranking</div></div></div><span class="text-slate-500 text-xs font-bold">➔</span></button>
+          <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">📆</div>
+              <div>
+                <div class="text-sm font-bold text-white">Balanço Anual</div>
+                <div class="text-[11px] text-slate-400">Evolução no ano, média mensal e ranking clicável</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">➔</span>
+          </button>
         </div>
       </div>
+
+      <!-- Grupo 3: Gestão e Ajustes -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <button onclick="setAba('assinaturas')" id="btn-menu-assinaturas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-base">🔄</div><div><div class="text-xs sm:text-sm font-bold text-white">Despesas Fixas</div><div class="text-[10px] text-slate-400 sm:hidden">Assinaturas mensais</div></div></div></button>
-          <button onclick="setAba('formas')" id="btn-menu-formas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-base">💳</div><div><div class="text-xs sm:text-sm font-bold text-white">Cartões e Limites</div><div class="text-[10px] text-slate-400 sm:hidden">Fechamento e limites</div></div></div></button>
-          <button onclick="setAba('categorias')" id="btn-menu-categorias" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-base">🏷️</div><div><div class="text-xs sm:text-sm font-bold text-white">Categorias e Metas</div><div class="text-[10px] text-slate-400 sm:hidden">Tetos de gastos</div></div></div></button>
+          <button onclick="setAba('assinaturas')" id="btn-menu-assinaturas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-base">🔄</div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-white">Despesas Fixas</div>
+                <div class="text-[10px] text-slate-400 sm:hidden">Assinaturas mensais</div>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="setAba('formas')" id="btn-menu-formas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-base">💳</div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-white">Cartões e Limites</div>
+                <div class="text-[10px] text-slate-400 sm:hidden">Fechamento e limites</div>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="setAba('categorias')" id="btn-menu-categorias" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-base">🏷️</div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-white">Categorias e Metas</div>
+                <div class="text-[10px] text-slate-400 sm:hidden">Tetos de gastos</div>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -135,82 +214,134 @@
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20">💳</div>
       <div class="flex items-center">
-        <div><h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1><p id="subtituloMobileAba" class="text-[10px] text-blue-400 font-semibold">Novo Registro</p></div>
-        <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">📶 Sincronizar (1)</button>
+        <div>
+          <h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1>
+          <p id="subtituloMobileAba" class="text-[10px] text-blue-400 font-semibold">Novo Registro</p>
+        </div>
+        <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">
+          📶 Sincronizar (1)
+        </button>
       </div>
     </div>
     <nav id="barraNavegacaoDesktop" class="hidden sm:flex items-center gap-1.5 bg-slate-800/90 p-1.5 rounded-xl border border-slate-700/60 text-sm"></nav>
   </header>
 
   <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
-    <!-- ABA 1: NOVO LANÇAMENTO -->
+    
+    <!-- ABA 1: NOVO LANÇAMENTO PESSOAL -->
     <div id="view-novo" class="max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8 shadow-xl shadow-black/20">
         <h2 class="text-base font-bold text-white mb-4 flex items-center justify-between">
           <span class="flex items-center gap-2"><span>➕</span> Novo Registro</span>
           <div class="flex items-center gap-1.5">
-            <button type="button" onclick="abrirFerramenta('emprestimos')" class="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 transition shadow-sm" title="Registrar compra de outra pessoa no seu cartão">🤝 Empréstimo</button>
+            <button type="button" onclick="abrirFerramenta('emprestimos')" class="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30 transition" title="Registrar compra de outra pessoa no seu cartão">🤝 Empréstimo</button>
             <button type="button" onclick="limparFormularioNovoGasto()" class="text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700 transition">🧹 Limpar</button>
           </div>
         </h2>
         <form id="formGasto" onsubmit="enviarGasto(event)" class="space-y-4"> 
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <div class="flex items-center justify-between mb-1.5"><label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Data</label><div class="flex gap-1"><button type="button" onclick="definirDataOffset(-1)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-blue-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Ontem</button><button type="button" onclick="definirDataOffset(0)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Hoje</button></div></div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Data</label>
+                <div class="flex gap-1">
+                  <button type="button" onclick="definirDataOffset(-1)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-blue-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Ontem</button>
+                  <button type="button" onclick="definirDataOffset(0)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Hoje</button>
+                </div>
+              </div>
               <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
-                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')" oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
+                  onfocus="this.select()"
+                  onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')"
+                  oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')"
+                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
+                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')" oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
+                  onfocus="this.select()"
+                  onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')"
+                  oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')"
+                  onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
+                  class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
                 <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataMes')" oninput="aoDigitarParteData(this, null, 4, 'novo')" onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
+                  onfocus="this.select()"
+                  onkeydown="voltarParteData(event, this, 'inpDataMes')"
+                  oninput="aoDigitarParteData(this, null, 4, 'novo')"
+                  onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)"
+                  class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               </div>
               <input type="hidden" id="inpData">
             </div>
             <div>
-              <div class="flex items-center justify-between mb-1.5"><label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Mês Fatura</label><div class="flex gap-0.5"><button type="button" onclick="ajustarMesFatura('inpMesFat', -1)" class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 font-bold">◀</button><button type="button" onclick="ajustarMesFatura('inpMesFat', 1)" class="text-[10px] text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 font-bold">▶</button></div></div>
-              <input type="text" id="inpMesFat" inputmode="numeric" placeholder="MM/AAAA" oninput="mascaraMesFatura(this)" onblur="formatarMesFaturaFinal(this); atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Mês Fatura</label>
+              <input type="text" id="inpMesFat" placeholder="MM/AAAA" oninput="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
             <div class="relative">
-              <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words" oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc')" onkeypress="pularComEnter(event, 'inpValor')" onblur="aoSairDescricao()" placeholder="Ex: Gasolina, Açaí (Cole o Pix aqui...)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words"
+                oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc')"
+                onblur="aoSairDescricao()"
+                placeholder="Ex: Gasolina - Posto X, Açaí, Pizzaria" required
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
               <button type="button" id="btnLimparDesc" onclick="limparCampoTexto('inpDesc', 'btnLimparDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
             </div>
-            <p class="text-[10px] text-slate-500 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho. Acentos são automáticos.</p>
+            <p class="text-[10px] text-slate-500 mt-1 ml-1">Padrão sugerido: 'Item - Local' ou apenas 'Local' (acentuação automática).</p>
             <datalist id="listaDescricoes"></datalist>
           </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
-              <select id="selForma" onchange="atualizarRegrasForma()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition"><option value="">Selecione...</option></select>
+              <select id="selForma" onchange="atualizarRegrasForma()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
+                <option value="">Selecione...</option>
+              </select>
               <div id="infoCartaoSelecionado" class="hidden text-[10px] font-semibold mt-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight"></div>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Categoria</label>
-              <select id="selCat" onchange="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition"><option value="">Selecione...</option></select>
+              <select id="selCat" onchange="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
+                <option value="">Selecione...</option>
+              </select>
               <div id="infoMetaCategoria" class="hidden text-[10px] font-semibold mt-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight"></div>
             </div>
           </div>
 
           <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1">
             <div id="boxValor" class="col-span-1">
-              <div class="flex items-center justify-between mb-1.5 gap-1"><label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label><div class="flex items-center gap-1"><button type="button" id="btnSugestaoUltimoValor" onclick="aplicarUltimoValorSugerido()" class="hidden text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 transition"></button><button type="button" id="btnDividirMetade" onclick="alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2 Metade</button></div></div>
-              <div class="relative"><input type="text" inputmode="numeric" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcelas(); toggleBotaoLimpar('inpValor', 'btnLimparValor')" onkeypress="pularComEnter(event, 'inpParc')" onfocus="ativarAutoScroll(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-emerald-400 font-bold text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"><button type="button" id="btnLimparValor" onclick="limparCampoComRecalculo('inpValor')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button></div>
+              <div class="flex items-center justify-between mb-1.5 gap-1">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
+                <div class="flex items-center gap-1">
+                  <button type="button" id="btnSugestaoUltimoValor" onclick="aplicarUltimoValorSugerido()" class="hidden text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 transition"></button>
+                  <button type="button" id="btnDividirMetade" onclick="alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2 Metade</button>
+                </div>
+              </div>
+              <input type="text" inputmode="numeric" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcelas()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
             </div>
             <div id="boxParc">
-              <div class="flex items-center justify-between mb-1.5"><label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label><div class="flex gap-1"><button type="button" onclick="setParcelasNovoGasto(1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">1x</button><button type="button" onclick="setParcelasNovoGasto(2)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">2x</button><button type="button" onclick="setParcelasNovoGasto(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3x</button><button type="button" onclick="setParcelasNovoGasto(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6x</button></div></div>
-              <input type="number" id="inpParc" value="1" min="1" oninput="atualizarLayoutParcelas(); atualizarPreviewParcelas()" onfocus="ativarAutoScroll(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
-              <div id="lblPreviewParcelas" class="text-[10px] font-bold text-sky-400 text-center mt-1">À vista</div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
+                <span id="lblPreviewParcelas" class="text-[10px] font-bold text-sky-400">À vista</span>
+              </div>
+              <input type="number" id="inpParc" value="1" min="1" oninput="atualizarLayoutParcelas(); atualizarPreviewParcelas()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
             </div>
-            <div id="boxParcIni" class="hidden"><label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label><input type="number" id="inpParcIni" value="1" min="1" onfocus="ativarAutoScroll(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition"></div>
+            <div id="boxParcIni" class="hidden">
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
+              <input type="number" id="inpParcIni" value="1" min="1" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
+            </div>
           </div>
 
           <div>
-            <div class="flex items-center justify-between mb-1.5"><label class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label><button type="button" id="btnSugestaoDivididoRapido" onclick="alternarMetadeValor()" class="hidden text-[10px] font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30 animate-pulse">➗ Dividir valor por 2?</button></div>
-            <div class="relative"><input type="text" id="inpTags" list="listaTagsUI" autocapitalize="none" oninput="sincronizarChipsTags('novo'); toggleBotaoLimpar('inpTags', 'btnLimparTags')" onfocus="ativarAutoScroll(this)" placeholder="Toque nas tags abaixo ou digite..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm focus:border-blue-500 outline-none transition lowercase"><button type="button" id="btnLimparTags" onclick="limparCampoTexto('inpTags', 'btnLimparTags'); sincronizarChipsTags('novo')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button></div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label>
+              <button type="button" id="btnSugestaoDivididoRapido" onclick="alternarMetadeValor()" class="hidden text-[10px] font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30 animate-pulse">➗ Dividir valor por 2?</button>
+            </div>
+            <div class="relative">
+              <input type="text" id="inpTags" list="listaTagsUI" autocapitalize="none" oninput="sincronizarChipsTags('novo'); toggleBotaoLimpar('inpTags', 'btnLimparTags')" placeholder="Toque nas tags abaixo ou digite..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm focus:border-blue-500 outline-none transition lowercase">
+              <button type="button" id="btnLimparTags" onclick="limparCampoTexto('inpTags', 'btnLimparTags'); sincronizarChipsTags('novo')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
+            </div>
             <div id="chipsTagsNovo" class="flex flex-wrap gap-1.5 mt-2"></div>
             <datalist id="listaTagsUI"></datalist>
           </div>
@@ -220,24 +351,31 @@
             <label for="checkAssinatura" class="text-sm font-bold text-blue-400 cursor-pointer w-full">Gasto Fixo / Assinatura Mensal</label>
           </div>
 
-          <button type="submit" id="btnSalvar" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition transform active:scale-95 mt-2">💾 Lançar</button>
-          
-          <div class="flex justify-center mt-2">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="chkManterDataCartao" class="w-4 h-4 rounded text-emerald-500 bg-slate-900 border-slate-700">
-              <span class="text-[11px] font-bold text-slate-400">Manter Data e Cartão após salvar (Lançar vários)</span>
-            </label>
-          </div>
+          <button type="submit" id="btnSalvar" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition transform active:scale-95 mt-2">
+            💾 Lançar
+          </button>
         </form>
       </div>
     </div> 
 
-    <!-- ABA 2: HISTÓRICO COM FILTROS DE 1 TOQUE -->
+    <!-- ABA 2: HISTÓRICO COM FILTROS DE 1 TOQUE, SOMA AUTOMÁTICA E WHATSAPP -->
     <div id="view-lancamentos" class="hidden space-y-3.5">
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
-        <div class="flex gap-2 w-full md:flex-1"><div class="relative flex-1"><input type="text" id="inpBusca" oninput="toggleBotaoLimpar('inpBusca', 'btnLimparBusca')" placeholder="Buscar (ex: acai, pizza dividido, heitor)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}"><button type="button" id="btnLimparBusca" onclick="limparCampoTexto('inpBusca', 'btnLimparBusca'); aplicarFiltros()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button></div><button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button></div>
-        <div class="flex gap-2 w-full md:w-auto justify-between"><button onclick="abrirModalFiltros()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">🎛️ Filtros</button><button onclick="toggleEdicaoLancamentos()" id="btnToggleEdicaoLanc" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">⚙️ Organizar</button><button onclick="limparFiltros()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition border border-slate-700">Limpar</button></div>
+        <div class="flex gap-2 w-full md:flex-1">
+          <div class="relative flex-1">
+            <input type="text" id="inpBusca" oninput="toggleBotaoLimpar('inpBusca', 'btnLimparBusca')" placeholder="Buscar (ex: acai, pizza dividido, heitor)..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm focus:border-blue-500 outline-none" onkeypress="if(event.key==='Enter'){aplicarFiltros(); event.preventDefault();}">
+            <button type="button" id="btnLimparBusca" onclick="limparCampoTexto('inpBusca', 'btnLimparBusca'); aplicarFiltros()" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
+          </div>
+          <button onclick="aplicarFiltros()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md active:scale-95 transition">🔍</button>
+        </div>
+
+        <div class="flex gap-2 w-full md:w-auto justify-between">
+          <button onclick="abrirModalFiltros()" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">🎛️ Filtros</button>
+          <button onclick="toggleEdicaoLancamentos()" id="btnToggleEdicaoLanc" class="flex-1 sm:flex-none bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition flex justify-center items-center gap-1.5">⚙️ Organizar</button>
+          <button onclick="limparFiltros()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md active:scale-95 transition border border-slate-700">Limpar</button>
+        </div>
       </div>
+
       <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
         <button onclick="aplicarFiltroRapidoHist('')" id="chip-hist-todos" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white transition">Todos</button>
         <button onclick="aplicarFiltroRapidoHist('mesatual')" id="chip-hist-mesatual" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">📅 Mês Atual</button>
@@ -246,149 +384,643 @@
         <button onclick="aplicarFiltroRapidoHist('fixos')" id="chip-hist-fixos" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">🔄 Fixos</button>
         <button onclick="aplicarFiltroRapidoHist('pix')" id="chip-hist-pix" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">⚡ Pix</button>
       </div>
+
       <div id="barraSomaFiltro" class="hidden card-glass p-3.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-800/90">
-        <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm"><span id="txtSomaQtd" class="font-bold text-slate-300">📊 0 itens</span><span class="text-slate-600">•</span><span class="text-slate-300">Soma Total: <strong id="txtSomaTotal" class="text-emerald-400 text-sm sm:text-base">R$ 0,00</strong></span><span id="badgeSomaMetade" class="bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-lg font-bold text-xs">➗ 50%: R$ 0,00</span></div>
-        <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">📋 Copiar Resumo p/ WhatsApp</button>
+        <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <span id="txtSomaQtd" class="font-bold text-slate-300">📊 0 itens</span>
+          <span class="text-slate-600">•</span>
+          <span class="text-slate-300">Soma Total: <strong id="txtSomaTotal" class="text-emerald-400 text-sm sm:text-base">R$ 0,00</strong></span>
+          <span id="badgeSomaMetade" class="bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-lg font-bold text-xs">➗ 50%: R$ 0,00</span>
+        </div>
+        <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">
+          📋 Copiar Resumo p/ WhatsApp
+        </button>
       </div>
+
       <div id="lista-lancamentos" class="grid grid-cols-1 md:grid-cols-2 gap-3 transition-all duration-300"></div>
-      <div id="boxCarregarMais" class="hidden text-center mt-6 pb-4"><button onclick="carregarMaisLancamentos()" class="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Carregar mais antigas 👇</button></div>
+      <div id="boxCarregarMais" class="hidden text-center mt-6 pb-4">
+         <button onclick="carregarMaisLancamentos()" class="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Carregar mais antigas 👇</button>
+      </div>
     </div>
 
-    <!-- ABA 3: MENSAL COM TOTAIS FIXOS -->
+    <!-- ABA 3: MENSAL COM FILTROS DE 1 TOQUE, CONCILIAÇÃO DE TERCEIROS E QUITAR FATURA -->
     <div id="view-relatorio" class="hidden space-y-5 bg-[#0b1120]">
-      <div class="card-glass p-4 sm:p-5"><div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"><div class="flex flex-wrap items-center gap-2.5"><h2 class="text-sm font-bold text-white flex items-center gap-2">📑 Fatura Mensal (Seus Gastos)</h2><span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span></div><div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print"><button id="btnMesPrev" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button><div class="flex flex-1 sm:flex-none gap-2"><select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select><select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select></div><button id="btnMesNext" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button><button onclick="gerarPDFExecutivo('mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1 w-full sm:w-auto mt-2 sm:mt-0">📄 PDF Executivo</button></div></div></div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div onclick="aplicarFiltroInternoMensal('status', 'aberto')" class="card-glass p-4 border-t-4 border-t-amber-400 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition active:scale-[0.99]" title="Toque para filtrar apenas itens A Pagar"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>A Pagar</span><span class="text-[9px] text-amber-400/80">🔍 Filtrar</span></span><div id="rel-aberto" class="text-lg sm:text-2xl font-bold text-amber-400 mt-1">R$ 0,00</div></div><div id="rel-sub-ticket" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">🛒 0 itens • Méd: R$ 0,00</div></div>
-        <div onclick="aplicarFiltroInternoMensal('status', 'pago')" class="card-glass p-4 border-t-4 border-t-emerald-400 flex flex-col justify-between cursor-pointer hover:border-emerald-400/60 transition active:scale-[0.99]" title="Toque para filtrar apenas itens Pagos"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Pago</span><span class="text-[9px] text-emerald-400/80">🔍 Filtrar</span></span><div id="rel-pago" class="text-lg sm:text-2xl font-bold text-emerald-400 mt-1">R$ 0,00</div></div><div id="rel-sub-pct" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug">✅ 0% quitado</div></div>
-        <div onclick="aplicarFiltroInternoMensal('todos', '')" class="card-glass p-4 border-t-4 border-t-purple-400 flex flex-col justify-between col-span-2 sm:col-span-1 cursor-pointer hover:border-purple-400/60 transition active:scale-[0.99]" title="Toque para mostrar todos os itens da fatura"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Total Pessoal</span><span class="text-[9px] text-purple-400/80">📋 Ver Tudo</span></span><div id="rel-total" class="text-xl sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div></div><div id="rel-sub-maior" class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">🔥 Maior gasto: -</div></div>
+      <div class="card-glass p-4 sm:p-5">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div class="flex flex-wrap items-center gap-2.5">
+            <h2 class="text-sm font-bold text-white flex items-center gap-2">📑 Fatura Mensal (Seus Gastos)</h2>
+            <span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print">
+            <button id="btnMesPrev" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
+            <div class="flex flex-1 sm:flex-none gap-2">
+              <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
+              <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
+            </div>
+            <button id="btnMesNext" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
+            <button onclick="gerarPDFExecutivo('mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1 w-full sm:w-auto mt-2 sm:mt-0">📄 PDF Executivo</button>
+          </div>
+        </div>
       </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div onclick="aplicarFiltroInternoMensal('status', 'aberto')" class="card-glass p-4 border-t-4 border-t-amber-400 flex flex-col justify-between cursor-pointer hover:border-amber-400/60 transition active:scale-[0.99]" title="Toque para filtrar apenas itens A Pagar">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>A Pagar</span><span class="text-[9px] text-amber-400/80">🔍 Filtrar</span></span>
+            <div id="rel-aberto" class="text-lg sm:text-2xl font-bold text-amber-400 mt-1">R$ 0,00</div>
+          </div>
+          <div id="rel-sub-ticket" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">🛒 0 itens • Méd: R$ 0,00</div>
+        </div>
+        <div onclick="aplicarFiltroInternoMensal('status', 'pago')" class="card-glass p-4 border-t-4 border-t-emerald-400 flex flex-col justify-between cursor-pointer hover:border-emerald-400/60 transition active:scale-[0.99]" title="Toque para filtrar apenas itens Pagos">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Pago</span><span class="text-[9px] text-emerald-400/80">🔍 Filtrar</span></span>
+            <div id="rel-pago" class="text-lg sm:text-2xl font-bold text-emerald-400 mt-1">R$ 0,00</div>
+          </div>
+          <div id="rel-sub-pct" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug">✅ 0% quitado</div>
+        </div>
+        <div onclick="aplicarFiltroInternoMensal('todos', '')" class="card-glass p-4 border-t-4 border-t-purple-400 flex flex-col justify-between col-span-2 sm:col-span-1 cursor-pointer hover:border-purple-400/60 transition active:scale-[0.99]" title="Toque para mostrar todos os itens da fatura">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider flex justify-between"><span>Total Pessoal</span><span class="text-[9px] text-purple-400/80">📋 Ver Tudo</span></span>
+            <div id="rel-total" class="text-xl sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div>
+          </div>
+          <div id="rel-sub-maior" class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">🔥 Maior gasto: -</div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="card-glass p-5 lg:col-span-1 space-y-6"><div><h2 class="text-sm font-bold text-white mb-4">Divisão de Gastos</h2><div class="relative h-48 flex items-center justify-center"><canvas id="chartRelatorio"></canvas></div></div><div class="pt-4 border-t border-slate-700/60"><h3 class="text-xs font-bold text-slate-400 mb-2.5 uppercase tracking-wider">⚖️ Composição da Fatura</h3><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden flex mb-2"><div id="bar-rel-avista" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div><div id="bar-rel-rigido" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%"></div></div><div class="grid grid-cols-2 gap-2 text-[11px]"><div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800"><span class="text-emerald-400 font-bold block">⚡ À Vista / 1x</span><span id="txt-rel-avista" class="text-slate-200 font-semibold">R$ 0,00 (0%)</span></div><div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800"><span class="text-indigo-400 font-bold block">🔒 Parcelado / Fixo</span><span id="txt-rel-rigido" class="text-slate-200 font-semibold">R$ 0,00 (0%)</span></div></div></div><div class="pt-4 border-t border-slate-700/60"><div class="flex justify-between items-center mb-3"><h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">💳 Consumo por Forma</h3><span class="text-[10px] text-slate-500">Toque p/ filtrar</span></div><div id="rel-formas-usadas" class="space-y-2 text-xs"></div></div><div id="box-rel-tags" class="pt-4 border-t border-slate-700/60 hidden"><div class="flex justify-between items-center mb-3"><h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🏷️ Consumo por Tags</h3><span class="text-[10px] text-slate-500">Toque p/ filtrar</span></div><div id="rel-tags-usadas" class="flex flex-wrap gap-1.5"></div></div><div class="pt-4 border-t border-slate-700/60"><div class="flex justify-between items-center mb-4"><h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Termômetro de Metas</h3><span class="text-[10px] text-slate-500">Toque p/ filtrar</span></div><div id="termometro-metas" class="space-y-4"></div></div></div>
-        <div class="lg:col-span-2 space-y-3"><div class="flex flex-wrap justify-between items-center gap-2 px-1"><div><h2 class="text-sm font-bold text-white">Lançamentos da Fatura</h2></div><div id="bannerFiltroMensal" class="hidden items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 px-3 py-1 rounded-xl text-xs font-bold"><span id="txtBannerFiltroMensal">Filtro ativo</span><button onclick="aplicarFiltroInternoMensal('todos', '')" class="text-white hover:text-rose-300 ml-1">✕ Mostrar Todos</button></div></div><div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div></div>
+        <div class="card-glass p-5 lg:col-span-1 space-y-6">
+          <div>
+            <h2 class="text-sm font-bold text-white mb-4">Divisão de Gastos</h2>
+            <div class="relative h-48 flex items-center justify-center"><canvas id="chartRelatorio"></canvas></div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-700/60">
+            <h3 class="text-xs font-bold text-slate-400 mb-2.5 uppercase tracking-wider">⚖️ Composição da Fatura</h3>
+            <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden flex mb-2">
+              <div id="bar-rel-avista" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+              <div id="bar-rel-rigido" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+              <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <span class="text-emerald-400 font-bold block">⚡ À Vista / 1x</span>
+                <span id="txt-rel-avista" class="text-slate-200 font-semibold">R$ 0,00 (0%)</span>
+              </div>
+              <div class="bg-slate-900/50 p-2 rounded-lg border border-slate-800">
+                <span class="text-indigo-400 font-bold block">🔒 Parcelado / Fixo</span>
+                <span id="txt-rel-rigido" class="text-slate-200 font-semibold">R$ 0,00 (0%)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-700/60">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">💳 Consumo por Forma</h3>
+              <span class="text-[10px] text-slate-500">Toque p/ filtrar</span>
+            </div>
+            <div id="rel-formas-usadas" class="space-y-2 text-xs"></div>
+          </div>
+
+          <div id="box-rel-tags" class="pt-4 border-t border-slate-700/60 hidden">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🏷️ Consumo por Tags</h3>
+              <span class="text-[10px] text-slate-500">Toque p/ filtrar</span>
+            </div>
+            <div id="rel-tags-usadas" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-700/60">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Termômetro de Metas</h3>
+              <span class="text-[10px] text-slate-500">Toque p/ filtrar</span>
+            </div>
+            <div id="termometro-metas" class="space-y-4"></div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-3">
+          <div class="flex flex-wrap justify-between items-center gap-2 px-1">
+            <h2 class="text-sm font-bold text-white">Lançamentos da Fatura</h2>
+            <div id="bannerFiltroMensal" class="hidden items-center gap-2 bg-blue-500/20 border border-blue-500/40 text-blue-300 px-3 py-1 rounded-xl text-xs font-bold">
+              <span id="txtBannerFiltroMensal">Filtro ativo</span>
+              <button onclick="aplicarFiltroInternoMensal('todos', '')" class="text-white hover:text-rose-300 ml-1">✕ Mostrar Todos</button>
+            </div>
+          </div>
+          <div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ABA 4: ANUAL -->
+    <!-- ABA 4: ANUAL COM RANKINGS CLICÁVEIS PARA AUDITORIA -->
     <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
-      <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4"><h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2><div class="flex items-center gap-2 w-full sm:w-auto no-print"><button id="btnAnoPrev" onclick="mudarAnoSimples(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button><select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select><button id="btnAnoNext" onclick="mudarAnoSimples(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button><button onclick="gerarPDFExecutivo('anual')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1 whitespace-nowrap">📄 PDF Executivo</button></div></div>
+      <div class="card-glass p-5 flex flex-wrap items-center justify-between gap-4">
+        <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2>
+        <div class="flex items-center gap-2 w-full sm:w-auto no-print">
+          <button id="btnAnoPrev" onclick="mudarAnoSimples(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
+          <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white text-sm font-semibold focus:border-blue-500 outline-none"></select>
+          <button id="btnAnoNext" onclick="mudarAnoSimples(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
+          <button onclick="gerarPDFExecutivo('anual')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center gap-1 whitespace-nowrap">📄 PDF Executivo</button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-        <div class="card-glass p-4 border-t-4 border-t-purple-500 flex flex-col justify-between"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Ano</span><div id="anual-total" class="text-lg sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div></div><div id="anual-sub-qtd" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug">📊 0 transações no ano</div></div>
-        <div class="card-glass p-4 border-t-4 border-t-sky-500 flex flex-col justify-between"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Média/Mês</span><div id="anual-media" class="text-lg sm:text-2xl font-bold text-sky-400 mt-1">R$ 0,00</div></div><div id="anual-sub-menor" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">📉 Menor: -</div></div>
-        <div class="card-glass p-4 border-t-4 border-t-rose-500 col-span-2 sm:col-span-1 flex flex-col justify-between"><div><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Mês Pico</span><div id="anual-pico" class="text-lg sm:text-2xl font-bold text-rose-400 mt-1">-</div></div><div id="anual-sub-comp" class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">⚡ À Vista: 0% • 🔒 Parc/Fixo: 0%</div></div>
+        <div class="card-glass p-4 border-t-4 border-t-purple-500 flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Ano</span>
+            <div id="anual-total" class="text-lg sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div>
+          </div>
+          <div id="anual-sub-qtd" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug">📊 0 transações no ano</div>
+        </div>
+        <div class="card-glass p-4 border-t-4 border-t-sky-500 flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Média/Mês</span>
+            <div id="anual-media" class="text-lg sm:text-2xl font-bold text-sky-400 mt-1">R$ 0,00</div>
+          </div>
+          <div id="anual-sub-menor" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">📉 Menor: -</div>
+        </div>
+        <div class="card-glass p-4 border-t-4 border-t-rose-500 col-span-2 sm:col-span-1 flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Mês Pico</span>
+            <div id="anual-pico" class="text-lg sm:text-2xl font-bold text-rose-400 mt-1">-</div>
+          </div>
+          <div id="anual-sub-comp" class="text-[10px] text-slate-300 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug break-words">⚡ À Vista: 0% • 🔒 Parc/Fixo: 0%</div>
+        </div>
       </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="card-glass p-5"><h2 class="text-sm font-bold text-white mb-4">Evolução no Ano</h2><div class="relative h-56 flex items-center justify-center"><canvas id="chartAnualBarras"></canvas></div></div>
-        <div class="card-glass p-5 overflow-x-auto"><div class="flex justify-between items-center mb-3"><h2 class="text-sm font-bold text-white">Ranking de Categorias</h2><span class="text-[10px] text-slate-400">Toque p/ auditar no Histórico</span></div><table class="w-full text-left text-sm"><tbody id="tabela-anual-cat" class="divide-y divide-slate-800/50"></tbody></table></div>
+        <div class="card-glass p-5">
+          <h2 class="text-sm font-bold text-white mb-4">Evolução no Ano</h2>
+          <div class="relative h-56 flex items-center justify-center"><canvas id="chartAnualBarras"></canvas></div>
+        </div>
+        <div class="card-glass p-5 overflow-x-auto">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-bold text-white">Ranking de Categorias</h2>
+            <span class="text-[10px] text-slate-400">Toque p/ auditar no Histórico</span>
+          </div>
+          <table class="w-full text-left text-sm"><tbody id="tabela-anual-cat" class="divide-y divide-slate-800/50"></tbody></table>
+        </div>
       </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="card-glass p-5"><div class="flex justify-between items-center mb-3"><h2 class="text-sm font-bold text-white">💳 Consumo por Forma de Pagamento</h2><span class="text-[10px] text-slate-400">Toque p/ auditar</span></div><table class="w-full text-left text-sm"><tbody id="tabela-anual-formas" class="divide-y divide-slate-800/50"></tbody></table></div>
-        <div class="card-glass p-5"><div class="flex justify-between items-center mb-3"><h2 class="text-sm font-bold text-white">🏷️ Consumo Acumulado por Tags</h2><span class="text-[10px] text-slate-400">Toque p/ auditar</span></div><div id="lista-anual-tags" class="flex flex-wrap gap-2"></div></div>
+        <div class="card-glass p-5">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-bold text-white">💳 Consumo por Forma de Pagamento</h2>
+            <span class="text-[10px] text-slate-400">Toque p/ auditar</span>
+          </div>
+          <table class="w-full text-left text-sm"><tbody id="tabela-anual-formas" class="divide-y divide-slate-800/50"></tbody></table>
+        </div>
+        <div class="card-glass p-5">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-sm font-bold text-white">🏷️ Consumo Acumulado por Tags</h2>
+            <span class="text-[10px] text-slate-400">Toque p/ auditar</span>
+          </div>
+          <div id="lista-anual-tags" class="flex flex-wrap gap-2"></div>
+        </div>
       </div>
     </div>
 
-    <!-- ABA 5: DASHBOARD -->
+    <!-- ABA 5: DASHBOARD COM ALERTA DE EMPRÉSTIMOS E TABELA HORIZONTE CLICÁVEL -->
     <div id="view-dashboard" class="hidden space-y-6">
-      <div id="bannerEmprestimosDash" onclick="abrirFerramenta('emprestimos')" class="hidden card-glass p-3.5 border-l-4 border-l-amber-400 bg-amber-500/10 hover:bg-amber-500/15 cursor-pointer transition flex items-center justify-between gap-3"><div class="flex items-center gap-2.5 text-xs sm:text-sm"><span class="text-lg">🤝</span><span id="txtBannerEmprestimosDash" class="text-amber-200 font-semibold">Você tem valores a receber de terceiros neste mês.</span></div><span class="text-xs font-bold text-amber-400 whitespace-nowrap">Ver e Cobrar ➔</span></div>
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"><div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div><div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div><div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div><div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1">...</div></div></section>
+      <div id="bannerEmprestimosDash" onclick="abrirFerramenta('emprestimos')" class="hidden card-glass p-3.5 border-l-4 border-l-amber-400 bg-amber-500/10 hover:bg-amber-500/15 cursor-pointer transition flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm">
+          <span class="text-lg">🤝</span>
+          <span id="txtBannerEmprestimosDash" class="text-amber-200 font-semibold">Você tem valores a receber de terceiros neste mês.</span>
+        </div>
+        <span class="text-xs font-bold text-amber-400 whitespace-nowrap">Ver e Cobrar ➔</span>
+      </div>
+
+      <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Compromisso</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1">...</div></div> 
+      </section>
+
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="card-glass p-5 lg:col-span-1 flex flex-col"><h2 class="text-sm font-bold text-white mb-3">Distribuição Global (Pessoal)</h2><div class="relative flex-1 min-h-[16rem] flex items-center justify-center my-auto py-2"><canvas id="chartCategorias"></canvas></div></div>
-        <div class="card-glass p-4 sm:p-5 lg:col-span-2 overflow-x-auto flex flex-col justify-between"><div><div class="flex justify-between items-center mb-4 gap-2"><div><h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte Pessoal)</h2><p class="text-[10px] text-slate-400 mt-0.5">Toque no mês no topo da coluna para abrir a Fatura Mensal</p></div><div class="flex gap-1.5 shrink-0"><button onclick="mudarMesEvolucao(-1)" id="btnEvolPrev" class="px-2.5 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md whitespace-nowrap">&larr; Ant</button><button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-2.5 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md whitespace-nowrap">Próx &rarr;</button></div></div><table class="w-full text-left text-xs sm:text-sm"><thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead><tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody></table></div></div>
+        <div class="card-glass p-5 lg:col-span-1 flex flex-col">
+          <h2 class="text-sm font-bold text-white mb-3">Distribuição Global (Pessoal)</h2>
+          <div class="relative flex-1 min-h-[16rem] flex items-center justify-center my-auto py-2">
+            <canvas id="chartCategorias"></canvas>
+          </div>
+        </div>
+        <div class="card-glass p-4 sm:p-5 lg:col-span-2 overflow-x-auto flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-4 gap-2">
+              <div>
+                <h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte Pessoal)</h2>
+                <p class="text-[10px] text-slate-400 mt-0.5">Toque no mês no topo da coluna para abrir a Fatura Mensal</p>
+              </div>
+              <div class="flex gap-1.5 shrink-0">
+                <button onclick="mudarMesEvolucao(-1)" id="btnEvolPrev" class="px-2.5 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md whitespace-nowrap">&larr; Ant</button>
+                <button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-2.5 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md whitespace-nowrap">Próx &rarr;</button>
+              </div>
+            </div>
+            <table class="w-full text-left text-xs sm:text-sm">
+              <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
+              <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ABA 6: FERRAMENTAS PRÁTICAS (NÃO EDITAR - OCULTA PARA O MOTOR FINAL) -->
+    <!-- ABA 6: CENTRAL DE FERRAMENTAS PRÁTICAS (5 FERRAMENTAS INTEGRADAS) -->
     <div id="view-ferramentas" class="hidden space-y-5 max-w-4xl mx-auto">
       <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
         <button onclick="selecionarSubFerramenta('emprestimos')" id="btn-sub-emprestimos" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition">🤝 Empréstimos</button>
-        <button onclick="selecionarSubFerramenta('rachadinha')" id="btn-sub-rachadinha" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🍻 Dividir</button>
-        <button onclick="selecionarSubFerramenta('simulador')" id="btn-sub-simulador" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🛍️ Simular</button>
+        <button onclick="selecionarSubFerramenta('rachadinha')" id="btn-sub-rachadinha" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🍻 Dividir c/ Galera</button>
+        <button onclick="selecionarSubFerramenta('simulador')" id="btn-sub-simulador" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🛍️ Simular Compra</button>
         <button onclick="selecionarSubFerramenta('calculadora')" id="btn-sub-calculadora" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🧮 Calculadora</button>
         <button onclick="selecionarSubFerramenta('notas')" id="btn-sub-notas" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">📝 Notas</button>
       </div>
 
-      <!-- EMPRÉSTIMOS -->
+      <!-- FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS - SEPARADO DOS GASTOS PESSOAIS) -->
       <div id="subview-emprestimos" class="space-y-5">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3"><div class="card-glass p-3.5 border-t-4 border-t-amber-400"><span class="text-[10px] font-bold text-slate-400 uppercase">A Receber</span><div id="emp-kpi-mes" class="text-base sm:text-xl font-bold text-amber-400 mt-1">R$ 0,00</div></div><div class="card-glass p-3.5 border-t-4 border-t-emerald-400"><span class="text-[10px] font-bold text-slate-400 uppercase">Já Recebido</span><div id="emp-kpi-recebido" class="text-base sm:text-xl font-bold text-emerald-400 mt-1">R$ 0,00</div></div><div class="card-glass p-3.5 border-t-4 border-t-sky-400"><span class="text-[10px] font-bold text-slate-400 uppercase">Total a Receber</span><div id="emp-kpi-total" class="text-base sm:text-xl font-bold text-sky-400 mt-1">R$ 0,00</div></div><div class="card-glass p-3.5 border-t-4 border-t-rose-400"><span class="text-[10px] font-bold text-slate-400 uppercase">Limite Ocupado</span><div id="emp-kpi-limite" class="text-base sm:text-xl font-bold text-rose-400 mt-1">R$ 0,00</div></div></div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="card-glass p-3.5 border-t-4 border-t-amber-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">A Receber (Mês Atual)</span>
+            <div id="emp-kpi-mes" class="text-base sm:text-xl font-bold text-amber-400 mt-1">R$ 0,00</div>
+          </div>
+          <div class="card-glass p-3.5 border-t-4 border-t-emerald-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Já Recebido (Mês)</span>
+            <div id="emp-kpi-recebido" class="text-base sm:text-xl font-bold text-emerald-400 mt-1">R$ 0,00</div>
+          </div>
+          <div class="card-glass p-3.5 border-t-4 border-t-sky-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Total Geral a Receber</span>
+            <div id="emp-kpi-total" class="text-base sm:text-xl font-bold text-sky-400 mt-1">R$ 0,00</div>
+          </div>
+          <div class="card-glass p-3.5 border-t-4 border-t-rose-400">
+            <span class="text-[10px] font-bold text-slate-400 uppercase">Limite de Cartão Ocupado</span>
+            <div id="emp-kpi-limite" class="text-base sm:text-xl font-bold text-rose-400 mt-1">R$ 0,00</div>
+          </div>
+        </div>
+
+        <!-- Formulário de Novo Empréstimo -->
         <div class="card-glass p-5 sm:p-6">
-          <div class="flex justify-between items-center mb-4"><div><h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro</h2></div></div>
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro no Seu Cartão</h2>
+              <p class="text-[11px] text-slate-400">Ocupa o limite disponível do cartão, mas não entra nos seus relatórios de gastos pessoais.</p>
+            </div>
+          </div>
+
           <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-3.5">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div><div class="flex justify-between items-center mb-1"><label class="text-[11px] font-bold text-slate-400 uppercase">Data Compra</label><button type="button" onclick="definirDataHojeEmprestimo()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold">Hoje</button></div><div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1"><input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none"><span class="text-slate-500">/</span><input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none"><span class="text-slate-500">/</span><input type="text" id="inpEmpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, null, 4)" onblur="sincronizarDataEmp()" class="w-11 bg-transparent text-center text-white outline-none"></div><input type="hidden" id="inpEmpData"></div>
-              <div><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">1ª Fatura</label><input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500"></div>
-              <div class="col-span-2"><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label><input type="text" id="inpEmpPessoa" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500"><div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div></div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Data Compra</label>
+                  <button type="button" onclick="definirDataHojeEmprestimo()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold">Hoje</button>
+                </div>
+                <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1">
+                  <input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500">/</span>
+                  <input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500">/</span>
+                  <input type="text" id="inpEmpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, null, 4)" onblur="sincronizarDataEmp()" class="w-11 bg-transparent text-center text-white outline-none">
+                </div>
+                <input type="hidden" id="inpEmpData">
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">1ª Fatura</label>
+                <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
+              </div>
+
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
+                <input type="text" id="inpEmpPessoa" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
+                <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
+              </div>
             </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Descrição</label><input type="text" id="inpEmpDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Tênis Shopee" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500"></div>
-              <div><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cartão Emprestado</label><select id="selEmpForma" onchange="atualizarFaturaEmprestimo()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500"><option value="">Selecione o cartão...</option></select></div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">O que foi comprado (Descrição)</label>
+                <input type="text" id="inpEmpDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Tênis Shopee, Celular, Passagem" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cartão Emprestado</label>
+                <select id="selEmpForma" onchange="atualizarFaturaEmprestimo()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+                  <option value="">Selecione o cartão...</option>
+                </select>
+              </div>
             </div>
+
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div class="col-span-2 sm:col-span-1"><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label><input type="text" id="inpEmpValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm outline-none focus:border-amber-500"></div>
-              <div><div class="flex justify-between items-center mb-1"><label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label><span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">1x</span></div><input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarLayoutParcelasEmp(); atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500"></div>
-              <div id="boxEmpParcIni" class="hidden"><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label><input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500"></div>
-              <div class="col-span-2 sm:col-span-1"><label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label><input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500"></div>
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label>
+                <input type="text" id="inpEmpValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
+                  <span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">1x</span>
+                </div>
+                <input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarPreviewParcEmp()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
+                <input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
+              </div>
+              <div class="col-span-2 sm:col-span-1">
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label>
+                <input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+              </div>
             </div>
-            <button type="submit" id="btnSalvarEmp" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95">💾 Registrar Empréstimo</button>
+
+            <button type="submit" id="btnSalvarEmp" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95">
+              💾 Registrar Empréstimo no Cartão
+            </button>
           </form>
         </div>
+
+        <!-- Filtros e Resumo Agrupado por Pessoa (Cobrança Rápida no WhatsApp) -->
         <div class="card-glass p-5 space-y-4">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h3 class="text-sm font-bold text-white">👥 Resumo e Cobrança no WhatsApp</h3></div><div class="flex flex-wrap gap-2 w-full sm:w-auto"><select id="selFiltroMesEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none"><option value="">Todos os Meses</option></select><select id="selFiltroPessoaEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none"><option value="">Todas as Pessoas</option></select><select id="selFiltroStatusEmp" onchange="renderizarPainelEmprestimos()" class="minimal bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none"><option value="A Receber">⏳ A Receber</option><option value="">Todos</option><option value="Recebido">✅ Recebidos</option></select></div></div>
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div>
+              <h3 class="text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
+              <p class="text-[11px] text-slate-400">Filtre o mês da fatura para cobrar e dar baixa rapidamente.</p>
+            </div>
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+              <select id="selFiltroMesEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="">Todos os Meses</option>
+              </select>
+              <select id="selFiltroPessoaEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="">Todas as Pessoas</option>
+              </select>
+              <select id="selFiltroStatusEmp" onchange="renderizarPainelEmprestimos()" class="minimal bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+                <option value="A Receber">⏳ A Receber</option>
+                <option value="">Todos Status</option>
+                <option value="Recebido">✅ Recebidos</option>
+              </select>
+            </div>
+          </div>
+
           <div id="listaResumoPessoasEmp" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-          <div class="pt-3 border-t border-slate-800"><h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">📋 Parcelas Detalhadas de Terceiros</h4><div id="listaItensEmprestimos" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div></div>
+
+          <div class="pt-3 border-t border-slate-800">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">📋 Parcelas Detalhadas de Terceiros</h4>
+            <div id="listaItensEmprestimos" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+          </div>
         </div>
       </div>
 
-      <!-- RACHADINHA -->
+      <!-- FERRAMENTA 2: DIVIDIR COM A GALERA (2 MODOS: COMIDA VS BEBIDA E ITENS POR PESSOA) -->
       <div id="subview-rachadinha" class="hidden card-glass p-5 sm:p-7 space-y-5">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"><div><h2 class="text-base font-bold text-white flex items-center gap-2">🍻 Dividir Gastos com a Galera</h2></div><div class="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700 w-full sm:w-auto"><button type="button" id="btnModoRachaRapido" onclick="alternarModoRachadinha('rapido')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition">⚡ Comida vs. Bebida</button><button type="button" id="btnModoRachaDetalhado" onclick="alternarModoRachadinha('detalhado')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">🧾 Itens por Pessoa</button></div></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><div class="sm:col-span-2"><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Local / Evento</label><input type="text" id="rachaLocal" autocapitalize="words" oninput="calcularRachadinha(); calcularRachadinhaDetalhada()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-emerald-500"></div><div class="flex items-end"><label class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between cursor-pointer"><span class="text-xs font-bold text-slate-200">+ 10% Garçom</span><input type="checkbox" id="rachaTaxa10" onchange="calcularRachadinha(); calcularRachadinhaDetalhada()" class="w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-600"></label></div></div>
-        <!-- MODO 1: RÁPIDO -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">🍻 Dividir Gastos com a Galera</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Divida separando quem bebeu de quem não bebeu ou item por item.</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700 w-full sm:w-auto">
+            <button type="button" id="btnModoRachaRapido" onclick="alternarModoRachadinha('rapido')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white transition">⚡ Comida vs. Bebida</button>
+            <button type="button" id="btnModoRachaDetalhado" onclick="alternarModoRachadinha('detalhado')" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-bold text-slate-400 hover:text-white transition">🧾 Itens por Pessoa</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2">
+            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Local / Evento (Opcional)</label>
+            <input type="text" id="rachaLocal" autocapitalize="words" oninput="calcularRachadinha(); calcularRachadinhaDetalhada()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Pizzaria, Churrasco, Bar" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-emerald-500">
+          </div>
+          <div class="flex items-end">
+            <label class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 flex items-center justify-between cursor-pointer">
+              <span class="text-xs font-bold text-slate-200">+ 10% Garçom</span>
+              <input type="checkbox" id="rachaTaxa10" onchange="calcularRachadinha(); calcularRachadinhaDetalhada()" class="w-4 h-4 rounded text-emerald-500 bg-slate-800 border-slate-600">
+            </label>
+          </div>
+        </div>
+
+        <!-- MODO 1: RÁPIDO (COMIDA VS. BEBIDA) -->
         <div id="boxRachaModoRapido" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5"><label class="block text-xs font-bold text-emerald-400 uppercase">🥗 Comida / Geral</label><input type="text" id="rachaValorTotal" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base outline-none focus:border-emerald-500"><div><div class="flex justify-between items-center mb-1"><span class="text-[11px] font-bold text-slate-400">Pessoas na Mesa:</span></div><div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden"><button type="button" onclick="ajustarPessoasRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button><input type="number" id="rachaQtdPessoas" value="2" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none"><button type="button" onclick="ajustarPessoasRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button></div></div></div>
-            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5"><label class="block text-xs font-bold text-amber-400 uppercase">🍺 Bebida / Extra</label><input type="text" id="rachaValorBebida" inputmode="numeric" placeholder="R$ 0,00 (Opcional)" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold text-base outline-none focus:border-amber-500"><div><div class="flex justify-between items-center mb-1"><span class="text-[11px] font-bold text-slate-400">Quantas beberam?</span></div><div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden"><button type="button" onclick="ajustarBebeuRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button><input type="number" id="rachaQtdBebeu" value="1" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none"><button type="button" onclick="ajustarBebeuRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button></div></div></div>
+            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+              <label class="block text-xs font-bold text-emerald-400 uppercase">🥗 Gasto Geral / Comida (Todos dividem)</label>
+              <input type="text" id="rachaValorTotal" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base outline-none focus:border-emerald-500">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[11px] font-bold text-slate-400">Total de Pessoas na Mesa:</span>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="setPessoasRachaRapido(2)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">2</button>
+                    <button type="button" onclick="setPessoasRachaRapido(3)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3</button>
+                    <button type="button" onclick="setPessoasRachaRapido(4)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">4</button>
+                    <button type="button" onclick="setPessoasRachaRapido(5)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">5</button>
+                    <button type="button" onclick="setPessoasRachaRapido(6)" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6</button>
+                  </div>
+                </div>
+                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
+                  <button type="button" onclick="ajustarPessoasRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button>
+                  <input type="number" id="rachaQtdPessoas" value="2" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none">
+                  <button type="button" onclick="ajustarPessoasRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 space-y-2.5">
+              <label class="block text-xs font-bold text-amber-400 uppercase">🍺 Bebida / Extra (Só quem consumiu)</label>
+              <input type="text" id="rachaValorBebida" inputmode="numeric" placeholder="R$ 0,00 (Opcional)" oninput="mascaraMoedaTeclado(this); calcularRachadinha()" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold text-base outline-none focus:border-amber-500">
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <span class="text-[11px] font-bold text-slate-400">Quantas pessoas beberam?</span>
+                  <span class="text-[10px] text-slate-500">Divide a bebida só entre elas</span>
+                </div>
+                <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
+                  <button type="button" onclick="ajustarBebeuRacha(-1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">-</button>
+                  <input type="number" id="rachaQtdBebeu" value="1" min="1" oninput="calcularRachadinha()" class="w-full bg-transparent text-center text-white font-bold text-sm outline-none">
+                  <button type="button" onclick="ajustarBebeuRacha(1)" class="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm">+</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3"><div class="flex justify-between items-center border-b border-slate-800 pb-2 text-xs"><span class="text-slate-400 font-bold uppercase">Total da Mesa:</span><strong id="rachaTotalFinal" class="text-white text-base">R$ 0,00</strong></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800"><span id="lblRachaSemBebida" class="text-[11px] font-bold text-emerald-400 block">🥗 Valor por Pessoa:</span><div id="rachaValorPorPessoa" class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">R$ 0,00</div></div><div id="boxResultadoComBebida" class="hidden bg-amber-500/10 p-3 rounded-xl border border-amber-500/30"><span id="lblRachaComBebida" class="text-[11px] font-bold text-amber-300 block">🍺 P/ Quem Bebeu:</span><div id="rachaValorComBebida" class="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">R$ 0,00</div></div></div><div class="flex flex-col sm:flex-row gap-2 pt-1"><button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button><button type="button" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Meu Gasto</button></div></div>
+
+          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2 text-xs">
+              <span class="text-slate-400 font-bold uppercase">Total da Mesa (c/ taxas):</span>
+              <strong id="rachaTotalFinal" class="text-white text-base">R$ 0,00</strong>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800">
+                <span id="lblRachaSemBebida" class="text-[11px] font-bold text-emerald-400 block">🥗 Valor por Pessoa (Geral / Sem Bebida):</span>
+                <div id="rachaValorPorPessoa" class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">R$ 0,00</div>
+              </div>
+              <div id="boxResultadoComBebida" class="hidden bg-amber-500/10 p-3 rounded-xl border border-amber-500/30">
+                <span id="lblRachaComBebida" class="text-[11px] font-bold text-amber-300 block">🍺 Valor p/ Quem Bebeu (Comida + Bebida):</span>
+                <div id="rachaValorComBebida" class="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2 pt-1">
+              <button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button>
+              <button type="button" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Minha Parte (Sem Bebida)</button>
+              <button type="button" id="btnLancarParteBebeu" onclick="lancarMinhaParteRachadinha('bebeu')" class="hidden flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">🍺 Lançar Minha Parte (Com Bebida)</button>
+            </div>
+          </div>
         </div>
-        <!-- MODO 2: DETALHADO -->
+
+        <!-- MODO 2: DETALHADO (ITENS POR PESSOA - QUEM CONSUMIU O QUÊ) -->
         <div id="boxRachaModoDetalhado" class="hidden space-y-4">
-          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3"><label class="block text-xs font-bold text-slate-300 uppercase">1️⃣ Pessoas na Mesa</label><div class="flex gap-2"><input type="text" id="inpNovoNomeRacha" autocapitalize="words" placeholder="Nome..." onkeypress="if(event.key==='Enter'){adicionarPessoaRachaDet(); event.preventDefault();}" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"><button type="button" onclick="adicionarPessoaRachaDet()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold px-4 py-2 rounded-xl text-xs">+ Pessoa</button></div><div id="listaPessoasRachaDet" class="flex flex-wrap gap-1.5"></div></div>
-          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3"><label class="block text-xs font-bold text-slate-300 uppercase">2️⃣ Adicionar Item</label><div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"><input type="text" id="inpItemDescRacha" autocapitalize="words" placeholder="Item (ex: Pizza)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-emerald-500"><input type="text" id="inpItemValRacha" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor (R$)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-xs sm:text-sm outline-none focus:border-emerald-500"></div><div><div class="flex justify-between items-center mb-1.5"><span class="text-[11px] font-bold text-slate-400">Quem divide este item?</span><button type="button" onclick="marcarTodosNoItemRacha()" class="text-[10px] text-emerald-400 font-bold underline">Marcar Todos</button></div><div id="boxCheckPessoasItemRacha" class="flex flex-wrap gap-1.5"></div></div><button type="button" onclick="adicionarItemRachaDet()" class="w-full bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-bold py-2.5 rounded-xl text-xs transition">+ Incluir Item</button></div>
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <label class="block text-xs font-bold text-slate-300 uppercase">1️⃣ Pessoas na Mesa</label>
+            <div class="flex gap-2">
+              <input type="text" id="inpNovoNomeRacha" autocapitalize="words" placeholder="Nome (ex: Lucas, Núbia, Heitor...)" onkeypress="if(event.key==='Enter'){adicionarPessoaRachaDet(); event.preventDefault();}" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-white text-xs sm:text-sm outline-none focus:border-emerald-500">
+              <button type="button" onclick="adicionarPessoaRachaDet()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 font-bold px-4 py-2 rounded-xl text-xs">+ Pessoa</button>
+            </div>
+            <div id="listaPessoasRachaDet" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <label class="block text-xs font-bold text-slate-300 uppercase">2️⃣ Adicionar Item da Conta e Marcar Quem Consumiu</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <input type="text" id="inpItemDescRacha" autocapitalize="words" placeholder="Item (ex: Pizza Grande, Cervejas, Suco)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-emerald-500">
+              <input type="text" id="inpItemValRacha" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor do Item (R$ 0,00)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-xs sm:text-sm outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <span class="text-[11px] font-bold text-slate-400">Quem vai dividir este item?</span>
+                <button type="button" onclick="marcarTodosNoItemRacha()" class="text-[10px] text-emerald-400 font-bold underline">Marcar Todos</button>
+              </div>
+              <div id="boxCheckPessoasItemRacha" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <button type="button" onclick="adicionarItemRachaDet()" class="w-full bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-bold py-2.5 rounded-xl text-xs transition">+ Incluir Item na Conta</button>
+          </div>
+
           <div id="listaItensRachaDet" class="space-y-1.5"></div>
-          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3"><h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">3️⃣ Total Oficial por Pessoa</h3><div id="listaResumoIndividualRachaDet" class="space-y-2 text-xs"></div><div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-800"><button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar Detalhamento p/ WhatsApp</button><button type="button" onclick="limparRachadinhaDetalhada()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-xl text-xs border border-slate-700">Zerar Itens</button></div></div>
+
+          <div class="bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-4 space-y-3">
+            <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">3️⃣ Total Oficial Individual por Pessoa</h3>
+            <div id="listaResumoIndividualRachaDet" class="space-y-2 text-xs"></div>
+
+            <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-800">
+              <button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar Detalhamento p/ WhatsApp</button>
+              <button type="button" onclick="limparRachadinhaDetalhada()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-3 rounded-xl text-xs border border-slate-700">Zerar Itens</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- SIMULADOR DE COMPRAS -->
+      <!-- FERRAMENTA 3: SIMULADOR DE COMPRA E IMPACTO NOS LIMITES (AUTOMÁTICO + WHATSAPP + EMPRÉSTIMO) -->
       <div id="subview-simulador" class="hidden card-glass p-5 sm:p-7 space-y-5">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div><h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras e Parcelamento</h2></div><button type="button" id="btnAtalhoCartaoMaisUsado" onclick="selecionarCartaoMaisUsadoSimulador()" class="hidden text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition active:scale-95"></button></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Valor da Compra (R$)</label><input type="text" id="simValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sky-400 font-bold text-base outline-none focus:border-sky-500"></div><div><div class="flex justify-between items-center mb-1"><label class="text-xs font-bold text-slate-400 uppercase">Parcelas</label></div><input type="number" id="simParcelas" value="1" min="1" max="48" oninput="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500"></div><div><label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cartão</label><select id="simCartao" onchange="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-sky-500"><option value="">📊 Comparar Todos</option></select></div></div>
-        <div id="boxResultadoSimulador" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-4"><p class="text-xs text-slate-500 text-center py-4">Digite o valor da compra acima para ver o cálculo.</p></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"><button type="button" onclick="copiarSimulacaoWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button><button type="button" onclick="transformarSimulacaoEmEmprestimo()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95">🤝 Lançar em Empréstimos</button><button type="button" onclick="transformarSimulacaoEmLancamento()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar como Meu Gasto</button></div>
-      </div>
-
-      <!-- CALCULADORA FINANCEIRA -->
-      <div id="subview-calculadora" class="hidden card-glass p-5 sm:p-7 max-w-sm mx-auto space-y-4">
-        <div class="flex justify-between items-center"><h2 class="text-sm font-bold text-white">🧮 Calculadora Financeira</h2><span id="calcHistoricoMini" class="text-[11px] text-slate-400 font-mono"></span></div>
-        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-right"><div id="calcExpressao" class="text-xs text-slate-500 font-mono min-h-[1.25rem] break-all"></div><div id="calcVisor" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tracking-tight mt-1">0</div></div>
-        <div class="grid grid-cols-4 gap-2 text-sm font-bold"><button type="button" onclick="calcAcao('C')" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 py-3.5 rounded-xl">C</button><button type="button" onclick="calcAcao('BACK')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-3.5 rounded-xl">⌫</button><button type="button" onclick="calcAcao('%')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 py-3.5 rounded-xl">%</button><button type="button" onclick="calcAcao('/')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">÷</button><button type="button" onclick="calcDigito('7')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">7</button><button type="button" onclick="calcDigito('8')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">8</button><button type="button" onclick="calcDigito('9')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">9</button><button type="button" onclick="calcAcao('*')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">×</button><button type="button" onclick="calcDigito('4')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">4</button><button type="button" onclick="calcDigito('5')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">5</button><button type="button" onclick="calcDigito('6')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">6</button><button type="button" onclick="calcAcao('-')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">−</button><button type="button" onclick="calcDigito('1')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">1</button><button type="button" onclick="calcDigito('2')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">2</button><button type="button" onclick="calcDigito('3')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">3</button><button type="button" onclick="calcAcao('+')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">+</button><button type="button" onclick="calcDigito('0')" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">0</button><button type="button" onclick="calcDigito('.')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">,</button><button type="button" onclick="calcAcao('=')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl shadow-md">=</button></div>
-        <button type="button" onclick="usarResultadoCalculadoraNoGasto()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition active:scale-95">📥 Usar Resultado no Novo Registro</button>
-      </div>
-
-      <!-- BLOCO DE NOTAS E LEMBRETES -->
-      <div id="subview-notas" class="hidden card-glass p-5 sm:p-7 space-y-4">
-        <div class="flex justify-between items-center"><div><h2 class="text-base font-bold text-white">📝 Bloco de Notas</h2><p class="text-xs text-slate-400">Anote observações rápidas ou lembretes.</p></div></div>
-        <div class="flex gap-2">
-          <!-- AQUI FICA O TEXTAREA DO BLOCO DE NOTAS QUE RECEBERÁ A CORREÇÃO NO PRÓXIMO PASSO -->
-          <textarea id="inpNovaNotaTexto" rows="3" placeholder="Digite sua nota aqui... (Enter pula linha)" class="w-full bg-transparent text-white text-sm outline-none resize-y hide-scrollbar"></textarea>
-          <button type="button" onclick="adicionarNotaRapida()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-xl text-xs sm:text-sm transition active:scale-95 self-end">Adicionar</button>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras e Parcelamento</h2>
+            <p class="text-xs text-slate-400 mt-0.5">Calcula automaticamente enquanto você digita e compara seus cartões.</p>
+          </div>
+          <button type="button" id="btnAtalhoCartaoMaisUsado" onclick="selecionarCartaoMaisUsadoSimulador()" class="hidden text-[11px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-1.5 rounded-xl border border-amber-500/30 transition active:scale-95"></button>
         </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Valor da Compra (R$)</label>
+            <input type="text" id="simValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sky-400 font-bold text-base outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-xs font-bold text-slate-400 uppercase">Nº de Parcelas</label>
+              <div class="flex gap-1">
+                <button type="button" onclick="setParcelasSimulador(1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">1x</button>
+                <button type="button" onclick="setParcelasSimulador(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">3x</button>
+                <button type="button" onclick="setParcelasSimulador(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">6x</button>
+                <button type="button" onclick="setParcelasSimulador(10)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">10x</button>
+                <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold">12x</button>
+              </div>
+            </div>
+            <input type="number" id="simParcelas" value="1" min="1" max="48" oninput="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Cartão (Vazio = Comparar Todos)</label>
+            <select id="simCartao" onchange="rodarSimuladorCompra()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-sky-500">
+              <option value="">📊 Comparar Todos os Cartões</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="boxResultadoSimulador" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-4">
+          <p class="text-xs text-slate-500 text-center py-4">Digite o valor da compra acima para ver o cálculo instantâneo das parcelas e o comparativo entre seus cartões.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <button type="button" onclick="copiarSimulacaoWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            📲 Copiar Simulação p/ WhatsApp
+          </button>
+          <button type="button" onclick="transformarSimulacaoEmEmprestimo()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            🤝 Lançar em Empréstimos
+          </button>
+          <button type="button" onclick="transformarSimulacaoEmLancamento()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            ➕ Lançar como Meu Gasto
+          </button>
+        </div>
+      </div>
+
+      <!-- FERRAMENTA 4: CALCULADORA FINANCEIRA INTEGRADA -->
+      <div id="subview-calculadora" class="hidden card-glass p-5 sm:p-7 max-w-sm mx-auto space-y-4">
+        <div class="flex justify-between items-center">
+          <h2 class="text-sm font-bold text-white">🧮 Calculadora Financeira</h2>
+          <span id="calcHistoricoMini" class="text-[11px] text-slate-400 font-mono"></span>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-right">
+          <div id="calcExpressao" class="text-xs text-slate-500 font-mono min-h-[1.25rem] break-all"></div>
+          <div id="calcVisor" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono tracking-tight mt-1">0</div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 text-sm font-bold">
+          <button type="button" onclick="calcAcao('C')" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 py-3.5 rounded-xl">C</button>
+          <button type="button" onclick="calcAcao('BACK')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-3.5 rounded-xl">⌫</button>
+          <button type="button" onclick="calcAcao('%')" class="bg-slate-800 hover:bg-slate-700 text-amber-400 py-3.5 rounded-xl">%</button>
+          <button type="button" onclick="calcAcao('/')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">÷</button>
+
+          <button type="button" onclick="calcDigito('7')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">7</button>
+          <button type="button" onclick="calcDigito('8')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">8</button>
+          <button type="button" onclick="calcDigito('9')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">9</button>
+          <button type="button" onclick="calcAcao('*')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">×</button>
+
+          <button type="button" onclick="calcDigito('4')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">4</button>
+          <button type="button" onclick="calcDigito('5')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">5</button>
+          <button type="button" onclick="calcDigito('6')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">6</button>
+          <button type="button" onclick="calcAcao('-')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">−</button>
+
+          <button type="button" onclick="calcDigito('1')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">1</button>
+          <button type="button" onclick="calcDigito('2')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">2</button>
+          <button type="button" onclick="calcDigito('3')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">3</button>
+          <button type="button" onclick="calcAcao('+')" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 py-3.5 rounded-xl">+</button>
+
+          <button type="button" onclick="calcDigito('0')" class="col-span-2 bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">0</button>
+          <button type="button" onclick="calcDigito('.')" class="bg-slate-900 hover:bg-slate-800 text-white py-3.5 rounded-xl border border-slate-800">,</button>
+          <button type="button" onclick="calcAcao('=')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3.5 rounded-xl shadow-md">=</button>
+        </div>
+
+        <button type="button" onclick="usarResultadoCalculadoraNoGasto()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl text-xs transition active:scale-95">
+          📥 Usar Resultado no Novo Registro
+        </button>
+      </div>
+
+      <!-- FERRAMENTA 5: BLOCO DE NOTAS E LEMBRETES SINCRONIZADO -->
+      <div id="subview-notas" class="hidden card-glass p-5 sm:p-7 space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h2 class="text-base font-bold text-white">📝 Bloco de Notas e Lembretes</h2>
+            <p class="text-xs text-slate-400">Anote observações rápidas ou lembretes financeiros (sincronizado na planilha).</p>
+          </div>
+        </div>
+
+        <div class="flex gap-2">
+          <input type="text" id="inpNovaNotaTexto" placeholder="Ex: Lembrar de conferir cashback..." onkeypress="if(event.key==='Enter'){adicionarNotaRapida(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-amber-500">
+          <button type="button" onclick="adicionarNotaRapida()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-3 rounded-xl text-xs sm:text-sm transition active:scale-95">Adicionar</button>
+        </div>
+
         <div id="listaNotasUI" class="space-y-2 pt-2"></div>
       </div>
     </div>
 
     <!-- ABA 7: CARTÕES E LIMITES -->
     <div id="view-formas" class="hidden space-y-4">
-      <div class="flex justify-between items-center px-1 mb-2"><h2 class="text-sm font-bold text-white">Cartões e Limites</h2><div class="flex gap-2"><button onclick="abrirModalForma()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">➕ Novo</button><button onclick="toggleEdicaoFormas()" id="btnToggleEdicaoFp" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button></div></div>
+      <div class="flex justify-between items-center px-1 mb-2">
+        <h2 class="text-sm font-bold text-white">Cartões e Limites</h2>
+        <div class="flex gap-2">
+          <button onclick="abrirModalForma()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">➕ Novo</button>
+          <button onclick="toggleEdicaoFormas()" id="btnToggleEdicaoFp" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-2 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button>
+        </div>
+      </div>
       <div id="lista-formas" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 pb-2"></div>
       <button onclick="salvarOrdemFormas()" id="btnSalvarFormas" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mb-4">💾 Salvar</button>
     </div>
@@ -396,10 +1028,22 @@
     <!-- ABA 8: CATEGORIAS E METAS -->
     <div id="view-categorias" class="hidden space-y-6 max-w-xl mx-auto">
       <div class="card-glass p-5 sm:p-8">
-        <div class="flex justify-between items-center mb-2"><h2 class="text-base font-bold text-white">🏷️ Categorias e Metas</h2><div class="flex items-center gap-3"><span id="contador-cat" class="text-[11px] font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">0/25</span><button onclick="toggleEdicaoCategorias()" id="btnToggleEdicaoCat" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button></div></div>
-        <p id="infoTextCat" class="hidden text-xs text-slate-400 mb-6">Arraste (☰) para personalizar. Exclua ou adicione novas abaixo.</p>
-        <div id="boxNovaCat" class="hidden flex-col sm:flex-row gap-3 mb-6"><input type="text" id="inpNovaCat" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Nova Categoria..." onkeypress="if(event.key==='Enter'){adicionarCategoriaUi(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"><input type="text" id="inpNovaMeta" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Meta R$ (Opc.)" class="w-full sm:w-36 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold text-sm focus:border-blue-500 outline-none"><button type="button" id="btnAdicionarCat" onclick="adicionarCategoriaUi()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition shadow-md active:scale-95">Adicionar</button></div>
-        <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-3 mt-4"><ul id="lista-categorias-ui" class="space-y-2"><li class="text-center text-slate-500 py-4 text-sm">Carregando...</li></ul></div>
+        <div class="flex justify-between items-center mb-2">
+          <h2 class="text-base font-bold text-white">🏷️ Categorias e Metas</h2>
+          <div class="flex items-center gap-3">
+            <span id="contador-cat" class="text-[11px] font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">0/25</span>
+            <button onclick="toggleEdicaoCategorias()" id="btnToggleEdicaoCat" class="bg-slate-700 hover:bg-slate-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold shadow-md active:scale-95 transition">⚙️ Organizar</button>
+          </div>
+        </div>
+        <p id="infoTextCat" class="hidden text-xs text-slate-400 mb-6">Arraste (☰) para personalizar. Exclua ou adicione novas abaixo para enviar à planilha.</p>
+        <div id="boxNovaCat" class="hidden flex-col sm:flex-row gap-3 mb-6">
+          <input type="text" id="inpNovaCat" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Nova Categoria..." onkeypress="if(event.key==='Enter'){adicionarCategoriaUi(); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+          <input type="text" id="inpNovaMeta" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Meta R$ (Opc.)" class="w-full sm:w-36 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-amber-400 font-bold text-sm focus:border-blue-500 outline-none">
+          <button type="button" id="btnAdicionarCat" onclick="adicionarCategoriaUi()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-bold transition shadow-md active:scale-95">Adicionar</button>
+        </div>
+        <div class="bg-slate-900/40 rounded-xl border border-slate-800 p-3 mt-4">
+          <ul id="lista-categorias-ui" class="space-y-2"><li class="text-center text-slate-500 py-4 text-sm">Carregando...</li></ul>
+        </div>
         <button onclick="salvarCategorias()" id="btnSalvarCat" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition active:scale-95 mt-5">💾 Salvar</button>
       </div>
     </div>
@@ -415,7 +1059,7 @@
 
   <nav id="barraNavegacaoMobile" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2.5 pt-2 px-2 grid grid-cols-5 gap-1.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
 
-  <!-- MODAIS RESTANTES -->
+  <!-- MODAL: FILTRO AVANÇADO -->
   <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
@@ -426,6 +1070,7 @@
         <div>
           <label class="block text-xs font-bold text-slate-400 mb-1">Tags Combinadas 🏷️</label>
           <input type="text" id="filtTag" autocapitalize="none" placeholder="Ex: casal, dividido" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm outline-none focus:border-blue-500 lowercase">
+          <p class="text-[10px] text-slate-400 mt-1">Separe por vírgula para exigir ambas as tags juntas.</p>
         </div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="filtStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option><option value="Em Aberto">Em Aberto / A Pagar</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option></select></div>
       </div>
@@ -436,6 +1081,7 @@
     </div>
   </div>
 
+  <!-- MODAL: EDITAR CARTÃO/PIX -->
   <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">💳 Editar Cartão/Pix</h3>
@@ -458,6 +1104,7 @@
     </div>
   </div>
 
+  <!-- MODAL EDIÇÃO DE LANÇAMENTO (COM ANTECIPAÇÃO NUBANK E CONVERSOR P/ EMPRÉSTIMOS) -->
   <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto">
       <h3 class="text-lg font-bold text-white mb-4">✏️ Editar Lançamento</h3>
@@ -470,26 +1117,126 @@
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Data</label>
             <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
-              <input type="text" id="inpEdDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" onkeydown="atalhoBarraData(event, this, 'inpEdDataMes', 'edicao')" oninput="aoDigitarParteData(this, 'inpEdDataMes', 2, 'edicao')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <input type="text" id="inpEdDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required
+                onfocus="this.select()"
+                onkeydown="atalhoBarraData(event, this, 'inpEdDataMes', 'edicao')"
+                oninput="aoDigitarParteData(this, 'inpEdDataMes', 2, 'edicao')"
+                onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
+                class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               <span class="text-slate-500 font-bold select-none">/</span>
-              <input type="text" id="inpEdDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpEdDataDia'); atalhoBarraData(event, this, 'inpEdDataAno', 'edicao')" oninput="aoDigitarParteData(this, 'inpEdDataAno', 2, 'edicao')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <input type="text" id="inpEdDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required
+                onfocus="this.select()"
+                onkeydown="voltarParteData(event, this, 'inpEdDataDia'); atalhoBarraData(event, this, 'inpEdDataAno', 'edicao')"
+                oninput="aoDigitarParteData(this, 'inpEdDataAno', 2, 'edicao')"
+                onblur="formatarZeroData(this, 2); validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
+                class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
               <span class="text-slate-500 font-bold select-none">/</span>
-              <input type="text" id="inpEdDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpEdDataMes')" oninput="aoDigitarParteData(this, null, 4, 'edicao')" onblur="validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)" class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <input type="text" id="inpEdDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required
+                onfocus="this.select()"
+                onkeydown="voltarParteData(event, this, 'inpEdDataMes')"
+                oninput="aoDigitarParteData(this, null, 4, 'edicao')"
+                onblur="validarLimitesDataTripla('edicao'); sincronizarDataTripla('edicao', false)"
+                class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
             </div>
             <input type="hidden" id="inpEdData">
           </div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><input type="text" id="inpEdMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
         </div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label><input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label>
+          <input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+        </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" onchange="aoMudarFormaEdicao()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
         </div>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label><input type="text" id="inpEdValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-sm focus:border-blue-500 outline-none"></div>
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Status</label><select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold"><option value="Em Aberto">Em Aberto</option><option value="Pago">Pago</option><option value="Agendado">Agendado</option><option value="Assinatura Ativa">Assinatura Ativa</option><option value="Assinatura Paga">Assinatura Paga</option><option value="Assinatura Cancelada">Assinatura Cancelada</option><option value="Pago (Cancelada)">Pago (Cancelada)</option></select></div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label>
+            <input type="text" id="inpEdValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this); marcarPropagacaoValorSeParcelado()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-sm focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
+            <select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold">
+              <option value="Em Aberto">Em Aberto</option>
+              <option value="Pago">Pago</option>
+              <option value="Agendado">Agendado</option>
+              <option value="Assinatura Ativa">Assinatura Ativa</option>
+              <option value="Assinatura Paga">Assinatura Paga</option>
+              <option value="Assinatura Cancelada">Assinatura Cancelada</option>
+              <option value="Pago (Cancelada)">Pago (Cancelada)</option>
+            </select>
+          </div>
         </div>
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Tags</label><input type="text" id="inpEdTags" autocapitalize="none" placeholder="Ex: lazer, casa" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500 outline-none lowercase"></div>
+
+        <div id="boxPropagarValorParc" class="hidden p-2.5 rounded-xl bg-slate-900/70 border border-slate-700">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="chkPropagarValorParc" class="w-4 h-4 rounded text-purple-600 bg-slate-800 border-slate-600">
+            <span class="text-[11px] text-slate-300 font-medium">Aplicar novo valor também às outras parcelas <strong>em aberto</strong> desta compra</span>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Tags</label>
+          <input type="text" id="inpEdTags" autocapitalize="none" oninput="sincronizarChipsTags('edicao')" placeholder="Toque abaixo ou digite..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:border-blue-500 outline-none lowercase">
+          <div id="chipsTagsEdicao" class="flex flex-wrap gap-1.5 mt-2"></div>
+        </div>
+
+        <!-- PAINEL DE ANTECIPAÇÃO PADRÃO NUBANK -->
+        <div id="boxAdiantarContainer" class="hidden pt-2 border-t border-slate-700">
+          <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
+            <span>⚡ Adiantar Parcelas Futuras (Padrão Nubank)</span>
+            <span id="setaAdiantar">▼</span>
+          </button>
+          <div id="painelAdiantarCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-3">
+            <p class="text-[11px] text-slate-300 leading-relaxed">Puxa as últimas parcelas futuras <strong>em aberto</strong> (de trás para a frente) e libera seu limite futuro.</p>
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Fatura Destino</label>
+                <input type="text" id="inpAdiantarMes" placeholder="MM/AAAA" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-bold outline-none focus:border-amber-400">
+              </div>
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[10px] font-bold text-slate-400 uppercase">Qtd. Parcelas</label>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='1'" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-700 font-bold">1</button>
+                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='2'" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-700 font-bold">2</button>
+                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='3'" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 border border-slate-700 font-bold">3</button>
+                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value=''" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-300 border border-slate-700 font-bold">Todas</button>
+                  </div>
+                </div>
+                <input type="number" id="inpAdiantarQtd" min="1" placeholder="Todas futuras" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs text-center font-bold outline-none focus:border-amber-400">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Desconto Total Obtido no Banco (R$)</label>
+              <input type="text" id="inpAdiantarDesconto" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="R$ 0,00 (Opcional)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-emerald-400 font-bold text-xs outline-none focus:border-amber-400">
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer pt-1">
+              <input type="checkbox" id="chkAdiantarJaPago" class="w-4 h-4 rounded text-amber-500 bg-slate-800 border-slate-600">
+              <span class="text-[11px] text-slate-300">Já marcar parcelas adiantadas como <strong>Pago</strong></span>
+            </label>
+            <button type="button" id="btnExecutarAdiantar" onclick="executarAdiantamentoParcelas()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">
+              Confirmar Antecipação ⚡
+            </button>
+          </div>
+        </div>
+
+        <!-- CONVERSOR RÁPIDO: MOVER COMPRA PARA EMPRÉSTIMOS DE TERCEIROS -->
+        <div class="pt-2 border-t border-slate-700">
+          <button type="button" onclick="togglePainelMoverEmprestimo()" class="w-full bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 text-sky-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
+            <span>🤝 Era compra de outra pessoa? Mover p/ Empréstimos</span>
+            <span id="setaMoverEmp">▼</span>
+          </button>
+          <div id="painelMoverEmprestimoCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-sky-500/30 space-y-2.5">
+            <p class="text-[11px] text-slate-300 leading-relaxed">Transfere esta compra (e todas as suas parcelas) da sua aba pessoal para a aba <strong>Empréstimos</strong>.</p>
+            <input type="text" id="inpMoverEmpPessoa" autocapitalize="words" placeholder="Nome da pessoa (ex: Heitor, Mãe...)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs font-bold outline-none focus:border-sky-400">
+            <button type="button" id="btnExecutarMoverEmp" onclick="executarMoverParaEmprestimos()" class="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">
+              Transferir para Empréstimos 🤝
+            </button>
+          </div>
+        </div>
+
         <div class="flex gap-3 pt-2">
           <button type="button" onclick="fecharModalEdicaoLanc()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
           <button type="submit" id="btnSalvarEdLanc" class="w-1/2 bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl transition">Atualizar</button>
@@ -498,30 +1245,40 @@
     </div>
   </div>
 
+  <!-- MODAL EDIÇÃO DE ASSINATURA -->
   <div id="modalEdicaoAss" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-2">🔄 Editar Assinatura</h3>
+      <p class="text-xs text-slate-400 mb-5">Altera o mês atual e futuros. O histórico de meses passados fica protegido.</p>
+      
       <form onsubmit="salvarEdicaoAss(event)" class="space-y-4">
-        <input type="hidden" id="inpAssDescOrig"><input type="hidden" id="inpAssFormaOrig">
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Descrição</label><input type="text" id="inpAssDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
-        <div class="grid grid-cols-2 gap-3"><div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Cartão</label><select id="selAssForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div><div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Categoria</label><select id="selAssCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div></div>
+        <input type="hidden" id="inpAssDescOrig">
+        <input type="hidden" id="inpAssFormaOrig">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Nova Descrição</label>
+          <input type="text" id="inpAssDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Cartão</label><select id="selAssForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Nova Categoria</label><select id="selAssCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+        </div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Novo Valor Mensal (R$)</label><input type="text" id="inpAssValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-sm focus:border-blue-500 outline-none"></div>
-        <div class="flex gap-3 pt-3"><button type="button" onclick="fecharModalEdicaoAss()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button><button type="submit" id="btnSalvarEdAss" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition">Atualizar Assinatura</button></div>
+        <div class="flex gap-3 pt-3">
+          <button type="button" onclick="fecharModalEdicaoAss()" class="w-1/2 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl transition">Cancelar</button>
+          <button type="submit" id="btnSalvarEdAss" class="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition">Atualizar Assinatura</button>
+        </div>
       </form>
     </div>
   </div>
-
-  <script>
+  
+    <script>
     // ============================================================================
-    // MOTOR JAVASCRIPT GESTOR FINANCEIRO - PARTE 1 (ESTADO, UTILITÁRIOS E RELATÓRIOS)
+    // MOTOR JAVASCRIPT - METADE 1 (CONFIG, NAVEGAÇÃO, API E NOVO REGISTRO)
     // ============================================================================
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(reg => {
-          reg.onupdatefound = () => {
-            const w = reg.installing;
-            w.onstatechange = () => { if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload(); };
-          };
+          reg.onupdatefound = () => { const w = reg.installing; w.onstatechange = () => { if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload(); }; };
         }).catch(err => console.log('SW fail:', err));
       });
     }
@@ -572,23 +1329,16 @@
       { id: 'categorias', icone: '🏷️', titulo: 'Metas', tituloD: 'Categorias e Metas', cor: 'text-slate-300' }
     ];
 
-    // INICIALIZAÇÃO DE EVENTOS DE INTERFACE
     document.addEventListener("DOMContentLoaded", function() {
       renderizarMenusNavegacao();
       window.addEventListener('online', atualizarIndicadorOffline);
       window.addEventListener('offline', atualizarIndicadorOffline);
       
-      // DESTRAVA O ENTER DO BLOCO DE NOTAS AQUI:
       const tAreaNota = document.getElementById('inpNovaNotaTexto');
       if (tAreaNota) {
-        tAreaNota.onkeydown = null; // Remove a trava do HTML
         tAreaNota.addEventListener('keydown', function(event) {
-          if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            salvarNotaUi();
-          }
+          if (event.key === 'Enter' && event.ctrlKey) { event.preventDefault(); salvarNotaUi(); }
         });
-        tAreaNota.placeholder = "Digite sua nota aqui... (Enter pula linha, Ctrl+Enter salva)";
       }
 
       window.addEventListener('resize', () => { if (evolucaoMeses.length > 0) renderTabelaEvolucao(); });
@@ -648,7 +1398,7 @@
       const bAtivo = document.getElementById('btn-sub-' + sub); if (bAtivo) bAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
       if (sub === 'emprestimos') { if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo(); renderizarPainelEmprestimos(); }
       if (sub === 'simulador') rodarSimuladorCompra();
-      if (sub === 'rachadinha') { calcularRachadinha(); }
+      if (sub === 'rachadinha') { calcularRachadinha(); calcularRachadinhaDetalhada(); }
       if (sub === 'notas') renderizarNotasUI();
     }
 
@@ -912,21 +1662,30 @@
       }
     }
     
+    function aoSairDescricao() {
+      const el = document.getElementById('inpDesc');
+      if (el) { el.value = formatarTituloInteligente(el.value); checarAutopreenchimento(); }
+    }
+
     function checarAutopreenchimento() {
       const desc = document.getElementById('inpDesc')?.value || ''; verificarLeituraPix(desc);
       const norm = normalizarTexto(desc), btnU = document.getElementById('btnSugestaoUltimoValor');
       if (!norm) { btnU?.classList.add('hidden'); return; }
       const sForma = document.getElementById('selForma'), sCat = document.getElementById('selCat');
+      
       const aplicar = (f, c, v = 0) => {
         if (f && sForma && [...sForma.options].some(o => o.value === f)) { sForma.value = f; atualizarRegrasForma(); }
         if (c && sCat && [...sCat.options].some(o => o.value === c)) { sCat.value = c; atualizarVisorMetaCategoria(); }
-        if (btnU) { if (v > 0) { btnU.textContent = `💡 Último: ${formatBRL(v)}`; btnU.classList.remove('hidden'); btnU.dataset.val = v; } else btnU.classList.add('hidden'); }
+        if (btnU) { if (v > 0) { ultimoValorSugeridoTemp = v; btnU.textContent = `💡 Último: ${formatBRL(v)}`; btnU.classList.remove('hidden'); } else btnU.classList.add('hidden'); }
       };
+      
       if (dicionarioAutofill[norm]) { aplicar(dicionarioAutofill[norm].forma, dicionarioAutofill[norm].categoria, dicionarioAutofill[norm].ultimoValor); return; }
       btnU?.classList.add('hidden');
     }
     
-    function aplicarUltimoValorSugerido() { vibrar(20); const b = document.getElementById('btnSugestaoUltimoValor'); if (b && b.dataset.val) { definirValorMoeda('inpValor', b.dataset.val); atualizarPreviewParcelas(); } }
+    function aplicarUltimoValorSugerido() { 
+      vibrar(20); if (ultimoValorSugeridoTemp > 0) { valorOriginalAntesMetade = null; definirValorMoeda('inpValor', ultimoValorSugeridoTemp); atualizarPreviewParcelas(); } 
+    }
 
     function limparFormularioNovoGasto() {
       vibrar(20); document.getElementById('formGasto')?.reset();
@@ -953,11 +1712,18 @@
         let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]'); payload.param.tipoFila = 'pessoal'; fila.push(payload.param); localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
         mostrarAviso('Offline ⚡', 'Salvo no aparelho! Sincronizará depois.');
         if (manter) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
-        btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false; atualizarIndicadorOffline(); return;
+        btn.textContent = '💾 Lançar'; btn.disabled = false; salvandoGastoTrava = false; atualizarIndicadorOffline(); return;
       }
       mostrarAviso('Processando', 'Registrando na nuvem...', payload);
-      if (manter) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
-      btn.textContent = '💾 Lançar Meu Gasto'; btn.disabled = false; salvandoGastoTrava = false;
+      apiCall(payload.action, payload.param).then(() => {
+        if (manter) { limparCampoComRecalculo('inpValor'); limparCampoComRecalculo('inpDesc'); } else limparFormularioNovoGasto();
+        btn.textContent = '💾 Lançar'; btn.disabled = false; salvandoGastoTrava = false;
+        mostrarAviso('Sucesso', 'Gasto lançado com sucesso!');
+        carregarDados();
+      }).catch(err => {
+        mostrarAviso('Erro', err.message);
+        btn.textContent = '💾 Lançar'; btn.disabled = false; salvandoGastoTrava = false;
+      });
     }
 
     // HISTÓRICO LOCAL 
@@ -969,16 +1735,39 @@
       return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
     }
 
-    function formatarInfoParcelaCard(p, r) { const l = String(p||'').replace(/^'/, '').trim(); return l === '∞/∞' ? 'Fixo (∞)' : (l ? `Parc: ${l}` : 'Parc: 1/1'); }
+    function formatarInfoParcelaCard(p, resObj) { 
+      const l = String(p||'').replace(/^'/, '').trim(); 
+      if (l === '∞/∞') return 'Fixo (∞)'; 
+      if (l.includes('/') && !l.endsWith('/1')) {
+        if (resObj && resObj.faltam > 0 && resObj.fimMes) return `Parc: ${l} <span class="text-sky-400 font-normal ml-1">Fim em ${resObj.fimMes}</span>`;
+        return `Parc: ${l}`;
+      }
+      return l ? `Parc: ${l}` : 'Parc: 1/1';
+    }
+
     function toggleAuditoriaRisco(el) { vibrar(10); el.classList.toggle('line-through'); el.classList.toggle('opacity-40'); }
 
     function renderTabelaLancamentos(lista, append = false) {
+      if (!append) itensFiltradosAtualCache = [...lista];
+      else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
+
       let html = '', bloco = '';
       lista.forEach(l => {
         const dL = l[0] || 'Sem data';
-        if (dL !== bloco) { bloco = dL; html += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${bloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`; }
-        const descSafe = String(l[1]).replace(/'/g, "\\'"), formaSafe = String(l[2]).replace(/'/g, "\\'"), catSafe = String(l[3]).replace(/'/g, "\\'");
-        html += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition"><div class="flex justify-between items-start gap-2"><div class="min-w-0 pr-2"><div class="text-white font-bold text-base cursor-pointer" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div><div class="text-[11px] text-slate-400 mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate">💳 ${l[2]} • 🏷️ ${l[3]}</div></div><div class="text-right shrink-0"><div class="valor-auditoria text-emerald-400 font-bold text-lg cursor-pointer" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent)">${l[7]}</div><div class="text-[10px] text-slate-400 mt-1 uppercase bg-slate-900 px-1.5 py-0.5 rounded-md">${formatarInfoParcelaCard(l[6])}</div></div></div><div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase ${obterClasseBadgeStatus(l[9])}">${l[9]}</span><span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span></div><div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50"><button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${String(l[11]||l[10]||'')}')" class="flex-1 text-emerald-400 text-[11px] font-bold py-2 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition">⚡ Repetir</button><button onclick="abrirModalEdicaoLanc('${l[10]||l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}','${String(l[11]||l[10]||'')}')" class="flex-1 text-purple-400 text-[11px] font-bold py-2 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition">Editar</button></div></div>`;
+        if (dL !== bloco && !append) { bloco = dL; html += `<div class="col-span-full mt-3 mb-1 pl-1"><h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">📅 ${bloco} <span class="h-px bg-slate-800 flex-1"></span></h4></div>`; }
+        const descSafe = String(l[1]).replace(/'/g, "\\'"), formaSafe = String(l[2]).replace(/'/g, "\\'"), catSafe = String(l[3]).replace(/'/g, "\\'"), tagSafe = String(l[10]||'').replace(/'/g, "\\'"), parcSafe = String(l[6]||'').replace(/'/g, "\\'");
+        
+        let tagsHtml = '';
+        if (l[10]) {
+          String(l[10]).split(',').map(t=>t.trim()).filter(Boolean).forEach(t => {
+            tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${t.replace(/'/g, "\\'")}')" class="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase mr-1 mt-1">${t}</button>`;
+          });
+        }
+        
+        const isAberto = String(l[9]).toLowerCase() === 'em aberto';
+        const btnEmp = isAberto ? `<button onclick="atalhoEmpurrarModalEdicao('${l[11]}','${String(l[0]).replace(/'/g, "\\'")}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${String(l[8]).replace(/'/g, "\\'")}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-sky-400 bg-sky-900/20 text-[11px] font-bold py-2 rounded-xl">⏩ Adiar</button>` : '';
+
+        html += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm hover:border-slate-600 transition"><div class="flex justify-between items-start gap-2"><div class="min-w-0 pr-2"><div class="text-white font-bold text-base cursor-pointer truncate" onclick="toggleAuditoriaRisco(this.parentElement.nextElementSibling.querySelector('.valor-auditoria'))">${l[1]}</div><div class="text-[11px] text-slate-400 mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50 truncate max-w-full">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right shrink-0"><div class="valor-auditoria text-emerald-400 font-bold text-lg cursor-pointer transition-all" onclick="toggleAuditoriaRisco(this)" ondblclick="copiarTextoAreaTransferencia(this.textContent)">${l[7]}</div><div class="text-[10px] text-slate-400 mt-1 uppercase bg-slate-900 px-1.5 py-0.5 rounded-md border border-slate-800">${formatarInfoParcelaCard(l[6], l[12])}</div></div></div><div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase ${obterClasseBadgeStatus(l[9])}">${l[9]}</span><span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span></div><div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50"><button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 text-[11px] font-bold py-2 bg-emerald-900/20 rounded-xl transition">⚡ Repetir</button>${btnEmp}<button onclick="abrirModalEdicaoLanc('${l[11]}','${String(l[0]).replace(/'/g, "\\'")}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${String(l[8]).replace(/'/g, "\\'")}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 text-[11px] font-bold py-2 bg-purple-900/20 rounded-xl transition">Editar</button></div></div>`;
       });
       const box = document.getElementById('lista-lancamentos');
       if (append) box.innerHTML += html; else box.innerHTML = html || '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado.</div>';
@@ -1003,7 +1792,9 @@
       document.getElementById('barraSomaFiltro')?.classList.add('hidden'); 
       itensFiltradosAtualCache = ultimosLancamentosCache;
       offsetAtual = 0;
+      aplicarFiltroRapidoHist('');
       renderTabelaLancamentos(itensFiltradosAtualCache.slice(0, LIMITE_PAGINA), false); 
+      document.getElementById('boxCarregarMais')?.classList.remove('hidden');
     }
     
     function temAlgumFiltroAtivo() { return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido); }
@@ -1021,12 +1812,12 @@
       let f = ultimosLancamentosCache || [];
 
       if (filtrosAtuais.tipoRapido === 'mesatual') f = f.filter(l => l[8] === evolucaoMesAtual);
-      else if (filtrosAtuais.tipoRapido === 'apagar') f = f.filter(l => String(l[9]).toLowerCase() === 'em aberto');
+      else if (filtrosAtuais.tipoRapido === 'apagar') f = f.filter(l => String(l[9]).toLowerCase() === 'em aberto' || String(l[9]).toLowerCase() === 'a pagar');
       else if (filtrosAtuais.tipoRapido === 'parcelados') f = f.filter(l => String(l[6]||'').includes('/') && String(l[6]) !== '∞/∞');
       else if (filtrosAtuais.tipoRapido === 'fixos') f = f.filter(l => String(l[6]) === '∞/∞');
       else if (filtrosAtuais.tipoRapido === 'pix') f = f.filter(l => String(l[2]).toLowerCase().includes('pix'));
 
-      if (filtrosAtuais.termo) f = f.filter(l => normalizarTexto(l[1]).includes(filtrosAtuais.termo) || normalizarTexto(l[3]).includes(filtrosAtuais.termo) || normalizarTexto(l[10]||l[11]||'').includes(filtrosAtuais.termo));
+      if (filtrosAtuais.termo) f = f.filter(l => normalizarTexto(l[1]).includes(filtrosAtuais.termo) || normalizarTexto(l[3]).includes(filtrosAtuais.termo) || normalizarTexto(l[10]||'').includes(filtrosAtuais.termo));
       if (filtrosAtuais.mes) f = f.filter(l => l[8] === filtrosAtuais.mes);
       if (filtrosAtuais.forma) f = f.filter(l => l[2] === filtrosAtuais.forma);
       if (filtrosAtuais.categoria) f = f.filter(l => l[3] === filtrosAtuais.categoria);
@@ -1040,7 +1831,7 @@
       }
       if (filtrosAtuais.tag) { 
         const arr = filtrosAtuais.tag.split(',').map(t=>t.trim()).filter(Boolean); 
-        f = f.filter(l => arr.every(tag => normalizarTexto(l[10]||l[11]||'').includes(tag))); 
+        f = f.filter(l => arr.every(tag => normalizarTexto(l[10]||'').includes(tag))); 
       }
 
       itensFiltradosAtualCache = f;
@@ -1113,7 +1904,7 @@
         mForma[fo].total += v; 
         if (abrt) mForma[fo].aberto += v;
         
-        const tags = (l[10] || l[11] || '').split(',').map(t=>t.trim()).filter(Boolean);
+        const tags = (l[10] || '').split(',').map(t=>t.trim()).filter(Boolean);
         tags.forEach(t => { 
           if (!mTag[t]) mTag[t] = { nome: t, total: 0, qtd: 0 }; 
           mTag[t].total += v; mTag[t].qtd += 1; 
@@ -1132,34 +1923,42 @@
       document.getElementById('rel-aberto').textContent = formatBRL(ab); 
       document.getElementById('rel-pago').textContent = formatBRL(pg); 
       document.getElementById('rel-total').textContent = formatBRL(tot);
-      document.getElementById('rel-sub-ticket').textContent = `🛒 ${list.length} itens`;
-      document.getElementById('rel-sub-pct').textContent = `✅ ${tot > 0 ? Math.round((pg/tot)*100) : 0}% quitado`;
-      document.getElementById('rel-sub-maior').textContent = `🔥 Maior gasto: ${formatBRL(maior)}`;
+      const subTk = document.getElementById('rel-sub-ticket'); if (subTk) subTk.textContent = `🛒 ${list.length} itens • Méd: ${formatBRL(tot/Math.max(1, list.length))}`;
+      const subPct = document.getElementById('rel-sub-pct'); if (subPct) subPct.textContent = `✅ ${tot > 0 ? Math.round((pg/tot)*100) : 0}% quitado`;
+      const subMaior = document.getElementById('rel-sub-maior'); if (subMaior) subMaior.textContent = `🔥 Maior gasto: ${formatBRL(maior)}`;
 
       const pAv = tot > 0 ? Math.round((av/tot)*100) : 0, pPr = tot > 0 ? Math.round((pr/tot)*100) : 0;
-      document.getElementById('bar-rel-avista').style.width = `${pAv}%`;
-      document.getElementById('bar-rel-rigido').style.width = `${pPr}%`;
-      document.getElementById('txt-rel-avista').textContent = `${formatBRL(av)} (${pAv}%)`;
-      document.getElementById('txt-rel-rigido').textContent = `${formatBRL(pr)} (${pPr}%)`;
+      const barAv = document.getElementById('bar-rel-avista'); if (barAv) barAv.style.width = `${pAv}%`;
+      const barPr = document.getElementById('bar-rel-rigido'); if (barPr) barPr.style.width = `${pPr}%`;
+      const txtAv = document.getElementById('txt-rel-avista'); if (txtAv) txtAv.textContent = `${formatBRL(av)} (${pAv}%)`;
+      const txtPr = document.getElementById('txt-rel-rigido'); if (txtPr) txtPr.textContent = `${formatBRL(pr)} (${pPr}%)`;
 
       if (chartRel) chartRel.destroy();
-      chartRel = new Chart(document.getElementById('chartRelatorio').getContext('2d'), { 
-        type: 'pie', data: { labels: ultimoRelatorioMensalCache.categorias.map(c => c.nome), datasets: [{ data: ultimoRelatorioMensalCache.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] }, 
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } 
-      });
+      const chartCnv = document.getElementById('chartRelatorio');
+      if (chartCnv) {
+        chartRel = new Chart(chartCnv.getContext('2d'), { 
+          type: 'pie', data: { labels: ultimoRelatorioMensalCache.categorias.map(c => c.nome), datasets: [{ data: ultimoRelatorioMensalCache.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] }, 
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } } 
+        });
+      }
 
-      document.getElementById('rel-formas-usadas').innerHTML = ultimoRelatorioMensalCache.formas.map(fo => {
-        const pct = tot > 0 ? Math.round((fo.total/tot)*100) : 0;
-        const foSafe = fo.nome.replace(/'/g, "\\'");
-        const btnQ = fo.aberto > 0 && !fo.nome.toLowerCase().includes('pix') ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${foSafe}', '${f}')" class="ml-2 bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px] shadow-sm">✅ Quitar</button>` : '';
-        return `<div onclick="aplicarFiltroInternoMensal('forma', '${foSafe}')" class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 cursor-pointer shadow-sm mb-1.5"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold text-xs">${fo.nome}</span><div class="flex items-center"><span class="text-white font-bold text-sm">${formatBRL(fo.total)}</span> <span class="text-[9px] text-slate-400 ml-1">(${pct}%)</span>${btnQ}</div></div></div>`;
-      }).join('') || '<p class="text-xs text-slate-500 text-center">Nenhuma forma.</p>';
+      const relF = document.getElementById('rel-formas-usadas');
+      if (relF) {
+        relF.innerHTML = ultimoRelatorioMensalCache.formas.map(fo => {
+          const pct = tot > 0 ? Math.round((fo.total/tot)*100) : 0;
+          const foSafe = fo.nome.replace(/'/g, "\\'");
+          const btnQ = fo.aberto > 0 && !fo.nome.toLowerCase().includes('pix') ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${foSafe}', '${f}')" class="ml-2 bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded text-[10px] shadow-sm">✅ Quitar</button>` : '';
+          return `<div onclick="aplicarFiltroInternoMensal('forma', '${foSafe}')" class="bg-slate-900/50 p-3 rounded-xl border border-slate-800 cursor-pointer shadow-sm mb-1.5"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold text-xs">${fo.nome}</span><div class="flex items-center"><span class="text-white font-bold text-sm">${formatBRL(fo.total)}</span> <span class="text-[9px] text-slate-400 ml-1">(${pct}%)</span>${btnQ}</div></div></div>`;
+        }).join('') || '<p class="text-xs text-slate-500 text-center">Nenhuma forma.</p>';
+      }
 
       const boxTags = document.getElementById('box-rel-tags'), cTags = document.getElementById('rel-tags-usadas');
-      if (ultimoRelatorioMensalCache.tags.length > 0) {
-        boxTags.classList.remove('hidden');
-        cTags.innerHTML = ultimoRelatorioMensalCache.tags.map(t => `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${t.nome.replace(/'/g,"\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-2.5 py-1.5 rounded-lg text-[11px] font-bold shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[9px] ml-0.5">(${t.qtd}x)</span></button>`).join('');
-      } else boxTags.classList.add('hidden');
+      if (boxTags && cTags) {
+        if (ultimoRelatorioMensalCache.tags.length > 0) {
+          boxTags.classList.remove('hidden');
+          cTags.innerHTML = ultimoRelatorioMensalCache.tags.map(t => `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${t.nome.replace(/'/g,"\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-2.5 py-1.5 rounded-lg text-[11px] font-bold shadow-sm">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[9px] ml-0.5">(${t.qtd}x)</span></button>`).join('');
+        } else boxTags.classList.add('hidden');
+      }
 
       let htmlMetas = ''; let temMeta = false;
       ultimoRelatorioMensalCache.categorias.forEach(c => {
@@ -1171,7 +1970,8 @@
           htmlMetas += `<div onclick="aplicarFiltroInternoMensal('categoria', '${c.nome.replace(/'/g,"\\'")}')" class="cursor-pointer bg-slate-900/40 p-2.5 rounded-xl border border-slate-800 mb-2"><div class="flex justify-between items-center text-[11px] font-semibold mb-1.5"><span class="text-slate-300 flex items-center gap-1.5">🏷️ ${c.nome}</span><span class="${corTxt} text-xs font-bold">${formatBRL(c.total)} / ${formatBRL(c.meta)} <span class="text-[9px] opacity-80">(${realPct.toFixed(0)}%)</span></span></div><div class="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
         }
       });
-      document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
+      const tMetas = document.getElementById('termometro-metas');
+      if (tMetas) tMetas.innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
       
       renderizarListaItensFaturaMensal();
     }
@@ -1190,27 +1990,34 @@
         const cat = l[3] || 'Outros'; if (!cMap[cat]) cMap[cat] = 0; cMap[cat] += v; 
         const fo = l[2] || 'Outros'; if (!fMap[fo]) fMap[fo] = 0; fMap[fo] += v;
         
-        const tags = (l[10] || l[11] || '').split(',').map(t=>t.trim()).filter(Boolean);
+        const tags = (l[10] || '').split(',').map(t=>t.trim()).filter(Boolean);
         tags.forEach(tg => { if (!tMap[tg]) tMap[tg] = {total: 0, qtd: 0}; tMap[tg].total += v; tMap[tg].qtd += 1; });
       });
 
       let maiorMesVal = 0, maiorMesNome = '-';
       Object.keys(mMap).forEach(k => { if (mMap[k] > maiorMesVal) { maiorMesVal = mMap[k]; maiorMesNome = getNomeMes(k); } });
 
-      document.getElementById('anual-total').textContent = formatBRL(tot); 
-      document.getElementById('anual-media').textContent = formatBRL(tot/12);
-      document.getElementById('anual-pico').textContent = maiorMesNome;
-      document.getElementById('anual-sub-qtd').textContent = `📊 ${list.length} transações no ano`;
-      document.getElementById('anual-sub-comp').textContent = 'Base Local';
+      const eTot = document.getElementById('anual-total'); if (eTot) eTot.textContent = formatBRL(tot); 
+      const eMed = document.getElementById('anual-media'); if (eMed) eMed.textContent = formatBRL(tot/12);
+      const ePic = document.getElementById('anual-pico'); if (ePic) ePic.textContent = maiorMesNome;
+      const eQtd = document.getElementById('anual-sub-qtd'); if (eQtd) eQtd.textContent = `📊 ${list.length} transações no ano`;
 
       if (chartAnualObj) chartAnualObj.destroy();
-      chartAnualObj = new Chart(document.getElementById('chartAnualBarras').getContext('2d'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], datasets: [{ data: Object.values(mMap), backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+      const cAnual = document.getElementById('chartAnualBarras');
+      if (cAnual) {
+        chartAnualObj = new Chart(cAnual.getContext('2d'), { type: 'bar', data: { labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'], datasets: [{ data: Object.values(mMap), backgroundColor: '#8b5cf6', borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+      }
 
-      document.getElementById('tabela-anual-cat').innerHTML = Object.keys(cMap).sort((A,B)=>cMap[B]-cMap[A]).map(k => `<tr onclick="auditarItemAnual('categoria', '${k.replace(/'/g,"\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${k}</td><td class="py-3 pr-2 text-right font-bold text-white text-sm">${formatBRL(cMap[k])} <span class="text-[10px] text-slate-500 font-normal ml-1">(${tot>0?Math.round((cMap[k]/tot)*100):0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>';
-      document.getElementById('tabela-anual-formas').innerHTML = Object.keys(fMap).sort((A,B)=>fMap[B]-fMap[A]).map(k => `<tr onclick="auditarItemAnual('forma', '${k.replace(/'/g,"\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${k}</td><td class="py-3 pr-2 text-right font-bold text-amber-400 text-sm">${formatBRL(fMap[k])} <span class="text-[10px] text-slate-500 font-normal ml-1">(${tot>0?Math.round((fMap[k]/tot)*100):0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum cartão.</td></tr>';
-      document.getElementById('lista-anual-tags').innerHTML = Object.keys(tMap).sort((A,B)=>tMap[B].total-tMap[A].total).map(k => `<button type="button" onclick="auditarItemAnual('tag', '${k.replace(/'/g,"\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">${k} • <span class="text-white">${formatBRL(tMap[k].total)}</span> <span class="text-indigo-400/80 text-[10px] ml-0.5">(${tMap[k].qtd}x)</span></button>`).join('') || '<p class="text-xs text-slate-500 py-2">Nenhuma tag.</p>';
+      const tbC = document.getElementById('tabela-anual-cat');
+      if (tbC) tbC.innerHTML = Object.keys(cMap).sort((A,B)=>cMap[B]-cMap[A]).map(k => `<tr onclick="auditarItemAnual('categoria', '${k.replace(/'/g,"\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${k}</td><td class="py-3 pr-2 text-right font-bold text-white text-sm">${formatBRL(cMap[k])} <span class="text-[10px] text-slate-500 font-normal ml-1">(${tot>0?Math.round((cMap[k]/tot)*100):0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>';
+      
+      const tbF = document.getElementById('tabela-anual-formas');
+      if (tbF) tbF.innerHTML = Object.keys(fMap).sort((A,B)=>fMap[B]-fMap[A]).map(k => `<tr onclick="auditarItemAnual('forma', '${k.replace(/'/g,"\\'")}')" class="border-b border-slate-800/50 hover:bg-slate-800/80 cursor-pointer transition"><td class="py-3 pl-2 text-slate-300 font-medium text-xs sm:text-sm">${k}</td><td class="py-3 pr-2 text-right font-bold text-amber-400 text-sm">${formatBRL(fMap[k])} <span class="text-[10px] text-slate-500 font-normal ml-1">(${tot>0?Math.round((fMap[k]/tot)*100):0}%)</span></td></tr>`).join('') || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum cartão.</td></tr>';
+      
+      const lT = document.getElementById('lista-anual-tags');
+      if (lT) lT.innerHTML = Object.keys(tMap).sort((A,B)=>tMap[B].total-tMap[A].total).map(k => `<button type="button" onclick="auditarItemAnual('tag', '${k.replace(/'/g,"\\'")}')" class="bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">${k} • <span class="text-white">${formatBRL(tMap[k].total)}</span> <span class="text-indigo-400/80 text-[10px] ml-0.5">(${tMap[k].qtd}x)</span></button>`).join('') || '<p class="text-xs text-slate-500 py-2">Nenhuma tag.</p>';
 
-      ultimoRelatorioAnualCache = { total: formatBRL(tot), media: formatBRL(tot/12), maiorMes: maiorMesNome, categorias: Object.keys(cMap).map(k=>({nome:k, total:cMap[k]})), totalRaw: tot };
+      ultimoRelatorioAnualCache = { total: formatBRL(tot), media: formatBRL(tot/12), maiorMes: maiorMesNome, totalRaw: tot };
     }
 
     function auditarItemAnual(tipo, valor) { vibrar(15); setAba('lancamentos'); document.getElementById('inpBusca').value = ''; document.getElementById('filtMes').value = ''; document.getElementById('filtForma').value = tipo === 'forma' ? valor : ''; document.getElementById('filtCat').value = tipo === 'categoria' ? valor : ''; document.getElementById('filtTag').value = tipo === 'tag' ? valor.replace(/^#/, '') : ''; document.getElementById('filtStatus').value = ''; filtrosAtuais.tipoRapido = ''; atualizarEstiloChipsRapidosHist(''); aplicarFiltros(); }
@@ -1234,7 +2041,7 @@
       html2pdf().set({ margin: 0.35, filename: nomeAr }).from(ct).save().then(() => document.body.removeChild(ct));
     }
 
-    // ============================================================================
+  // ============================================================================
     // PAINEL DE EVOLUÇÃO (HORIZONTE DASHBOARD)
     // ============================================================================
 
@@ -1478,7 +2285,7 @@
         opcoesTagsGlobal = dados.opcoesTags || [];
         if (dados.anotacoes) {
           notasGlobais = dados.anotacoes;
-          localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+          localStorage.setItem('notasLocaisGestorV12', JSON.stringify(notasGlobais));
         }
         if (dados.emprestimos) {
           emprestimosGlobal = dados.emprestimos;
@@ -1694,7 +2501,7 @@
     function carregarDados() {
       const cacheP = localStorage.getItem('cacheDadosGestorV12');
       if (cacheP && !dadosCarregadosIniciais) { try { renderizarDados(JSON.parse(cacheP)); } catch (e) { console.error(e); } }
-      const notasS = localStorage.getItem('notasLocaisGestorV11');
+      const notasS = localStorage.getItem('notasLocaisGestorV12');
       if (notasS && notasGlobais.length === 0) { try { notasGlobais = JSON.parse(notasS); } catch (e) {} }
 
       apiCall('getDadosCompletos').then(dados => { localStorage.setItem('cacheDadosGestorV12', JSON.stringify(dados)); renderizarDados(dados); })
