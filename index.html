@@ -79,7 +79,7 @@
     </button>
   </div>
 
-  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA -->
+  <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (COM OPÇÃO DE LOTE) -->
   <div id="modalConfirmacao" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[210] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center my-auto overflow-y-auto">
       <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
@@ -114,6 +114,7 @@
         </div>
       </div>
 
+      <!-- Grupo 1: Ferramentas Práticas e Empréstimos -->
       <div>
         <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-2.5 px-1">🧰 Ferramentas e Controle de Terceiros</span>
         <div class="grid grid-cols-2 gap-2.5">
@@ -162,6 +163,7 @@
         </div>
       </div>
 
+      <!-- Grupo 2: Relatórios -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Relatórios e Análises</span>
         <div class="grid grid-cols-1 gap-2.5">
@@ -178,6 +180,7 @@
         </div>
       </div>
 
+      <!-- Grupo 3: Gestão e Ajustes -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1684,7 +1687,7 @@
     function definirValorMoeda(inputOrId, valorFloat) {
       const el = typeof inputOrId === 'string' ? document.getElementById(inputOrId) : inputOrId;
       if (!el) return;
-      const num = Math.abs(Number(valorFloat || 0)); 
+      const num = Math.abs(Number(valorFloat || 0)); // Impede valores negativos acidentais
       if (num <= 0) { el.value = ''; return; }
       const centavos = Math.round(num * 100);
       el.value = formatBRL(centavos / 100);
@@ -1727,7 +1730,7 @@
         if (palavra.length > 1 && palavra === palavra.toUpperCase() && /[A-Z]/.test(palavra)) return palavra;
         let limpa = palavra.toLowerCase();
         const semAcento = normalizarTexto(limpa);
-        if (DICIONARIO_ACENTOS_PT[semAcento]) limpa = DICIONARIO_ACENTOS_PT[semAcento];
+        if (dicionarioPrefixosAutofill[semAcento]) limpa = dicionarioPrefixosAutofill[semAcento];
         const anterior = index > 0 ? palavras[index - 1] : '';
         if (index > 0 && anterior !== '-' && anterior !== '–' && conectivos.has(limpa)) return limpa;
         return limpa.charAt(0).toUpperCase() + limpa.slice(1);
@@ -2661,6 +2664,7 @@
 
       copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo copiado p/ o WhatsApp!');
     }
+
     // ============================================================================
     // EDIÇÃO, EXCLUSÃO E CONTEXTO DE MODAIS
     // ============================================================================
