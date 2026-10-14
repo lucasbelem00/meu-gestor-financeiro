@@ -3821,8 +3821,18 @@ function chamarFiltroBackend(append = false) {
         listaFormas.innerHTML = htmlP;
         if (listaFormas.sortableInstance) listaFormas.sortableInstance.destroy();
         if (modoEdicaoFormas) {
-          listaFormas.sortableInstance = new Sortable(listaFormas, { animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-fp', filter: '.locked-card', delay: 150, delayOnTouchOnly: true });
-        }
+         // Verifica se listaFormas existe e é um elemento HTML válido antes de aplicar o Sortable
+if (typeof listaFormas !== 'undefined' && listaFormas !== null) {
+  listaFormas.sortableInstance = new Sortable(listaFormas, { 
+    animation: 150, 
+    ghostClass: 'sortable-ghost', 
+    dragClass: 'sortable-drag', 
+    handle: '.drag-handle-fp', 
+    filter: '.locked-card', 
+    delay: 150, 
+    delayOnTouchOnly: true 
+  });
+}
       }
     }
 
@@ -3900,17 +3910,24 @@ function chamarFiltroBackend(append = false) {
         ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
       });
 
-      if (ul.sortableInstance) ul.sortableInstance.destroy();
-      if (modoEdicaoCategorias) {
-        ul.sortableInstance = new Sortable(ul, {
-          animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
-          onEnd: function () {
-            const nomes = Array.from(ul.children).map(li => li.getAttribute('data-nome'));
-            localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...nomes.filter(n => !isCategoriaOutros(n)), ...nomes.filter(n => isCategoriaOutros(n))]));
-            renderizarListaCategorias();
-          }
-        });
+     // Verifica se o 'ul' existe antes de tentar destruir ou criar o Sortable
+if (typeof ul !== 'undefined' && ul !== null) {
+  if (ul.sortableInstance) ul.sortableInstance.destroy();
+  
+  if (modoEdicaoCategorias) {
+    ul.sortableInstance = new Sortable(ul, {
+      animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
+      onEnd: function () {
+        // Proteção extra caso a lista fique vazia durante o arraste
+        if (ul && ul.children) {
+          const nomes = Array.from(ul.children).map(li => li.getAttribute('data-nome'));
+          localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...nomes.filter(n => !isCategoriaOutros(n)), ...nomes.filter(n => isCategoriaOutros(n))]));
+          renderizarListaCategorias();
+        }
       }
+    });
+  }
+}
     }
 
     let indexEdicaoCat = -1;
