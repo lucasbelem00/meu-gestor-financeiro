@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; overscroll-behavior-y: none; }
+html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; overscroll-behavior-y: none; }
     .card-glass { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
     .tab-btn-global { transition: all 0.2s ease; user-select: none; }
     .tab-btn-global.active { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
@@ -36,6 +36,9 @@
     .sortable-drag { cursor: grabbing !important; }
     .main-content { padding-bottom: 95px; }
     @media (min-width: 640px) { .main-content { padding-bottom: 32px; } }
+    input, select, textarea { font-size: 16px !important; }
+    input::-webkit-calendar-picker-indicator { display: none !important; }
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
     
     .btn-acao-lanc { display: none; }
     .modo-edicao-lanc .btn-acao-lanc { display: flex; }
@@ -239,126 +242,116 @@
           </div>
         </h2>
         <form id="formGasto" onsubmit="enviarGasto(event)" class="space-y-4"> 
-          <div class="grid grid-cols-2 gap-3">
+          <form id="formLancamento" onsubmit="enviarLancamento(event)" class="space-y-4 relative pb-6 pb-safe">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Data</label>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="vibrar(); definirDataOffset(-1)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-blue-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Ontem</button>
+                    <button type="button" onclick="vibrar(); definirDataOffset(0)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Hoje</button>
+                  </div>
+                </div>
+                <div class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
+                  <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')" oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo'); salvarRascunho()" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                  <span class="text-slate-500 font-bold select-none cursor-text" onclick="document.getElementById('inpDataDia').focus()">/</span>
+                  <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')" oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo'); salvarRascunho()" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                  <span class="text-slate-500 font-bold select-none cursor-text" onclick="document.getElementById('inpDataDia').focus()">/</span>
+                  <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataMes')" oninput="aoDigitarParteData(this, null, 4, 'novo'); salvarRascunho()" onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+                </div>
+                <input type="hidden" id="inpData">
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Mês Fatura</label>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpMesFat')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700 transition active:scale-95">◀</button>
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpMesFat')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
+                  </div>
+                </div>
+                <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
+              <div class="relative">
+                <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words" oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); salvarRascunho()" onpaste="extrairValorPixAoColar(event, 'inpValor', 'inpDesc')" onblur="aoSairDescricao()" placeholder="Ex: Gasolina, Açaí (Cole o Pix...)" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                <button type="button" id="btnLimparDesc" onclick="vibrar(); limparCampoEVoltarFoco('inpDesc', 'btnLimparDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
+              </div>
+              <p class="text-[10px] text-slate-500 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho.</p>
+              <datalist id="listaDescricoes"></datalist>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
+                <select id="selForma" onchange="verificarGastoFixo(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
+                  <option value="">Selecione...</option>
+                </select>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Categoria</label>
+                  <span id="visorMetaCategoria" class="text-[10px] font-bold text-slate-500 hidden px-2 py-0.5 bg-slate-800 rounded-lg border border-slate-700"></span>
+                </div>
+                <select id="selCategoria" onchange="atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
+                  <option value="">Selecione...</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1 mb-2">
+              <div id="boxValor" class="col-span-1">
+                <div class="flex items-center justify-between mb-1.5 gap-1">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
+                  <div class="flex items-center gap-1">
+                    <button type="button" id="btnDividirMetade" onclick="vibrar(); alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2</button>
+                  </div>
+                </div>
+                <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+              </div>
+              
+              <div id="boxParc">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
+                  <div class="flex gap-0.5 sm:gap-1">
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
+                  </div>
+                </div>
+                <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              </div>
+              
+              <div id="boxParcIni" class="hidden">
+                <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
+                <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              </div>
+            </div>
+
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Data</label>
-                <div class="flex gap-1">
-                  <button type="button" onclick="definirDataOffset(-1)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-blue-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Ontem</button>
-                  <button type="button" onclick="definirDataOffset(0)" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">Hoje</button>
-                </div>
+                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Tags (Opcional)</label>
+                <button type="button" id="btnGastoFixo" onclick="alternarGastoFixoUI()" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm">
+                  📌 Fixo
+                </button>
+                <input type="checkbox" id="inpFixo" class="hidden">
               </div>
-              <div class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition flex items-center justify-center sm:justify-start gap-1">
-                <input type="text" id="inpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" onkeydown="atalhoBarraData(event, this, 'inpDataMes', 'novo')" oninput="aoDigitarParteData(this, 'inpDataMes', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
-                <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataDia'); atalhoBarraData(event, this, 'inpDataAno', 'novo')" oninput="aoDigitarParteData(this, 'inpDataAno', 2, 'novo')" onblur="formatarZeroData(this, 2); validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-7 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
-                <span class="text-slate-500 font-bold select-none">/</span>
-                <input type="text" id="inpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" onkeydown="voltarParteData(event, this, 'inpDataMes')" oninput="aoDigitarParteData(this, null, 4, 'novo')" onblur="validarLimitesDataTripla('novo'); sincronizarDataTripla('novo', true)" class="w-12 bg-transparent text-center text-white outline-none focus:text-blue-400 transition">
+              <div class="relative">
+                <input type="text" id="inpTags" autocapitalize="none" list="listaTagsOpcionais" oninput="toggleBotaoLimpar('inpTags', 'btnLimparTags'); salvarRascunho()" placeholder="toque nas tags abaixo ou digite..." class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 outline-none transition">
+                <button type="button" id="btnLimparTags" onclick="vibrar(); limparCampoEVoltarFoco('inpTags', 'btnLimparTags')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
               </div>
-              <input type="hidden" id="inpData">
+              <div id="chipsTagsPopulares" class="flex flex-wrap gap-1.5 mt-2"></div>
+              <datalist id="listaTagsOpcionais"></datalist>
             </div>
-            <div>
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Mês Fatura</label>
-                <div class="flex gap-1">
-                  <button type="button" onclick="ajustarMesFatura(-1, 'inpMesFat')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700 transition active:scale-95">◀</button>
-                  <button type="button" onclick="ajustarMesFatura(1, 'inpMesFat')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
-                </div>
-              </div>
-              <input type="text" id="inpMesFat" placeholder="MM/AAAA" oninput="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
-            </div>
-          </div>
 
-          <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
-            <div class="relative">
-              <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words"
-                oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc')"
-                onpaste="extrairValorPixAoColar(event, 'inpValor', 'inpDesc')"
-                onblur="aoSairDescricao()"
-                placeholder="Ex: Gasolina, Açaí (Cole o Pix aqui...)" required
-                class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-3 text-white text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
-              <button type="button" id="btnLimparDesc" onclick="limparCampoTexto('inpDesc', 'btnLimparDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
+            <div class="sticky bottom-2 z-50 pt-2">
+              <button type="submit" id="btnSalvarL" onclick="vibrar()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
+                💾 Lançar Despesa
+              </button>
             </div>
-            <p class="text-[10px] text-slate-500 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho. Acentos são automáticos.</p>
-            <datalist id="listaDescricoes"></datalist>
-          </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
-              <select id="selForma" onchange="atualizarRegrasForma()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
-                <option value="">Selecione...</option>
-              </select>
-              <div id="infoCartaoSelecionado" class="hidden text-[10px] font-semibold mt-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight"></div>
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Categoria</label>
-              <select id="selCat" onchange="atualizarVisorMetaCategoria()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none transition">
-                <option value="">Selecione...</option>
-              </select>
-              <div id="infoMetaCategoria" class="hidden text-[10px] font-semibold mt-1.5 px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight"></div>
-            </div>
-          </div>
-
-          <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1 mb-2">
-            <div id="boxValor" class="col-span-1">
-              <div class="flex items-center justify-between mb-1.5 gap-1">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
-                <div class="flex items-center gap-1">
-                  <button type="button" id="btnSugestaoUltimoValor" onclick="aplicarUltimoValorSugerido()" class="hidden text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 transition"></button>
-                  <button type="button" id="btnDividirMetade" onclick="alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2 Metade</button>
-                </div>
-              </div>
-              <input type="text" inputmode="numeric" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcelas()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
-            </div>
-            
-            <div id="boxParc" class="relative">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
-                <div class="flex gap-0.5 sm:gap-1">
-                  <button type="button" onclick="document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
-                  <button type="button" onclick="document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
-                  <button type="button" onclick="document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
-                </div>
-              </div>
-              <input type="number" id="inpParc" value="1" min="1" oninput="atualizarLayoutParcelas(); atualizarPreviewParcelas()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
-              <div class="absolute -bottom-4 left-0 w-full text-center pointer-events-none">
-                <span id="lblPreviewParcelas" class="text-[10px] font-bold text-sky-400">À vista</span>
-              </div>
-            </div>
-            
-            <!-- Início alinhado à direita para evitar choque visual com os botões -->
-            <div id="boxParcIni" class="hidden">
-              <div class="flex justify-end mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide text-right w-full">Início</label>
-              </div>
-              <input type="number" id="inpParcIni" value="1" min="1" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
-            </div>
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-xs font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">🏷️ Tags (Opcional)</label>
-              <button type="button" id="btnSugestaoDivididoRapido" onclick="alternarMetadeValor()" class="hidden text-[10px] font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30 animate-pulse">➗ Dividir valor por 2?</button>
-            </div>
-            <div class="relative">
-              <input type="text" id="inpTags" list="listaTagsUI" autocapitalize="none" oninput="sincronizarChipsTags('novo'); toggleBotaoLimpar('inpTags', 'btnLimparTags')" placeholder="Toque nas tags abaixo ou digite..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-9 py-2.5 text-white text-sm focus:border-blue-500 outline-none transition lowercase">
-              <button type="button" id="btnLimparTags" onclick="limparCampoTexto('inpTags', 'btnLimparTags'); sincronizarChipsTags('novo')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-6 h-6 rounded-full items-center justify-center">✕</button>
-            </div>
-            <div id="chipsTagsNovo" class="flex flex-wrap gap-1.5 mt-2"></div>
-            <datalist id="listaTagsUI"></datalist>
-          </div>
-          
-          <div class="border border-slate-700 bg-slate-800/30 p-3 rounded-xl flex items-center gap-3">
-            <input type="checkbox" id="checkAssinatura" onchange="alternarModoAssinatura()" class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 bg-slate-900 border-slate-600">
-            <label for="checkAssinatura" class="text-sm font-bold text-blue-400 cursor-pointer w-full">Gasto Fixo / Assinatura Mensal</label>
-          </div>
-
-          <button type="submit" id="btnSalvar" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm py-3.5 rounded-xl shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition transform active:scale-95 mt-2">
-            💾 Lançar
-          </button>
-        </form>
+          </form>
       </div>
     </div> 
 
@@ -668,23 +661,22 @@
             <button type="button" onclick="limparFormularioEmprestimo()" class="shrink-0 text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition shadow-sm">🧹 Limpar</button>
           </div>
 
-         <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-4">
+         <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-4 relative pb-6 pb-safe">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <!-- Alterado para apenas "Data" -->
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Data</label>
                   <div class="flex gap-1">
-                    <button type="button" onclick="definirDataOffsetEmprestimo(-1)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-blue-400 border border-slate-700 font-bold transition">Ontem</button>
-                    <button type="button" onclick="definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold transition">Hoje</button>
+                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(-1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-blue-400 font-bold active:scale-95">Ontem</button>
+                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 font-bold active:scale-95">Hoje</button>
                   </div>
                 </div>
-                <div class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-2 py-2.5 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-1">
-                  <input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
-                  <span class="text-slate-500">/</span>
-                  <input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2)" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
-                  <span class="text-slate-500">/</span>
-                  <input type="text" id="inpEmpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, null, 4)" onblur="sincronizarDataEmp()" class="w-11 bg-transparent text-center text-white outline-none">
+                <div class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-2 text-white font-semibold flex items-center justify-center gap-1">
+                  <input type="text" id="inpEmpDataDia" inputmode="numeric" maxlength="2" placeholder="DD" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataMes', 2); salvarRascunhoEmp()" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500 cursor-text" onclick="document.getElementById('inpEmpDataDia').focus()">/</span>
+                  <input type="text" id="inpEmpDataMes" inputmode="numeric" maxlength="2" placeholder="MM" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, 'inpEmpDataAno', 2); salvarRascunhoEmp()" onblur="formatarZeroData(this, 2); sincronizarDataEmp()" class="w-6 bg-transparent text-center text-white outline-none">
+                  <span class="text-slate-500 cursor-text" onclick="document.getElementById('inpEmpDataDia').focus()">/</span>
+                  <input type="text" id="inpEmpDataAno" inputmode="numeric" maxlength="4" placeholder="AAAA" required onfocus="this.select()" oninput="aoDigitarParteDataEmp(this, null, 4); salvarRascunhoEmp()" onblur="sincronizarDataEmp()" class="w-11 bg-transparent text-center text-white outline-none">
                 </div>
                 <input type="hidden" id="inpEmpData">
               </div>
@@ -693,18 +685,18 @@
                 <div class="flex items-center justify-between mb-1">
                   <label class="block text-[11px] font-bold text-slate-400 uppercase">1ª Fatura</label>
                   <div class="flex gap-1">
-                    <button type="button" onclick="ajustarMesFatura(-1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">◀</button>
-                    <button type="button" onclick="ajustarMesFatura(1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 active:scale-95">◀</button>
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 active:scale-95">▶</button>
                   </div>
                 </div>
-                <input type="text" id="inpEmpMesFat" placeholder="MM/AAAA" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm font-semibold outline-none focus:border-amber-500">
+                <input type="text" id="inpEmpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white focus:border-amber-500 outline-none">
               </div>
 
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
-                <div class="relative flex flex-col justify-end h-full">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa')" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
-                  <button type="button" id="btnLimparEmpPessoa" onclick="limparCampoTexto('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-5 h-5 rounded-full items-center justify-center">✕</button>
+                <div class="relative">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold outline-none focus:border-amber-500">
+                  <button type="button" id="btnLimparEmpPessoa" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
               </div>
@@ -714,13 +706,13 @@
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">O que foi comprado (Descrição)</label>
                 <div class="relative">
-                  <input type="text" id="inpEmpDesc" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpDesc', 'btnLimparEmpDesc')" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Tênis, Celular, Passagem" required class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
-                  <button type="button" id="btnLimparEmpDesc" onclick="limparCampoTexto('inpEmpDesc', 'btnLimparEmpDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-5 h-5 rounded-full items-center justify-center">✕</button>
+                  <input type="text" id="inpEmpDesc" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpDesc', 'btnLimparEmpDesc'); salvarRascunhoEmp()" placeholder="Ex: Tênis, Celular" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-white outline-none focus:border-amber-500">
+                  <button type="button" id="btnLimparEmpDesc" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpDesc', 'btnLimparEmpDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cartão Emprestado</label>
-                <select id="selEmpForma" onchange="atualizarFaturaEmprestimo()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+                <select id="selEmpForma" onchange="atualizarFaturaEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white outline-none focus:border-amber-500">
                   <option value="">Selecione o cartão...</option>
                 </select>
               </div>
@@ -729,40 +721,37 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label>
-                <input type="text" id="inpEmpValor" inputmode="numeric" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcEmp()" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-emerald-400 font-bold text-sm outline-none focus:border-amber-500">
-              </div>
-              
-              <div class="relative">
-                <div class="flex justify-between items-center mb-1">
-                  <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
-                  <div class="flex gap-0.5 sm:gap-1">
-                    <button type="button" onclick="document.getElementById('inpEmpParc').value='3'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
-                    <button type="button" onclick="document.getElementById('inpEmpParc').value='6'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
-                    <!-- Adicionado atalho de 12x e removido o de 10x para manter apenas 3 botões em telas pequenas -->
-                    <button type="button" onclick="document.getElementById('inpEmpParc').value='12'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
-                  </div>
-                </div>
-                <input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarPreviewParcEmp()" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
-                <div class="absolute -bottom-4 w-full text-center pointer-events-none"><span id="lblPreviewParcEmp" class="text-[9px] font-bold text-sky-400">À vista</span></div>
+                <input type="text" inputmode="decimal" id="inpEmpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-emerald-400 font-bold focus:border-amber-500 outline-none">
               </div>
               
               <div>
-                <!-- Início alinhado à direita para evitar choque visual com os botões -->
-                <div class="flex justify-end mb-1">
-                   <label class="text-[11px] font-bold text-slate-400 uppercase text-right w-full">Parc. Inicial</label>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
+                  <div class="flex gap-0.5 sm:gap-1">
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
+                  </div>
                 </div>
-                <input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
+                <input type="number" id="inpEmpParc" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+              </div>
+              
+              <div>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
+                <input type="number" id="inpEmpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
               </div>
               
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label>
-                <input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs sm:text-sm outline-none focus:border-amber-500">
+                <input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" oninput="salvarRascunhoEmp()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white outline-none focus:border-amber-500">
               </div>
             </div>
 
-            <button type="submit" id="btnSalvarEmp" class="w-full mt-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-xs sm:text-sm shadow-md transition active:scale-95">
-              💾 Registrar Empréstimo no Cartão
-            </button>
+            <div class="sticky bottom-2 z-50 pt-2">
+              <button type="submit" id="btnSalvarEmp" onclick="vibrar()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-sm shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
+                💾 Registrar Empréstimo
+              </button>
+            </div>
           </form>
         </div>
 
@@ -1405,6 +1394,7 @@
       </form>
     </div>
   </div>
+  
     <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -4731,6 +4721,83 @@ function limparSimuladorTudo() {
           }
        }
     }
+
+// --- 1. UX NATIVA: Feedback Tátil e Foco Automático ---
+    function vibrar() {
+      if (navigator.vibrate) navigator.vibrate(15);
+    }
+    
+    function limparCampoEVoltarFoco(idInput, idBotao) {
+      const campo = document.getElementById(idInput);
+      if(campo) { campo.value = ''; campo.focus(); }
+      const btn = document.getElementById(idBotao);
+      if(btn) btn.classList.add('hidden');
+    }
+
+    // --- 2. UX: O Novo Botão Inteligente "Fixo" ---
+    function alternarGastoFixoUI() {
+      vibrar();
+      const chk = document.getElementById('inpFixo');
+      const btn = document.getElementById('btnGastoFixo');
+      if(!chk || !btn) return;
+      chk.checked = !chk.checked;
+      
+      if (chk.checked) {
+        btn.classList.replace('bg-slate-800', 'bg-emerald-600');
+        btn.classList.replace('text-slate-400', 'text-white');
+        btn.classList.replace('border-slate-700', 'border-emerald-500');
+        mostrarAviso('Gasto Fixo Ativo', 'Este lançamento vai repetir-se todos os meses automaticamente.');
+      } else {
+        btn.classList.replace('bg-emerald-600', 'bg-slate-800');
+        btn.classList.replace('text-white', 'text-slate-400');
+        btn.classList.replace('border-emerald-500', 'border-slate-700');
+      }
+      salvarRascunho();
+    }
+
+    // --- 3. MÁSCARA INTELIGENTE DO MÊS FATURA (MM/AAAA) ---
+    function mascaraMesFaturaAPI(input) {
+      let v = input.value.replace(/\D/g, ''); // Remove tudo que não é número
+      if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 6); // Coloca a barra
+      input.value = v;
+    }
+
+    // --- 4. RASCUNHO AUTO-SAVE (Prevenção contra perda de dados offline) ---
+    function salvarRascunho() {
+      const rascunho = {
+        desc: document.getElementById('inpDesc')?.value || '',
+        valor: document.getElementById('inpValor')?.value || '',
+        parc: document.getElementById('inpParc')?.value || '1',
+        forma: document.getElementById('selForma')?.value || ''
+      };
+      sessionStorage.setItem('rascunhoLancamento', JSON.stringify(rascunho));
+    }
+    
+    function salvarRascunhoEmp() {
+      const rascunho = {
+        pessoa: document.getElementById('inpEmpPessoa')?.value || '',
+        desc: document.getElementById('inpEmpDesc')?.value || '',
+        valor: document.getElementById('inpEmpValor')?.value || ''
+      };
+      sessionStorage.setItem('rascunhoEmprestimo', JSON.stringify(rascunho));
+    }
+
+    // Recupera os dados se o utilizador atualizar a página acidentalmente
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const salvoL = sessionStorage.getItem('rascunhoLancamento');
+        if (salvoL) {
+           const d = JSON.parse(salvoL);
+           if(document.getElementById('inpDesc') && !document.getElementById('inpDesc').value) document.getElementById('inpDesc').value = d.desc;
+           if(document.getElementById('inpValor') && !document.getElementById('inpValor').value) document.getElementById('inpValor').value = d.valor;
+        }
+        const salvoE = sessionStorage.getItem('rascunhoEmprestimo');
+        if (salvoE) {
+           const e = JSON.parse(salvoE);
+           if(document.getElementById('inpEmpPessoa') && !document.getElementById('inpEmpPessoa').value) document.getElementById('inpEmpPessoa').value = e.pessoa;
+        }
+      }, 500); // Aguarda o carregamento base
+    });
   
     window.onload = carregarDados;
   </script>
