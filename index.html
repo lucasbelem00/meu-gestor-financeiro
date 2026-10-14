@@ -23,44 +23,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; overscroll-behavior-y: none; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b1120; color: #f8fafc; }
+    html, body { overscroll-behavior-y: none; } /* Impede o Pull-to-Refresh acidental */
+    
     .card-glass { background: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
     .tab-btn-global { transition: all 0.2s ease; user-select: none; }
     .tab-btn-global.active { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
+    
+    /* Barras de Rolagem Invisíveis/Elegantes */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #0f172a; }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    
+    /* Configurações de Arrastar/Soltar (Sortable) */
     .sortable-ghost { opacity: 0.4; background-color: #334155 !important; border-radius: 0.5rem; }
     .sortable-drag { cursor: grabbing !important; }
+    
+    /* Margem de Segurança do Conteúdo Principal */
     .main-content { padding-bottom: 95px; }
     @media (min-width: 640px) { .main-content { padding-bottom: 32px; } }
-    input, select, textarea { font-size: 16px !important; }
-    input::-webkit-calendar-picker-indicator { display: none !important; }
-    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
-    
-    .btn-acao-lanc { display: none; }
-    .modo-edicao-lanc .btn-acao-lanc { display: flex; }
-    
-    select.minimal {
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-      background-repeat: no-repeat;
-      background-position: right 0.5rem top 50%;
-      background-size: 0.65rem auto;
-      padding-right: 1.5rem;
-    }
 
-    #toastNotificacao {
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
-      transform: translate(-50%, -20px) scale(0.9);
-      opacity: 0;
-    }
-    #toastNotificacao.show {
-      transform: translate(-50%, 0) scale(1);
-      opacity: 1;
-    }
+    /* --- MELHORIAS UX/UI NATIVAS DESTA ATUALIZAÇÃO --- */
+    input, select, textarea { font-size: 16px !important; } /* Previne o Zoom automático no iPhone/Android */
+    input::-webkit-calendar-picker-indicator { display: none !important; } /* Oculta a seta chata do Datalist */
+    
+    /* Remove setas de aumentar/diminuir dos campos numéricos */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    
+    /* Margem segura para os botões fixos não colidirem com o sistema do telemóvel */
+    .pb-safe { padding-bottom: env(safe-area-inset-bottom, 24px); } 
   </style>
 </head>
 <body class="min-h-screen flex flex-col relative">
@@ -242,7 +237,7 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
           </div>
         </h2>
         <form id="formGasto" onsubmit="enviarGasto(event)" class="space-y-4"> 
-          <form id="formLancamento" onsubmit="enviarLancamento(event)" class="space-y-4 relative pb-6 pb-safe">
+          <form id="formLancamento" onsubmit="enviarLancamento(event)" class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <div class="flex items-center justify-between mb-1.5">
@@ -269,14 +264,14 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
                     <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpMesFat')" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
                   </div>
                 </div>
-                <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-semibold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-semibold focus:border-blue-500 outline-none transition">
               </div>
             </div>
 
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Descrição do Gasto</label>
               <div class="relative">
-                <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words" oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); salvarRascunho()" onpaste="extrairValorPixAoColar(event, 'inpValor', 'inpDesc')" onblur="aoSairDescricao()" placeholder="Ex: Gasolina, Açaí (Cole o Pix...)" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words" oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); salvarRascunho()" onpaste="extrairValorPixAoColar(event, 'inpValor', 'inpDesc')" onblur="aoSairDescricao()" placeholder="Ex: Gasolina, Açaí (Cole o Pix...)" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 outline-none transition">
                 <button type="button" id="btnLimparDesc" onclick="vibrar(); limparCampoEVoltarFoco('inpDesc', 'btnLimparDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
               </div>
               <p class="text-[10px] text-slate-500 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho.</p>
@@ -303,29 +298,29 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
 
             <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1 mb-2">
               <div id="boxValor" class="col-span-1">
-                <div class="flex items-center justify-between mb-1.5 gap-1">
+                <div class="flex items-end justify-between h-[28px] mb-1.5 gap-1">
                   <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
-                  <div class="flex items-center gap-1">
-                    <button type="button" id="btnDividirMetade" onclick="vibrar(); alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2</button>
-                  </div>
+                  <button type="button" id="btnDividirMetade" onclick="vibrar(); alternarMetadeValor()" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">÷2</button>
                 </div>
-                <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 outline-none transition">
               </div>
               
               <div id="boxParc">
-                <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-end justify-between h-[28px] mb-1.5">
                   <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
-                  <div class="flex gap-0.5 sm:gap-1">
-                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); salvarRascunho()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
+                  <div class="flex gap-1 mb-0.5">
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); salvarRascunho()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); salvarRascunho()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); salvarRascunho()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
                   </div>
                 </div>
                 <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
               </div>
               
               <div id="boxParcIni" class="hidden">
-                <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
+                <div class="flex items-end h-[28px] mb-1.5">
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Início</label>
+                </div>
                 <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
               </div>
             </div>
@@ -346,10 +341,14 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
               <datalist id="listaTagsOpcionais"></datalist>
             </div>
 
-            <div class="sticky bottom-2 z-50 pt-2">
-              <button type="submit" id="btnSalvarL" onclick="vibrar()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
-                💾 Lançar Despesa
-              </button>
+            <!-- Botão Fixo Elegante e Seguro -->
+            <div class="h-24"></div> <!-- Espaço fantasma para o conteúdo rolar até o fim -->
+            <div class="fixed bottom-0 left-0 w-full p-4 bg-slate-950/80 backdrop-blur-md z-50 border-t border-slate-800/50 pb-safe sm:relative sm:bg-transparent sm:border-none sm:p-0">
+              <div class="max-w-md mx-auto sm:max-w-none">
+                <button type="submit" id="btnSalvarL" onclick="vibrar()" class="w-full h-[52px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
+                  💾 Lançar Despesa
+                </button>
+              </div>
             </div>
           </form>
       </div>
@@ -661,14 +660,14 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
             <button type="button" onclick="limparFormularioEmprestimo()" class="shrink-0 text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition shadow-sm">🧹 Limpar</button>
           </div>
 
-         <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-4 relative pb-6 pb-safe">
+        <form id="formEmprestimo" onsubmit="enviarEmprestimo(event)" class="space-y-4">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Data</label>
                   <div class="flex gap-1">
-                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(-1)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-blue-400 font-bold active:scale-95">Ontem</button>
-                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-emerald-400 font-bold active:scale-95">Hoje</button>
+                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(-1)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-blue-400 border border-slate-700 font-bold transition active:scale-95">Ontem</button>
+                    <button type="button" onclick="vibrar(); definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold transition active:scale-95">Hoje</button>
                   </div>
                 </div>
                 <div class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-2 text-white font-semibold flex items-center justify-center gap-1">
@@ -685,8 +684,8 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
                 <div class="flex items-center justify-between mb-1">
                   <label class="block text-[11px] font-bold text-slate-400 uppercase">1ª Fatura</label>
                   <div class="flex gap-1">
-                    <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 active:scale-95">◀</button>
-                    <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 active:scale-95">▶</button>
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">◀</button>
+                    <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
                   </div>
                 </div>
                 <input type="text" id="inpEmpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white focus:border-amber-500 outline-none">
@@ -727,10 +726,10 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
-                  <div class="flex gap-0.5 sm:gap-1">
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; salvarRascunhoEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
+                  <div class="flex gap-1">
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
                   </div>
                 </div>
                 <input type="number" id="inpEmpParc" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
@@ -747,10 +746,14 @@ html, body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0b
               </div>
             </div>
 
-            <div class="sticky bottom-2 z-50 pt-2">
-              <button type="submit" id="btnSalvarEmp" onclick="vibrar()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3.5 rounded-xl text-sm shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
-                💾 Registrar Empréstimo
-              </button>
+            <!-- Botão Fixo Elegante e Seguro -->
+            <div class="h-24"></div> <!-- Espaço fantasma -->
+            <div class="fixed bottom-0 left-0 w-full p-4 bg-slate-950/80 backdrop-blur-md z-50 border-t border-slate-800/50 pb-safe sm:relative sm:bg-transparent sm:border-none sm:p-0">
+              <div class="max-w-md mx-auto sm:max-w-none">
+                <button type="submit" id="btnSalvarEmp" onclick="vibrar()" class="w-full h-[52px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
+                  💾 Registrar Empréstimo
+                </button>
+              </div>
             </div>
           </form>
         </div>
