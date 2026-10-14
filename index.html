@@ -319,7 +319,6 @@
                 <div class="flex gap-0.5 sm:gap-1">
                   <button type="button" onclick="document.getElementById('inpParc').value='3'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
                   <button type="button" onclick="document.getElementById('inpParc').value='6'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
-                  <button type="button" onclick="document.getElementById('inpParc').value='10'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
                   <button type="button" onclick="document.getElementById('inpParc').value='12'; atualizarLayoutParcelas(); atualizarPreviewParcelas()" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
                 </div>
               </div>
@@ -329,8 +328,11 @@
               </div>
             </div>
             
+            <!-- Início alinhado à direita para evitar choque visual com os botões -->
             <div id="boxParcIni" class="hidden">
-              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Início</label>
+              <div class="flex justify-end mb-1.5">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide text-right w-full">Início</label>
+              </div>
               <input type="number" id="inpParcIni" value="1" min="1" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm font-bold text-center focus:border-blue-500 outline-none transition">
             </div>
           </div>
@@ -670,7 +672,8 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <label class="text-[11px] font-bold text-slate-400 uppercase">Data Compra</label>
+                  <!-- Alterado para apenas "Data" -->
+                  <label class="text-[11px] font-bold text-slate-400 uppercase">Data</label>
                   <div class="flex gap-1">
                     <button type="button" onclick="definirDataOffsetEmprestimo(-1)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-blue-400 border border-slate-700 font-bold transition">Ontem</button>
                     <button type="button" onclick="definirDataOffsetEmprestimo(0)" class="text-[9px] bg-slate-800 hover:bg-slate-700 px-1.5 py-0.5 rounded text-emerald-400 border border-slate-700 font-bold transition">Hoje</button>
@@ -699,7 +702,7 @@
 
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
-                <div class="relative">
+                <div class="relative flex flex-col justify-end h-full">
                   <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa')" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe, Amigo..." required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-8 py-2.5 text-amber-300 font-bold text-xs sm:text-sm outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="limparCampoTexto('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white text-xs bg-slate-800 w-5 h-5 rounded-full items-center justify-center">✕</button>
                 </div>
@@ -735,7 +738,8 @@
                   <div class="flex gap-0.5 sm:gap-1">
                     <button type="button" onclick="document.getElementById('inpEmpParc').value='3'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
                     <button type="button" onclick="document.getElementById('inpEmpParc').value='6'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
-                    <button type="button" onclick="document.getElementById('inpEmpParc').value='10'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
+                    <!-- Adicionado atalho de 12x e removido o de 10x para manter apenas 3 botões em telas pequenas -->
+                    <button type="button" onclick="document.getElementById('inpEmpParc').value='12'; atualizarPreviewParcEmp()" class="text-[9px] bg-slate-800 px-1 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
                   </div>
                 </div>
                 <input type="number" id="inpEmpParc" value="1" min="1" max="48" oninput="atualizarPreviewParcEmp()" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
@@ -743,7 +747,10 @@
               </div>
               
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
+                <!-- Início alinhado à direita para evitar choque visual com os botões -->
+                <div class="flex justify-end mb-1">
+                   <label class="text-[11px] font-bold text-slate-400 uppercase text-right w-full">Parc. Inicial</label>
+                </div>
                 <input type="number" id="inpEmpParcIni" value="1" min="1" max="48" required class="w-full h-[48px] bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm font-bold text-center outline-none focus:border-amber-500">
               </div>
               
@@ -954,7 +961,6 @@
               <div class="flex gap-0.5 sm:gap-1">
                 <button type="button" onclick="setParcelasSimulador(3)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">3x</button>
                 <button type="button" onclick="setParcelasSimulador(6)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">6x</button>
-                <button type="button" onclick="setParcelasSimulador(10)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">10x</button>
                 <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
               </div>
             </div>
