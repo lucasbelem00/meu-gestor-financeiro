@@ -2887,7 +2887,129 @@ function chamarFiltroBackend(append = false) {
       });
     }
 
-   unction renderizarPainelEmprestimos() {
+   function renderizarPainelEmprestimos() {
+      const kpis = emprestimosGlobal.kpis || {};
+      if (document.getElementById('emp-kpi-mes')) document.getElementById('emp-kpi-mes').textContent = kpis.aReceberMes || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-recebido')) document.getElementById('emp-kpi-recebido').textContent = kpis.recebidoMes || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-total')) document.getElementById('emp-kpi-total').textContent = kpis.totalAReceberGeral || 'R$ 0,00';
+      if (document.getElementById('emp-kpi-limite')) document.getElementById('emp-kpi-limite').textContent = kpis.limiteOcupado || 'R$ 0,00';
+
+      const chipsPessoas = document.getElementById('chipsPessoasEmp');
+      const pFreq = emprestimosGlobal.pessoasFrequentes || [];
+      if (chipsPessoas) {
+        chipsPessoas.innerHTML = pFreq.slice(0, 8).map(p => {
+          const pSafe = String(p || '').replace(/'/g, "\\'");
+          return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition">👤 ${p}</button>`;
+        }).join('');
+      }
+
+      const todosItens = emprestimosGlobal.itens || [];
+      const selMes = document.getElementById('selFiltroMesEmp');
+      const selPes = document.getElementById('selFiltroPessoaEmp');
+      const selSt = document.getElementById('selFiltroStatusEmp');
+
+      if (selMes && selPes) {
+        const vMes = selMes.value, vPes = selPes.value;
+        const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).filter(Boolean))].sort((a, b) => {
+          const [mA, aA] = String(a).split('/').map(Number), [mB, aB] = String(b).split('/').map(Number);
+          return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
+        });
+        selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${m}">${m}</option>`).join('');
+        selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pFreq.map(p => `<option value="${p}">${p}</option>`).join('');
+        if (vMes && mesesEmp.includes(vMes)) selMes.value = vMes;
+        else if (! selMes.dataset.iniciado && evolucaoMesAtual && mesesEmp.includes(evolucaoMesAtual)) {
+          selMes.value = evolucaoMesAtual;
+          selMes.dataset.iniciado = '1';
+        }
+        if (vPes && pFreq.includes(vPes)) selPes.value = vPes;
+      }
+
+      const fMes = selMes?.value || '';
+      const fPes = selPes?.value || '';
+      const fSt = selSt?.value || '';
+
+      const filtrados = todosItens.filter(item => {
+        if (fMes && item.mesFatura !== fMes) return false;
+        if (fPes && item.pessoa !== fPes) return false;
+        if (fSt && item.status !== fSt) return false;
+        return true;
+      });
+
+      const mapaPessoas = {};
+      filtrados.forEach(it => {
+        const pessoaNome = String(it.pessoa || 'Desconhecido');
+        if (!mapaPessoas[pessoaNome]) mapaPessoas[pessoaNome] = { nome: pessoaNome, aReceber: 0, recebido: 0, itens: [] };
+        if (it.status === 'Recebido') mapaPessoas[pessoaNome].recebido += (it.valorRaw || 0);
+        else mapaPessoas[pessoaNome].aReceber += (it.valorRaw || 0);
+        mapaPessoas[pessoaNome].itens.push(it);
+      });
+
+      const boxPessoas = document.getElementById('listaResumoPessoasEmp');
+      const arrPessoas = Object.values(mapaPessoas).sort((a, b) => b.aReceber - a.aReceber);
+      
+      if (boxPessoas) {
+        if (arrPessoas.length === 0) {
+          boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
+        } else {
+          boxPessoas.innerHTML = arrPessoas.map(p => {
+            const pSafe = String(p.nome).replace(/'/g, "\\'");
+            const btnQuitarMes = p.aReceber > 0
+              ? `<button onclick="quitarMesPessoaEmprestimo('${pSafe}', '${fMes}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">✅ Quitar ${fMes || 'Tudo'}</button>`
+              : '';
+            return `<div class="bg-slate-900/70 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between gap-3">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h4 class="text-white font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${p.nome}</h4>
+                  <span class="text-[11px] text-slate-400">${p.itens.length} parcela(s) ${fMes ? `em ${fMes}` : 'listadas'}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] font-bold text-slate-400 uppercase block">A Receber</span>
+                  <strong class="text-amber-400 text-base sm:text-lg">${formatBRL(p.aReceber)}</strong>
+                </div>
+              </div>
+              <div class="flex gap-2 pt-2 border-t border-slate-800">
+                <button onclick="copiarCobrancaPessoaWhats('${pSafe}')" class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">📲 Cobrar no WhatsApp</button>
+                ${btnQuitarMes}
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const boxItens = document.getElementById('listaItensEmprestimos');
+      if (boxItens) {
+        if (filtrados.length === 0) {
+          boxItens.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma parcela encontrada.</div>';
+        } else {
+          boxItens.innerHTML = filtrados.map(it => {
+            const pSafe = String(it.pessoa || '').replace(/'/g, "\\'");
+            const dSafe = String(it.descricao || '').replace(/'/g, "\\'");
+            const parcSafe = String(it.parcela || '').replace(/'/g, "\\'");
+            const isRec = it.status === 'Recebido';
+            const badge = obterClasseBadgeStatus(it.status);
+            return `<div class="bg-slate-800/40 border border-slate-700/70 p-3.5 rounded-2xl flex flex-col gap-2">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${it.pessoa} • ${it.data}</span>
+                  <div class="text-white font-bold text-sm mt-0.5">${it.descricao}</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">💳 ${it.forma} • Fat: <strong class="text-slate-200">${it.mesFatura}</strong> • Parc: <strong>${it.parcela}</strong></div>
+                  ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${it.observacoes}</div>` : ''}
+                </div>
+                <div class="text-right">
+                  <div class="text-emerald-400 font-bold text-base">${it.valorFmt}</div>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${it.status}</span>
+                </div>
+              </div>
+            <div class="flex gap-2 pt-2 border-t border-slate-700/40">
+                <button onclick="alternarStatusItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="flex-1 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : '✅ Marcar Recebido'}</button>
+                <button onclick="abrirModalEdicaoEmp('${it.linha}', '${it.data}', '${pSafe}', '${dSafe}', '${it.forma}', '${it.valorRaw}', '${it.mesFatura}', '${it.status}', '${parcSafe}', '${it.observacoes ? String(it.observacoes).replace(/'/g, "\\'") : ''}')" class="bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">Editar</button>
+                <button onclick="excluirItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️</button>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
+    }
 
     function alternarStatusItemEmprestimo(linha, pessoa, descricao, parcela) {
       apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela })
