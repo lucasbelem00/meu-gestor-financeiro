@@ -309,9 +309,9 @@
               <div class="flex items-end justify-between h-[28px] mb-1.5">
                 <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
                 <div class="flex gap-1.5">
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="px-2.5 py-1 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 rounded-lg transition active:scale-95">3x</button>
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="px-2.5 py-1 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 rounded-lg transition active:scale-95">6x</button>
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(12, 'novo')" class="px-2.5 py-1 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 rounded-lg transition active:scale-95">12x</button>
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="w-8 text-center py-0.5 rounded border border-indigo-500/30 bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[10px] transition active:scale-95">3x</button>
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="w-8 text-center py-0.5 rounded border border-indigo-500/30 bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[10px] transition active:scale-95">6x</button>
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(12, 'novo')" class="w-8 text-center py-0.5 rounded border border-indigo-500/30 bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[10px] transition active:scale-95">12x</button>
                 </div>
               </div>
               <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
@@ -342,8 +342,6 @@
             <datalist id="listaTagsOpcionais"></datalist>
           </div>
 
-          <!-- BOTÃO FIXO E SEGURO (Acima do Menu Mobile) -->
-          <div class="h-16 sm:h-4"></div>
           <div class="fixed bottom-[68px] sm:bottom-0 left-0 w-full p-4 bg-slate-950/95 sm:bg-transparent sm:p-0 z-40 border-t border-slate-800 sm:border-none shadow-[0_-10px_20px_rgba(0,0,0,0.5)] sm:shadow-none">
             <div class="max-w-md mx-auto sm:max-w-none">
               <button type="submit" id="btnSalvar" onclick="vibrar()" class="w-full h-[54px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
@@ -747,8 +745,6 @@
               </div>
             </div>
 
-           <!-- BOTÃO FIXO E SEGURO (Acima do Menu Mobile) - Empréstimos -->
-            <div class="h-16 sm:h-4"></div> <!-- Espaço fantasma para garantir que nada fica tapado -->
             <div class="fixed bottom-[68px] sm:bottom-0 left-0 w-full p-4 bg-slate-950/95 sm:bg-transparent sm:p-0 z-40 border-t border-slate-800 sm:border-none shadow-[0_-10px_20px_rgba(0,0,0,0.5)] sm:shadow-none">
               <div class="max-w-md mx-auto sm:max-w-none">
                 <button type="submit" id="btnSalvarEmp" onclick="vibrar()" class="w-full h-[54px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
@@ -1482,8 +1478,21 @@
       el.value = formatBRL(centavos / 100);
     }
 
-    function normalizarTexto(str) {
+  function normalizarTexto(str) {
       return String(str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    }
+
+    function getCategoriaExibicao(nomeBruto) {
+      if (!nomeBruto) return 'Outros';
+      let match = categoriasGlobaisEdit.find(c => c.nome === nomeBruto);
+      if (match) return match.nome;
+      const cleanBruto = normalizarTexto(nomeBruto).replace(/[^\w\s]/gi, '').trim().toLowerCase();
+      match = categoriasGlobaisEdit.find(c => {
+          const cleanCat = normalizarTexto(c.nome).replace(/[^\w\s]/gi, '').trim().toLowerCase();
+          return cleanCat === cleanBruto && cleanBruto.length > 0;
+      });
+      if (match) return match.nome;
+      return nomeBruto;
     }
 
     const DICIONARIO_ACENTOS_PT = {
@@ -1564,19 +1573,16 @@
       }
     }
 
-    function mostrarAviso(titulo, mensagem) {
+   function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
       if(!toast) return;
       document.getElementById('toastTitulo').textContent = titulo;
       document.getElementById('toastMensagem').textContent = mensagem;
-      
-      // Usa as classes modernas do Tailwind para mostrar e esconder com suavidade
-      toast.classList.remove('opacity-0', 'translate-y-[-20px]');
-      toast.classList.add('opacity-100', 'translate-y-0');
-      
+      toast.style.opacity = '1';
+      toast.style.transform = 'translate(-50%, 0)';
       setTimeout(() => { 
-        toast.classList.remove('opacity-100', 'translate-y-0'); 
-        toast.classList.add('opacity-0', 'translate-y-[-20px]');
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -20px)';
       }, 3000);
     }
 
@@ -2437,7 +2443,7 @@
             <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${l[9]}</span>
             <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
           </div>
-          <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50">
+          <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50" style="display: ${modoEdicaoLancamentos ? 'flex' : 'none'};">
             <button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
             <button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
             <button onclick="excluirLancamentoLocal('${l[10]}','${descSafe}','${parcSafe}','${l[8]}')" class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
@@ -3727,11 +3733,13 @@ function chamarFiltroBackend(append = false) {
     function toggleEdicaoLancamentos() {
       modoEdicaoLancamentos = !modoEdicaoLancamentos;
       const btn = document.getElementById('btnToggleEdicaoLanc');
-      const boxLanc = document.getElementById('lista-lancamentos');
+      const botoesAcao = document.querySelectorAll('.btn-acao-lanc');
       if (modoEdicaoLancamentos) {
-        btn.classList.replace('bg-slate-700', 'bg-amber-500'); btn.innerHTML = '❌ Fechar'; boxLanc?.classList.add('modo-edicao-lanc');
+        if(btn) { btn.classList.replace('bg-slate-700', 'bg-amber-500'); btn.innerHTML = '❌ Fechar'; }
+        botoesAcao.forEach(b => b.style.display = 'flex');
       } else {
-        btn.classList.replace('bg-amber-500', 'bg-slate-700'); btn.innerHTML = '⚙️ Organizar'; boxLanc?.classList.remove('modo-edicao-lanc');
+        if(btn) { btn.classList.replace('bg-amber-500', 'bg-slate-700'); btn.innerHTML = '⚙️ Organizar'; }
+        botoesAcao.forEach(b => b.style.display = 'none');
       }
     }
 
