@@ -3817,6 +3817,7 @@ function chamarFiltroBackend(append = false) {
           htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPix ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
         });
       }
+      
       const listaFormas = document.getElementById('lista-formas');
       if (listaFormas) {
         listaFormas.innerHTML = htmlP;
@@ -3830,6 +3831,7 @@ function chamarFiltroBackend(append = false) {
           } catch (e) {}
         }
       }
+    }
 
     function abrirModalForma(nome = '', banco = '', limite = '', fechamento = '', vencimento = '') {
       document.getElementById('modalFormaTitle').innerHTML = nome ? '✏️ Editar Cartão' : '➕ Novo Cartão';
@@ -3905,14 +3907,13 @@ function chamarFiltroBackend(append = false) {
         ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
       });
 
-    // Verifica se o 'ul' existe antes de tentar destruir ou criar o Sortable
+      // Verifica se o 'ul' existe antes de tentar destruir ou criar o Sortable
       if (typeof ul !== 'undefined' && ul !== null) {
         if (ul.sortableInstance) ul.sortableInstance.destroy();
         if (modoEdicaoCategorias) {
           try {
             ul.sortableInstance = new Sortable(ul, {
-              animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', 
-              handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
+              animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
               onEnd: function () {
                 if (ul && ul.children) {
                   const nomes = Array.from(ul.children).map(li => li.getAttribute('data-nome'));
@@ -3925,7 +3926,7 @@ function chamarFiltroBackend(append = false) {
         }
       }
     }
-
+      
     let indexEdicaoCat = -1;
     function editarCategoriaUi(index) {
       const c = categoriasGlobaisEdit[index];
