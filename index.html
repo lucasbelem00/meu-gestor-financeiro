@@ -281,7 +281,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
-              <select id="selForma" onchange="verificarGastoFixo(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
+              <select id="selForma" onchange="atualizarRegrasForma(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
                 <option value="">Selecione...</option>
               </select>
             </div>
@@ -749,6 +749,7 @@
               </button>
             </div>
           </form>
+         </div>
 
         <!-- Filtros e Resumo Agrupado por Pessoa (Cobrança Rápida no WhatsApp) -->
         <div class="card-glass p-5 space-y-4">
@@ -2280,7 +2281,11 @@
     }
 
     function limparFormularioNovoGasto() {
-      document.getElementById('formGasto')?.reset();
+      document.getElementById('formLancamento')?.reset();
+document.getElementById('inpDesc').value = '';
+sessionStorage.removeItem('rascunhoLancamento');
+const bf = document.getElementById('btnGastoFixo');
+if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm';
       document.getElementById('selForma').value = '';
       document.getElementById('selCat').value = '';
       document.getElementById('inpMesFat').value = '';
@@ -4538,7 +4543,7 @@ function chamarFiltroBackend(append = false) {
         definirDataHoje();
         definirDataHojeEmprestimo();
         document.getElementById('selForma').value = '';
-        document.getElementById('selCategoria').value = '';
+        document.getElementById('selCat').value = '';
         document.getElementById('inpMesFat').value = '';
         document.getElementById('simCartao').value = '';
         atualizarLayoutParcelas();
@@ -4764,24 +4769,20 @@ function limparSimuladorTudo() {
 
     // --- 2. UX: O Novo Botão Inteligente "Fixo" ---
     function alternarGastoFixoUI() {
-      vibrar();
-      const chk = document.getElementById('inpFixo');
-      const btn = document.getElementById('btnGastoFixo');
-      if(!chk || !btn) return;
-      chk.checked = !chk.checked;
-      
-      if (chk.checked) {
-        btn.classList.replace('bg-slate-800', 'bg-emerald-600');
-        btn.classList.replace('text-slate-400', 'text-white');
-        btn.classList.replace('border-slate-700', 'border-emerald-500');
-        mostrarAviso('Gasto Fixo Ativo', 'Este lançamento vai repetir-se todos os meses automaticamente.');
-      } else {
-        btn.classList.replace('bg-emerald-600', 'bg-slate-800');
-        btn.classList.replace('text-white', 'text-slate-400');
-        btn.classList.replace('border-emerald-500', 'border-slate-700');
-      }
-      salvarRascunho();
-    }
+  vibrar();
+  const chk = document.getElementById('checkAssinatura');
+  const btn = document.getElementById('btnGastoFixo');
+  if (!chk || !btn) return;
+  chk.checked = !chk.checked;
+  if (chk.checked) {
+    btn.className = 'text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-1 rounded-lg border border-emerald-500 transition active:scale-95 flex items-center gap-1 shadow-sm';
+    mostrarAviso('Gasto Fixo Ativo', 'Este lançamento vai se repetir todos os meses.');
+  } else {
+    btn.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm';
+  }
+  atualizarLayoutParcelas();
+  salvarRascunho();
+}
 
     // --- 3. MÁSCARA INTELIGENTE DO MÊS FATURA (MM/AAAA) ---
     function mascaraMesFaturaAPI(input) {
