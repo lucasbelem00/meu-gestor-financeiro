@@ -1212,7 +1212,15 @@ function getDadosCompletos() {
     const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
     const lancSheet = ss.getSheetByName('Lançamentos');
     const notasSheet = ss.getSheetByName('Anotações');
-    const empSheet = ss.getSheetByName('Empréstimos');
+    // Cria a aba uma única vez, inclusive antes do primeiro empréstimo. O lock
+    // evita que duas primeiras cargas tentem criá-la ao mesmo tempo.
+    let empSheet = ss.getSheetByName('Empréstimos');
+    if (!empSheet) {
+      const lockCriacaoEmprestimos = LockService.getScriptLock();
+      lockCriacaoEmprestimos.waitLock(10000);
+      try { empSheet = garantirAbaEmprestimos(ss); }
+      finally { lockCriacaoEmprestimos.releaseLock(); }
+    }
     const nomesConfigCat = listarNomesCategoriasConfig(dashSheet);
 
     // CORRIGIDO: manutenção da planilha agora protegida por lock (evita conflito com gravações)
@@ -1496,6 +1504,8 @@ function getDadosCompletos() {
     let terceirosAbertoMesPorForma = {};
     let terceirosFuturoPorForma = {};
     let terceirosTotalMesPorForma = {};
+    let terceirosAReceberPorMes = {};
+    let terceirosCartaoPorFormaMes = {};
     let empKpiAReceberMes = 0, empKpiRecebidoMes = 0, empKpiTotalAReceberGeral = 0, empKpiLimiteOcupado = 0;
     let empKpiAtrasados = 0;
     let freqPessoasEmp = {};
@@ -1528,6 +1538,11 @@ function getDadosCompletos() {
         }
 
         if (valParc > 0) {
+          if (infoFat.time > 0) {
+            mesesUnicos.push(mesFat);
+            setMeses.add(mesFat);
+          }
+
           if (mesFat === mesAtualStr) {
             if (consomeLimiteCartao) {
               terceirosTotalMesPorForma[chaveForma] = (terceirosTotalMesPorForma[chaveForma] || 0) + valParc;
@@ -1538,18 +1553,26 @@ function getDadosCompletos() {
 
           if (!recebido) {
             empKpiTotalAReceberGeral += valParc;
+            if (infoFat.time > 0) {
+              terceirosAReceberPorMes[mesFat] = (terceirosAReceberPorMes[mesFat] || 0) + valParc;
+            }
 
             if (infoFat.time > 0 && infoFat.time < timeMesAtual) {
               empKpiAtrasados += valParc;
             }
+          }
 
-            if (consomeLimiteCartao && infoFat.time >= timeMesAtual) {
-              empKpiLimiteOcupado += valParc;
-              if (mesFat === mesAtualStr) {
-                terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + valParc;
-              } else if (infoFat.time > timeMesAtual) {
-                terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + valParc;
-              }
+          if (consomeLimiteCartao && infoFat.time >= timeMesAtual) {
+            if (!terceirosCartaoPorFormaMes[chaveForma]) terceirosCartaoPorFormaMes[chaveForma] = {};
+            terceirosCartaoPorFormaMes[chaveForma][mesFat] = (terceirosCartaoPorFormaMes[chaveForma][mesFat] || 0) + valParc;
+
+            // A devolução da pessoa não quita a fatura do banco. Por isso o limite
+            // continua ocupado pela parcela do cartão, mesmo com status Recebido.
+            empKpiLimiteOcupado += valParc;
+            if (mesFat === mesAtualStr) {
+              terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + valParc;
+            } else if (infoFat.time > timeMesAtual) {
+              terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + valParc;
             }
           }
         }
@@ -1582,7 +1605,11 @@ function getDadosCompletos() {
       if (m === mesAtualStr) return true;
       let somaMes = 0;
       for (let f in pivotFaturas) somaMes += (pivotFaturas[f][m] || 0);
-      return somaMes > 0;
+      const somaTerceirosAReceber = terceirosAReceberPorMes[m] || 0;
+      const somaTerceirosCartao = Object.keys(terceirosCartaoPorFormaMes).reduce(function (acc, forma) {
+        return acc + ((terceirosCartaoPorFormaMes[forma] || {})[m] || 0);
+      }, 0);
+      return somaMes > 0 || somaTerceirosAReceber > 0 || somaTerceirosCartao > 0;
     }).sort((a, b) => parseMesFat(a).time - parseMesFat(b).time);
 
     let mesesContinuos = mesesComGasto.length > 0 ? mesesComGasto : [mesAtualStr];
@@ -1645,7 +1672,7 @@ function getDadosCompletos() {
         const meses = pivotFaturas[fNomeTrim] || {};
         mesesContinuos.forEach(m => {
           if (meses[m] > 0) pivotTotalCarteira[m] += meses[m];
-          const tercMesGeral = listaEmprestimos.filter(it => it.forma === fNomeTrim && it.mesFatura === m).reduce((acc, it) => acc + it.valorRaw, 0);
+          const tercMesGeral = (terceirosCartaoPorFormaMes[fNomeTrim] || {})[m] || 0;
           pivotTotalBanco[m] += (meses[m] || 0) + tercMesGeral;
         });
 
@@ -1672,7 +1699,10 @@ function getDadosCompletos() {
     });
 
     const chaveTotalCarteira = listaFormasPagto.find(f => f.nome.toLowerCase().includes('total') || f.nome.toLowerCase().includes('carteira'))?.nome || 'Total Carteira';
+    const pivotTerceirosAReceber = {};
+    mesesContinuos.forEach(function (m) { pivotTerceirosAReceber[m] = terceirosAReceberPorMes[m] || 0; });
     pivotFaturas[chaveTotalCarteira] = pivotTotalCarteira;
+    pivotFaturas['__TERCEIROS_A_RECEBER__'] = pivotTerceirosAReceber;
     pivotFaturas['__BANCO_TOTAL__'] = pivotTotalBanco;
 
     listaFormasPagto.forEach(f => {

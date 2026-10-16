@@ -90,6 +90,33 @@
     </div>
   </div>
 
+  <div id="modalPixCobranca" role="dialog" aria-modal="true" aria-labelledby="tituloModalPixCobranca" class="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center z-[610] hidden px-4" onclick="if(event.target === this) fecharModalPixCobranca()">
+    <div class="bg-slate-800 border border-slate-600 w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 rounded-2xl shadow-2xl space-y-3">
+      <div class="flex items-center justify-between gap-3">
+        <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📋 Confira a mensagem</h3>
+        <button type="button" onclick="fecharModalPixCobranca()" aria-label="Fechar" class="text-slate-400 hover:text-white bg-slate-700 px-2.5 py-1 rounded-lg">✕</button>
+      </div>
+      <textarea id="textoModalPixCobranca" rows="9" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
+      <label id="linhaIncluirPixCobranca" class="hidden flex items-start gap-2.5 rounded-xl bg-slate-900/70 border border-slate-700 p-3 cursor-pointer">
+        <input id="chkIncluirPixCobranca" type="checkbox" class="mt-0.5 w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
+        <span class="text-xs text-slate-200">Incluir minha chave Pix nesta mensagem</span>
+      </label>
+      <div id="configPixCobranca" class="hidden rounded-xl bg-slate-900/70 border border-slate-700 p-3 space-y-2">
+        <label for="inpChavePixCobranca" class="block text-xs font-bold text-slate-300">Sua chave Pix para cobranças</label>
+        <input id="inpChavePixCobranca" type="text" maxlength="160" autocomplete="off" placeholder="CPF, e-mail, telefone ou chave aleatória" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+        <p class="text-[10px] text-slate-400">Fica salva somente neste navegador/aparelho. Não vai para a planilha.</p>
+        <div class="flex gap-2">
+          <button type="button" id="btnSalvarChavePixCobranca" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs">Salvar chave</button>
+          <button type="button" id="btnRemoverChavePixCobranca" class="hidden bg-rose-600/20 border border-rose-500/30 text-rose-300 font-bold px-3 rounded-lg text-xs">Remover</button>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" id="btnAbrirConfigPixCobranca" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold px-3 py-2.5 rounded-xl text-xs">⚙️ Configurar Pix</button>
+        <button type="button" id="btnCopiarPixCobranca" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs">Copiar mensagem</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
   <div id="modalMenuMobile" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
     <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-24 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
@@ -173,7 +200,7 @@
       <!-- Grupo 3: Gestão e Ajustes -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <button onclick="setAba('assinaturas')" id="btn-menu-assinaturas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-base">🔄</div>
@@ -200,6 +227,16 @@
               <div>
                 <div class="text-xs sm:text-sm font-bold text-white">Categorias e Metas</div>
                 <div class="text-[10px] text-slate-400 sm:hidden">Tetos de gastos</div>
+              </div>
+            </div>
+          </button>
+
+          <button onclick="abrirModalPixCobranca()" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/15 border border-emerald-500/25 text-left transition active:scale-95 gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-base">🔑</div>
+              <div>
+                <div class="text-xs sm:text-sm font-bold text-white">Chave Pix de Cobrança</div>
+                <div class="text-[10px] text-slate-400 sm:hidden">Opcional nas mensagens</div>
               </div>
             </div>
           </button>
@@ -629,7 +666,7 @@
     <!-- ABA 6: CENTRAL DE FERRAMENTAS PRÁTICAS (5 FERRAMENTAS INTEGRADAS) -->
     <div id="view-ferramentas" class="hidden space-y-5 max-w-4xl mx-auto">
       <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
-        <button onclick="selecionarSubFerramenta('emprestimos')" id="btn-sub-emprestimos" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition">🤝 Empréstimos</button>
+        <button onclick="selecionarSubFerramenta('emprestimos')" id="btn-sub-emprestimos" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-700 text-white transition">🤝 Empréstimos</button>
         <button onclick="selecionarSubFerramenta('rachadinha')" id="btn-sub-rachadinha" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🍻 Dividir c/ Galera</button>
         <button onclick="selecionarSubFerramenta('simulador')" id="btn-sub-simulador" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🛍️ Simular Compra</button>
         <button onclick="selecionarSubFerramenta('calculadora')" id="btn-sub-calculadora" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">🧮 Calculadora</button>
@@ -701,7 +738,7 @@
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
                 <div class="relative">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold outline-none focus:border-amber-500">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold placeholder:font-normal placeholder:text-amber-300/60 outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -718,7 +755,7 @@
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Como você pagou?</label>
-                <select id="selEmpForma" onchange="atualizarFaturaEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white outline-none focus:border-amber-500">
+                <select id="selEmpForma" aria-label="Forma de pagamento do empréstimo" onchange="atualizarFaturaEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white outline-none focus:border-amber-500">
                   <option value="">Selecione o cartão ou Pix...</option>
                 </select>
               </div>
@@ -739,12 +776,12 @@
                     <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
                   </div>
                 </div>
-                <input type="number" id="inpEmpParc" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+                  <input type="number" id="inpEmpParc" aria-label="Quantidade total de parcelas" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
               </div>
               
               <div>
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
-                <input type="number" id="inpEmpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+                <input type="number" id="inpEmpParcIni" aria-label="Número da primeira parcela a registrar" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
               </div>
               
               <div class="col-span-2 sm:col-span-1">
@@ -768,18 +805,22 @@
               <h3 class="text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
               <p class="text-[11px] text-slate-400">Filtre o mês da fatura para cobrar e dar baixa rapidamente.</p>
             </div>
-            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
-              <select id="selFiltroMesEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
+              <select id="selFiltroMesEmp" aria-label="Filtrar empréstimos por mês da fatura" onchange="renderizarPainelEmprestimos()" class="minimal min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500">
                 <option value="">Todos os Meses</option>
               </select>
-              <select id="selFiltroPessoaEmp" onchange="renderizarPainelEmprestimos()" class="minimal flex-1 sm:flex-none bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+              <select id="selFiltroPessoaEmp" aria-label="Filtrar empréstimos por pessoa" onchange="renderizarPainelEmprestimos()" class="minimal min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500">
                 <option value="">Todas as Pessoas</option>
               </select>
-              <select id="selFiltroStatusEmp" onchange="renderizarPainelEmprestimos()" class="minimal bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold outline-none">
+              <select id="selFiltroStatusEmp" aria-label="Filtrar empréstimos por status de recebimento" onchange="renderizarPainelEmprestimos()" class="minimal min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500">
                 <option value="A Receber">⏳ A Receber</option>
                 <option value="">Todos Status</option>
                 <option value="Recebido">✅ Recebidos</option>
               </select>
+              <select id="selFiltroFormaEmp" aria-label="Filtrar empréstimos por forma de pagamento" onchange="renderizarPainelEmprestimos()" class="minimal min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500">
+                <option value="">Todas as Formas</option>
+              </select>
+              <input id="inpBuscaEmp" type="search" aria-label="Buscar empréstimos por texto" placeholder="🔎 Pessoa, descrição, data..." oninput="renderizarPainelEmprestimos()" class="col-span-2 sm:col-span-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs outline-none placeholder:text-slate-400 focus:border-amber-500">
             </div>
           </div>
 
@@ -1604,6 +1645,98 @@
       }
     }
 
+    const CHAVE_PIX_COBRANCA_LOCAL = 'gestorPixCobrancaV1';
+
+    function lerChavePixCobranca() {
+      try { return String(localStorage.getItem(CHAVE_PIX_COBRANCA_LOCAL) || '').trim(); }
+      catch (e) { return ''; }
+    }
+
+    function fecharModalPixCobranca() {
+      const modal = document.getElementById('modalPixCobranca');
+      if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    }
+
+    function abrirModalPixCobranca() {
+      fecharMenuMobile();
+      abrirPreviaCobrancaWhats('', '', true);
+    }
+
+    function abrirPreviaCobrancaWhats(textoBase, mensagemSucesso, somenteConfiguracao = false) {
+      const modal = document.getElementById('modalPixCobranca');
+      if (!modal) { copiarTextoAreaTransferencia(textoBase, mensagemSucesso); return; }
+
+      const titulo = document.getElementById('tituloModalPixCobranca');
+      const texto = document.getElementById('textoModalPixCobranca');
+      const check = document.getElementById('chkIncluirPixCobranca');
+      const linhaCheck = document.getElementById('linhaIncluirPixCobranca');
+      const areaConfig = document.getElementById('configPixCobranca');
+      const campoPix = document.getElementById('inpChavePixCobranca');
+      const botaoConfig = document.getElementById('btnAbrirConfigPixCobranca');
+      const botaoCopiar = document.getElementById('btnCopiarPixCobranca');
+      const botaoSalvar = document.getElementById('btnSalvarChavePixCobranca');
+      const botaoRemover = document.getElementById('btnRemoverChavePixCobranca');
+      const chaveAtual = lerChavePixCobranca();
+
+      modal._textoBaseCobranca = String(textoBase || '');
+      modal._mensagemSucessoCobranca = mensagemSucesso || 'Mensagem copiada para o WhatsApp.';
+      modal._somenteConfiguracaoPix = Boolean(somenteConfiguracao);
+      titulo.textContent = somenteConfiguracao ? '🔑 Minha chave Pix de cobrança' : '📋 Confira a mensagem';
+      texto.value = modal._textoBaseCobranca;
+      texto.classList.toggle('hidden', Boolean(somenteConfiguracao));
+      botaoCopiar.classList.toggle('hidden', Boolean(somenteConfiguracao));
+      botaoConfig.classList.toggle('hidden', Boolean(somenteConfiguracao));
+      areaConfig.classList.toggle('hidden', !somenteConfiguracao);
+      campoPix.value = chaveAtual;
+      botaoRemover.classList.toggle('hidden', !chaveAtual);
+      check.checked = false;
+      check.disabled = !chaveAtual;
+      linhaCheck.classList.toggle('hidden', Boolean(somenteConfiguracao) || !chaveAtual);
+
+      const atualizarPreview = function () {
+        const chave = lerChavePixCobranca();
+        check.disabled = !chave;
+        linhaCheck.classList.toggle('hidden', Boolean(modal._somenteConfiguracaoPix) || !chave);
+        const complemento = check.checked && chave ? `\n\n🔑 *Minha chave Pix:* ${chave}` : '';
+        texto.value = modal._textoBaseCobranca + complemento;
+      };
+
+      botaoConfig.onclick = function () {
+        areaConfig.classList.toggle('hidden');
+        campoPix.focus();
+      };
+      botaoSalvar.onclick = function () {
+        const chave = String(campoPix.value || '').trim();
+        if (!chave) { mostrarAviso('Atenção', 'Digite uma chave Pix ou use Remover para apagar a salva.'); return; }
+        try { localStorage.setItem(CHAVE_PIX_COBRANCA_LOCAL, chave); }
+        catch (e) { mostrarAviso('Erro', 'Não foi possível salvar a chave neste aparelho.'); return; }
+        check.checked = false;
+        atualizarPreview();
+        mostrarAviso('Salvo neste aparelho', 'A chave só será incluída quando você marcar a opção na mensagem.');
+        if (modal._somenteConfiguracaoPix) fecharModalPixCobranca();
+        else areaConfig.classList.add('hidden');
+      };
+      botaoRemover.onclick = function () {
+        try { localStorage.removeItem(CHAVE_PIX_COBRANCA_LOCAL); }
+        catch (e) { mostrarAviso('Erro', 'Não foi possível remover a chave salva.'); return; }
+        campoPix.value = '';
+        check.checked = false;
+        atualizarPreview();
+        mostrarAviso('Chave removida', 'A chave Pix foi apagada deste aparelho.');
+        if (modal._somenteConfiguracaoPix) fecharModalPixCobranca();
+      };
+      check.onchange = atualizarPreview;
+      botaoCopiar.onclick = function () {
+        copiarTextoAreaTransferencia(texto.value, modal._mensagemSucessoCobranca);
+        fecharModalPixCobranca();
+      };
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      atualizarPreview();
+      if (somenteConfiguracao) campoPix.focus();
+    }
+
    function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
       if(!toast) return;
@@ -1841,6 +1974,7 @@
           fecharModalForma();
           fecharModalEdicaoLanc();
           fecharModalEdicaoAss();
+          fecharModalPixCobranca();
           document.getElementById('modalConfirmacao')?.classList.add('hidden');
         }
       });
@@ -1875,7 +2009,21 @@
       navDesktop.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-desk-menu" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs text-slate-300 hover:text-white transition cursor-pointer">☰ <span id="txt-desk-menu">Menu</span></button>`;
       navMobile.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-mob-menu" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl text-slate-300 transition active:scale-95"><span class="text-lg mb-0.5 leading-none">☰</span><span id="txt-mob-menu" class="text-[10px] font-bold tracking-tight">Menu</span></button>`;
 
+      atualizarNavegacaoResponsiva();
+      if (!window._ouvindoMudancaLarguraNav) {
+        window._ouvindoMudancaLarguraNav = true;
+        window.matchMedia('(max-width: 639px)').addEventListener('change', atualizarNavegacaoResponsiva);
+      }
+
       setAba('novo', false);
+    }
+
+    function atualizarNavegacaoResponsiva() {
+      const emTelaPequena = window.matchMedia('(max-width: 639px)').matches;
+      const navDesktop = document.getElementById('barraNavegacaoDesktop');
+      const navMobile = document.getElementById('barraNavegacaoMobile');
+      if (navDesktop) { navDesktop.inert = emTelaPequena; navDesktop.setAttribute('aria-hidden', String(emTelaPequena)); }
+      if (navMobile) { navMobile.inert = !emTelaPequena; navMobile.setAttribute('aria-hidden', String(!emTelaPequena)); }
     }
 
     function setAba(aba, salvar = true) {
@@ -1888,7 +2036,8 @@
       if (subMobile && configAtiva) subMobile.textContent = configAtiva.tituloD;
 
       abasConfig.forEach(a => {
-        const view = document.getElementById('view-' + a.id); if (view) view.classList.add('hidden');
+        const view = document.getElementById('view-' + a.id);
+        if (view) { view.classList.add('hidden'); view.inert = true; view.setAttribute('aria-hidden', 'true'); }
         const btnD = document.getElementById('btn-desk-' + a.id);
         const btnM = document.getElementById('btn-mob-' + a.id);
         const btnMenuModal = document.getElementById('btn-menu-' + a.id);
@@ -1898,7 +2047,8 @@
         if (btnMenuModal) { btnMenuModal.classList.remove('border-blue-500', 'bg-blue-950/40'); btnMenuModal.classList.add('border-slate-700/80', 'bg-slate-800/80'); }
       });
 
-      const viewShow = document.getElementById('view-' + aba); if (viewShow) viewShow.classList.remove('hidden');
+      const viewShow = document.getElementById('view-' + aba);
+      if (viewShow) { viewShow.classList.remove('hidden'); viewShow.inert = false; viewShow.setAttribute('aria-hidden', 'false'); }
       const btnShowD = document.getElementById('btn-desk-' + aba);
       const btnShowM = document.getElementById('btn-mob-' + aba);
       const btnMenuD = document.getElementById('btn-desk-menu');
@@ -1936,13 +2086,15 @@
 
     function selecionarSubFerramenta(sub) {
       ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas'].forEach(id => {
-        document.getElementById('subview-' + id)?.classList.add('hidden');
+        const subview = document.getElementById('subview-' + id);
+        if (subview) { subview.classList.add('hidden'); subview.inert = true; subview.setAttribute('aria-hidden', 'true'); }
         const btn = document.getElementById('btn-sub-' + id);
         if (btn) btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition';
       });
-      document.getElementById('subview-' + sub)?.classList.remove('hidden');
+      const subviewAtiva = document.getElementById('subview-' + sub);
+      if (subviewAtiva) { subviewAtiva.classList.remove('hidden'); subviewAtiva.inert = false; subviewAtiva.setAttribute('aria-hidden', 'false'); }
       const btnAtivo = document.getElementById('btn-sub-' + sub);
-      if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md transition';
+      if (btnAtivo) btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-emerald-700 text-white shadow-md transition';
       if (sub === 'emprestimos') {
         if (!document.getElementById('inpEmpData')?.value) definirDataHojeEmprestimo();
         renderizarPainelEmprestimos();
@@ -2627,7 +2779,7 @@ function chamarFiltroBackend(append = false) {
       linhas.push(`💰 *Total:* ${somaTxt}`);
       linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
 
-      copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo copiado! Só colar no WhatsApp.');
+      abrirPreviaCobrancaWhats(linhas.join('\n'), 'Resumo copiado! Só colar no WhatsApp.');
     }
 
     // ============================================================================
@@ -2927,37 +3079,54 @@ function chamarFiltroBackend(append = false) {
           const pSafe = String(p || '').replace(/'/g, "\\'");
           return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition">👤 ${p}</button>`;
         }).join('');
+        chipsPessoas.classList.toggle('hidden', pFreq.length === 0);
       }
 
       const todosItens = emprestimosGlobal.itens || [];
       const selMes = document.getElementById('selFiltroMesEmp');
       const selPes = document.getElementById('selFiltroPessoaEmp');
       const selSt = document.getElementById('selFiltroStatusEmp');
+      const selForma = document.getElementById('selFiltroFormaEmp');
+      const inpBusca = document.getElementById('inpBuscaEmp');
 
       if (selMes && selPes) {
-        const vMes = selMes.value, vPes = selPes.value;
+        const vMes = selMes.value, vPes = selPes.value, vForma = selForma?.value || '';
         const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).filter(Boolean))].sort((a, b) => {
           const [mA, aA] = String(a).split('/').map(Number), [mB, aB] = String(b).split('/').map(Number);
           return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
         });
         selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${m}">${m}</option>`).join('');
-        selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pFreq.map(p => `<option value="${p}">${p}</option>`).join('');
+        const pessoasEmp = [...new Set(todosItens.map(i => String(i.pessoa || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        const formasEmp = [...new Set(todosItens.map(i => String(i.forma || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pessoasEmp.map(p => `<option value="${pxEscHtml(p)}">${pxEscHtml(p)}</option>`).join('');
         if (vMes && mesesEmp.includes(vMes)) selMes.value = vMes;
         else if (! selMes.dataset.iniciado && evolucaoMesAtual && mesesEmp.includes(evolucaoMesAtual)) {
           selMes.value = evolucaoMesAtual;
           selMes.dataset.iniciado = '1';
         }
-        if (vPes && pFreq.includes(vPes)) selPes.value = vPes;
+        if (vPes && pessoasEmp.includes(vPes)) selPes.value = vPes;
+        if (selForma) {
+          selForma.innerHTML = '<option value="">Todas as Formas</option>' + formasEmp.map(f => `<option value="${pxEscHtml(f)}">${pxEscHtml(f)}</option>`).join('');
+          if (vForma && formasEmp.includes(vForma)) selForma.value = vForma;
+        }
       }
 
       const fMes = selMes?.value || '';
       const fPes = selPes?.value || '';
       const fSt = selSt?.value || '';
+      const fForma = selForma?.value || '';
+      const fBusca = String(inpBusca?.value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
 
       const filtrados = todosItens.filter(item => {
         if (fMes && item.mesFatura !== fMes) return false;
         if (fPes && item.pessoa !== fPes) return false;
         if (fSt && item.status !== fSt) return false;
+        if (fForma && item.forma !== fForma) return false;
+        if (fBusca) {
+          const texto = [item.pessoa, item.descricao, item.data, item.mesFatura, item.forma, item.parcela, item.observacoes]
+            .join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+          if (!texto.includes(fBusca)) return false;
+        }
         return true;
       });
 
@@ -2975,7 +3144,7 @@ function chamarFiltroBackend(append = false) {
       
       if (boxPessoas) {
         if (arrPessoas.length === 0) {
-          boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
+          boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
         } else {
           boxPessoas.innerHTML = arrPessoas.map(p => {
             const pSafe = String(p.nome).replace(/'/g, "\\'");
@@ -3005,7 +3174,7 @@ function chamarFiltroBackend(append = false) {
       const boxItens = document.getElementById('listaItensEmprestimos');
       if (boxItens) {
         if (filtrados.length === 0) {
-          boxItens.innerHTML = '<div class="col-span-full py-4 text-center text-slate-500 text-xs">Nenhuma parcela encontrada.</div>';
+          boxItens.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs">Nenhuma parcela encontrada.</div>';
         } else {
           boxItens.innerHTML = filtrados.map(it => {
             const pSafe = String(it.pessoa || '').replace(/'/g, "\\'");
@@ -3182,7 +3351,15 @@ function chamarFiltroBackend(append = false) {
     function copiarCobrancaPessoaWhats(pessoa) {
       const fMes = document.getElementById('selFiltroMesEmp')?.value || '';
       const fSt = document.getElementById('selFiltroStatusEmp')?.value || '';
-      const itens = (emprestimosGlobal.itens || []).filter(i => i.pessoa === pessoa && (!fMes || i.mesFatura === fMes) && (!fSt || i.status === fSt));
+      const fForma = document.getElementById('selFiltroFormaEmp')?.value || '';
+      const fBusca = String(document.getElementById('inpBuscaEmp')?.value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+      const itens = (emprestimosGlobal.itens || []).filter(i => {
+        if (i.pessoa !== pessoa || (fMes && i.mesFatura !== fMes) || (fSt ? i.status !== fSt : i.status === 'Recebido') || (fForma && i.forma !== fForma)) return false;
+        if (!fBusca) return true;
+        const texto = [i.pessoa, i.descricao, i.data, i.mesFatura, i.forma, i.parcela, i.observacoes]
+          .join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+        return texto.includes(fBusca);
+      });
       if (itens.length === 0) return;
 
       let total = 0;
@@ -3194,8 +3371,8 @@ function chamarFiltroBackend(append = false) {
         msg.push(`• ${it.descricao} (${it.parcela}) [${it.forma}]: *${it.valorFmt}*`);
       });
       msg.push('');
-      msg.push(`💰 *Total a Pagar:* *${formatBRL(total)}*`);
-      copiarTextoAreaTransferencia(msg.join('\n'), `Resumo de ${pessoa} copiado p/ o WhatsApp!`);
+      msg.push(`💰 *${fSt === 'Recebido' ? 'Total Recebido' : 'Total em Aberto'}:* *${formatBRL(total)}*`);
+      abrirPreviaCobrancaWhats(msg.join('\n'), `Resumo de ${pessoa} copiado p/ o WhatsApp!`);
     }
 
     // ============================================================================
@@ -3368,7 +3545,7 @@ function chamarFiltroBackend(append = false) {
         msg.push(`👥 Divisão exata: ${resumoGruposCentavos(d.partesIndividuais)}`);
         msg.push('_A sua parte usa a primeira cota; os centavos restantes foram distribuídos na ordem._');
       }
-      copiarTextoAreaTransferencia(msg.join('\n'), 'Rachadinha copiada p/ o WhatsApp!');
+      abrirPreviaCobrancaWhats(msg.join('\n'), 'Rachadinha copiada p/ o WhatsApp!');
     }
 
     function lancarMinhaParteRachadinha(tipo = 'normal') {
@@ -3556,7 +3733,7 @@ function chamarFiltroBackend(append = false) {
       });
       msg.push('');
       msg.push(`💰 *Total da Conta:* *${formatBRL(d.totalGeralFinal)}*`);
-      copiarTextoAreaTransferencia(msg.join('\n'), 'Detalhamento por pessoa copiado p/ o WhatsApp!');
+      abrirPreviaCobrancaWhats(msg.join('\n'), 'Detalhamento por pessoa copiado p/ o WhatsApp!');
     }
 
     // ============================================================================
@@ -4186,7 +4363,10 @@ function chamarFiltroBackend(append = false) {
 
       let tb = '';
       const todasFormas = Object.keys(evolucaoPivot);
+      const chaveLinhaTerceiros = '__TERCEIROS_A_RECEBER__';
+      const chaveLinhaBanco = '__BANCO_TOTAL__';
       const formasNormais = todasFormas.filter(f => {
+        if (f.startsWith('__')) return false;
         const lower = f.toLowerCase();
         if (lower.includes('total') || lower.includes('carteira')) return false;
         return evolucaoMeses.reduce((acc, m) => acc + (evolucaoPivot[f][m] || 0), 0) > 0;
@@ -4197,7 +4377,7 @@ function chamarFiltroBackend(append = false) {
         return a.localeCompare(b);
       });
 
-      const formasTotal = todasFormas.filter(f => f.toLowerCase().includes('total') || f.toLowerCase().includes('carteira'));
+      const formasTotal = todasFormas.filter(f => !f.startsWith('__') && (f.toLowerCase().includes('total') || f.toLowerCase().includes('carteira')));
 
       formasNormais.forEach(forma => {
         let totalLinha = 0;
@@ -4209,7 +4389,7 @@ function chamarFiltroBackend(append = false) {
         tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
 
-   formasTotal.forEach(forma => {
+      formasTotal.forEach(forma => {
         let totalLinha = 0;
         let cols = mToShow.map(m => {
           const val = evolucaoPivot[forma][m] || 0;
@@ -4217,11 +4397,35 @@ function chamarFiltroBackend(append = false) {
           return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
         });
         
-        // Remove a chave secreta e exibe o nome enxuto sem emoji
-        const nomeExibicao = forma === '__BANCO_TOTAL__' ? 'Fatura Real' : forma;
-        
+        const nomeExibicao = forma;
         tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">${nomeExibicao}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
+
+      const linhaTotalBanco = evolucaoPivot[chaveLinhaBanco] || {};
+      const carteiraForma = formasTotal.find(f => f.toLowerCase().includes('total') || f.toLowerCase().includes('carteira'));
+      const linhaTotalCarteira = carteiraForma ? (evolucaoPivot[carteiraForma] || {}) : {};
+      const totalTerceirosCartao = evolucaoMeses.reduce((acc, m) => acc + Math.max(0, (linhaTotalBanco[m] || 0) - (linhaTotalCarteira[m] || 0)), 0);
+      if (totalTerceirosCartao > 0) {
+        let totalBancoVisivel = 0;
+        const colsBanco = mToShow.map(m => {
+          const val = linhaTotalBanco[m] || 0;
+          totalBancoVisivel += val;
+          return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+        });
+        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">Fatura Real</td>${colsBanco.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalBancoVisivel > 0 ? formatBRL(totalBancoVisivel) : '-'}</td></tr>`;
+      }
+
+      const mapaTerceirosAReceber = evolucaoPivot[chaveLinhaTerceiros] || {};
+      const temTerceirosAReceber = evolucaoMeses.some(m => (mapaTerceirosAReceber[m] || 0) > 0);
+      if (temTerceirosAReceber) {
+        let totalTerceirosVisivel = 0;
+        const colsTerceiros = mToShow.map(m => {
+          const val = mapaTerceirosAReceber[m] || 0;
+          totalTerceirosVisivel += val;
+          return `<td class="py-3 text-center text-amber-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+        });
+        tb += `<tr class="bg-amber-950/20 border-t border-amber-500/30"><td class="py-3 pl-2 font-bold text-amber-300 whitespace-nowrap pr-1">🤝 Terceiros (a receber)</td>${colsTerceiros.join('')}<td class="py-3 font-extrabold text-amber-300 text-right pr-2 whitespace-nowrap">${totalTerceirosVisivel > 0 ? formatBRL(totalTerceirosVisivel) : '-'}</td></tr>`;
+      }
 
       const fBody = document.getElementById('faturas-body'); if (fBody) fBody.innerHTML = tb;
       const btnPrev = document.getElementById('btnEvolPrev'), btnNext = document.getElementById('btnEvolNext');
@@ -4630,9 +4834,18 @@ function chamarFiltroBackend(append = false) {
         renderizarPainelEmprestimos();
         const bannerEmp = document.getElementById('bannerEmprestimosDash');
         const txtBannerEmp = document.getElementById('txtBannerEmprestimosDash');
-        if (bannerEmp && txtBannerEmp && (dados.emprestimos.kpis?.aReceberMesRaw || 0) > 0) {
+        const kpisEmprestimos = dados.emprestimos.kpis || {};
+        const aReceberMesRaw = Number(kpisEmprestimos.aReceberMesRaw || 0);
+        const atrasadosRaw = Number(kpisEmprestimos.atrasadosRaw || 0);
+        if (bannerEmp && txtBannerEmp && (aReceberMesRaw > 0 || atrasadosRaw > 0)) {
           bannerEmp.classList.remove('hidden');
-          txtBannerEmp.innerHTML = `Você tem <strong class="text-white">${dados.emprestimos.kpis.aReceberMes}</strong> a receber de terceiros neste mês.`;
+          if (atrasadosRaw > 0 && aReceberMesRaw > 0) {
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${kpisEmprestimos.atrasadosFmt}</strong> em atraso e <strong class="text-white">${kpisEmprestimos.aReceberMes}</strong> a receber neste mês.`;
+          } else if (atrasadosRaw > 0) {
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${kpisEmprestimos.atrasadosFmt}</strong> em atraso com terceiros.`;
+          } else {
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-white">${kpisEmprestimos.aReceberMes}</strong> a receber de terceiros neste mês.`;
+          }
         } else if (bannerEmp) {
           bannerEmp.classList.add('hidden');
         }
@@ -5631,7 +5844,7 @@ try {
         linhas.push('');
         linhas.push('💰 *Total:* ' + res.somaTotal);
         linhas.push('➗ *50% (Metade):* ' + res.somaMetade);
-        copiarTextoAreaTransferencia(linhas.join('\n'), 'Resumo completo copiado! Só colar no WhatsApp.');
+        abrirPreviaCobrancaWhats(linhas.join('\n'), 'Resumo completo copiado! Só colar no WhatsApp.');
       } catch (err) {
         mostrarAviso('Erro', err.message);
       }
