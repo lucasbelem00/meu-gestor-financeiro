@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v11';
+const CACHE_NAME = 'gestor-gastos-v12';
 
 // Instalação do Service Worker
 self.addEventListener('install', event => {
@@ -23,6 +23,11 @@ self.addEventListener('activate', event => {
 // Estratégia Inteligente: Rede primeiro para o HTML (Garante atualizações instantâneas)
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // Requisições de gravação e a API privada nunca entram no cache offline.
+  if (event.request.method !== 'GET' || (url.origin === self.location.origin && url.pathname.startsWith('/api/'))) {
+    return;
+  }
 
   // Deixa as chamadas à API do Google Apps Script passarem direto sem cache
   if (url.origin.includes('script.google.com')) {
