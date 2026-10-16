@@ -738,7 +738,7 @@
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
                 <div class="relative">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold placeholder:font-normal placeholder:text-amber-300/60 outline-none focus:border-amber-500">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -761,30 +761,30 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
-              <div class="col-span-2 sm:col-span-1">
+            <div id="gridEmpValorParcelas" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
+              <div id="boxEmpValor" class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label>
                 <input type="text" inputmode="decimal" id="inpEmpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-emerald-400 font-bold focus:border-amber-500 outline-none">
               </div>
               
-              <div>
+              <div id="boxEmpParc">
                 <div class="flex justify-between items-center mb-1">
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
                   <div class="flex gap-1">
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
                   </div>
                 </div>
-                  <input type="number" id="inpEmpParc" aria-label="Quantidade total de parcelas" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+                  <input type="number" id="inpEmpParc" aria-label="Quantidade total de parcelas" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
               </div>
               
-              <div>
+              <div id="boxEmpParcIni" class="hidden">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Parc. Inicial</label>
                 <input type="number" id="inpEmpParcIni" aria-label="Número da primeira parcela a registrar" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
               </div>
               
-              <div class="col-span-2 sm:col-span-1">
+              <div id="boxEmpObs" class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Observação (Opc.)</label>
                 <input type="text" id="inpEmpObs" placeholder="Ex: Paga dia 10" oninput="salvarRascunhoEmp()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white outline-none focus:border-amber-500">
               </div>
@@ -1742,14 +1742,18 @@
       if(!toast) return;
       document.getElementById('toastTitulo').textContent = titulo;
       document.getElementById('toastMensagem').textContent = mensagem;
+      if (toast._timerAviso) clearTimeout(toast._timerAviso);
       
       toast.classList.remove('opacity-0', '-translate-y-4');
       toast.classList.add('opacity-100', 'translate-y-0');
-      
-      setTimeout(() => { 
+
+      const tamanhoTexto = String(titulo || '').length + String(mensagem || '').length;
+      const duracao = Math.min(9000, Math.max(3000, 3000 + Math.ceil(tamanhoTexto / 70) * 1000));
+      toast._timerAviso = setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0'); 
         toast.classList.add('opacity-0', '-translate-y-4');
-      }, 3000);
+        toast._timerAviso = null;
+      }, duracao);
     }
 
     function mostrarConfirmacao(titulo, mensagem, onSimCallback, exibirOpcaoParcelas = false) {
@@ -3001,11 +3005,51 @@ function chamarFiltroBackend(append = false) {
       lbl.textContent = (qtd > 1 && val > 0) ? `${qtd}x de ${formatBRL(val / qtd)}` : `${qtd}x`;
     }
 
+    function atualizarLayoutParcelasEmprestimo() {
+      const forma = String(document.getElementById('selEmpForma')?.value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const isPix = forma.includes('pix');
+      const qtd = Math.max(1, parseInt(document.getElementById('inpEmpParc')?.value, 10) || 1);
+      const grid = document.getElementById('gridEmpValorParcelas');
+      const boxValor = document.getElementById('boxEmpValor');
+      const boxParc = document.getElementById('boxEmpParc');
+      const boxParcIni = document.getElementById('boxEmpParcIni');
+      const boxObs = document.getElementById('boxEmpObs');
+      const inpParc = document.getElementById('inpEmpParc');
+      const inpParcIni = document.getElementById('inpEmpParcIni');
+      if (!grid || !boxValor || !boxParc || !boxParcIni || !boxObs || !inpParc || !inpParcIni) return;
+
+      if (isPix) {
+        inpParc.value = '1';
+        inpParcIni.value = '1';
+        boxParc.classList.add('hidden');
+        boxParcIni.classList.add('hidden');
+        grid.className = 'grid grid-cols-2 gap-3 mb-2';
+        boxValor.className = 'col-span-1';
+        boxObs.className = 'col-span-1';
+      } else {
+        boxParc.classList.remove('hidden');
+        const parcelas = Math.max(1, parseInt(inpParc.value, 10) || 1);
+        if (parcelas > 1) {
+          boxParcIni.classList.remove('hidden');
+          grid.className = 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2';
+          boxValor.className = 'col-span-2 sm:col-span-1';
+          boxObs.className = 'col-span-2 sm:col-span-1';
+        } else {
+          inpParcIni.value = '1';
+          boxParcIni.classList.add('hidden');
+          grid.className = 'grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2';
+          boxValor.className = 'col-span-1';
+          boxObs.className = 'col-span-2 sm:col-span-1';
+        }
+      }
+    }
+
     function atualizarFaturaEmprestimo() {
       sincronizarDataTripla('emp', false);
       const nomeForma = document.getElementById('selEmpForma')?.value || '';
       const dataStr = document.getElementById('inpEmpData')?.value || '';
       const inpMesFat = document.getElementById('inpEmpMesFat');
+      atualizarLayoutParcelasEmprestimo();
       if (!nomeForma || dataStr.length !== 10 || !inpMesFat) return;
       const formaNormalizada = nomeForma.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
       const pagamentoAVista = /pix|debito|transferencia|dinheiro|\bted\b|\bdoc\b/.test(formaNormalizada);
@@ -3047,8 +3091,8 @@ function chamarFiltroBackend(append = false) {
         descricao: formatarTituloInteligente(document.getElementById('inpEmpDesc').value),
         formaPagto: document.getElementById('selEmpForma').value,
         valorTotal: valTotal,
-        numParcelas: parseInt(document.getElementById('inpEmpParc').value, 10) || 1,
-        parcelaInicial: parseInt(document.getElementById('inpEmpParcIni').value, 10) || 1,
+        numParcelas: String(document.getElementById('selEmpForma').value || '').toLowerCase().includes('pix') ? 1 : (parseInt(document.getElementById('inpEmpParc').value, 10) || 1),
+        parcelaInicial: String(document.getElementById('selEmpForma').value || '').toLowerCase().includes('pix') ? 1 : (parseInt(document.getElementById('inpEmpParcIni').value, 10) || 1),
         observacoes: document.getElementById('inpEmpObs').value
       };
 
@@ -3056,6 +3100,7 @@ function chamarFiltroBackend(append = false) {
         mostrarAviso('Sucesso 🤝', 'Empréstimo registrado sem afetar seus gastos pessoais!');
         document.getElementById('formEmprestimo').reset();
         definirDataHojeEmprestimo();
+        atualizarLayoutParcelasEmprestimo();
         atualizarPreviewParcEmp();
         btn.textContent = '💾 Registrar Empréstimo'; btn.disabled = false;
         carregarDados();
@@ -5034,6 +5079,7 @@ function limparFormularioEmprestimo() {
       document.getElementById('formEmprestimo')?.reset();
       definirDataHojeEmprestimo();
       document.getElementById('selEmpForma').value = '';
+      atualizarLayoutParcelasEmprestimo();
       atualizarPreviewParcEmp();
       toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa');
       toggleBotaoLimpar('inpEmpDesc', 'btnLimparEmpDesc');
@@ -5633,6 +5679,7 @@ try {
       pxEl('selEmpForma').value = '';
       pxEl('inpEmpParc').value = '1';
       pxEl('inpEmpParcIni').value = '1';
+      atualizarLayoutParcelasEmprestimo();
       try { sessionStorage.removeItem('rascunhoEmprestimo'); } catch (e) {}
       definirDataHojeEmprestimo();
       atualizarPreviewParcEmp();
@@ -5729,6 +5776,7 @@ try {
       var btn = pxEl('btnSalvarEmp');
       var rotulo = btn.dataset.rotulo || '💾 Registrar Empréstimo';
       btn.textContent = 'Salvando...'; btn.disabled = true;
+      var ehPixEmprestimo = String(pxEl('selEmpForma').value || '').toLowerCase().includes('pix');
 
       var payload = {
         dataCompra: pxEl('inpEmpData').value,
@@ -5737,8 +5785,8 @@ try {
         descricao: formatarTituloInteligente(pxEl('inpEmpDesc').value),
         formaPagto: pxEl('selEmpForma').value,
         valorTotal: valTotal,
-        numParcelas: parseInt(pxEl('inpEmpParc').value, 10) || 1,
-        parcelaInicial: parseInt(pxEl('inpEmpParcIni').value, 10) || 1,
+        numParcelas: ehPixEmprestimo ? 1 : (parseInt(pxEl('inpEmpParc').value, 10) || 1),
+        parcelaInicial: ehPixEmprestimo ? 1 : (parseInt(pxEl('inpEmpParcIni').value, 10) || 1),
         observacoes: pxEl('inpEmpObs').value
       };
 

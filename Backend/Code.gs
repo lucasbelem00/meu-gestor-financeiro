@@ -2316,16 +2316,28 @@ function salvarEmprestimoWeb(dados) {
     lock.waitLock(15000);
     if (!dados || typeof dados !== 'object' || Array.isArray(dados)) throw new Error('Dados do empréstimo inválidos.');
     validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
-    validarMesFaturaWeb_(dados.mesPrimeiraFatura);
     if (!String(dados.formaPagto || '').trim()) throw new Error('Selecione como o empréstimo foi pago.');
+    const formaPagto = String(dados.formaPagto || '').trim();
+    const isPix = normalizarTexto(formaPagto).includes('pix');
+    let mesPrimeiraFatura = limparApostrofo(dados.mesPrimeiraFatura);
+    if (isPix) {
+      if (mesPrimeiraFatura) {
+        mesPrimeiraFatura = validarMesFaturaWeb_(mesPrimeiraFatura);
+      } else {
+        const partesData = limparApostrofo(dados.dataCompra).split('/');
+        mesPrimeiraFatura = partesData.length === 3 ? partesData[1] + '/' + partesData[2] : '';
+      }
+    } else {
+      mesPrimeiraFatura = validarMesFaturaWeb_(mesPrimeiraFatura);
+    }
 
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
 
     const valorTotal = extractNum(dados.valorTotal);
     if (!Number.isFinite(valorTotal) || valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
-    const numParcelas = Number(dados.numParcelas || 1);
-    const parcelaInicial = Number(dados.parcelaInicial || 1);
+    const numParcelas = isPix ? 1 : Number(dados.numParcelas || 1);
+    const parcelaInicial = isPix ? 1 : Number(dados.parcelaInicial || 1);
     if (!Number.isInteger(numParcelas) || numParcelas < 1) throw new Error('O número de parcelas deve ser um inteiro positivo.');
     if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
       throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');
@@ -2335,7 +2347,7 @@ function salvarEmprestimoWeb(dados) {
     const sobraCentavos = totalCentavos % numParcelas;
 
     const hoje = getHojeSeguro();
-    const pm = limparApostrofo(dados.mesPrimeiraFatura).split('/');
+    const pm = mesPrimeiraFatura.split('/');
     const mesFat = Number(pm[0]);
     const anoFat = Number(pm[1]);
 
@@ -2349,7 +2361,7 @@ function salvarEmprestimoWeb(dados) {
       const dRef = new Date(anoFat, (mesFat - 1) + (p - parcelaInicial), 1);
       const valorParcela = (centavosBase + (p <= sobraCentavos ? 1 : 0)) / 100;
       linhas.push([
-        "'" + dtStr, pessoa, desc, dados.formaPagto, valorTotal, numParcelas,
+        "'" + dtStr, pessoa, desc, formaPagto, valorTotal, numParcelas,
         "'" + p + '/' + numParcelas, valorParcela,
         "'" + pad2(dRef.getMonth() + 1) + '/' + dRef.getFullYear(),
         'A Receber', dados.observacoes || ''
