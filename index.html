@@ -5354,6 +5354,8 @@ try {
   function pxEscHtml(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+  // A renderização principal roda fora desta IIFE e também usa esta função.
+  window.pxEscHtml = pxEscHtml;
   // Escape de copia (nao mexe em & nem em '): protege < > " em textos E dentro de onclick="..."
   function pxEscapar(v) {
     if (typeof v === 'string') return v.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
