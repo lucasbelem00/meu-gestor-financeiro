@@ -240,7 +240,7 @@
           </div>
         </h2>
         
-        <form id="formLancamento" onsubmit="enviarGasto(event)" class="space-y-4">
+        <form id="formLancamento" onsubmit="enviarGasto(event)" class="space-y-3 sm:space-y-4">
           <div class="grid grid-cols-2 gap-3">
             <div>
               <div class="flex items-center justify-between mb-1.5">
@@ -2191,9 +2191,9 @@
       boxMeta.classList.remove('hidden');
       if (restante >= 0) {
         const cor = pct >= 80 ? 'text-amber-400' : 'text-emerald-400';
-        boxMeta.innerHTML = `<span class="${cor}">🎯 Meta (${mesFat || 'mês'}): ${formatBRL(gastoAtual)} / ${formatBRL(meta)} (${pct}%) • Restam <strong>${formatBRL(restante)}</strong></span>`;
+        boxMeta.innerHTML = `<span class="${cor}">🎯 Meta: ${formatBRL(gastoAtual)} / ${formatBRL(meta)} (${pct}%) • Restam <strong>${formatBRL(restante)}</strong></span>`;
       } else {
-        boxMeta.innerHTML = `<span class="text-rose-400">⚠️ Meta estourada em ${formatBRL(Math.abs(restante))} (${formatBRL(gastoAtual)} / ${formatBRL(meta)})</span>`;
+        boxMeta.innerHTML = `<span class="text-rose-400">⚠️ Meta excedida em ${formatBRL(Math.abs(restante))} • Total ${formatBRL(gastoAtual)}</span>`;
       }
     }
 
@@ -4280,14 +4280,21 @@ function chamarFiltroBackend(append = false) {
       if (dispararBusca) dispararBuscaRelatorioMensal();
     }
 
+    function obterMesesRelatorioEmOrdem() {
+      const meses = [];
+      Object.keys(arvoreMesesAno).forEach(ano => {
+        (arvoreMesesAno[ano] || []).forEach(mesAno => {
+          meses.push({ ano: String(ano), mes: String(mesAno).split('/')[0] });
+        });
+      });
+      return meses.sort((a, b) => Number(a.ano) - Number(b.ano) || Number(a.mes) - Number(b.mes));
+    }
+
     function atualizarEstadoSetasMensal() {
       const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
       const btnPrev = document.getElementById('btnMesPrev'), btnNext = document.getElementById('btnMesNext');
       if (!selAno || !selMes || !btnPrev || !btnNext) return;
-      let listaGlobalMeses = [];
-      Object.keys(arvoreMesesAno).sort((a, b) => a - b).forEach(a => {
-        (arvoreMesesAno[a] || []).forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
-      });
+      const listaGlobalMeses = obterMesesRelatorioEmOrdem();
       const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
       btnPrev.disabled = (idxAtual <= 0);
       btnNext.disabled = (idxAtual === -1 || idxAtual >= listaGlobalMeses.length - 1);
@@ -4295,10 +4302,7 @@ function chamarFiltroBackend(append = false) {
 
     function mudarMesRelatorio(step) {
       const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
-      let listaGlobalMeses = [];
-      Object.keys(arvoreMesesAno).sort((a, b) => a - b).forEach(a => {
-        (arvoreMesesAno[a] || []).forEach(mStr => listaGlobalMeses.push({ ano: a, mes: mStr.split('/')[0] }));
-      });
+      const listaGlobalMeses = obterMesesRelatorioEmOrdem();
       const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
       const alvo = listaGlobalMeses[idxAtual + step];
       if (alvo) { selAno.value = alvo.ano; atualizarMesesDisponiveis(alvo.mes, true); }
@@ -5222,7 +5226,7 @@ try {
     if (selCat && !pxEl('infoMetaCategoria')) {
       var d2 = document.createElement('div');
       d2.id = 'infoMetaCategoria';
-      d2.className = 'hidden text-[11px] font-semibold mt-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 leading-snug';
+      d2.className = 'hidden text-[10px] sm:text-[11px] font-semibold mt-1 sm:mt-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight sm:leading-snug';
       selCat.insertAdjacentElement('afterend', d2);
     }
     var velho = pxEl('visorMetaCategoria'); if (velho) velho.remove();
