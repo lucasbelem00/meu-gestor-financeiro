@@ -213,7 +213,10 @@
       <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20">💳</div>
       <div class="flex items-center">
         <div>
-          <h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-bold text-white leading-tight">Gestor de Gastos</h1>
+            <span id="statusConexao" role="status" aria-live="polite" class="hidden text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border"></span>
+          </div>
           <p id="subtituloMobileAba" class="text-[10px] text-blue-400 font-semibold">Novo Registro</p>
         </div>
         <button id="btnSyncOffline" onclick="sincronizarFilaOffline()" class="hidden text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/50 px-2 py-1 rounded-md animate-pulse ml-3 shadow-md">
@@ -1819,6 +1822,7 @@
     let notasGlobais = [];
     let emprestimosGlobal = { kpis: {}, pessoasFrequentes: [], itens: [] };
     let salvandoGastoTrava = false;
+    let conexaoAnterior = navigator.onLine;
 
     let offsetAtual = 0;
     const LIMITE_PAGINA = 50;
@@ -1838,8 +1842,8 @@
 
     document.addEventListener("DOMContentLoaded", function() {
       renderizarMenusNavegacao();
-      window.addEventListener('online', atualizarIndicadorOffline);
-      window.addEventListener('offline', atualizarIndicadorOffline);
+      window.addEventListener('online', () => atualizarStatusConexao(true));
+      window.addEventListener('offline', () => atualizarStatusConexao(true));
       window.addEventListener('resize', () => { if (evolucaoMeses.length > 0) renderTabelaEvolucao(); });
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1851,6 +1855,7 @@
           document.getElementById('modalConfirmacao')?.classList.add('hidden');
         }
       });
+      atualizarStatusConexao(false);
       atualizarIndicadorOffline();
     });
 
@@ -3789,6 +3794,29 @@ function chamarFiltroBackend(append = false) {
         btn.textContent = resultadoIncerto ? `⚠️ Conferir sincronização (${fila.length})` : `📶 Sincronizar (${fila.length})`;
       }
       else { btn.classList.add('hidden'); }
+    }
+
+    function atualizarStatusConexao(avisarMudanca) {
+      const indicador = document.getElementById('statusConexao');
+      if (!indicador) return;
+      const online = navigator.onLine;
+
+      if (!online) {
+        indicador.textContent = 'Offline';
+        indicador.className = 'text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border border-rose-400/40 bg-rose-500/15 text-rose-300';
+      } else if (avisarMudanca && !conexaoAnterior) {
+        indicador.textContent = 'Conexão voltou';
+        indicador.className = 'text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-md border border-emerald-400/40 bg-emerald-500/15 text-emerald-300';
+        mostrarAviso('Conexão voltou', 'A rede voltou. Você já pode sincronizar lançamentos pendentes.');
+        setTimeout(() => {
+          if (navigator.onLine && indicador.textContent === 'Conexão voltou') indicador.classList.add('hidden');
+        }, 4000);
+      } else {
+        indicador.classList.add('hidden');
+      }
+
+      conexaoAnterior = online;
+      atualizarIndicadorOffline();
     }
 
     function sincronizarFilaOffline() {
