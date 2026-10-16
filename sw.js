@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v12';
+const CACHE_NAME = 'gestor-gastos-v13';
 
 // Instalação do Service Worker
 self.addEventListener('install', event => {
