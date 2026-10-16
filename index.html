@@ -274,20 +274,20 @@
               <input type="text" id="inpDesc" list="listaDescricoes" autocapitalize="words" oninput="checarAutopreenchimento(); toggleBotaoLimpar('inpDesc', 'btnLimparDesc'); salvarRascunho()" onpaste="extrairValorPixAoColar(event, 'inpValor', 'inpDesc')" onblur="aoSairDescricao()" placeholder="Ex: Gasolina, Açaí (Cole o Pix...)" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 outline-none transition">
               <button type="button" id="btnLimparDesc" onclick="vibrar(); limparCampoEVoltarFoco('inpDesc', 'btnLimparDesc')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
             </div>
-            <p class="text-[10px] text-slate-500 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho.</p>
+            <p class="text-[10px] text-slate-400 mt-1 ml-1">Cole mensagens de Pix para extrair o valor sozinho.</p>
             <datalist id="listaDescricoes"></datalist>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
+              <label for="selForma" class="block text-xs font-bold text-slate-400 mb-1.5 uppercase tracking-wide">Cartão / Forma</label>
               <select id="selForma" onchange="atualizarRegrasForma(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
                 <option value="">Selecione...</option>
               </select>
             </div>
             <div>
               <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Categoria</label>
+                <label for="selCat" class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Categoria</label>
                 <span id="visorMetaCategoria" class="text-[10px] font-bold text-slate-500 hidden px-2 py-0.5 bg-slate-800 rounded-lg border border-slate-700"></span>
               </div>
               <select id="selCat" onchange="atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
@@ -299,14 +299,14 @@
           <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1 mb-2">
             <div id="boxValor" class="col-span-1">
               <div class="flex items-end h-[28px] mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
+                <label for="inpValor" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
               </div>
               <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 outline-none transition">
             </div>
             
             <div id="boxParc">
               <div class="flex items-end justify-between h-[28px] mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
+                <label for="inpParc" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
                 <div class="flex gap-1.5">
                   <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">3x</button>
                   <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">6x</button>
@@ -318,7 +318,7 @@
             
             <div id="boxParcIni" class="hidden">
               <div class="flex items-end h-[28px] mb-1.5">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Início</label>
+                <label for="inpParcIni" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Início</label>
               </div>
               <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
             </div>
@@ -1911,7 +1911,7 @@
       const btnMenuM = document.getElementById('btn-mob-menu');
       const btnMenuModalAtivo = document.getElementById('btn-menu-' + aba);
 
-      const corAtiva = (aba === 'novo') ? 'bg-emerald-600' : 'bg-blue-600';
+      const corAtiva = (aba === 'novo') ? 'bg-emerald-700' : 'bg-blue-600';
 
       if (btnShowD && btnShowM) {
         btnShowD.classList.add(corAtiva, 'text-white', 'shadow-md'); btnShowD.classList.remove('text-slate-300', 'text-emerald-400');
