@@ -112,8 +112,8 @@
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-lg shrink-0">🤝</div>
               <div class="min-w-0">
-                <div class="text-sm font-bold text-amber-300 truncate">Empréstimos de Cartão (Terceiros)</div>
-                <div class="text-[11px] text-slate-300 truncate">Desconta do limite sem entrar nos seus gastos</div>
+                <div class="text-sm font-bold text-amber-300 truncate">Empréstimos para Terceiros</div>
+                <div class="text-[11px] text-slate-300 truncate">Cartão ou Pix, inclusive pagamentos à vista</div>
               </div>
             </div>
             <span class="text-amber-400 text-xs font-bold shrink-0 ml-2">➔</span>
@@ -299,7 +299,7 @@
             </div>
           </div>
 
-          <div id="gridValorParcelas" class="grid grid-cols-2 gap-3 pt-1 mb-2">
+          <div id="gridValorParcelas" class="grid grid-cols-2 gap-3">
             <div id="boxValor" class="col-span-1">
               <div class="flex items-end h-[28px] mb-1.5">
                 <label for="inpValor" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
@@ -415,12 +415,12 @@
             <span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto no-print">
-            <button id="btnMesPrev" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
+            <button id="btnMesPrev" type="button" aria-label="Ir para o mês anterior disponível" title="Mês anterior disponível" onclick="mudarMesRelatorio(-1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">◀</button>
             <div class="flex flex-1 sm:flex-none gap-2">
               <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal w-full sm:w-auto bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
               <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal w-24 bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold focus:border-blue-500 outline-none"></select>
             </div>
-            <button id="btnMesNext" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
+            <button id="btnMesNext" type="button" aria-label="Ir para o próximo mês disponível" title="Próximo mês disponível" onclick="mudarMesRelatorio(1)" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed">▶</button>
             <button onclick="gerarPDFExecutivo('mensal')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-md active:scale-95 transition flex items-center justify-center gap-1 w-full sm:w-auto mt-2 sm:mt-0">📄 PDF Executivo</button>
           </div>
         </div>
@@ -636,7 +636,7 @@
         <button onclick="selecionarSubFerramenta('notas')" id="btn-sub-notas" class="flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition">📝 Notas</button>
       </div>
 
-      <!-- FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS - SEPARADO DOS GASTOS PESSOAIS) -->
+      <!-- FERRAMENTA 1: EMPRÉSTIMOS PARA TERCEIROS - SEPARADOS DOS GASTOS PESSOAIS -->
       <div id="subview-emprestimos" class="space-y-5">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <div class="card-glass p-3.5 border-t-4 border-t-amber-400">
@@ -661,8 +661,8 @@
        <div class="card-glass p-5 sm:p-6">
           <div class="flex justify-between items-center mb-4">
             <div>
-              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Compra de Terceiro no Cartão</h2>
-              <p class="text-[11px] text-slate-400">Ocupa o limite disponível do cartão, mas não entra nos seus relatórios pessoais.</p>
+              <h2 class="text-sm sm:text-base font-bold text-white flex items-center gap-2">🤝 Registrar Empréstimo para Terceiro</h2>
+              <p class="text-[11px] text-slate-400">Registre como pagou e acompanhe o valor que a pessoa vai devolver.</p>
             </div>
             <button type="button" onclick="limparFormularioEmprestimo()" class="shrink-0 text-[11px] font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition shadow-sm">🧹 Limpar</button>
           </div>
@@ -689,7 +689,7 @@
 
               <div>
                 <div class="flex items-center justify-between mb-1">
-                  <label class="block text-[11px] font-bold text-slate-400 uppercase">1ª Fatura</label>
+                  <label class="block text-[11px] font-bold text-slate-400 uppercase">1º Mês a Receber</label>
                   <div class="flex gap-1">
                     <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">◀</button>
                     <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpEmpMesFat')" class="text-[9px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700 transition active:scale-95">▶</button>
@@ -717,9 +717,9 @@
                 </div>
               </div>
               <div>
-                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cartão Emprestado</label>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Como você pagou?</label>
                 <select id="selEmpForma" onchange="atualizarFaturaEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white outline-none focus:border-amber-500">
-                  <option value="">Selecione o cartão...</option>
+                  <option value="">Selecione o cartão ou Pix...</option>
                 </select>
               </div>
             </div>
@@ -876,14 +876,15 @@
                 <div id="rachaValorPorPessoa" class="text-xl sm:text-2xl font-extrabold text-white mt-0.5">R$ 0,00</div>
               </div>
               <div id="boxResultadoComBebida" class="hidden bg-amber-500/10 p-3 rounded-xl border border-amber-500/30">
-                <span id="lblRachaComBebida" class="text-[11px] font-bold text-amber-300 block">🍺 Valor p/ Quem Bebeu:</span>
+                <span id="lblRachaComBebida" class="text-[11px] font-bold text-amber-300 block">🍺 Sua parte (com bebida):</span>
                 <div id="rachaValorComBebida" class="text-xl sm:text-2xl font-extrabold text-amber-300 mt-0.5">R$ 0,00</div>
               </div>
             </div>
+            <p id="rachaResumoCentavos" class="text-[11px] leading-relaxed text-slate-400"></p>
 
             <div class="flex flex-col sm:flex-row gap-2 pt-1">
               <button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Copiar p/ WhatsApp</button>
-              <button type="button" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Minha Parte</button>
+              <button type="button" id="btnLancarMinhaParteNormal" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Lançar Minha Parte</button>
               <button type="button" id="btnLancarParteBebeu" onclick="lancarMinhaParteRachadinha('bebeu')" class="hidden flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">🍺 Lançar (Com Bebida)</button>
             </div>
           </div>
@@ -1109,7 +1110,7 @@
             <input type="hidden" id="inpEmpEdData">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 mb-1">Mês Fatura</label>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Mês de Recebimento</label>
             <input type="text" id="inpEdEmpMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-blue-500 outline-none">
           </div>
         </div>
@@ -1127,7 +1128,7 @@
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 mb-1">Cartão</label>
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Forma de Pagamento</label>
             <select id="selEdEmpForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none"></select>
           </div>
           <div>
@@ -2837,7 +2838,7 @@ function chamarFiltroBackend(append = false) {
         .catch(err => { mostrarAviso('Erro', 'Erro: ' + err.message); btn.textContent = 'Atualizar'; btn.disabled = false; });
     }
           // ============================================================================
-    // FERRAMENTA 1: EMPRÉSTIMOS DE CARTÃO (TERCEIROS - ISOLADO DOS GASTOS PESSOAIS)
+    // FERRAMENTA 1: EMPRÉSTIMOS PARA TERCEIROS (ISOLADOS DOS GASTOS PESSOAIS)
     // ============================================================================
 
     function atualizarPreviewParcEmp() {
@@ -2854,10 +2855,20 @@ function chamarFiltroBackend(append = false) {
       const dataStr = document.getElementById('inpEmpData')?.value || '';
       const inpMesFat = document.getElementById('inpEmpMesFat');
       if (!nomeForma || dataStr.length !== 10 || !inpMesFat) return;
+      const formaNormalizada = nomeForma.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+      const pagamentoAVista = /pix|debito|transferencia|dinheiro|\bted\b|\bdoc\b/.test(formaNormalizada);
+      if (pagamentoAVista) {
+        if (!inpMesFat.value) {
+          const [dia, mes, ano] = dataStr.split('/');
+          inpMesFat.value = `${mes}/${ano}`;
+        }
+        return;
+      }
       const formaObj = formasGlobais.find(f => f.nome === nomeForma);
-      if (!formaObj) return;
-      const calc = calcularMesFaturaCartao(formaObj, dataStr);
-      inpMesFat.value = calc.mesFat;
+      if (formaObj) {
+        const calc = calcularMesFaturaCartao(formaObj, dataStr);
+        inpMesFat.value = calc.mesFat;
+      }
     }
 
     function selecionarPessoaChipEmp(nome) {
@@ -2894,11 +2905,11 @@ function chamarFiltroBackend(append = false) {
         document.getElementById('formEmprestimo').reset();
         definirDataHojeEmprestimo();
         atualizarPreviewParcEmp();
-        btn.textContent = '💾 Registrar Empréstimo no Cartão'; btn.disabled = false;
+        btn.textContent = '💾 Registrar Empréstimo'; btn.disabled = false;
         carregarDados();
       }).catch(err => {
         mostrarAviso('Erro', err.message);
-        btn.textContent = '💾 Registrar Empréstimo no Cartão'; btn.disabled = false;
+        btn.textContent = '💾 Registrar Empréstimo'; btn.disabled = false;
       });
     }
 
@@ -3007,7 +3018,7 @@ function chamarFiltroBackend(append = false) {
                 <div>
                   <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${it.pessoa} • ${it.data}</span>
                   <div class="text-white font-bold text-sm mt-0.5">${it.descricao}</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">💳 ${it.forma} • Fat: <strong class="text-slate-200">${it.mesFatura}</strong> • Parc: <strong>${it.parcela}</strong></div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">💰 ${it.forma} • Mês: <strong class="text-slate-200">${it.mesFatura}</strong> • Parc: <strong>${it.parcela}</strong></div>
                   ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${it.observacoes}</div>` : ''}
                 </div>
                 <div class="text-right">
@@ -3035,7 +3046,7 @@ function chamarFiltroBackend(append = false) {
     function quitarMesPessoaEmprestimo(pessoa, mesFatura) {
       mostrarConfirmacao(
         "Confirmar Recebimento",
-        `Marcar todas as parcelas em aberto de "${pessoa}" ${mesFatura ? `na fatura ${mesFatura}` : ''} como RECEBIDAS?`,
+        `Marcar todas as parcelas em aberto de "${pessoa}" ${mesFatura ? `no mês ${mesFatura}` : ''} como RECEBIDAS?`,
         () => {
           apiCall('alternarStatusEmprestimoWeb', { quitarMesPessoa: true, pessoa, mesFatura })
             .then(res => { mostrarAviso('Recebido ✅', `${res.qtd} parcela(s) de ${pessoa} baixadas!`); carregarDados(); })
@@ -3175,8 +3186,8 @@ function chamarFiltroBackend(append = false) {
       if (itens.length === 0) return;
 
       let total = 0;
-      let msg = [`🤝 *Resumo do Cartão — ${pessoa}*`];
-      if (fMes) msg.push(`📅 Fatura de Referência: *${fMes}*`);
+      let msg = [`🤝 *Resumo do Empréstimo — ${pessoa}*`];
+      if (fMes) msg.push(`📅 Mês de Referência: *${fMes}*`);
       msg.push('');
       itens.forEach(it => {
         total += it.valorRaw;
@@ -3235,29 +3246,93 @@ function chamarFiltroBackend(append = false) {
       calcularRachadinha();
     }
 
+    function rachadinhaParaCentavos(valor) {
+      const numero = Number(valor);
+      return Number.isFinite(numero) ? Math.max(0, Math.round(numero * 100)) : 0;
+    }
+
+    function repartirCentavos(total, quantidade) {
+      const qtd = Math.max(1, Math.floor(Number(quantidade) || 1));
+      const centavos = Math.max(0, Math.round(total));
+      const base = Math.floor(centavos / qtd);
+      const sobra = centavos % qtd;
+      return Array.from({ length: qtd }, (_, i) => base + (i < sobra ? 1 : 0));
+    }
+
+    function repartirCentavosPorPeso(total, pesos) {
+      const centavos = Math.max(0, Math.round(total));
+      const somaPesos = pesos.reduce((soma, peso) => soma + Math.max(0, peso), 0);
+      if (!somaPesos || !centavos) return pesos.map(() => 0);
+      const partes = pesos.map((peso, indice) => {
+        const cota = centavos * Math.max(0, peso) / somaPesos;
+        return { indice, valor: Math.floor(cota), resto: cota - Math.floor(cota) };
+      });
+      let sobra = centavos - partes.reduce((soma, parte) => soma + parte.valor, 0);
+      partes.slice().sort((a, b) => b.resto - a.resto || a.indice - b.indice).forEach(parte => {
+        if (sobra > 0) { partes[parte.indice].valor++; sobra--; }
+      });
+      return partes.map(parte => parte.valor);
+    }
+
+    function resumoGruposCentavos(partes) {
+      const grupos = new Map();
+      partes.forEach(valor => grupos.set(valor, (grupos.get(valor) || 0) + 1));
+      return Array.from(grupos.entries()).sort((a, b) => b[0] - a[0])
+        .map(([valor, quantidade]) => `${quantidade} ${quantidade === 1 ? 'pessoa' : 'pessoas'}: ${formatBRL(valor / 100)} cada`)
+        .join(' • ');
+    }
+
     function calcularRachadinha() {
       const valComida = lerValorMoeda('rachaValorTotal');
       const valBebida = lerValorMoeda('rachaValorBebida');
       const com10 = Boolean(document.getElementById('rachaTaxa10')?.checked);
-      const mult = com10 ? 1.10 : 1.0;
-
-      const qtdTotal = Math.max(1, parseInt(document.getElementById('rachaQtdPessoas')?.value, 10) || 1);
+      const campoQtdTotal = document.getElementById('rachaQtdPessoas');
+      const qtdTotal = Math.min(1000, Math.max(1, parseInt(campoQtdTotal?.value, 10) || 1));
+      if (campoQtdTotal && Number(campoQtdTotal.value) !== qtdTotal) campoQtdTotal.value = qtdTotal;
       let qtdBebeu = Math.max(1, parseInt(document.getElementById('rachaQtdBebeu')?.value, 10) || 1);
       if (qtdBebeu > qtdTotal) {
         qtdBebeu = qtdTotal;
         if (document.getElementById('rachaQtdBebeu')) document.getElementById('rachaQtdBebeu').value = qtdTotal;
       }
 
-      const comidaComTaxa = valComida * mult;
-      const bebidaComTaxa = valBebida * mult;
-      const totalMesa = comidaComTaxa + bebidaComTaxa;
-
-      const valorSemBebida = comidaComTaxa / qtdTotal;
-      const adicionalBebida = valBebida > 0 ? (bebidaComTaxa / qtdBebeu) : 0;
-      const valorComBebida = valorSemBebida + adicionalBebida;
+      const comidaBaseCentavos = rachadinhaParaCentavos(valComida);
+      const bebidaBaseCentavos = rachadinhaParaCentavos(valBebida);
+      const baseTotalCentavos = comidaBaseCentavos + bebidaBaseCentavos;
+      const taxaCentavos = com10 ? Math.round(baseTotalCentavos * 0.10) : 0;
+      const taxaPorGrupo = repartirCentavosPorPeso(taxaCentavos, [comidaBaseCentavos, bebidaBaseCentavos]);
+      const comidaTotalCentavos = comidaBaseCentavos + taxaPorGrupo[0];
+      const bebidaTotalCentavos = bebidaBaseCentavos + taxaPorGrupo[1];
+      const partesComida = repartirCentavos(comidaTotalCentavos, qtdTotal);
+      const partesBebida = repartirCentavos(bebidaTotalCentavos, qtdBebeu);
+      const qtdNaoBebeu = qtdTotal - qtdBebeu;
+      // Ordem definida para o modo rápido: quem não bebeu primeiro, depois quem bebeu.
+      const partesIndividuais = partesComida.map((parte, indice) =>
+        parte + (indice >= qtdNaoBebeu ? (partesBebida[indice - qtdNaoBebeu] || 0) : 0));
+      const valorSemBebidaCentavos = qtdNaoBebeu > 0 ? partesComida[0] : 0;
+      const valorComBebidaCentavos = partesIndividuais[qtdNaoBebeu] || 0;
+      const totalMesaCentavos = comidaTotalCentavos + bebidaTotalCentavos;
+      const totalMesa = totalMesaCentavos / 100;
+      const valorSemBebida = valorSemBebidaCentavos / 100;
+      const valorComBebida = valorComBebidaCentavos / 100;
 
       if (document.getElementById('rachaTotalFinal')) document.getElementById('rachaTotalFinal').textContent = formatBRL(totalMesa);
       if (document.getElementById('rachaValorPorPessoa')) document.getElementById('rachaValorPorPessoa').textContent = formatBRL(valorSemBebida);
+      const resumo = document.getElementById('rachaResumoCentavos');
+      const btnParteNormal = document.getElementById('btnLancarMinhaParteNormal');
+      if (btnParteNormal) btnParteNormal.classList.toggle('hidden', valBebida > 0 && qtdNaoBebeu === 0);
+      const lblNormal = document.getElementById('lblRachaSemBebida');
+      if (lblNormal) lblNormal.textContent = valBebida > 0 ? '🥗 Sua parte (sem bebida):' : '👥 Sua parte (geral):';
+      const lblBebida = document.getElementById('lblRachaComBebida');
+      if (lblBebida) lblBebida.textContent = '🍺 Sua parte (com bebida):';
+      if (resumo) {
+        if (valBebida > 0) {
+          const grupoSem = partesIndividuais.slice(0, qtdNaoBebeu);
+          const grupoCom = partesIndividuais.slice(qtdNaoBebeu);
+          resumo.textContent = `${qtdNaoBebeu ? 'Sem bebida: ' + resumoGruposCentavos(grupoSem) + '. ' : ''}Com bebida: ${resumoGruposCentavos(grupoCom)}. Ordem: sem bebida primeiro, depois com bebida; o botão lança a primeira cota do grupo.`;
+        } else {
+          resumo.textContent = `Distribuição exata: ${resumoGruposCentavos(partesIndividuais)}. A sua parte considera a primeira cota.`;
+        }
+      }
 
       const boxComBebida = document.getElementById('boxResultadoComBebida');
       const btnLancarBebeu = document.getElementById('btnLancarParteBebeu');
@@ -3270,7 +3345,7 @@ function chamarFiltroBackend(append = false) {
         btnLancarBebeu?.classList.add('hidden');
       }
 
-      return { valComida, valBebida, com10, totalMesa, qtdTotal, qtdBebeu, valorSemBebida, valorComBebida };
+      return { valComida: comidaBaseCentavos / 100, valBebida: bebidaBaseCentavos / 100, com10, totalMesa, qtdTotal, qtdBebeu, qtdNaoBebeu, valorSemBebida, valorComBebida, partesIndividuais, partesComida, partesBebida, comidaTotal: comidaTotalCentavos / 100, bebidaTotal: bebidaTotalCentavos / 100 };
     }
 
     function copiarRachadinhaWhats() {
@@ -3281,16 +3356,17 @@ function chamarFiltroBackend(append = false) {
       if (d.valBebida > 0) {
         msg.push(`🥗 Comida/Geral: ${formatBRL(d.valComida)} (${d.qtdTotal} pessoas)`);
         msg.push(`🍺 Bebidas/Extras: ${formatBRL(d.valBebida)} (${d.qtdBebeu} beberam)`);
-        if (d.com10) msg.push(`➕ Taxa 10% Garçom inclusa proporcionalmente`);
+        if (d.com10) msg.push(`➕ Taxa de 10% incluída e arredondada uma vez em centavos`);
         msg.push(`💰 *Total da Mesa:* *${formatBRL(d.totalMesa)}*`);
         msg.push('');
-        const qtdNaoBebeu = d.qtdTotal - d.qtdBebeu;
-        if (qtdNaoBebeu > 0) msg.push(`👉 *Quem NÃO bebeu (${qtdNaoBebeu}x):* *${formatBRL(d.valorSemBebida)}* cada`);
-        msg.push(`🍺 *Quem BEBEU (${d.qtdBebeu}x):* *${formatBRL(d.valorComBebida)}* cada`);
+        if (d.qtdNaoBebeu > 0) msg.push(`👉 *Quem NÃO bebeu (${d.qtdNaoBebeu}):* ${resumoGruposCentavos(d.partesIndividuais.slice(0, d.qtdNaoBebeu))}`);
+        msg.push(`🍺 *Quem BEBEU (${d.qtdBebeu}):* ${resumoGruposCentavos(d.partesIndividuais.slice(d.qtdNaoBebeu))}`);
+        msg.push('_Ajustes de centavos incluídos; cotas sem bebida primeiro, depois com bebida. O botão de lançamento usa a primeira cota do grupo escolhido._');
       } else {
         msg.push(`🧾 Conta Base: ${formatBRL(d.valComida)}${d.com10 ? ' (+ 10% garçom)' : ''}`);
         msg.push(`💰 *Total Final:* *${formatBRL(d.totalMesa)}*`);
-        msg.push(`👥 Dividido por ${d.qtdTotal} pessoas: *${formatBRL(d.valorSemBebida)}* cada`);
+        msg.push(`👥 Divisão exata: ${resumoGruposCentavos(d.partesIndividuais)}`);
+        msg.push('_A sua parte usa a primeira cota; os centavos restantes foram distribuídos na ordem._');
       }
       copiarTextoAreaTransferencia(msg.join('\n'), 'Rachadinha copiada p/ o WhatsApp!');
     }
@@ -3363,7 +3439,8 @@ function chamarFiltroBackend(append = false) {
       const marcados = Array.from(document.querySelectorAll('.chk-pessoa-item-racha:checked')).map(c => rachaDetPessoas[parseInt(c.value, 10)]).filter(Boolean);
       if (marcados.length === 0) { mostrarAviso('Atenção', 'Marque pelo menos 1 pessoa que consumiu este item.'); return; }
 
-      rachaDetItens.push({ id: Date.now(), desc, valor, consumidores: marcados });
+      const valorCentavos = rachadinhaParaCentavos(valor);
+      rachaDetItens.push({ id: Date.now(), desc, valor: valorCentavos / 100, valorCentavos, consumidores: marcados });
       if (inpDesc) inpDesc.value = '';
       document.getElementById('inpItemValRacha').value = '';
       calcularRachadinhaDetalhada();
@@ -3381,38 +3458,53 @@ function chamarFiltroBackend(append = false) {
 
     function calcularRachadinhaDetalhada() {
       const com10 = Boolean(document.getElementById('rachaTaxa10')?.checked);
-      const mult = com10 ? 1.10 : 1.0;
-
       const boxItens = document.getElementById('listaItensRachaDet');
       if (boxItens) {
-        boxItens.innerHTML = rachaDetItens.map(it => `
-          <div class="flex justify-between items-center bg-slate-950/70 border border-slate-800 px-3 py-2 rounded-xl text-xs">
-            <div>
-              <strong class="text-white">${it.desc}</strong> <span class="text-emerald-400 font-bold ml-1">${formatBRL(it.valor)}</span>
-              <div class="text-[10px] text-slate-400">Dividido por: ${it.consumidores.join(', ')} (${formatBRL(it.valor / it.consumidores.length)} cada)</div>
+        boxItens.innerHTML = rachaDetItens.map(it => {
+          const totalItemCentavos = it.valorCentavos ?? rachadinhaParaCentavos(it.valor);
+          const consumidores = rachaDetPessoas.filter(p => it.consumidores.includes(p));
+          const partesItem = repartirCentavos(totalItemCentavos, Math.max(1, consumidores.length));
+          const resumoItem = consumidores.map((p, i) => `${p}: ${formatBRL(partesItem[i] / 100)}`).join(' • ');
+          return `
+            <div class="flex justify-between items-center bg-slate-950/70 border border-slate-800 px-3 py-2 rounded-xl text-xs">
+              <div class="min-w-0">
+                <strong class="text-white">${it.desc}</strong> <span class="text-emerald-400 font-bold ml-1">${formatBRL(totalItemCentavos / 100)}</span>
+                <div class="text-[10px] text-slate-400 break-words">Partes exatas: ${resumoItem}</div>
+              </div>
+              <button type="button" onclick="removerItemRachaDet(${it.id})" class="text-rose-400 hover:text-white px-2">🗑️</button>
             </div>
-            <button type="button" onclick="removerItemRachaDet(${it.id})" class="text-rose-400 hover:text-white px-2">🗑️</button>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       const mapaPorPessoa = {};
-      rachaDetPessoas.forEach(p => mapaPorPessoa[p] = { base: 0, final: 0, itens: [] });
-      let totalGeralFinal = 0;
+      rachaDetPessoas.forEach(p => mapaPorPessoa[p] = { baseCentavos: 0, taxaCentavos: 0, finalCentavos: 0, itens: [] });
+      let totalBaseCentavos = 0;
 
       rachaDetItens.forEach(it => {
-        const cota = it.valor / it.consumidores.length;
-        it.consumidores.forEach(p => {
-          if (!mapaPorPessoa[p]) mapaPorPessoa[p] = { base: 0, final: 0, itens: [] };
-          mapaPorPessoa[p].base += cota;
+        const consumidores = rachaDetPessoas.filter(p => it.consumidores.includes(p));
+        if (!consumidores.length) return;
+        const totalItemCentavos = it.valorCentavos ?? rachadinhaParaCentavos(it.valor);
+        const partesItem = repartirCentavos(totalItemCentavos, consumidores.length);
+        totalBaseCentavos += totalItemCentavos;
+        consumidores.forEach((p, indice) => {
+          mapaPorPessoa[p].baseCentavos += partesItem[indice];
           mapaPorPessoa[p].itens.push(it.desc);
         });
       });
 
-      Object.keys(mapaPorPessoa).forEach(p => {
-        mapaPorPessoa[p].final = mapaPorPessoa[p].base * mult;
-        totalGeralFinal += mapaPorPessoa[p].final;
+      const pessoas = Object.keys(mapaPorPessoa);
+      const totalTaxaCentavos = com10 ? Math.round(totalBaseCentavos * 0.10) : 0;
+      const taxasPorPessoa = repartirCentavosPorPeso(totalTaxaCentavos, pessoas.map(p => mapaPorPessoa[p].baseCentavos));
+      pessoas.forEach((p, indice) => {
+        const pessoa = mapaPorPessoa[p];
+        pessoa.taxaCentavos = taxasPorPessoa[indice];
+        pessoa.finalCentavos = pessoa.baseCentavos + pessoa.taxaCentavos;
+        pessoa.base = pessoa.baseCentavos / 100;
+        pessoa.final = pessoa.finalCentavos / 100;
       });
+      const totalGeralCentavos = totalBaseCentavos + totalTaxaCentavos;
+      const totalGeralFinal = totalGeralCentavos / 100;
 
       const boxResumo = document.getElementById('listaResumoIndividualRachaDet');
       if (boxResumo) {
@@ -3425,11 +3517,11 @@ function chamarFiltroBackend(append = false) {
             return `<div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
               <div>
                 <strong class="text-white text-sm">👤 ${p}</strong>
-                <div class="text-[10px] text-slate-400">${dP.itens.join(', ') || 'Sem consumo'}${com10 && dP.base > 0 ? ' (+10%)' : ''}</div>
+                <div class="text-[10px] text-slate-400">${dP.itens.join(', ') || 'Sem consumo'}${com10 && dP.baseCentavos > 0 ? ' (+10% proporcional)' : ''}</div>
               </div>
               <div class="flex items-center gap-2">
-                <strong class="text-emerald-400 text-sm sm:text-base">${formatBRL(dP.final)}</strong>
-                ${dP.final > 0 ? `<button type="button" onclick="lancarParteIndividualDet('${pSafe}', ${dP.final})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-2 py-1 rounded-lg text-[10px] font-bold">➕ Lançar</button>` : ''}
+                <strong class="text-emerald-400 text-sm sm:text-base">${formatBRL(dP.finalCentavos / 100)}</strong>
+                ${dP.finalCentavos > 0 ? `<button type="button" onclick="lancarParteIndividualDet('${pSafe}', ${dP.finalCentavos})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-2 py-1 rounded-lg text-[10px] font-bold">➕ Lançar</button>` : ''}
               </div>
             </div>`;
           }).join('') + `<div class="flex justify-between items-center pt-2 text-xs font-bold text-slate-300"><span>Total da Conta:</span><span class="text-white text-sm">${formatBRL(totalGeralFinal)}</span></div>`;
@@ -3438,7 +3530,8 @@ function chamarFiltroBackend(append = false) {
       return { mapaPorPessoa, totalGeralFinal, com10 };
     }
 
-    function lancarParteIndividualDet(nomePessoa, valorFloat) {
+    function lancarParteIndividualDet(nomePessoa, valorCentavos) {
+      const valorFloat = Math.max(0, Math.round(Number(valorCentavos) || 0)) / 100;
       const local = document.getElementById('rachaLocal')?.value.trim() || `Conta (${nomePessoa})`;
       limparFormularioNovoGasto();
       document.getElementById('inpDesc').value = formatarTituloInteligente(local);
@@ -3862,10 +3955,11 @@ function chamarFiltroBackend(append = false) {
         formasGlobais.forEach(p => {
           const nomeSeguro = String(p.nome || ''), bancoSeguro = String(p.banco || '');
           const nomeEscaped = nomeSeguro.replace(/'/g, "\\'"), bancoEscaped = bancoSeguro.replace(/'/g, "\\'");
-          const nLower = nomeSeguro.toLowerCase();
-          const isPix = nLower.includes('pix'), isTotal = nLower.includes('total') || nLower.includes('carteira');
-          const isFixed = isPix || isTotal;
-          const badgeClass = isPix ? 'bg-slate-700 text-slate-300' : (isTotal ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30');
+          const nLower = nomeSeguro.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const isPagamentoAVista = /pix|debito|transferencia|dinheiro|\bted\b|\bdoc\b/.test(nLower);
+          const isTotal = nLower.includes('total') || nLower.includes('carteira');
+          const isFixed = isPagamentoAVista || isTotal;
+          const badgeClass = isPagamentoAVista ? 'bg-slate-700 text-slate-300' : (isTotal ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30');
 
           let botaoExcluir = '', iconeDrag = '', lockClass = '', botoesRow = '', margemInterna = '';
           if (modoEdicaoFormas) {
@@ -3881,13 +3975,13 @@ function chamarFiltroBackend(append = false) {
             botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
           }
 
-          const labelFatura = isPix ? 'Gasto no Mês' : 'Sua Fatura Atual';
-          const htmlTotalFuturo = !isPix ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div>` : '';
-          const htmlTerceiros = (!isPix && p.terceirosMesRaw > 0)
+          const labelFatura = isPagamentoAVista ? 'Gasto no Mês' : 'Sua Fatura Atual';
+          const htmlTotalFuturo = !isPagamentoAVista ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div>` : '';
+          const htmlTerceiros = (!isPagamentoAVista && p.terceirosMesRaw > 0)
             ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${p.terceirosMes} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${p.totalBancoMes}</strong></span></div>`
             : '';
 
-          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPix ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
+          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPagamentoAVista ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
         });
       }
       
@@ -4582,14 +4676,21 @@ function chamarFiltroBackend(append = false) {
         if (sel.id === 'filtForma') sel.innerHTML = '<option value="">Todos</option>';
         else if (sel.id === 'selForma') sel.innerHTML = '<option value="">Selecione...</option>';
         else if (sel.id === 'simCartao') sel.innerHTML = '<option value="">📊 Comparar Todos os Cartões</option>';
-        else if (sel.id === 'selEmpForma') sel.innerHTML = '<option value="">Selecione o cartão...</option>';
+        else if (sel.id === 'selEmpForma') sel.innerHTML = '<option value="">Selecione o cartão ou Pix...</option>';
         else sel.innerHTML = '';
 
         (dados.opcoesFormas || []).forEach(f => {
-          if ((sel.id === 'simCartao' || sel.id === 'selEmpForma') && String(f).toLowerCase().includes('pix')) return;
+          if (sel.id === 'simCartao' && String(f).toLowerCase().includes('pix')) return;
           const star = (sel.id === 'simCartao' && f === cartaoMaisFrequenteGlobal) ? ' ⭐' : '';
           sel.innerHTML += `<option value="${f}">${f}${star}</option>`;
         });
+        if (sel.id === 'selEmpForma' || sel.id === 'selEdEmpForma') {
+          const normalizarForma = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const formasAtuais = Array.from(sel.options).map(o => normalizarForma(o.value));
+          [['Pix', /pix/]].forEach(([nome, padrao]) => {
+            if (!formasAtuais.some(f => padrao.test(f))) sel.add(new Option(nome, nome));
+          });
+        }
         sel.value = v || '';
       });
 
@@ -4989,8 +5090,8 @@ try {
   function pxJs(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/'/g, "\\'"); }
 
   var CLS_FIXO_OFF = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm';
-  var CLS_METADE_OFF = 'text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95';
-  var CLS_METADE_ON = 'text-[10px] font-bold bg-amber-500/20 text-amber-300 w-8 text-center py-0.5 rounded border border-amber-500/40 transition active:scale-95';
+  var CLS_METADE_OFF = 'h-6 inline-flex items-center justify-center text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 rounded border border-indigo-500/30 transition active:scale-95';
+  var CLS_METADE_ON = 'h-6 inline-flex items-center justify-center text-[10px] font-bold bg-amber-500/20 text-amber-300 w-8 rounded border border-amber-500/40 transition active:scale-95';
 
   /* ------------------------------------------------------------------ 1 */
   /* Gravacoes NAO sao mais repetidas sozinhas (evita lancamento duplicado) */
@@ -5135,7 +5236,7 @@ try {
 
       var b1 = document.createElement('button');
       b1.type = 'button'; b1.id = 'btnSugestaoUltimoValor';
-      b1.className = 'hidden text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-2 py-1 rounded-lg border border-amber-500/30 transition active:scale-95';
+      b1.className = 'hidden h-6 inline-flex items-center text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-2 rounded-lg border border-amber-500/30 transition active:scale-95';
       b1.onclick = function () { vibrar(); aplicarUltimoValorSugerido(); };
 
       linha.appendChild(b1);
@@ -5166,7 +5267,7 @@ try {
   /* ------------------------------------------------------------------ 5 */
   /* Atalhos 3x/6x/12x: agora ficam pequenos, ABAIXO do campo (nao cobrem o "Inicio") */
   seguro('chipsParcelas', function () {
-    var cls = 'flex-1 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 py-0.5 rounded border border-indigo-500/30 transition active:scale-95';
+    var cls = 'flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95';
     var botoes = document.querySelectorAll('button[onclick*="aplicarParcelamentoRapido"], button[onclick*="inpEmpParc"]');
     var grupos = [];
     botoes.forEach(function (b) {

@@ -497,7 +497,7 @@ function organizarFormasPagamento(pagtoSheet) {
 }
 
 // ============================================================================
-// MÓDULO DE EMPRÉSTIMOS DE CARTÃO (TERCEIROS) - BLINDADO CONTRA GASTOS PESSOAIS
+// MÓDULO DE EMPRÉSTIMOS PARA TERCEIROS - SEPARADO DOS GASTOS PESSOAIS
 // ============================================================================
 
 function garantirAbaEmprestimos(ss) {
@@ -1514,7 +1514,7 @@ function getDadosCompletos() {
         const dtLimpa = String(d[0] || '').replace(/^'/, '').trim();
         const formaRaw = String(d[3] || '').trim();
         const chaveForma = mapLowerToOriginal[formaRaw.toLowerCase()] || formaRaw;
-        const isPix = chaveForma.toLowerCase().includes('pix');
+        const consomeLimiteCartao = formaEmprestimoConsomeLimite_(chaveForma);
         const parcLimpa = String(d[6] || '').replace(/^'/, '').trim();
         const valParc = extractNum(r[7]);
         const mesFat = String(d[8] || '').replace(/^'/, '').trim();
@@ -1529,7 +1529,9 @@ function getDadosCompletos() {
 
         if (valParc > 0) {
           if (mesFat === mesAtualStr) {
-            terceirosTotalMesPorForma[chaveForma] = (terceirosTotalMesPorForma[chaveForma] || 0) + valParc;
+            if (consomeLimiteCartao) {
+              terceirosTotalMesPorForma[chaveForma] = (terceirosTotalMesPorForma[chaveForma] || 0) + valParc;
+            }
             if (recebido) empKpiRecebidoMes += valParc;
             else empKpiAReceberMes += valParc;
           }
@@ -1541,7 +1543,7 @@ function getDadosCompletos() {
               empKpiAtrasados += valParc;
             }
 
-            if (!isPix && infoFat.time >= timeMesAtual) {
+            if (consomeLimiteCartao && infoFat.time >= timeMesAtual) {
               empKpiLimiteOcupado += valParc;
               if (mesFat === mesAtualStr) {
                 terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + valParc;
@@ -1609,7 +1611,7 @@ function getDadosCompletos() {
     listaFormasPagto.forEach(f => {
       const fNomeTrim = f.nome.trim();
       const nomeLower = fNomeTrim.toLowerCase();
-      const isPix = nomeLower.includes('pix');
+      const isPagamentoAVista = !formaEmprestimoConsomeLimite_(nomeLower);
       const isTotal = nomeLower.includes('total') || nomeLower.includes('carteira');
       const limRaw = extractNum(f.limiteTotal);
 
@@ -1628,7 +1630,7 @@ function getDadosCompletos() {
       f.terceirosFuturoRaw = tercFuturo;
       f.totalBancoMes = formatBRL(gastoMesPessoal + tercTotalMes);
 
-      if (isPix) {
+      if (isPagamentoAVista) {
         f.utilizado = formatBRL(gastoMesPessoal);
         f.totalFuturo = 'R$ 0,00';
         f.disponivelRaw = limRaw > 0 ? (limRaw - gastoMesPessoal) : 0;
@@ -2268,6 +2270,13 @@ function salvarNotasWeb(notas) {
 }
 
 // ============================================================================
+// Pagamentos à vista não comprometem limite de cartão; continuam com parcelas
+// próprias de recebimento no controle de empréstimos.
+function formaEmprestimoConsomeLimite_(forma) {
+  const nome = String(forma || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return !(/pix|debito|transferencia|dinheiro|\bted\b|\bdoc\b/.test(nome));
+}
+
 // EMPRÉSTIMOS: NOVO REGISTRO
 // ============================================================================
 
@@ -2278,7 +2287,7 @@ function salvarEmprestimoWeb(dados) {
     if (!dados || typeof dados !== 'object' || Array.isArray(dados)) throw new Error('Dados do empréstimo inválidos.');
     validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
     validarMesFaturaWeb_(dados.mesPrimeiraFatura);
-    if (!String(dados.formaPagto || '').trim()) throw new Error('Selecione o cartão ou forma de pagamento.');
+    if (!String(dados.formaPagto || '').trim()) throw new Error('Selecione como o empréstimo foi pago.');
 
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
@@ -2291,7 +2300,9 @@ function salvarEmprestimoWeb(dados) {
     if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
       throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');
     }
-    const valorParcela = valorTotal / numParcelas;
+    const totalCentavos = Math.round(valorTotal * 100);
+    const centavosBase = Math.floor(totalCentavos / numParcelas);
+    const sobraCentavos = totalCentavos % numParcelas;
 
     const hoje = getHojeSeguro();
     const pm = limparApostrofo(dados.mesPrimeiraFatura).split('/');
@@ -2306,6 +2317,7 @@ function salvarEmprestimoWeb(dados) {
     const linhas = [];
     for (let p = parcelaInicial; p <= numParcelas; p++) {
       const dRef = new Date(anoFat, (mesFat - 1) + (p - parcelaInicial), 1);
+      const valorParcela = (centavosBase + (p <= sobraCentavos ? 1 : 0)) / 100;
       linhas.push([
         "'" + dtStr, pessoa, desc, dados.formaPagto, valorTotal, numParcelas,
         "'" + p + '/' + numParcelas, valorParcela,
