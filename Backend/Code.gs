@@ -73,6 +73,56 @@ function parseMesFat(str) {
   return { m: 0, a: 0, time: 0 };
 }
 
+function validarDataCalendarioWeb_(valor, rotulo) {
+  const texto = String(valor || '').replace(/^'/, '').trim();
+  const partes = texto.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!partes) throw new Error(rotulo + ' inválida. Use o formato DD/MM/AAAA.');
+
+  const dia = Number(partes[1]), mes = Number(partes[2]), ano = Number(partes[3]);
+  const data = new Date(ano, mes - 1, dia);
+  if (ano < 1900 || mes < 1 || mes > 12 || dia < 1 ||
+      data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) {
+    throw new Error(rotulo + ' não existe no calendário. Confira o dia e o mês.');
+  }
+  return texto;
+}
+
+function validarMesFaturaWeb_(valor) {
+  const texto = String(valor || '').replace(/^'/, '').trim();
+  const partes = texto.match(/^(\d{2})\/(\d{4})$/);
+  if (!partes) throw new Error('Mês da fatura inválido. Use o formato MM/AAAA.');
+
+  const mes = Number(partes[1]), ano = Number(partes[2]);
+  if (ano < 1900 || mes < 1 || mes > 12) {
+    throw new Error('Mês da fatura inválido. Confira o mês e o ano.');
+  }
+  return texto;
+}
+
+function validarLancamentoWeb_(dados, indice) {
+  const contexto = indice ? 'Lançamento ' + indice + ': ' : '';
+  if (!dados || typeof dados !== 'object' || Array.isArray(dados)) {
+    throw new Error(contexto + 'dados inválidos.');
+  }
+  if (!String(dados.descricao || '').trim()) throw new Error(contexto + 'informe a descrição.');
+  if (!String(dados.formaPagto || '').trim()) throw new Error(contexto + 'selecione o cartão ou forma de pagamento.');
+  if (!String(dados.categoria || '').trim()) throw new Error(contexto + 'selecione uma categoria.');
+  validarDataCalendarioWeb_(dados.dataCompra, contexto + 'data da compra');
+  validarMesFaturaWeb_(dados.mesPrimeiraFatura);
+
+  const valor = extractNum(dados.valorTotal);
+  if (!Number.isFinite(valor) || valor <= 0) throw new Error(contexto + 'o valor deve ser maior que zero.');
+
+  const isPix = String(dados.formaPagto).toLowerCase().includes('pix');
+  const isAssinatura = Boolean(dados.isAssinatura);
+  const parcelas = (isPix || isAssinatura) ? 1 : Number(dados.numParcelas || 1);
+  const parcelaInicial = (parcelas <= 1) ? 1 : Number(dados.parcelaInicial || 1);
+  if (!Number.isInteger(parcelas) || parcelas < 1) throw new Error(contexto + 'o número de parcelas deve ser um inteiro positivo.');
+  if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > parcelas) {
+    throw new Error(contexto + 'a parcela inicial deve estar entre 1 e o total de parcelas.');
+  }
+}
+
 function parseNumParcela(parcStr) {
   const limpa = String(parcStr || '').replace(/^'/, '').trim();
   if (limpa.includes('/') && limpa !== '∞/∞') {
@@ -1053,6 +1103,13 @@ function sincronizarLoteWeb(loteOffline) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
+    if (!Array.isArray(loteOffline) || loteOffline.length === 0) {
+      throw new Error('A fila de sincronização está vazia ou inválida.');
+    }
+    // Validar o lote inteiro antes de escrever qualquer linha evita sincronização parcial
+    // causada por um item com data, valor ou parcelas inválidos.
+    loteOffline.forEach((dados, i) => validarLancamentoWeb_(dados, i + 1));
+
     const ss = obterPlanilhaGestor_();
     const lancSheet = ss.getSheetByName('Lançamentos');
     const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
@@ -2218,23 +2275,28 @@ function salvarEmprestimoWeb(dados) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
+    if (!dados || typeof dados !== 'object' || Array.isArray(dados)) throw new Error('Dados do empréstimo inválidos.');
+    validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
+    validarMesFaturaWeb_(dados.mesPrimeiraFatura);
+    if (!String(dados.formaPagto || '').trim()) throw new Error('Selecione o cartão ou forma de pagamento.');
+
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
 
     const valorTotal = extractNum(dados.valorTotal);
-    if (valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
-    const numParcelas = Math.max(1, parseInt(dados.numParcelas, 10) || 1);
-    let parcelaInicial = Math.max(1, parseInt(dados.parcelaInicial, 10) || 1);
-    if (parcelaInicial > numParcelas) parcelaInicial = 1;
+    if (!Number.isFinite(valorTotal) || valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
+    const numParcelas = Number(dados.numParcelas || 1);
+    const parcelaInicial = Number(dados.parcelaInicial || 1);
+    if (!Number.isInteger(numParcelas) || numParcelas < 1) throw new Error('O número de parcelas deve ser um inteiro positivo.');
+    if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
+      throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');
+    }
     const valorParcela = valorTotal / numParcelas;
 
     const hoje = getHojeSeguro();
-    let mesFat = hoje.getMonth() + 1, anoFat = hoje.getFullYear();
     const pm = limparApostrofo(dados.mesPrimeiraFatura).split('/');
-    if (pm.length === 2 && !isNaN(parseInt(pm[0], 10)) && !isNaN(parseInt(pm[1], 10))) {
-      mesFat = parseInt(pm[0], 10);
-      anoFat = parseInt(pm[1], 10);
-    }
+    const mesFat = Number(pm[0]);
+    const anoFat = Number(pm[1]);
 
     const pessoa = formatarTituloInteligente(dados.pessoa);
     const desc = formatarTituloInteligente(dados.descricao);
