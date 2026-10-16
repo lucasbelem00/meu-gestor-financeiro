@@ -4935,8 +4935,11 @@ try {
           clearTimeout(timer);
           var erro = err;
           if (err && err.name === 'AbortError') {
-            erro = new Error(ehLeitura ? 'A nuvem demorou demais para responder.' : 'A nuvem demorou para responder. Confira o Historico antes de tentar de novo (pode ter sido gravado).');
-            erro.doServidor = !ehLeitura;
+            erro = new Error(ehLeitura ? 'A nuvem demorou demais para responder.' : 'A nuvem demorou para responder.');
+          }
+          if (!ehLeitura) {
+            erro = new Error('Não foi possível confirmar se a gravação foi concluída. Confira o Histórico antes de tentar novamente. Detalhe: ' + (erro.message || 'falha de comunicação'));
+            erro.doServidor = true;
           }
           if (i === tentativas - 1 || (erro && erro.doServidor)) throw erro;
           await new Promise(function (r) { setTimeout(r, 600 * (i + 1)); });
