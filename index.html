@@ -5055,7 +5055,10 @@ function chamarFiltroBackend(append = false) {
       }
     }
   
+    let requisicaoCarregarDadosAtual = 0;
+
     function carregarDados() {
+      const idRequisicao = ++requisicaoCarregarDadosAtual;
       const cacheLocal = localStorage.getItem('cacheDadosGestorV11');
       if (cacheLocal && !dadosCarregadosIniciais) {
         try { renderizarDados(JSON.parse(cacheLocal)); } catch (e) {}
@@ -5065,13 +5068,22 @@ function chamarFiltroBackend(append = false) {
         try { notasGlobais = JSON.parse(notasSalvas); } catch (e) {}
       }
 
-      apiCall('getDadosCompletos')
+      return apiCall('getDadosCompletos')
         .then(dados => {
+          // Uma resposta antiga não pode sobrescrever uma recarga iniciada depois dela.
+          if (idRequisicao !== requisicaoCarregarDadosAtual) return true;
           localStorage.setItem('cacheDadosGestorV11', JSON.stringify(dados));
           renderizarDados(dados);
+          return true;
         })
         .catch(err => {
-          if (!cacheLocal) mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message);
+          if (idRequisicao !== requisicaoCarregarDadosAtual) return false;
+          if (cacheLocal) {
+            mostrarAviso('Dados ainda não atualizados', 'A gravação pode estar na planilha, mas a tela continua com dados anteriores. Confira novamente quando a conexão estabilizar. Detalhe: ' + (err?.message || 'falha ao recarregar'));
+          } else {
+            mostrarAviso('Erro de Conexão', 'Não foi possível carregar os dados: ' + err.message);
+          }
+          return false;
         });
     }
 
