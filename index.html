@@ -119,7 +119,7 @@
 
   <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
   <div id="modalMenuMobile" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
-    <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-24 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
+    <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-lg">🧭</span>
@@ -738,7 +738,7 @@
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
                 <div class="relative">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 text-amber-300 font-bold placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-amber-500">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 !text-white font-bold placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -1159,7 +1159,7 @@
         <div class="grid grid-cols-2 gap-3">
           <div class="col-span-2">
             <label class="block text-[11px] font-bold text-slate-400 mb-1">Pessoa</label>
-            <input type="text" id="inpEdEmpPessoa" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-amber-300 font-bold text-sm focus:border-amber-500 outline-none">
+            <input type="text" id="inpEdEmpPessoa" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 !text-white font-bold text-sm focus:border-amber-500 outline-none">
           </div>
           <div class="col-span-2">
             <label class="block text-[11px] font-bold text-slate-400 mb-1">Descrição</label>
@@ -3199,7 +3199,7 @@ function chamarFiltroBackend(append = false) {
             return `<div class="bg-slate-900/70 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between gap-3">
               <div class="flex justify-between items-start">
                 <div>
-                  <h4 class="text-white font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${p.nome}</h4>
+                  <h4 class="text-amber-300 font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${p.nome}</h4>
                   <span class="text-[11px] text-slate-400">${p.itens.length} parcela(s) ${fMes ? `em ${fMes}` : 'listadas'}</span>
                 </div>
                 <div class="text-right">
