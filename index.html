@@ -42,7 +42,7 @@
     .sortable-drag { cursor: grabbing !important; }
     
     /* Margem de Segurança do Conteúdo Principal */
-    .main-content { padding-bottom: 95px; }
+    .main-content { padding-bottom: 80px; }
     @media (min-width: 640px) { .main-content { padding-bottom: 32px; } }
 
     /* --- MELHORIAS UX/UI NATIVAS DESTA ATUALIZAÇÃO --- */
@@ -194,13 +194,23 @@
             </div>
             <span class="text-slate-500 text-xs font-bold">➔</span>
           </button>
+          <button type="button" onclick="exportarBackupDados()" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lg">💾</div>
+              <div>
+                <div class="text-sm font-bold text-white">Exportar cópia de segurança</div>
+                <div class="text-[11px] text-slate-400">Baixa os dados das abas em um arquivo JSON</div>
+              </div>
+            </div>
+            <span class="text-slate-500 text-xs font-bold">⇩</span>
+          </button>
         </div>
       </div>
 
       <!-- Grupo 3: Gestão e Ajustes -->
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">⚙️ Gestão e Ajustes</span>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-2 gap-2.5">
           <button onclick="setAba('assinaturas')" id="btn-menu-assinaturas" class="flex sm:flex-col items-center sm:items-start justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95 gap-2">
             <div class="flex items-center gap-3">
               <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-base">🔄</div>
@@ -378,6 +388,7 @@
               <button type="button" id="btnLimparTags" onclick="vibrar(); limparCampoEVoltarFoco('inpTags', 'btnLimparTags')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
             </div>
             <div id="chipsTagsNovo" class="flex flex-wrap gap-1.5 mt-2"></div>
+            <button type="button" id="btnTagsFrequentes" onclick="aplicarTagsFrequentes()" class="hidden mt-2 px-2.5 py-1 rounded-lg text-[10px] font-bold text-indigo-200 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 transition"></button>
             <datalist id="listaTagsOpcionais"></datalist>
           </div>
 
@@ -620,13 +631,20 @@
 
     <!-- ABA 5: DASHBOARD COM ALERTA DE EMPRÉSTIMOS E TABELA HORIZONTE CLICÁVEL -->
     <div id="view-dashboard" class="hidden space-y-6">
-      <div id="bannerEmprestimosDash" onclick="abrirFerramenta('emprestimos')" class="hidden card-glass p-3.5 border-l-4 border-l-amber-400 bg-amber-500/10 hover:bg-amber-500/15 cursor-pointer transition flex items-center justify-between gap-3">
+      <button type="button" id="bannerEmprestimosDash" onclick="abrirResumoEmprestimos()" aria-label="Ir ao resumo de terceiros e cobrar pelo WhatsApp" class="hidden w-full card-glass p-3.5 border-l-4 border-l-amber-400 bg-amber-500/10 hover:bg-amber-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 text-left cursor-pointer transition flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 text-xs sm:text-sm">
           <span class="text-lg">🤝</span>
           <span id="txtBannerEmprestimosDash" class="text-amber-200 font-semibold">Você tem valores a receber de terceiros neste mês.</span>
         </div>
         <span class="text-xs font-bold text-amber-400 whitespace-nowrap">Ver e Cobrar ➔</span>
-      </div>
+      </button>
+      <button type="button" id="bannerVencimentoFatura" onclick="setAba('relatorio')" aria-label="Abrir a fatura mensal com vencimento próximo" class="hidden w-full card-glass p-3.5 border-l-4 border-l-sky-400 bg-sky-500/10 hover:bg-sky-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 text-left cursor-pointer transition flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm min-w-0">
+          <span class="text-lg">💳</span>
+          <span id="txtVencimentoFatura" class="text-sky-100 font-semibold">Há uma fatura próxima do vencimento.</span>
+        </div>
+        <span class="text-xs font-bold text-sky-300 whitespace-nowrap">Ver fatura ➔</span>
+      </button>
 
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -802,7 +820,7 @@
         <div class="card-glass p-5 space-y-4">
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
-              <h3 class="text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
+              <h3 id="tituloResumoPessoasEmp" class="scroll-mt-24 text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
               <p class="text-[11px] text-slate-400">Filtre o mês da fatura para cobrar e dar baixa rapidamente.</p>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
@@ -1947,6 +1965,7 @@
     let ultimoValorSugeridoTemp = 0;
     let notasGlobais = [];
     let emprestimosGlobal = { kpis: {}, pessoasFrequentes: [], itens: [] };
+    const acoesStatusEmprestimoEmAndamento = new Set();
     let salvandoGastoTrava = false;
     let conexaoAnterior = navigator.onLine;
 
@@ -2086,6 +2105,13 @@
     function abrirFerramenta(sub) {
       setAba('ferramentas');
       selecionarSubFerramenta(sub);
+    }
+
+    function abrirResumoEmprestimos() {
+      abrirFerramenta('emprestimos');
+      window.setTimeout(() => {
+        document.getElementById('tituloResumoPessoasEmp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
     }
 
     function selecionarSubFerramenta(sub) {
@@ -3259,15 +3285,34 @@ function chamarFiltroBackend(append = false) {
         vaiMarcarRecebido
           ? `Confirma que ${pessoa} pagou a parcela ${parcela} de “${descricao}”? O status será alterado para Recebido.`
           : `Confirma voltar a parcela ${parcela} de “${descricao}”, de ${pessoa}, para A Receber?`,
-        () => {
-          apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela })
-            .then(res => { mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`); carregarDados(); })
-            .catch(err => mostrarAviso('Erro', err.message));
-        },
+        () => salvarStatusEmprestimoComAtualizacao(linha, pessoa, descricao, parcela, vaiMarcarRecebido),
         false,
         vaiMarcarRecebido ? 'Sim, marcar recebido' : 'Sim, voltar a receber',
         vaiMarcarRecebido ? 'success' : 'neutral'
       );
+    }
+
+    async function salvarStatusEmprestimoComAtualizacao(linha, pessoa, descricao, parcela, vaiMarcarRecebido) {
+      const chaveAcao = String(linha);
+      if (acoesStatusEmprestimoEmAndamento.has(chaveAcao)) {
+        mostrarAviso('Aguarde', 'Essa parcela já está sendo atualizada.');
+        return;
+      }
+      acoesStatusEmprestimoEmAndamento.add(chaveAcao);
+      mostrarAviso('Salvando recebimento…', `Atualizando a parcela ${parcela} de ${pessoa}.`);
+      try {
+        const res = await apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela });
+        const dadosAtualizados = await carregarDados();
+        if (dadosAtualizados) {
+          mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`);
+        } else {
+          mostrarAviso('Recebimento salvo', 'A planilha confirmou a alteração, mas a tela não conseguiu atualizar. Confira novamente quando a conexão estabilizar.');
+        }
+      } catch (err) {
+        mostrarAviso('Erro ao atualizar', err.message || 'Não foi possível confirmar a alteração. Confira a planilha antes de tentar novamente.');
+      } finally {
+        acoesStatusEmprestimoEmAndamento.delete(chaveAcao);
+      }
     }
 
     function quitarMesPessoaEmprestimo(pessoa, mesFatura) {
@@ -4485,7 +4530,7 @@ function chamarFiltroBackend(append = false) {
           totalTerceirosVisivel += val;
           return `<td class="py-3 text-center text-amber-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
         });
-        tb += `<tr class="bg-amber-950/20 border-t border-amber-500/30"><td class="py-3 pl-2 font-bold text-amber-300 whitespace-nowrap pr-1">🤝 Terceiros (a receber)</td>${colsTerceiros.join('')}<td class="py-3 font-extrabold text-amber-300 text-right pr-2 whitespace-nowrap">${totalTerceirosVisivel > 0 ? formatBRL(totalTerceirosVisivel) : '-'}</td></tr>`;
+        tb += `<tr class="bg-amber-950/20 border-t border-amber-500/30"><td title="Valores a receber de terceiros" class="py-3 pl-2 font-bold text-amber-300 whitespace-nowrap pr-1">Terceiros</td>${colsTerceiros.join('')}<td class="py-3 font-extrabold text-amber-300 text-right pr-2 whitespace-nowrap">${totalTerceirosVisivel > 0 ? formatBRL(totalTerceirosVisivel) : '-'}</td></tr>`;
       }
 
       const fBody = document.getElementById('faturas-body'); if (fBody) fBody.innerHTML = tb;

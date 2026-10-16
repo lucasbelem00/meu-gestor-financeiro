@@ -1366,34 +1366,37 @@ function getDadosCompletos() {
         }
 
         const descNorm = normalizarTexto(descStr);
-        if (!statsDesc[descNorm]) {
-          statsDesc[descNorm] = { original: descStr, formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr, ultValor: valor, ultTags: tagsDaLinha };
-        }
-        statsDesc[descNorm].original = descStr;
-        if (valor > 0) statsDesc[descNorm].ultValor = valor;
-        if (tagsDaLinha) statsDesc[descNorm].ultTags = tagsDaLinha;
-        if (chaveForma) {
-          statsDesc[descNorm].formas[chaveForma] = (statsDesc[descNorm].formas[chaveForma] || 0) + 1;
-          statsDesc[descNorm].ultForma = chaveForma;
-        }
-        if (catStr) {
-          statsDesc[descNorm].cats[catStr] = (statsDesc[descNorm].cats[catStr] || 0) + 1;
-          statsDesc[descNorm].ultCat = catStr;
-        }
-
-        const partesTraco = descNorm.split(/\s*[-–]\s*/);
-        const prefixoItem = partesTraco[0].trim();
-        if (prefixoItem && prefixoItem.length >= 3) {
-          if (!statsPrefixos[prefixoItem]) {
-            statsPrefixos[prefixoItem] = { formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr };
+        // Cancelamentos não devem contaminar sugestões de compras recorrentes.
+        if (!cancelado) {
+          if (!statsDesc[descNorm]) {
+            statsDesc[descNorm] = { original: descStr, formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr, ultValor: valor, ultTags: tagsDaLinha };
           }
+          statsDesc[descNorm].original = descStr;
+          if (valor > 0) statsDesc[descNorm].ultValor = valor;
+          if (tagsDaLinha) statsDesc[descNorm].ultTags = tagsDaLinha;
           if (chaveForma) {
-            statsPrefixos[prefixoItem].formas[chaveForma] = (statsPrefixos[prefixoItem].formas[chaveForma] || 0) + 1;
-            statsPrefixos[prefixoItem].ultForma = chaveForma;
+            statsDesc[descNorm].formas[chaveForma] = (statsDesc[descNorm].formas[chaveForma] || 0) + 1;
+            statsDesc[descNorm].ultForma = chaveForma;
           }
           if (catStr) {
-            statsPrefixos[prefixoItem].cats[catStr] = (statsPrefixos[prefixoItem].cats[catStr] || 0) + 1;
-            statsPrefixos[prefixoItem].ultCat = catStr;
+            statsDesc[descNorm].cats[catStr] = (statsDesc[descNorm].cats[catStr] || 0) + 1;
+            statsDesc[descNorm].ultCat = catStr;
+          }
+
+          const partesTraco = descNorm.split(/\s*[-–]\s*/);
+          const prefixoItem = partesTraco[0].trim();
+          if (prefixoItem && prefixoItem.length >= 3) {
+            if (!statsPrefixos[prefixoItem]) {
+              statsPrefixos[prefixoItem] = { formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr };
+            }
+            if (chaveForma) {
+              statsPrefixos[prefixoItem].formas[chaveForma] = (statsPrefixos[prefixoItem].formas[chaveForma] || 0) + 1;
+              statsPrefixos[prefixoItem].ultForma = chaveForma;
+            }
+            if (catStr) {
+              statsPrefixos[prefixoItem].cats[catStr] = (statsPrefixos[prefixoItem].cats[catStr] || 0) + 1;
+              statsPrefixos[prefixoItem].ultCat = catStr;
+            }
           }
         }
 
@@ -1652,6 +1655,7 @@ function getDadosCompletos() {
 
       f.limiteRaw = limRaw;
       f.gastoMesRaw = gastoMesPessoal;
+      f.abertoMesRaw = abertoMesPessoal + tercAbertoMes;
       f.terceirosMesRaw = tercTotalMes;
       f.terceirosMes = formatBRL(tercTotalMes);
       f.terceirosFuturoRaw = tercFuturo;
@@ -1697,6 +1701,24 @@ function getDadosCompletos() {
         }
       }
     });
+
+    const agoraVenc = getHojeSeguro();
+    const diasAteVencimento = [];
+    listaFormasPagto.forEach(function (f) {
+      const nomeLower = String(f.nome || '').toLowerCase();
+      const ehCarteiraTotal = nomeLower.includes('total') || nomeLower.includes('carteira');
+      const diaVenc = parseInt(f.vencimento, 10);
+      const abertoFatura = Number(f.abertoMesRaw || 0);
+      if (ehCarteiraTotal || formaEmprestimoConsomeLimite_(nomeLower) !== true || !diaVenc || abertoFatura <= 0) return;
+      const ultimoDiaMes = new Date(agoraVenc.getFullYear(), agoraVenc.getMonth() + 1, 0).getDate();
+      const dataVenc = new Date(agoraVenc.getFullYear(), agoraVenc.getMonth(), Math.min(diaVenc, ultimoDiaMes));
+      const dias = Math.round((Date.UTC(dataVenc.getFullYear(), dataVenc.getMonth(), dataVenc.getDate()) - Date.UTC(agoraVenc.getFullYear(), agoraVenc.getMonth(), agoraVenc.getDate())) / 86400000);
+      if (dias <= 7) {
+        diasAteVencimento.push({ forma: f.nome, valorRaw: abertoFatura, valor: formatBRL(abertoFatura), dias: dias,
+          data: pad2(dataVenc.getDate()) + '/' + pad2(dataVenc.getMonth() + 1) + '/' + dataVenc.getFullYear() });
+      }
+    });
+    diasAteVencimento.sort(function (a, b) { return a.dias - b.dias; });
 
     const chaveTotalCarteira = listaFormasPagto.find(f => f.nome.toLowerCase().includes('total') || f.nome.toLowerCase().includes('carteira'))?.nome || 'Total Carteira';
     const pivotTerceirosAReceber = {};
@@ -1799,6 +1821,7 @@ function getDadosCompletos() {
       configCategorias: configCategorias,
       consumoCategoriasPorMes: consumoCatPorMes,
       formasPagamento: listaFormasPagto,
+      alertasVencimento: diasAteVencimento,
       cartaoMaisFrequente: cartaoMaisFrequente,
       lancamentos: ultimosLancamentos,
       temMaisLancamentos: lancamentosValidos.length > 50,
@@ -1864,6 +1887,35 @@ function apiCallServidor(action, param) {
   }
 }
 
+// Exportação para arquivo local. Inclui valores, fórmulas e valores exibidos
+// das abas usadas pelo app; não inclui Script Properties nem tokens secretos.
+function exportarBackupDadosWeb() {
+  const ss = obterPlanilhaGestor_();
+  const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
+  const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
+  const abas = nomes.map(function (nome) {
+    const sh = ss.getSheetByName(nome);
+    if (!sh) return null;
+    const range = sh.getDataRange();
+    const valores = range.getValues().map(function (linha) {
+      return linha.map(function (valor) {
+        if (valor instanceof Date) return { tipo: 'data', valor: Utilities.formatDate(valor, fuso, "yyyy-MM-dd'T'HH:mm:ss") };
+        return valor;
+      });
+    });
+    return { nome: nome, valores: valores, exibidos: range.getDisplayValues(), formulas: range.getFormulas() };
+  }).filter(function (aba) { return !!aba; });
+
+  return {
+    formato: 'gestor-financeiro-backup-v1',
+    geradoEm: Utilities.formatDate(new Date(), fuso, 'yyyy-MM-dd HH:mm:ss'),
+    fusoHorario: fuso,
+    planilha: ss.getName(),
+    observacao: 'Cópia de segurança dos dados das abas. Não inclui o código do app nem restauração automática.',
+    abas: abas
+  };
+}
+
 function propriedade_(nome) {
   return PropertiesService.getScriptProperties().getProperty(nome) || '';
 }
@@ -1871,6 +1923,7 @@ function propriedade_(nome) {
 function executarAcaoApi_(action, param) {
   switch (action) {
     case 'getDadosCompletos': return getDadosCompletos();
+    case 'exportarBackupDadosWeb': return exportarBackupDadosWeb();
     case 'salvarLancamentoWeb': return salvarLancamentoWeb(param);
     case 'sincronizarLoteWeb': return sincronizarLoteWeb(param);
     case 'editarLancamentoLinhaWeb': return editarLancamentoLinhaWeb(param);
@@ -2844,7 +2897,8 @@ function obterRelatorioMes(mesFiltro) {
     if (!isStatusPago(l.status)) mapaForma[k].aberto += l.valor;
   });
   Object.keys(terceiros).forEach(function (k) {
-    if (mapaForma[k]) mapaForma[k].terceiros = terceiros[k].total;
+    if (!mapaForma[k]) mapaForma[k] = { nome: terceiros[k].nome || terceiros[k].nome, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
+    mapaForma[k].terceiros = terceiros[k].total;
   });
   const formas = Object.values(mapaForma).map(function (f) {
     f.totalBanco = f.total + f.terceiros;
