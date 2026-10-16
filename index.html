@@ -3783,20 +3783,41 @@ function chamarFiltroBackend(append = false) {
     function atualizarIndicadorOffline() {
       let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
       const btn = document.getElementById('btnSyncOffline');
-      if (fila.length > 0) { btn.classList.remove('hidden'); btn.textContent = `📶 Sincronizar (${fila.length})`; }
+      const resultadoIncerto = localStorage.getItem('syncOfflineResultadoIncerto') === 'true';
+      if (fila.length > 0) {
+        btn.classList.remove('hidden');
+        btn.textContent = resultadoIncerto ? `⚠️ Conferir sincronização (${fila.length})` : `📶 Sincronizar (${fila.length})`;
+      }
       else { btn.classList.add('hidden'); }
     }
 
     function sincronizarFilaOffline() {
       if (!navigator.onLine) { mostrarAviso('Aviso', 'Você ainda está sem internet.'); return; }
+      if (localStorage.getItem('syncOfflineResultadoIncerto') === 'true') {
+        mostrarConfirmacao(
+          'Confira antes de sincronizar novamente',
+          'A tentativa anterior pode ter gravado os itens, mesmo sem confirmar o resultado. Confira o Histórico. Se todos já aparecerem, cancele. Se nenhum aparecer, confirme para tentar novamente.',
+          function () {
+            localStorage.removeItem('syncOfflineResultadoIncerto');
+            sincronizarFilaOffline();
+          }
+        );
+        return;
+      }
       let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
       if (fila.length === 0) return;
       const btn = document.getElementById('btnSyncOffline'); btn.textContent = 'Enviando...'; btn.disabled = true;
       apiCall('sincronizarLoteWeb', fila).then(res => {
         localStorage.removeItem('filaOfflineGestor'); btn.disabled = false;
+        localStorage.removeItem('syncOfflineResultadoIncerto');
         mostrarAviso('Sucesso', `Sincronização concluída! ${res.qtd} item(ns) enviado(s).`);
         atualizarIndicadorOffline(); carregarDados();
-      }).catch(err => { mostrarAviso('Erro', err.message); btn.disabled = false; atualizarIndicadorOffline(); });
+      }).catch(err => {
+        localStorage.setItem('syncOfflineResultadoIncerto', 'true');
+        mostrarAviso('Confira o Histórico', 'Não foi possível confirmar a sincronização. Alguns itens podem ter sido gravados. Confira o Histórico antes de sincronizar novamente. Detalhe: ' + err.message);
+        btn.disabled = false;
+        atualizarIndicadorOffline();
+      });
     }
 
     function toggleEdicaoFormas() {
