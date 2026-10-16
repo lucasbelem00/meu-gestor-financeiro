@@ -3252,9 +3252,22 @@ function chamarFiltroBackend(append = false) {
     }
 
     function alternarStatusItemEmprestimo(linha, pessoa, descricao, parcela) {
-      apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela })
-        .then(res => { mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`); carregarDados(); })
-        .catch(err => mostrarAviso('Erro', err.message));
+      const itemRecebido = emprestimosGlobal.itens?.find(it => String(it.linha) === String(linha));
+      const vaiMarcarRecebido = itemRecebido?.status !== 'Recebido';
+      mostrarConfirmacao(
+        vaiMarcarRecebido ? 'Confirmar recebimento' : 'Reabrir valor a receber',
+        vaiMarcarRecebido
+          ? `Confirma que ${pessoa} pagou a parcela ${parcela} de “${descricao}”? O status será alterado para Recebido.`
+          : `Confirma voltar a parcela ${parcela} de “${descricao}”, de ${pessoa}, para A Receber?`,
+        () => {
+          apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela })
+            .then(res => { mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`); carregarDados(); })
+            .catch(err => mostrarAviso('Erro', err.message));
+        },
+        false,
+        vaiMarcarRecebido ? 'Sim, marcar recebido' : 'Sim, voltar a receber',
+        vaiMarcarRecebido ? 'success' : 'neutral'
+      );
     }
 
     function quitarMesPessoaEmprestimo(pessoa, mesFatura) {
@@ -3265,7 +3278,10 @@ function chamarFiltroBackend(append = false) {
           apiCall('alternarStatusEmprestimoWeb', { quitarMesPessoa: true, pessoa, mesFatura })
             .then(res => { mostrarAviso('Recebido ✅', `${res.qtd} parcela(s) de ${pessoa} baixadas!`); carregarDados(); })
             .catch(err => mostrarAviso('Erro', err.message));
-        }
+        },
+        false,
+        'Sim, marcar recebidas',
+        'success'
       );
     }
 
@@ -5417,7 +5433,7 @@ try {
   /* ------------------------------------------------------------------ 2 */
   /* Modal de confirmacao: nao executa em dobro (mesmo fechando com Esc) */
   seguro('mostrarConfirmacao', function () {
-    window.mostrarConfirmacao = function (titulo, mensagem, onSimCallback, exibirOpcaoParcelas) {
+    window.mostrarConfirmacao = function (titulo, mensagem, onSimCallback, exibirOpcaoParcelas, rotuloConfirmar, estiloConfirmar) {
       var modal = pxEl('modalConfirmacao');
       pxEl('confTitle').textContent = titulo;
       pxEl('confMensagem').textContent = mensagem;
@@ -5425,8 +5441,16 @@ try {
       var chkLote = pxEl('chkConfTodasParcelas');
       if (chkLote) chkLote.checked = false;
       if (boxLote) boxLote.classList.toggle('hidden', !exibirOpcaoParcelas);
+      var btnSim = pxEl('confBtnSim');
+      btnSim.textContent = rotuloConfirmar || 'Sim, Confirmar';
+      btnSim.className = 'w-1/2 font-bold py-3 rounded-xl transition active:scale-95 text-sm shadow-md ' +
+        (estiloConfirmar === 'success'
+          ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+          : estiloConfirmar === 'neutral'
+            ? 'bg-slate-600 hover:bg-slate-500 text-white'
+            : 'bg-rose-600 hover:bg-rose-500 text-white');
       modal.classList.remove('hidden');
-      pxEl('confBtnSim').onclick = function () {
+      btnSim.onclick = function () {
         var marcouTodas = chkLote ? chkLote.checked : false;
         modal.classList.add('hidden');
         if (onSimCallback) onSimCallback(marcouTodas);
