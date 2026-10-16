@@ -345,6 +345,14 @@
           </div>
 
           <div class="pt-2 w-full">
+            <div id="avisoResultadoIncerto" class="hidden mb-3 rounded-xl border border-amber-400/50 bg-amber-500/10 p-3 text-sm text-amber-100" role="alert" aria-live="assertive">
+              <p class="font-bold">A gravação pode ter sido concluída, mas o app não recebeu a confirmação.</p>
+              <p class="mt-1 text-xs text-amber-100/90">Confira o lançamento no Histórico. Se encontrar, escolha a primeira opção. Se não encontrar, libere uma nova tentativa.</p>
+              <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button type="button" id="btnIncertoEncontrado" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">Encontrei no Histórico — limpar campos</button>
+                <button type="button" id="btnIncertoNaoEncontrado" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">Não encontrei — liberar tentativa</button>
+              </div>
+            </div>
             <button type="submit" id="btnSalvar" onclick="vibrar()" class="w-full h-[54px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">
               💾 Lançar Despesa
             </button>
@@ -1691,28 +1699,8 @@
       const [idDia, idMes, idAno] = mapIds[contexto] || mapIds['novo'];
       const elDia = document.getElementById(idDia), elMes = document.getElementById(idMes), elAno = document.getElementById(idAno);
       if (!elDia || !elMes || !elAno) return;
-
-      let m = parseInt(elMes.value, 10);
-      if (!isNaN(m)) {
-        if (m < 1) m = 1;
-        if (m > 12) m = 12;
-        elMes.value = String(m).padStart(2, '0');
-      }
-      let a = parseInt(elAno.value, 10);
-      if (!isNaN(a) && elAno.value.length === 4) {
-        if (a < 2000) a = 2000;
-        if (a > 2100) a = 2100;
-        elAno.value = String(a);
-      } else {
-        a = new Date().getFullYear();
-      }
-      let d = parseInt(elDia.value, 10);
-      if (!isNaN(d)) {
-        const maxDias = new Date(a, !isNaN(m) ? m : 1, 0).getDate();
-        if (d < 1) d = 1;
-        if (d > maxDias) d = maxDias;
-        elDia.value = String(d).padStart(2, '0');
-      }
+      // Nao corrige silenciosamente partes invalidas da data. A validade
+      // completa e verificada antes do envio para preservar o que foi digitado.
     }
 
     function aoDigitarParteData(input, nextId, maxLen, contexto) {
@@ -4936,6 +4924,55 @@ try {
     try { fn(); } catch (e) { console.error('[PATCH] falhou em "' + nome + '":', e); }
   }
   function pxEl(id) { return document.getElementById(id); }
+  var PX_CHAVE_RESULTADO_INCERTO = 'lancamentoResultadoIncerto';
+  var pxLiberandoLimpezaIncerta = false;
+  function pxDefinirEstadoIncerto(ativo, avisar) {
+    var painel = pxEl('avisoResultadoIncerto');
+    var botao = pxEl('btnSalvar');
+    if (ativo) {
+      try { sessionStorage.setItem(PX_CHAVE_RESULTADO_INCERTO, 'true'); } catch (e) {}
+      if (painel) painel.classList.remove('hidden');
+      if (botao) { botao.disabled = true; botao.textContent = '⚠️ Confira no Histórico'; }
+      if (avisar) mostrarAviso('Confira o Histórico', 'A gravação pode ter sido concluída. Não tente novamente antes de verificar.');
+      return;
+    }
+    try { sessionStorage.removeItem(PX_CHAVE_RESULTADO_INCERTO); } catch (e) {}
+    if (painel) painel.classList.add('hidden');
+    if (botao) { botao.disabled = false; botao.textContent = botao.dataset.rotulo || '💾 Lançar Despesa'; }
+  }
+  function pxRestaurarEstadoIncerto() {
+    try { if (sessionStorage.getItem(PX_CHAVE_RESULTADO_INCERTO) === 'true') pxDefinirEstadoIncerto(true, false); } catch (e) {}
+  }
+  function pxResolverResultadoIncerto(encontrado) {
+    pxDefinirEstadoIncerto(false, false);
+    salvandoGastoTrava = false;
+    if (encontrado) {
+      pxLiberandoLimpezaIncerta = true;
+      try { limparFormularioNovoGasto(); } finally { pxLiberandoLimpezaIncerta = false; }
+      mostrarAviso('Resolvido', 'Os campos foram limpos porque você confirmou o lançamento no Histórico.');
+    } else {
+      mostrarAviso('Nova tentativa liberada', 'Confira os dados e envie novamente somente se o lançamento realmente não estiver no Histórico.');
+    }
+  }
+  seguro('avisoResultadoIncerto', function () {
+    var sim = pxEl('btnIncertoEncontrado'), nao = pxEl('btnIncertoNaoEncontrado');
+    if (sim) sim.onclick = function () { pxResolverResultadoIncerto(true); };
+    if (nao) nao.onclick = function () { pxResolverResultadoIncerto(false); };
+    setTimeout(pxRestaurarEstadoIncerto, 0);
+  });
+  function pxDataTriplaValida(contexto) {
+    var prefixo = contexto === 'emp' ? 'inpEmpData' : 'inpData';
+    var diaEl = pxEl(prefixo + 'Dia'), mesEl = pxEl(prefixo + 'Mes'), anoEl = pxEl(prefixo + 'Ano');
+    var dia = Number(diaEl && diaEl.value), mes = Number(mesEl && mesEl.value), ano = Number(anoEl && anoEl.value);
+    var data = new Date(ano, mes - 1, dia);
+    if (!diaEl || !mesEl || !anoEl || !/^\d{1,2}$/.test(diaEl.value) || !/^\d{1,2}$/.test(mesEl.value) || !/^\d{4}$/.test(anoEl.value) ||
+        ano < 1900 || mes < 1 || mes > 12 || dia < 1 || data.getFullYear() !== ano || data.getMonth() !== mes - 1 || data.getDate() !== dia) {
+      mostrarAviso('Data inválida', 'Confira o dia, o mês e o ano. Essa data não existe no calendário.');
+      if (diaEl) { diaEl.focus(); diaEl.select(); }
+      return false;
+    }
+    return true;
+  }
 
   // Escape completo (texto puro dentro de HTML)
   function pxEscHtml(s) {
@@ -4976,7 +5013,7 @@ try {
             signal: ctrl.signal
           });
           clearTimeout(timer);
-          if (!response.ok) throw new Error('Falha HTTP ' + response.status);
+          if (!response.ok) { var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
           var data = await response.json();
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.doServidor = true; throw e1; }
           return data.dados;
@@ -4986,9 +5023,11 @@ try {
           if (err && err.name === 'AbortError') {
             erro = new Error(ehLeitura ? 'A nuvem demorou demais para responder.' : 'A nuvem demorou para responder.');
           }
-          if (!ehLeitura) {
+          var resultadoIncerto = !err.doServidor || err.name === 'AbortError' || (err.status >= 500);
+          if (!ehLeitura && resultadoIncerto) {
             erro = new Error('Não foi possível confirmar se a gravação foi concluída. Confira o Histórico antes de tentar novamente. Detalhe: ' + (erro.message || 'falha de comunicação'));
             erro.doServidor = true;
+            erro.resultadoIncerto = true;
           }
           if (i === tentativas - 1 || (erro && erro.doServidor)) throw erro;
           await new Promise(function (r) { setTimeout(r, 600 * (i + 1)); });
@@ -5241,6 +5280,12 @@ try {
   /* Limpar formulario (descricao, rascunho, botao Fixo) + textos dos botoes ao salvar */
   seguro('formularios', function () {
     window.limparFormularioNovoGasto = function () {
+      try {
+        if (sessionStorage.getItem(PX_CHAVE_RESULTADO_INCERTO) === 'true' && !pxLiberandoLimpezaIncerta) {
+          mostrarAviso('Confira antes de limpar', 'Primeiro confira o Histórico e escolha uma opção no aviso abaixo do formulário.');
+          return;
+        }
+      } catch (e) {}
       var f = pxEl('formLancamento'); if (f) f.reset();
       ['inpDesc', 'inpValor', 'inpTags', 'inpMesFat'].forEach(function (id) { var el = pxEl(id); if (el) el.value = ''; });
       pxEl('selForma').value = '';
@@ -5280,9 +5325,11 @@ try {
     window.enviarGasto = function (e) {
       e.preventDefault();
       if (salvandoGastoTrava) return;
+      try { if (sessionStorage.getItem(PX_CHAVE_RESULTADO_INCERTO) === 'true') { pxRestaurarEstadoIncerto(); return; } } catch (e) {}
 
       formatarZeroData(pxEl('inpDataDia'), 2);
       formatarZeroData(pxEl('inpDataMes'), 2);
+      if (!pxDataTriplaValida('novo')) return;
       validarLimitesDataTripla('novo');
       sincronizarDataTripla('novo', false);
 
@@ -5338,8 +5385,16 @@ try {
         btn.textContent = rotulo; btn.disabled = false; salvandoGastoTrava = false;
         carregarDados();
       }).catch(function (err) {
-        mostrarAviso('Erro', 'Erro: ' + err.message);
-        btn.textContent = rotulo; btn.disabled = false; salvandoGastoTrava = false;
+        if (err && err.resultadoIncerto) {
+          pxDefinirEstadoIncerto(true, true);
+          // Atualiza o Histórico em segundo plano para ajudar a pessoa a conferir.
+          try { Promise.resolve(carregarDados()).catch(function (falhaAtualizacao) { console.warn('Falha ao atualizar após resultado incerto:', falhaAtualizacao); }); } catch (falhaAtualizacao) {}
+          salvandoGastoTrava = false;
+        } else {
+          mostrarAviso('Erro', 'Erro: ' + err.message);
+          btn.textContent = rotulo; btn.disabled = false;
+          salvandoGastoTrava = false;
+        }
       });
     };
 
@@ -5347,6 +5402,7 @@ try {
       e.preventDefault();
       formatarZeroData(pxEl('inpEmpDataDia'), 2);
       formatarZeroData(pxEl('inpEmpDataMes'), 2);
+      if (!pxDataTriplaValida('emp')) return;
       sincronizarDataEmp();
 
       var valTotal = lerValorMoeda('inpEmpValor');
