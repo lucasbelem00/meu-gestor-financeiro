@@ -5529,7 +5529,7 @@ function chamarFiltroBackend(append = false) {
     async function gerarPDFExecutivo(tipo) {
       if (gerarPDFExecutivo.emAndamento) return;
       const mensal = tipo === 'mensal';
-      const dados = mensal ? ultimoRelatorioCache : ultimoRelatorioAnualCache;
+      const dados = mensal ? ultimoRelatorioMensalCache : ultimoRelatorioAnualCache;
       if (!dados) { mostrarAviso('Aguarde', 'Carregue o relatório do período antes de exportar.'); return; }
       if (!dados.terceiros) { mostrarAviso('Atualização necessária', 'Atualize o Código.gs e a implantação do Apps Script para incluir terceiros no relatório.'); return; }
       if (!window.jspdf?.jsPDF || !window.jspdf.jsPDF.API.autoTable) { mostrarAviso('PDF indisponível', 'Conecte-se à internet e abra o app novamente para carregar o gerador de PDF.'); return; }
