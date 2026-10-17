@@ -97,7 +97,7 @@
         <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📋 Confira a mensagem</h3>
         <button type="button" onclick="fecharModalPixCobranca()" aria-label="Fechar" class="text-slate-400 hover:text-white bg-slate-700 px-2.5 py-1 rounded-lg">✕</button>
       </div>
-      <textarea id="textoModalPixCobranca" rows="9" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
+      <textarea id="textoModalPixCobranca" rows="9" aria-label="Mensagem de cobrança editável" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
       <label id="linhaIncluirPixCobranca" class="hidden flex items-start gap-2.5 rounded-xl bg-slate-900/70 border border-slate-700 p-3 cursor-pointer">
         <input id="chkIncluirPixCobranca" type="checkbox" class="mt-0.5 w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
         <span class="text-xs text-slate-200">Incluir minha chave Pix nesta mensagem</span>
@@ -105,6 +105,7 @@
       <div id="configPixCobranca" class="hidden rounded-xl bg-slate-900/70 border border-slate-700 p-3 space-y-2">
         <label for="inpChavePixCobranca" class="block text-xs font-bold text-slate-300">Sua chave Pix para cobranças</label>
         <input id="inpChavePixCobranca" type="text" maxlength="160" autocomplete="off" placeholder="CPF, e-mail, telefone ou chave aleatória" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+        <label class="flex items-start gap-2 text-xs text-slate-200"><input type="checkbox" id="chkPixPadrao">Incluir minha chave Pix por padrão nas mensagens</label>
         <p class="text-[10px] text-slate-400">Fica salva somente neste navegador/aparelho. Não vai para a planilha.</p>
         <div class="flex gap-2">
           <button type="button" id="btnSalvarChavePixCobranca" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs">Salvar chave</button>
@@ -467,7 +468,7 @@
           <span id="txtSomaQtd" class="font-bold text-slate-300">📊 0 itens</span>
           <span class="text-slate-600">•</span>
           <span class="text-slate-300">Soma Total: <strong id="txtSomaTotal" class="text-emerald-400 text-sm sm:text-base">R$ 0,00</strong></span>
-          <span id="badgeSomaMetade" class="bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-lg font-bold text-xs">➗ 50%: R$ 0,00</span>
+          <span id="badgeSomaMetade" hidden class="hidden bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-lg font-bold text-xs">➗ 50%: R$ 0,00</span>
         </div>
         <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">
           📋 Copiar Resumo p/ WhatsApp
@@ -688,7 +689,7 @@
           <div>
             <div class="flex justify-between items-center mb-4 gap-2">
               <div>
-                <h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte Pessoal)</h2>
+                <h2 class="text-sm font-bold text-white leading-tight">Próximos Meses (Horizonte)</h2>
                 <p class="text-[10px] text-slate-400 mt-0.5">Toque no mês no topo da coluna para abrir a Fatura Mensal</p>
               </div>
               <div class="flex gap-1.5 shrink-0">
@@ -780,7 +781,7 @@
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Pessoa / Quem Comprou</label>
                 <div class="relative">
-                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex: Heitor, Mãe..." required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 !text-white font-bold placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-amber-500">
+                  <input type="text" id="inpEmpPessoa" autocapitalize="words" oninput="toggleBotaoLimpar('inpEmpPessoa', 'btnLimparEmpPessoa'); salvarRascunhoEmp()" onblur="this.value = formatarTituloInteligente(this.value)" placeholder="Ex.: Mãe, tio…" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-3.5 pr-10 !text-white font-bold placeholder:font-normal placeholder:text-slate-400 outline-none focus:border-amber-500">
                   <button type="button" id="btnLimparEmpPessoa" onclick="vibrar(); limparCampoEVoltarFoco('inpEmpPessoa', 'btnLimparEmpPessoa')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
                 </div>
                 <div id="chipsPessoasEmp" class="flex flex-wrap gap-1 mt-1.5"></div>
@@ -1632,7 +1633,7 @@
     }
 
     function getCategoriaExibicao(nomeBruto) {
-      if (!nomeBruto) return 'Outros';
+      if (!nomeBruto || isCategoriaOutros(nomeBruto)) return 'Outros 📦';
       let match = categoriasGlobaisEdit.find(c => c.nome === nomeBruto);
       if (match) return match.nome;
       const cleanBruto = normalizarTexto(nomeBruto).replace(/[^\w\s]/gi, '').trim().toLowerCase();
@@ -1806,8 +1807,11 @@
       areaConfig.classList.toggle('hidden', !somenteConfiguracao);
       campoPix.value = chaveAtual;
       botaoRemover.classList.toggle('hidden', !chaveAtual);
-      check.checked = false;
+      const preferenciaPix = document.getElementById('chkPixPadrao');
+      preferenciaPix.checked = localStorage.getItem('gestorPixPadraoV1') === 'true';
+      check.checked = Boolean(chaveAtual) && preferenciaPix.checked;
       check.disabled = !chaveAtual;
+      let complementoAnterior = '';
       linhaCheck.classList.toggle('hidden', Boolean(somenteConfiguracao) || !chaveAtual);
 
       const atualizarPreview = function () {
@@ -1815,7 +1819,11 @@
         check.disabled = !chave;
         linhaCheck.classList.toggle('hidden', Boolean(modal._somenteConfiguracaoPix) || !chave);
         const complemento = check.checked && chave ? `\n\n🔑 *Minha chave Pix:* ${chave}` : '';
-        texto.value = modal._textoBaseCobranca + complemento;
+        let base = texto.value;
+        const posicaoPix = complementoAnterior ? base.lastIndexOf(complementoAnterior) : -1;
+        if (posicaoPix >= 0) base = base.slice(0, posicaoPix) + base.slice(posicaoPix + complementoAnterior.length);
+        texto.value = base + complemento;
+        complementoAnterior = complemento;
       };
 
       botaoConfig.onclick = function () {
@@ -1825,11 +1833,11 @@
       botaoSalvar.onclick = function () {
         const chave = String(campoPix.value || '').trim();
         if (!chave) { mostrarAviso('Atenção', 'Digite uma chave Pix ou use Remover para apagar a salva.'); return; }
-        try { localStorage.setItem(CHAVE_PIX_COBRANCA_LOCAL, chave); }
+        try { localStorage.setItem(CHAVE_PIX_COBRANCA_LOCAL, chave); localStorage.setItem('gestorPixPadraoV1', String(preferenciaPix.checked)); }
         catch (e) { mostrarAviso('Erro', 'Não foi possível salvar a chave neste aparelho.'); return; }
-        check.checked = false;
+        check.checked = preferenciaPix.checked;
         atualizarPreview();
-        mostrarAviso('Salvo neste aparelho', 'A chave só será incluída quando você marcar a opção na mensagem.');
+        mostrarAviso('Salvo neste aparelho', 'Chave Pix e preferência salvas.');
         if (modal._somenteConfiguracaoPix) fecharModalPixCobranca();
         else areaConfig.classList.add('hidden');
       };
@@ -2252,7 +2260,7 @@
       salvandoEmprestimoTrava = true;
       const controles = Array.from(document.getElementById('formEmprestimo').elements).map(campo => [campo, campo.disabled]);
       controles.forEach(([campo]) => { campo.disabled = true; });
-      btn.textContent = 'Salvando...';
+      btn.textContent = 'Enviando…';
       let resultadoIncerto = false;
       try {
         await apiCall('salvarEmprestimoWeb', payload);
@@ -2982,7 +2990,7 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
 
       salvandoGastoTrava = true;
       const btn = document.getElementById('btnSalvar');
-      btn.textContent = 'Salvando...';
+      btn.textContent = 'Enviando…';
       btn.disabled = true;
 
       const tagsTratadas = formatarTagsAutomaticamente(document.getElementById('inpTags').value);
@@ -3262,7 +3270,7 @@ function chamarFiltroBackend(append = false) {
       const somaTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaTotal : '';
       const metadeTxt = ultimoResumoSomaFiltro ? ultimoResumoSomaFiltro.somaMetade : '';
       linhas.push(`💰 *Total:* ${somaTxt}`);
-      linhas.push(`➗ *50% (Metade):* ${metadeTxt}`);
+
 
       abrirPreviaCobrancaWhats(linhas.join('\n'), 'Resumo copiado! Só colar no WhatsApp.');
     }
@@ -3451,7 +3459,7 @@ function chamarFiltroBackend(append = false) {
       edDescEl.value = formatarTituloInteligente(edDescEl.value);
 
       const btn = document.getElementById('btnSalvarEdLanc');
-      btn.textContent = 'Salvando...';
+      btn.textContent = 'Enviando…';
       btn.disabled = true;
 
       const tagsEdTratadas = formatarTagsAutomaticamente(document.getElementById('inpEdTags').value);
@@ -3563,7 +3571,7 @@ function chamarFiltroBackend(append = false) {
       if (valTotal <= 0) { mostrarAviso('Atenção', 'Informe um valor maior que R$ 0,00.'); return; }
 
       const btn = document.getElementById('btnSalvarEmp');
-      btn.textContent = 'Salvando...'; btn.disabled = true;
+      btn.textContent = 'Enviando…'; btn.disabled = true;
 
       const payload = {
         dataCompra: document.getElementById('inpEmpData').value,
@@ -3629,6 +3637,7 @@ function chamarFiltroBackend(append = false) {
           selMes.value = evolucaoMesAtual;
           selMes.dataset.iniciado = '1';
         }
+        selMes.dataset.iniciado = '1';
         if (vPes && pessoasEmp.includes(vPes)) selPes.value = vPes;
         if (selForma) {
           selForma.innerHTML = '<option value="">Todas as Formas</option>' + formasEmp.map(f => `<option value="${pxEscHtml(f)}">${pxEscHtml(f)}</option>`).join('');
@@ -3750,7 +3759,7 @@ function chamarFiltroBackend(append = false) {
         return;
       }
       acoesStatusEmprestimoEmAndamento.add(chaveAcao);
-      mostrarAviso('Salvando recebimento…', `Atualizando a parcela ${parcela} de ${pessoa}.`);
+      mostrarAviso('Enviando…', `Atualizando a parcela ${parcela} de ${pessoa}.`);
       try {
         const res = await apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela, statusDesejado: vaiMarcarRecebido ? 'Recebido' : 'A Receber' });
         const dadosAtualizados = await carregarDados();
@@ -3821,7 +3830,7 @@ function chamarFiltroBackend(append = false) {
       const selCat = document.getElementById('selMoverPessoalCat');
       if (selCat) {
         selCat.innerHTML = '<option value="">Selecione a Categoria...</option>';
-        categoriasGlobaisEdit.forEach(c => selCat.add(new Option(c.nome, c.nome)));
+        categoriasGlobaisEdit.forEach(c => selCat.add(new Option(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome, c.nome)));
       }
       document.getElementById('modalEdicaoEmp').classList.remove('hidden');
     }
@@ -3836,7 +3845,7 @@ function chamarFiltroBackend(append = false) {
       sincronizarDataTripla('empEd', false);
 
       const btn = document.getElementById('btnSalvarEdEmp');
-      btn.textContent = 'Salvando...'; btn.disabled = true;
+      btn.textContent = 'Enviando…'; btn.disabled = true;
 
       apiCall('editarEmprestimoLinhaWeb', {
         linha: document.getElementById('inpEdEmpLinha').value,
@@ -4636,7 +4645,7 @@ function chamarFiltroBackend(append = false) {
     // ============================================================================
 
     function isCategoriaOutros(nome) {
-      const n = normalizarTexto(nome);
+      const n = normalizarTexto(nome).replace(/[^a-z0-9]/g, '');
       return n === 'outros' || n === 'outro';
     }
 
@@ -4819,7 +4828,7 @@ function chamarFiltroBackend(append = false) {
 
     function salvarForma(e) {
       e.preventDefault();
-      const btn = document.getElementById('btnSalvarFp'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      const btn = document.getElementById('btnSalvarFp'); btn.textContent = 'Enviando…'; btn.disabled = true;
       apiCall('salvarFormaPagamentoWeb', {
         nomeOriginal: document.getElementById('inpFpOriginal').value,
         nome: document.getElementById('inpFpNome').value,
@@ -4842,17 +4851,7 @@ function chamarFiltroBackend(append = false) {
       const countSpan = document.getElementById('contador-cat'); if (countSpan) countSpan.textContent = `${categoriasGlobaisEdit.length}/25`;
       ul.innerHTML = '';
 
-      const ordemSalva = JSON.parse(localStorage.getItem('ordemCategoriasLocalV8')) || [];
-      categoriasGlobaisEdit.sort((a, b) => {
-        if (isCategoriaOutros(a.nome) && !isCategoriaOutros(b.nome)) return 1;
-        if (!isCategoriaOutros(a.nome) && isCategoriaOutros(b.nome)) return -1;
-        if (ordemSalva.length > 0) {
-          let idxA = ordemSalva.indexOf(a.nome), idxB = ordemSalva.indexOf(b.nome);
-          if (idxA === -1) idxA = 999; if (idxB === -1) idxB = 999;
-          if (idxA !== idxB) return idxA - idxB;
-        }
-        return a.nome.toLowerCase().localeCompare(b.nome.toLowerCase());
-      });
+      categoriasGlobaisEdit.sort((a,b) => isCategoriaOutros(a.nome) !== isCategoriaOutros(b.nome) ? (isCategoriaOutros(a.nome) ? 1 : -1) : normalizarTexto(a.nome).localeCompare(normalizarTexto(b.nome), 'pt-BR'));
 
       const selectsCat = [document.getElementById('selCat'), document.getElementById('selEdCat'), document.getElementById('selAssCat'), document.getElementById('filtCat')];
       selectsCat.forEach(sel => {
@@ -4861,7 +4860,7 @@ function chamarFiltroBackend(append = false) {
         if (sel.id === 'filtCat') sel.innerHTML = '<option value="">Todas</option>';
         else if (sel.id === 'selCat') sel.innerHTML = '<option value="">Selecione...</option>';
         else sel.innerHTML = '';
-        categoriasGlobaisEdit.forEach(c => sel.add(new Option(c.nome, c.nome)));
+        categoriasGlobaisEdit.forEach(c => sel.add(new Option(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome, c.nome)));
         sel.value = valAtual || '';
       });
 
@@ -4872,30 +4871,13 @@ function chamarFiltroBackend(append = false) {
         if (modoEdicaoCategorias) {
           espacamentoItem = 'pl-2 pr-4 py-2.5';
           if (isFixa) { iconeDrag = `<span class="text-slate-600 text-lg px-3">🔒</span>`; classeLock = 'locked-item opacity-80'; }
-          else { iconeDrag = `<span class="drag-handle-cat text-slate-500 hover:text-white text-2xl px-3 py-1 bg-slate-900/50 rounded-lg cursor-grab">☰</span>`; }
+          else { iconeDrag = ''; }
           botoesAcao = `<div class="flex gap-2"><button type="button" ${acaoHTML('editarCategoriaUi', [index])} class="text-blue-400 bg-blue-900/20 p-2 rounded-lg">✏️</button><button type="button" ${acaoHTML('removerCategoriaUi', [index])} class="text-rose-400 bg-rose-900/20 p-2 rounded-lg">🗑</button></div>`;
         }
-        ul.innerHTML += `<li data-nome="${escaparHTML(c.nome)}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${escaparHTML(c.nome)}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
+        ul.innerHTML += `<li data-nome="${escaparHTML(c.nome)}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
       });
 
-      // Verifica se o 'ul' existe antes de tentar destruir ou criar o Sortable
-      if (typeof ul !== 'undefined' && ul !== null) {
-        if (ul.sortableInstance) ul.sortableInstance.destroy();
-        if (modoEdicaoCategorias) {
-          try {
-            ul.sortableInstance = new Sortable(ul, {
-              animation: 150, ghostClass: 'sortable-ghost', dragClass: 'sortable-drag', handle: '.drag-handle-cat', delay: 150, delayOnTouchOnly: true, filter: '.locked-item',
-              onEnd: function () {
-                if (ul && ul.children) {
-                  const nomes = Array.from(ul.children).map(li => li.getAttribute('data-nome'));
-                  localStorage.setItem('ordemCategoriasLocalV8', JSON.stringify([...nomes.filter(n => !isCategoriaOutros(n)), ...nomes.filter(n => isCategoriaOutros(n))]));
-                  renderizarListaCategorias();
-                }
-              }
-            });
-          } catch (e) {}
-        }
-      }
+      if (ul.sortableInstance) { ul.sortableInstance.destroy(); ul.sortableInstance = null; }
     }
       
     let indexEdicaoCat = -1;
@@ -4927,7 +4909,7 @@ function chamarFiltroBackend(append = false) {
     function removerCategoriaUi(index) { categoriasGlobaisEdit.splice(index, 1); renderizarListaCategorias(); }
 
     function salvarCategorias() {
-      const btn = document.getElementById('btnSalvarCat'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      const btn = document.getElementById('btnSalvarCat'); btn.textContent = 'Enviando…'; btn.disabled = true;
       apiCall('salvarCategoriasWeb', categoriasGlobaisEdit).then(() => {
         btn.textContent = '💾 Salvar'; btn.disabled = false; toggleEdicaoCategorias(); mostrarAviso('Sucesso', 'Categorias salvas!'); carregarDados();
       }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = '💾 Salvar'; btn.disabled = false; });
@@ -4950,7 +4932,7 @@ function chamarFiltroBackend(append = false) {
       e.preventDefault();
       const assDescEl = document.getElementById('inpAssDesc');
       assDescEl.value = formatarTituloInteligente(assDescEl.value);
-      const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Enviando…'; btn.disabled = true;
       apiCall('editarAssinaturaWeb', {
         ...(identidadeAssinaturaEdicaoGestor || {}),
         descOriginal: document.getElementById('inpAssDescOrig').value,
@@ -5015,7 +4997,7 @@ function chamarFiltroBackend(append = false) {
           totalLinha += val;
           return `<td class="py-2.5 text-center text-slate-300 font-medium whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
         });
-        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${escaparHTML(forma)}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${escaparHTML(forma)}</td>${cols.join('')}<td class="py-3 font-bold text-sky-200 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
 
       formasTotal.forEach(forma => {
@@ -5683,7 +5665,9 @@ function chamarFiltroBackend(append = false) {
 
     function renderizarDados(dados) {
       if (!dados) return;
+      const posicaoLista = window.scrollY;
       registrarIdentidadesGestor('getDadosCompletos', dados);
+      requestAnimationFrame(() => window.scrollTo({ top: posicaoLista, behavior: 'instant' }));
 
       formasGlobais = dados.formasPagamento || [];
       renderizarAlertasVencimento(dados.alertasVencimento || []);
@@ -5871,7 +5855,9 @@ function chamarFiltroBackend(append = false) {
       document.getElementById('lista-assinaturas-inativas').innerHTML = htmlInativas || '<div class="col-span-full py-4 text-center text-slate-500 text-sm">Nenhuma cancelada.</div>';
 
       ultimosLancamentosCache = dados.lancamentos || [];
-      if (!temAlgumFiltroAtivo()) {
+      if (abaAtivaAtual === 'historico') {
+        chamarFiltroBackend(false, true);
+      } else if (!temAlgumFiltroAtivo()) {
         offsetAtual = 0;
         if (typeof invalidarPaginacaoHistoricoGestor === 'function') invalidarPaginacaoHistoricoGestor();
         renderTabelaLancamentos(ultimosLancamentosCache, false);
@@ -6311,6 +6297,7 @@ try {
             erro = new Error('Não foi possível confirmar se a gravação foi concluída. Confira o Histórico antes de tentar novamente. Detalhe: ' + (erro.message || 'falha de comunicação'));
             erro.doServidor = true;
             erro.resultadoIncerto = true;
+            mostrarAviso('Conferindo confirmação', 'O envio foi preservado para conferência. Não registre novamente.');
           }
           if (i === tentativas - 1 || (erro && erro.doServidor)) throw erro;
           await new Promise(function (r) { setTimeout(r, 600 * (i + 1)); });
@@ -6318,7 +6305,7 @@ try {
        }
       })();
       operacao = operacao.then(function (resposta) {
-        if (chaveJournal) localStorage.removeItem(chaveJournal);
+        if (chaveJournal) { localStorage.removeItem(chaveJournal); mostrarAviso('Salvo', 'Alteração confirmada na planilha.'); }
         return resposta;
       }, function (erro) {
         if (chaveJournal && !erro.resultadoIncerto) localStorage.removeItem(chaveJournal);
@@ -6652,7 +6639,7 @@ try {
       salvandoGastoTrava = true;
       var btn = pxEl('btnSalvar');
       var rotulo = btn.dataset.rotulo || '💾 Lançar Despesa';
-      btn.textContent = 'Salvando...';
+      btn.textContent = 'Enviando…';
       btn.disabled = true;
 
       var tagsTratadas = formatarTagsAutomaticamente(pxEl('inpTags').value);
@@ -6773,19 +6760,35 @@ try {
       chamarFiltroBackend(false);
     };
 
-    window.chamarFiltroBackend = function (append) {
+    window.chamarFiltroBackend = function (append, preservarLista) {
       if (append && pxPaginaHistoricoEmAndamento) return;
       var meuId = ++pxReqFiltroId; // respostas antigas sao ignoradas
+      var offsetPreservado = preservarLista ? offsetAtual : 0;
+      var posicaoPreservada = window.scrollY;
       var offsetSolicitado = append ? offsetAtual + LIMITE_PAGINA : 0;
       var botaoMais = pxEl('boxCarregarMais')?.querySelector('button');
       pxPaginaHistoricoEmAndamento = true;
       if (botaoMais) { botaoMais.disabled = true; botaoMais.textContent = 'Baixando...'; }
-      return apiCall('filtrarLancamentosWeb', { filtros: { ...filtrosAtuais }, offset: offsetSolicitado, limite: LIMITE_PAGINA })
+      const filtrosConsulta = { ...filtrosAtuais };
+      const consultar = async () => {
+        let res = await apiCall('filtrarLancamentosWeb', { filtros: filtrosConsulta, offset: offsetSolicitado, limite: LIMITE_PAGINA });
+        if (preservarLista) {
+          for (let pagina = LIMITE_PAGINA; pagina <= offsetPreservado && res.temMais; pagina += LIMITE_PAGINA) {
+            if (meuId !== pxReqFiltroId) return res;
+            const proxima = await apiCall('filtrarLancamentosWeb', { filtros: filtrosConsulta, offset: pagina, limite: LIMITE_PAGINA });
+            res = { ...proxima, itens: res.itens.concat(proxima.itens) };
+            offsetSolicitado = pagina;
+          }
+        }
+        return res;
+      };
+      return consultar()
         .then(function (res) {
           if (meuId !== pxReqFiltroId) return;
           offsetAtual = offsetSolicitado;
           if (!append) pxEl('lista-lancamentos').innerHTML = '';
           renderTabelaLancamentos(res.itens, !!append);
+          if (preservarLista) requestAnimationFrame(() => window.scrollTo({ top: posicaoPreservada, behavior: 'instant' }));
           ultimoResumoSomaFiltro = res;
 
           var barraSoma = pxEl('barraSomaFiltro');
@@ -6855,7 +6858,7 @@ try {
         });
         linhas.push('');
         linhas.push('💰 *Total:* ' + res.somaTotal);
-        linhas.push('➗ *50% (Metade):* ' + res.somaMetade);
+
         abrirPreviaCobrancaWhats(linhas.join('\n'), 'Resumo completo copiado! Só colar no WhatsApp.');
       } catch (err) {
         mostrarAviso('Erro', err.message);
@@ -6984,7 +6987,7 @@ try {
     };
 
     window.salvarCategorias = function () {
-      var btn = pxEl('btnSalvarCat'); btn.textContent = 'Salvando...'; btn.disabled = true;
+      var btn = pxEl('btnSalvarCat'); btn.textContent = 'Enviando…'; btn.disabled = true;
       var renomeacoes = Object.keys(pxRenomeacoesCat).map(function (k) { return { de: k, para: pxRenomeacoesCat[k] }; });
       pxSalvandoCats = true;
       apiCall('salvarCategoriasWeb', { categorias: categoriasGlobaisEdit, renomeacoes: renomeacoes }).then(function (res) {
@@ -7279,6 +7282,33 @@ document.addEventListener('keydown', e => {
   const modal = document.getElementById('modalPagamentoFaturaGestor'); if (modal.classList.contains('hidden')) return;
   if (e.key === 'Escape') fecharPagamentoFaturaGestor();
   if (e.key === 'Tab') { const focaveis = Array.from(modal.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled)')); const primeiro = focaveis[0], ultimo = focaveis[focaveis.length - 1]; if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); } else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); } }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const campo = document.getElementById('inpEmpValor');
+  const atalho = document.createElement('button');
+  atalho.type = 'button'; atalho.id = 'btnUltimoValorEmp'; atalho.hidden = true; atalho.style.display = 'none';
+  atalho.className = 'mt-1.5 h-6 inline-flex items-center justify-center px-2 rounded border border-amber-500/30 bg-amber-500/15 text-amber-200 text-[10px] font-bold';
+  campo.insertAdjacentElement('afterend', atalho);
+  let valorSugerido = 0;
+  function atualizarUltimoEmp() {
+    const pessoa = normalizarTexto(document.getElementById('inpEmpPessoa').value);
+    const descricao = normalizarTexto(document.getElementById('inpEmpDesc').value);
+    const itens = (emprestimosGlobal.itens || []).filter(i => pessoa && descricao && normalizarTexto(i.pessoa) === pessoa && normalizarTexto(i.descricao) === descricao && Number(i.valorTotalRaw) > 0);
+    const data = x => { const p = String(x.data).split('/'); return Number(p[2] + p[1] + p[0]) || 0; };
+    itens.sort((a,b) => data(b) - data(a) || Number(b.linha) - Number(a.linha));
+    valorSugerido = itens[0]?.valorTotalRaw || 0;
+    atalho.hidden = !valorSugerido;
+    atalho.style.display = valorSugerido ? 'inline-flex' : 'none';
+    atalho.textContent = 'Último: ' + formatBRL(valorSugerido);
+  }
+  ['inpEmpPessoa', 'inpEmpDesc'].forEach(id => ['input', 'change', 'focus', 'blur'].forEach(evento => document.getElementById(id).addEventListener(evento, atualizarUltimoEmp)));
+  atalho.addEventListener('click', () => { definirValorMoeda(campo, valorSugerido); salvarRascunhoEmp(); });
+  const selecionarOriginal = window.selecionarPessoaChipEmp;
+  window.selecionarPessoaChipEmp = function(...args) { selecionarOriginal(...args); atualizarUltimoEmp(); };
+  const limparOriginal = window.limparFormularioEmprestimo;
+  window.limparFormularioEmprestimo = function(...args) { const resultado = limparOriginal(...args); atualizarUltimoEmp(); return resultado; };
 });
 </script>
 </body>
