@@ -9,6 +9,7 @@
 const CHAVE_ID_PLANILHA_GESTOR = 'GESTOR_PLANILHA_ID';
 
 function obterPlanilhaGestor_() {
+  if (CONTEXTO_GESTOR_) return CONTEXTO_GESTOR_.ss;
   const id = PropertiesService.getScriptProperties()
     .getProperty(CHAVE_ID_PLANILHA_GESTOR);
   if (!id || !String(id).trim()) {
@@ -117,7 +118,7 @@ function validarLancamentoWeb_(dados, indice) {
   const isAssinatura = Boolean(dados.isAssinatura);
   const parcelas = (isPix || isAssinatura) ? 1 : Number(dados.numParcelas || 1);
   const parcelaInicial = (parcelas <= 1) ? 1 : Number(dados.parcelaInicial || 1);
-  if (!Number.isInteger(parcelas) || parcelas < 1) throw new Error(contexto + 'o número de parcelas deve ser um inteiro positivo.');
+  if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > 600) throw new Error(contexto + 'o número de parcelas deve ser um inteiro positivo.');
   if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > parcelas) {
     throw new Error(contexto + 'a parcela inicial deve estar entre 1 e o total de parcelas.');
   }
@@ -172,7 +173,7 @@ function formatarTituloInteligente(texto) {
     }
     let limpa = palavra.toLowerCase();
     const semAcento = normalizarTexto(limpa);
-    if (DICIONARIO_ACENTOS_PT[semAcento]) {
+    if (Object.prototype.hasOwnProperty.call(DICIONARIO_ACENTOS_PT, semAcento)) {
       limpa = DICIONARIO_ACENTOS_PT[semAcento];
     }
     const anterior = index > 0 ? palavras[index - 1] : '';
@@ -209,8 +210,8 @@ function doGet(e) {
   return ContentService.createTextOutput('API do Gestor Financeiro ativa.');
 }
 
-function atualizarStatusAutomatico() {
-  const lock = LockService.getScriptLock();
+function atualizarStatusAutomaticoInterno_() {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
@@ -221,6 +222,7 @@ function atualizarStatusAutomatico() {
     if (empSheet) organizarAbaEmprestimos(empSheet);
   } catch (e) {
     console.error("Erro atualizarStatusAutomatico: " + e);
+    throw e;
   } finally {
     lock.releaseLock();
   }
@@ -229,10 +231,10 @@ function atualizarStatusAutomatico() {
 function processarAssinaturasAutomaticas(lancSheet) {
   if (!lancSheet || lancSheet.getLastRow() < 2) return;
   const ultimaLinha = lancSheet.getLastRow();
-  const data = lancSheet.getRange(2, 1, ultimaLinha - 1, 11).getValues();
-  const displayData = lancSheet.getRange(2, 1, ultimaLinha - 1, 11).getDisplayValues();
+  const data = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getValues();
+  const displayData = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getDisplayValues();
 
-  const assinaturas = {};
+  const assinaturas = Object.create(null);
 
   data.forEach((r, idx) => {
     const descStr = String(displayData[idx][1] || '').trim();
@@ -300,14 +302,14 @@ function processarAssinaturasAutomaticas(lancSheet) {
           nFatStr,
           'Assinatura Ativa',
           ass.dispBase[10] || ''
-        ]);
+        ].concat([gerarIdGestor_(), ass.linhaBase[12] || gerarIdGestor_(), 1, 'Em Aberto', '', '']));
       }
     }
   });
 
   if (novasLinhas.length > 0) {
     const prox = Math.max(2, lancSheet.getLastRow() + 1);
-    lancSheet.getRange(prox, 1, novasLinhas.length, 11).setValues(novasLinhas);
+    lancSheet.getRange(prox, 1, novasLinhas.length, COLUNAS_GESTOR_).setValues(novasLinhas);
     lancSheet.getRange(prox, 5, novasLinhas.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
     lancSheet.getRange(prox, 8, novasLinhas.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
   }
@@ -318,7 +320,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
   const ultimaLinha = lancSheet.getLastRow();
   if (ultimaLinha < 2) return;
 
-  const diasVencimento = {};
+  const diasVencimento = Object.create(null);
   if (pagtoSheet && pagtoSheet.getLastRow() >= 7) {
     const uLP = pagtoSheet.getLastRow();
     const dadosPagto = pagtoSheet.getRange(7, 2, uLP - 6, 5).getValues();
@@ -330,7 +332,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
   }
 
   const numRows = ultimaLinha - 1;
-  const range = lancSheet.getRange(2, 1, numRows, 11);
+  const range = lancSheet.getRange(2, 1, numRows, COLUNAS_GESTOR_);
   const rawVals = range.getValues();
   const dispVals = range.getDisplayValues();
 
@@ -372,9 +374,8 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
             let dataVenc = new Date(infoFat.a, infoFat.m - 1, diaOrig, 0, 0, 0, 0);
             if (dataVenc.getDay() === 0) dataVenc.setDate(dataVenc.getDate() + 1);
             if (dataVenc.getDay() === 6) dataVenc.setDate(dataVenc.getDate() + 2);
-            if (timeHoje > dataVenc.getTime()) {
-              jaVenceuOuPagou = true;
-            }
+            // A data de vencimento só alimenta avisos. O pagamento do cartão
+            // depende da confirmação explícita do usuário.
           }
         }
 
@@ -436,7 +437,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
 
   if (mudouOrdem || alterouStatus) {
     const novosValores = linhasOrdenadas.map(item => {
-      if (item.vazia) return ['', '', '', '', '', '', '', '', '', '', ''];
+      if (item.vazia) return Array(COLUNAS_GESTOR_).fill('');
       const r = item.raw;
       const d = item.disp;
 
@@ -459,7 +460,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
         fatProtegida,
         d[9],
         d[10]
-      ];
+      ].concat(r.slice(11, COLUNAS_GESTOR_));
     });
 
     range.setValues(novosValores);
@@ -475,7 +476,9 @@ function organizarFormasPagamento(pagtoSheet) {
 
   const numRows = ultimaLinha - 6;
   const staticRange = pagtoSheet.getRange(7, 2, numRows, 6);
-  const staticData = staticRange.getValues();
+  const staticValues = staticRange.getValues();
+  const staticFormulas = staticRange.getFormulas();
+  const staticData = staticValues.map(function (r, i) { return r.map(function (v, j) { return staticFormulas[i][j] || v; }); });
 
   staticData.sort((a, b) => {
     const nomeA = String(a[0]).toLowerCase().trim();
@@ -514,7 +517,7 @@ function garantirAbaEmprestimos(ss) {
 function organizarAbaEmprestimos(empSheet) {
   if (!empSheet || empSheet.getLastRow() < 2) return;
   const numRows = empSheet.getLastRow() - 1;
-  const range = empSheet.getRange(2, 1, numRows, 11);
+  const range = empSheet.getRange(2, 1, numRows, COLUNAS_GESTOR_);
   const rawVals = range.getValues();
   const dispVals = range.getDisplayValues();
 
@@ -564,7 +567,7 @@ function organizarAbaEmprestimos(empSheet) {
 
   if (mudouOrdem) {
     const novosValores = linhasOrdenadas.map(item => {
-      if (item.vazia) return ['', '', '', '', '', '', '', '', '', '', ''];
+      if (item.vazia) return Array(COLUNAS_GESTOR_).fill('');
       const r = item.raw, d = item.disp;
       const dataStr = String(d[0] || '').replace(/^'/, '').trim();
       const parcStr = String(d[6] || '').replace(/^'/, '').trim();
@@ -581,7 +584,7 @@ function organizarAbaEmprestimos(empSheet) {
         fatStr ? "'" + fatStr : '',
         d[9] || 'A Receber',
         d[10] || ''
-      ];
+      ].concat(r.slice(11, COLUNAS_GESTOR_));
     });
     range.setValues(novosValores);
     empSheet.getRange(2, 5, numRows, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
@@ -590,24 +593,26 @@ function organizarAbaEmprestimos(empSheet) {
 }
 
 // Dividir Parcela de Empréstimo (Amigo pagou só a metade)
-function dividirParcelaEmprestimoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function dividirParcelaEmprestimoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
     const uL = empSheet.getLastRow();
-    if (uL < 2) return { sucesso: false };
+    if (uL < 2) throw new Error('Empréstimo não encontrado. Atualize a lista.');
 
-    const dispAll = empSheet.getRange(2, 1, uL - 1, 11).getDisplayValues();
-    const rawAll = empSheet.getRange(2, 1, uL - 1, 11).getValues();
+    const dispAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getDisplayValues();
+    const rawAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getValues();
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descricao, dados.mesFatura, dados.parcela);
     if (idxAlvo < 0 || idxAlvo >= dispAll.length) throw new Error('Parcela não localizada.');
 
-    const valorOriginalParc = extractNum(rawAll[idxAlvo][7]);
-    const valorRecebido = extractNum(dados.valorRecebido);
-    const valorRestante = valorOriginalParc - valorRecebido;
+    if (String(rawAll[idxAlvo][9]) === 'Recebido') throw new Error('Esta parcela já foi recebida. Atualize a lista.');
+    const valorOriginalParc = centavosGestor_(rawAll[idxAlvo][7]);
+    const recebidoCentavos = centavosGestor_(dados.valorRecebido);
+    const valorRecebido = recebidoCentavos / 100;
+    const valorRestante = (valorOriginalParc - recebidoCentavos) / 100;
 
     if (valorRecebido <= 0 || valorRestante <= 0) {
       throw new Error("O valor recebido deve ser menor que o total da parcela e maior que zero.");
@@ -633,10 +638,10 @@ function dividirParcelaEmprestimoWeb(dados) {
       mStr ? "'" + mStr : '',
       'Recebido',
       String(d[10] || '') + ' (Pagamento Parcial)'
-    ];
+    ].concat([gerarIdGestor_(), r[12], 1, r[14], r[15], '']);
 
     const prox = empSheet.getLastRow() + 1;
-    empSheet.getRange(prox, 1, 1, 11).setValues([novaLinhaPago]);
+    empSheet.getRange(prox, 1, 1, COLUNAS_GESTOR_).setValues([novaLinhaPago]);
     empSheet.getRange(prox, 5).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
     empSheet.getRange(prox, 8).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
 
@@ -649,16 +654,16 @@ function dividirParcelaEmprestimoWeb(dados) {
   }
 }
 
-function alternarStatusEmprestimoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function alternarStatusEmprestimoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
     const uL = empSheet.getLastRow();
-    if (uL < 2) return { sucesso: false };
+    if (uL < 2) throw new Error('Empréstimo não encontrado. Atualize a lista.');
 
-    const dispAll = empSheet.getRange(2, 1, uL - 1, 11).getDisplayValues();
+    const dispAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getDisplayValues();
 
     if (dados.quitarMesPessoa) {
       const pessoaAlvo = normalizarTexto(dados.pessoa);
@@ -681,7 +686,8 @@ function alternarStatusEmprestimoWeb(dados) {
     if (idxAlvo < 0) throw new Error('Parcela de empréstimo não localizada.');
 
     const stAtual = String(dispAll[idxAlvo][9] || '').trim();
-    const novoStatus = (stAtual === 'Recebido') ? 'A Receber' : 'Recebido';
+    const novoStatus = String(dados.statusDesejado || '');
+    if (['Recebido', 'A Receber'].indexOf(novoStatus) < 0) throw new Error('Informe a situação desejada. Atualize o app.');
     empSheet.getRange(idxAlvo + 2, 10).setValue(novoStatus);
 
     return { sucesso: true, novoStatus: novoStatus };
@@ -692,16 +698,16 @@ function alternarStatusEmprestimoWeb(dados) {
   }
 }
 
-function excluirEmprestimoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function excluirEmprestimoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
     const uL = empSheet.getLastRow();
-    if (uL < 2) return { sucesso: false };
+    if (uL < 2) throw new Error('Empréstimo não encontrado. Atualize a lista.');
 
-    const dispAll = empSheet.getRange(2, 1, uL - 1, 11).getDisplayValues();
+    const dispAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getDisplayValues();
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descricao, dados.mesFatura, dados.parcela);
     if (idxAlvo < 0) throw new Error('Registro não encontrado.');
 
@@ -709,26 +715,7 @@ function excluirEmprestimoWeb(dados) {
     if (!dados.excluirTodasParcelas) {
       empSheet.deleteRow(linhaInt);
     } else {
-      const origData = String(dispAll[idxAlvo][0] || '').replace(/^'/, '').trim();
-      const origPessoa = normalizarTexto(dispAll[idxAlvo][1]);
-      const origDesc = normalizarTexto(dispAll[idxAlvo][2]);
-      const origForma = normalizarTexto(dispAll[idxAlvo][3]);
-      let linhasApagar = [linhaInt];
-
-      for (let i = 0; i < dispAll.length; i++) {
-        const numL = i + 2;
-        if (numL === linhaInt) continue;
-        const d = dispAll[i];
-        if (
-          String(d[0] || '').replace(/^'/, '').trim() === origData &&
-          normalizarTexto(d[1]) === origPessoa &&
-          normalizarTexto(d[2]) === origDesc &&
-          normalizarTexto(d[3]) === origForma &&
-          String(d[9] || '').trim() !== 'Recebido'
-        ) {
-          linhasApagar.push(numL);
-        }
-      }
+      const linhasApagar = indicesMesmaCompra(dispAll, idxAlvo).filter(function (i) { return i === idxAlvo || String(dispAll[i][9] || '').trim() !== 'Recebido'; }).map(function (i) { return i + 2; });
       linhasApagar.sort((a, b) => b - a).forEach(l => empSheet.deleteRow(l));
     }
     organizarAbaEmprestimos(empSheet);
@@ -740,8 +727,9 @@ function excluirEmprestimoWeb(dados) {
   }
 }
 
-function editarEmprestimoLinhaWeb(dados) {
-  const lock = LockService.getScriptLock();
+function editarEmprestimoLinhaWebInterno_(dados) {
+  validarEdicaoGestor_(dados, true);
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
@@ -749,7 +737,7 @@ function editarEmprestimoLinhaWeb(dados) {
 
     const uL = empSheet.getLastRow();
     if (uL < 2) throw new Error("Aba de empréstimos vazia.");
-    const rangeAll = empSheet.getRange(2, 1, uL - 1, 11);
+    const rangeAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_);
     const rawAll = rangeAll.getValues();
     const dispAll = rangeAll.getDisplayValues();
 
@@ -765,7 +753,7 @@ function editarEmprestimoLinhaWeb(dados) {
 
     const pessoaFmt = formatarTituloInteligente(dados.pessoa);
     const descFmt = formatarTituloInteligente(dados.descricao);
-    const valorFloat = extractNum(dados.valorParcela);
+    const valorFloat = centavosGestor_(dados.valorParcela) / 100;
     const novaDataFmt = "'" + String(dados.dataCompra || '').replace(/^'/, '').trim();
     const novoMesFatLimpo = String(dados.mesFatura || '').replace(/^'/, '').trim();
     const novoMesFatFmt = "'" + novoMesFatLimpo;
@@ -787,6 +775,7 @@ function editarEmprestimoLinhaWeb(dados) {
     rawAll[idxAlvo][10] = dados.observacoes || '';
 
     if (totalParcelas > 1) {
+      indicesMesmaCompra(dispAll, idxAlvo); // Bloqueia grupos legados ambíguos.
       const sufixoParc = '/' + totalParcelas;
       let indicesMesmaCompraEmp = [idxAlvo];
 
@@ -797,11 +786,7 @@ function editarEmprestimoLinhaWeb(dados) {
         const stAtual = String(d[9] || '').trim();
 
         if (
-          pAtual.endsWith(sufixoParc) &&
-          String(d[0] || '').replace(/^'/, '').trim() === origData &&
-          String(d[1] || '').trim() === origPessoa &&
-          String(d[2] || '').trim() === origDesc &&
-          String(d[3] || '').trim() === origForma
+          String(d[12] || '') === String(dispAll[idxAlvo][12] || '')
         ) {
           indicesMesmaCompraEmp.push(i);
           if (stAtual !== 'Recebido') {
@@ -863,8 +848,8 @@ function editarEmprestimoLinhaWeb(dados) {
 }
 
 // MOVER COMPRA INTEIRA (TODAS AS PARCELAS) DE "LANÇAMENTOS" PARA "EMPRÉSTIMOS"
-function moverParaEmprestimosWeb(dados) {
-  const lock = LockService.getScriptLock();
+function moverParaEmprestimosWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(12000);
     const ss = obterPlanilhaGestor_();
@@ -877,8 +862,8 @@ function moverParaEmprestimosWeb(dados) {
 
     const uL = lancSheet.getLastRow();
     if (uL < 2) throw new Error('Planilha de lançamentos vazia.');
-    const rawAll = lancSheet.getRange(2, 1, uL - 1, 11).getValues();
-    const dispAll = lancSheet.getRange(2, 1, uL - 1, 11).getDisplayValues();
+    const rawAll = lancSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getValues();
+    const dispAll = lancSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getDisplayValues();
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idxAlvo < 0 || idxAlvo >= dispAll.length) throw new Error('Lançamento original não encontrado.');
@@ -890,22 +875,7 @@ function moverParaEmprestimosWeb(dados) {
     const infoParc = parseNumParcela(parcStr);
     const sufixo = '/' + infoParc.total;
 
-    let indicesParaMover = [idxAlvo];
-    if (infoParc.total > 1 && parcStr !== '∞/∞') {
-      for (let i = 0; i < dispAll.length; i++) {
-        if (i === idxAlvo) continue;
-        const d = dispAll[i];
-        const pAtual = String(d[6] || '').replace(/^'/, '').trim();
-        if (
-          pAtual.endsWith(sufixo) &&
-          String(d[0] || '').replace(/^'/, '').trim() === origData &&
-          String(d[1] || '').trim() === origDesc &&
-          String(d[2] || '').trim() === origForma
-        ) {
-          indicesParaMover.push(i);
-        }
-      }
-    }
+    const indicesParaMover = indicesMesmaCompra(dispAll, idxAlvo);
 
     indicesParaMover.sort((a, b) => a - b);
     const novasLinhasEmp = indicesParaMover.map(idx => {
@@ -927,13 +897,13 @@ function moverParaEmprestimosWeb(dados) {
         "'" + pClean,
         valParc,
         "'" + fatClean,
-        jaPago ? 'Recebido' : 'A Receber',
+        'A Receber',
         d[10] || ''
-      ];
+      ].concat([r[11], r[12], r[13], jaPago ? 'Pago' : 'Em Aberto', r[15], r[16]]);
     });
 
     const proxEmp = Math.max(2, empSheet.getLastRow() + 1);
-    empSheet.getRange(proxEmp, 1, novasLinhasEmp.length, 11).setValues(novasLinhasEmp);
+    empSheet.getRange(proxEmp, 1, novasLinhasEmp.length, COLUNAS_GESTOR_).setValues(novasLinhasEmp);
     empSheet.getRange(proxEmp, 5, novasLinhasEmp.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
     empSheet.getRange(proxEmp, 8, novasLinhasEmp.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
 
@@ -952,8 +922,8 @@ function moverParaEmprestimosWeb(dados) {
 }
 
 // MOVER COMPRA (TODAS AS PARCELAS) DE VOLTA PARA "LANÇAMENTOS" PESSOAIS
-function moverParaGastosPessoaisWeb(dados) {
-  const lock = LockService.getScriptLock();
+function moverParaGastosPessoaisWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(12000);
     const ss = obterPlanilhaGestor_();
@@ -966,8 +936,8 @@ function moverParaGastosPessoaisWeb(dados) {
 
     const uL = empSheet.getLastRow();
     if (uL < 2) throw new Error('Planilha de empréstimos vazia.');
-    const rawAll = empSheet.getRange(2, 1, uL - 1, 11).getValues();
-    const dispAll = empSheet.getRange(2, 1, uL - 1, 11).getDisplayValues();
+    const rawAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getValues();
+    const dispAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_).getDisplayValues();
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idxAlvo < 0 || idxAlvo >= dispAll.length) throw new Error('Empréstimo original não encontrado.');
@@ -980,23 +950,7 @@ function moverParaGastosPessoaisWeb(dados) {
     const infoParc = parseNumParcela(parcStr);
     const sufixo = '/' + infoParc.total;
 
-    let indicesParaMover = [idxAlvo];
-    if (infoParc.total > 1 && parcStr !== '∞/∞') {
-      for (let i = 0; i < dispAll.length; i++) {
-        if (i === idxAlvo) continue;
-        const d = dispAll[i];
-        const pAtual = String(d[6] || '').replace(/^'/, '').trim();
-        if (
-          pAtual.endsWith(sufixo) &&
-          String(d[0] || '').replace(/^'/, '').trim() === origData &&
-          String(d[1] || '').trim() === origPessoa &&
-          String(d[2] || '').trim() === origDesc &&
-          String(d[3] || '').trim() === origForma
-        ) {
-          indicesParaMover.push(i);
-        }
-      }
-    }
+    const indicesParaMover = indicesMesmaCompra(dispAll, idxAlvo);
 
     indicesParaMover.sort((a, b) => a - b);
     const novasLinhasLanc = indicesParaMover.map(idx => {
@@ -1019,13 +973,13 @@ function moverParaGastosPessoaisWeb(dados) {
         "'" + pClean,
         valParc,
         "'" + fatClean,
-        (jaPago || isPix) ? 'Pago' : 'Em Aberto',
+        (r[14] === 'Pago' || isPix) ? 'Pago' : 'Em Aberto',
         tagsFmt
-      ];
+      ].concat(r.slice(11, COLUNAS_GESTOR_));
     });
 
     const proxLanc = Math.max(2, lancSheet.getLastRow() + 1);
-    lancSheet.getRange(proxLanc, 1, novasLinhasLanc.length, 11).setValues(novasLinhasLanc);
+    lancSheet.getRange(proxLanc, 1, novasLinhasLanc.length, COLUNAS_GESTOR_).setValues(novasLinhasLanc);
     lancSheet.getRange(proxLanc, 5, novasLinhasLanc.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
     lancSheet.getRange(proxLanc, 8, novasLinhasLanc.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
 
@@ -1076,7 +1030,8 @@ function gravarLancamentoDoFormulario() {
       mesPrimeiraFatura: displayVals[7][0],
       statusInicial: String(rawVals[8][0] || 'Em Aberto').trim(),
       isAssinatura: false,
-      tags: ''
+      tags: '',
+      requestId: gerarIdGestor_()
     }]);
 
     limparFormulario();
@@ -1099,8 +1054,8 @@ function limparFormulario() {
   formSheet.getRange('D12').setValue(1);
 }
 
-function sincronizarLoteWeb(loteOffline) {
-  const lock = LockService.getScriptLock();
+function sincronizarLoteWebInterno_(loteOffline) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     if (!Array.isArray(loteOffline) || loteOffline.length === 0) {
@@ -1118,7 +1073,7 @@ function sincronizarLoteWeb(loteOffline) {
 
     loteOffline.forEach(dados => {
       const descFormatada = formatarTituloInteligente(dados.descricao);
-      const valorTotal = extractNum(dados.valorTotal);
+      const valorTotal = centavosGestor_(dados.valorTotal) / 100;
       const isPix = String(dados.formaPagto || '').toLowerCase().includes('pix');
       const isAssinatura = Boolean(dados.isAssinatura);
 
@@ -1129,7 +1084,9 @@ function sincronizarLoteWeb(loteOffline) {
         if (parcelaInicial > numParcelas) parcelaInicial = 1;
       }
 
-      const valorParcela = isAssinatura ? valorTotal : (valorTotal / numParcelas);
+      const valoresParcelas = parcelasCentavosGestor_(valorTotal, numParcelas);
+      if (valoresParcelas.some(function (v) { return v <= 0; })) throw new Error('Cada parcela deve ter pelo menos um centavo.');
+      if (isAssinatura) { const existentes = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_).disp; if (existentes.some(function (r) { return limparApostrofo(r[6]) === '∞/∞' && !isStatusCancelado(r[9]) && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descFormatada) && normalizarTexto(r[2]) === normalizarTexto(dados.formaPagto); })) throw new Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento. Edite a assinatura existente.'); }
       let mesFat = hoje.getMonth() + 1, anoFat = hoje.getFullYear();
       if (dados.mesPrimeiraFatura && dados.mesPrimeiraFatura.includes('/')) {
         const p = String(dados.mesPrimeiraFatura).replace(/^'/, '').split('/');
@@ -1162,7 +1119,7 @@ function sincronizarLoteWeb(loteOffline) {
           isAssinatura ? '' : valorTotal,
           isAssinatura ? '' : numParcelas,
           pTxt,
-          valorParcela,
+          valoresParcelas[p - 1],
           "'" + mFmt + '/' + aFmt,
           statusPadrao,
           dados.tags || ''
@@ -1185,19 +1142,64 @@ function sincronizarLoteWeb(loteOffline) {
   }
 }
 
+function sincronizarLoteWeb(loteOffline) {
+  if (!Array.isArray(loteOffline) || !loteOffline.length) throw new Error('Fila inválida.');
+  loteOffline.forEach(function (d, i) { validarLancamentoWeb_(d, i + 1); if (!/^[A-Za-z0-9_.:-]{8,160}$/.test(String(d.requestId || ''))) throw new Error('Atualize o app: lançamento sem identificação segura.'); });
+  const ids = [];
+  for (let i = 0; i < loteOffline.length; i++) {
+    const item = loteOffline[i];
+    try { executarOperacaoGestor_('salvarLancamentoWeb', item, function () { return sincronizarLoteWebInterno_([item]); }, false); ids.push(item.requestId); }
+    catch (e) { return { sucesso: false, completo: false, qtd: ids.length, requestIds: ids, erro: e.message, resultadoIncerto: e.resultadoIncerto === true }; }
+  }
+  return { sucesso: true, completo: true, qtd: ids.length, requestIds: ids };
+}
 function salvarLancamentoWeb(dados) {
-  return sincronizarLoteWeb([dados]);
+  return executarOperacaoGestor_('salvarLancamentoWeb', dados, function () { return sincronizarLoteWebInterno_([dados]); }, false);
 }
 
 // ============================================================================
 // LEITURA GERAL DO SISTEMA (DASHBOARD, LIMITES, EMPRÉSTIMOS, TAGS E METAS)
 // ============================================================================
 
+function calcularAlertasVencimento_(formas, lancamentos, hoje) {
+  const cartoes = Object.create(null);
+  formas.forEach(function (f) {
+    const nome = normalizarTexto(f.nome);
+    const dia = parseInt(f.vencimento, 10);
+    if (!nome.includes('total') && !nome.includes('carteira') && formaEmprestimoConsomeLimite_(nome) && dia >= 1 && dia <= 31) {
+      cartoes[nome] = { nome: f.nome, dia: dia };
+    }
+  });
+  const faturas = Object.create(null);
+  const hojeUTC = Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  lancamentos.forEach(function (item) {
+    const d = item.disp;
+    if (isStatusPago(d[9]) || isStatusCancelado(d[9])) return;
+    const cartao = cartoes[normalizarTexto(d[2])];
+    const mes = limparApostrofo(d[8]);
+    if (!cartao || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(mes)) return;
+    const partes = mes.split('/').map(Number);
+    const ultimoDia = new Date(partes[1], partes[0], 0).getDate();
+    const dia = Math.min(cartao.dia, ultimoDia);
+    const dias = Math.round((Date.UTC(partes[1], partes[0] - 1, dia) - hojeUTC) / 86400000);
+    const valor = extractNum(item.raw[7]);
+    if (dias > 7 || valor <= 0) return;
+    const chave = normalizarTexto(cartao.nome) + '|' + mes;
+    if (!faturas[chave]) faturas[chave] = { forma: cartao.nome, mes: mes, data: pad2(dia) + '/' + mes, dias: dias, valorRaw: 0 };
+    faturas[chave].valorRaw += valor;
+  });
+  return Object.values(faturas).map(function (f) {
+    f.valorRaw = arred2(f.valorRaw);
+    f.valor = formatBRL(f.valorRaw);
+    return f;
+  }).sort(function (a, b) { return a.dias - b.dias || a.forma.localeCompare(b.forma); });
+}
+
 function getDadosCompletos() {
   const obterMaisFrequente = (mapaContagem, ultimoUsado) => {
     let melhorChave = ultimoUsado || '';
     let maiorQtd = -1;
-    for (let k in mapaContagem) {
+    for (const k of Object.keys(mapaContagem)) {
       if (mapaContagem[k] > maiorQtd || (mapaContagem[k] === maiorQtd && k === ultimoUsado)) {
         maiorQtd = mapaContagem[k];
         melhorChave = k;
@@ -1216,7 +1218,7 @@ function getDadosCompletos() {
     // evita que duas primeiras cargas tentem criá-la ao mesmo tempo.
     let empSheet = ss.getSheetByName('Empréstimos');
     if (!empSheet) {
-      const lockCriacaoEmprestimos = LockService.getScriptLock();
+      const lockCriacaoEmprestimos = obterLockGestor_();
       lockCriacaoEmprestimos.waitLock(10000);
       try { empSheet = garantirAbaEmprestimos(ss); }
       finally { lockCriacaoEmprestimos.releaseLock(); }
@@ -1224,7 +1226,7 @@ function getDadosCompletos() {
     const nomesConfigCat = listarNomesCategoriasConfig(dashSheet);
 
     // CORRIGIDO: manutenção da planilha agora protegida por lock (evita conflito com gravações)
-    const lockMant = LockService.getScriptLock();
+    const lockMant = obterLockGestor_();
     const temLock = lockMant.tryLock(20000);
     if (temLock) {
       try {
@@ -1240,7 +1242,7 @@ function getDadosCompletos() {
     }
 
     let listaFormasPagto = [];
-    let mapLowerToOriginal = {};
+    let mapLowerToOriginal = Object.create(null);
     if (pagtoSheet && pagtoSheet.getLastRow() >= 7) {
       const uL = pagtoSheet.getLastRow();
       const rawP = pagtoSheet.getRange(7, 2, uL - 6, 8).getValues();
@@ -1276,38 +1278,42 @@ function getDadosCompletos() {
 
     let ultimosLancamentos = [];
     let mesesUnicos = [];
-    let pivotFaturas = {};
-    let gastoMesPorForma = {};
-    let abertoMesPorForma = {};
-    let futuroParcelasPorForma = {};
-    let freqCartoesCompras = {};
+    let pivotFaturas = Object.create(null);
+    let gastoMesPorForma = Object.create(null);
+    let abertoMesPorForma = Object.create(null);
+    const vencidoPorForma = Object.create(null);
+    const terceirosVencidoPorForma = Object.create(null);
+    let somaVencidoCartoes = 0;
+    let futuroParcelasPorForma = Object.create(null);
+    let freqCartoesCompras = Object.create(null);
 
     listaFormasPagto.forEach(f => {
       const n = f.nome.trim();
-      pivotFaturas[n] = {};
+      pivotFaturas[n] = Object.create(null);
       gastoMesPorForma[n] = 0;
       abertoMesPorForma[n] = 0;
       futuroParcelasPorForma[n] = 0;
     });
 
     let setMeses = new Set([mesAtualStr]);
-    let mapAutofill = {};
-    let mapPrefixosAutofill = {};
-    let statsDesc = {};
-    let statsPrefixos = {};
-    let listaAssinaturas = {};
+    let mapAutofill = Object.create(null);
+    let mapPrefixosAutofill = Object.create(null);
+    let statsDesc = Object.create(null);
+    let statsPrefixos = Object.create(null);
+    const comprasMemoria = new Set();
+    let listaAssinaturas = Object.create(null);
     let lancamentosValidos = [];
-    let freqTagsCompras = {};
-    let consumoCatPorMes = {};
-    let resumoParcelasCompra = {};
+    let freqTagsCompras = Object.create(null);
+    let consumoCatPorMes = Object.create(null);
+    let resumoParcelasCompra = Object.create(null);
 
     let calcAberto = 0, calcPago = 0, calcCompromisso = 0, calcGeral = 0;
-    let mapCatTotal = {};
+    let mapCatTotal = Object.create(null);
 
     if (lancSheet && lancSheet.getLastRow() > 1) {
       const uL_Lanc = lancSheet.getLastRow();
-      const lancData = lancSheet.getRange(2, 1, uL_Lanc - 1, 11).getValues();
-      const dispLancData = lancSheet.getRange(2, 1, uL_Lanc - 1, 11).getDisplayValues();
+      const lancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getValues();
+      const dispLancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getDisplayValues();
 
       lancData.forEach((r, idx) => {
         const dVals = dispLancData[idx];
@@ -1335,7 +1341,7 @@ function getDadosCompletos() {
         const infoFat = parseMesFat(mesFat);
         const infoParc = parseNumParcela(parcela);
 
-        const chaveCompraUnica = `${dtLimpa}_${normalizarTexto(descStr)}_${normalizarTexto(chaveForma)}_${infoParc.total}`;
+        const chaveCompraUnica = String(r[12] || r[11] || ('linha-' + idx));
 
         if (!cancelado && !isPix && !isTotal && chaveForma) {
           if (!freqCartoesCompras[chaveForma]) freqCartoesCompras[chaveForma] = new Set();
@@ -1367,35 +1373,46 @@ function getDadosCompletos() {
 
         const descNorm = normalizarTexto(descStr);
         // Cancelamentos não devem contaminar sugestões de compras recorrentes.
-        if (!cancelado) {
+        const valorCompraMemoria = extractNum(r[4]) || valor;
+        const chaveMemoria = chaveCompraUnica + '_' + valorCompraMemoria;
+        if (!cancelado && valor > 0 && !comprasMemoria.has(chaveMemoria)) {
+          comprasMemoria.add(chaveMemoria);
+          const dataMemoria = parseDataBR(dtLimpa);
+          const tempoMemoria = dataMemoria ? dataMemoria.getTime() : 0;
           if (!statsDesc[descNorm]) {
-            statsDesc[descNorm] = { original: descStr, formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr, ultValor: valor, ultTags: tagsDaLinha };
+            statsDesc[descNorm] = { original: descStr, formas: Object.create(null), cats: Object.create(null), ultForma: chaveForma, ultCat: catStr, ultValor: valorCompraMemoria, ultTags: tagsDaLinha, tempo: -1 };
           }
-          statsDesc[descNorm].original = descStr;
-          if (valor > 0) statsDesc[descNorm].ultValor = valor;
-          if (tagsDaLinha) statsDesc[descNorm].ultTags = tagsDaLinha;
+          if (tempoMemoria >= statsDesc[descNorm].tempo) {
+            statsDesc[descNorm].original = descStr;
+            statsDesc[descNorm].ultValor = valorCompraMemoria;
+            statsDesc[descNorm].ultTags = tagsDaLinha;
+            statsDesc[descNorm].ultForma = chaveForma;
+            statsDesc[descNorm].ultCat = catStr;
+            statsDesc[descNorm].tempo = tempoMemoria;
+          }
           if (chaveForma) {
             statsDesc[descNorm].formas[chaveForma] = (statsDesc[descNorm].formas[chaveForma] || 0) + 1;
-            statsDesc[descNorm].ultForma = chaveForma;
           }
           if (catStr) {
             statsDesc[descNorm].cats[catStr] = (statsDesc[descNorm].cats[catStr] || 0) + 1;
-            statsDesc[descNorm].ultCat = catStr;
           }
 
           const partesTraco = descNorm.split(/\s*[-–]\s*/);
           const prefixoItem = partesTraco[0].trim();
           if (prefixoItem && prefixoItem.length >= 3) {
             if (!statsPrefixos[prefixoItem]) {
-              statsPrefixos[prefixoItem] = { formas: {}, cats: {}, ultForma: chaveForma, ultCat: catStr };
+              statsPrefixos[prefixoItem] = { formas: Object.create(null), cats: Object.create(null), ultForma: chaveForma, ultCat: catStr, tempo: -1 };
+            }
+            if (tempoMemoria >= statsPrefixos[prefixoItem].tempo) {
+              statsPrefixos[prefixoItem].ultForma = chaveForma;
+              statsPrefixos[prefixoItem].ultCat = catStr;
+              statsPrefixos[prefixoItem].tempo = tempoMemoria;
             }
             if (chaveForma) {
               statsPrefixos[prefixoItem].formas[chaveForma] = (statsPrefixos[prefixoItem].formas[chaveForma] || 0) + 1;
-              statsPrefixos[prefixoItem].ultForma = chaveForma;
             }
             if (catStr) {
               statsPrefixos[prefixoItem].cats[catStr] = (statsPrefixos[prefixoItem].cats[catStr] || 0) + 1;
-              statsPrefixos[prefixoItem].ultCat = catStr;
             }
           }
         }
@@ -1405,6 +1422,7 @@ function getDadosCompletos() {
           if (!listaAssinaturas[chaveAss] || infoFat.time >= listaAssinaturas[chaveAss].timeRef) {
             listaAssinaturas[chaveAss] = {
               linhaBase: idx + 2,
+              registroId: r[11], compraId: r[12], versao: Number(r[13] || 1),
               descricao: descStr,
               forma: chaveForma,
               categoria: catStr,
@@ -1421,7 +1439,7 @@ function getDadosCompletos() {
           calcGeral += valor;
 
           if (mesFat) {
-            if (!consumoCatPorMes[mesFat]) consumoCatPorMes[mesFat] = {};
+            if (!consumoCatPorMes[mesFat]) consumoCatPorMes[mesFat] = Object.create(null);
             consumoCatPorMes[mesFat][catRes] = (consumoCatPorMes[mesFat][catRes] || 0) + valor;
           }
 
@@ -1441,13 +1459,14 @@ function getDadosCompletos() {
             mesesUnicos.push(mesFat);
             const isFuturo = (infoFat.a > anoAt) || (infoFat.a === anoAt && infoFat.m > mesAt);
 
+            if (!isFuturo && mesFat !== mesAtualStr && !pago && !isPix) vencidoPorForma[chaveForma] = (vencidoPorForma[chaveForma] || 0) + valor;
             if (isFuturo && !pago && parcela !== '∞/∞' && !isPix) {
               futuroParcelasPorForma[chaveForma] = (futuroParcelasPorForma[chaveForma] || 0) + valor;
             }
 
             if (!pago || isPix) {
               setMeses.add(mesFat);
-              if (!pivotFaturas[chaveForma]) pivotFaturas[chaveForma] = {};
+              if (!pivotFaturas[chaveForma]) pivotFaturas[chaveForma] = Object.create(null);
               pivotFaturas[chaveForma][mesFat] = (pivotFaturas[chaveForma][mesFat] || 0) + valor;
             }
           }
@@ -1488,7 +1507,7 @@ function getDadosCompletos() {
         let dt = r[0] instanceof Date ? Utilities.formatDate(r[0], getTimezone(), 'dd/MM/yyyy') : String(d[0]).replace(/^'/, '');
         let val = formatBRL(extractNum(r[7]));
         let resParc = resumoParcelasCompra[item.chaveCompraUnica] || null;
-        return [dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc];
+        return [dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];
       }).filter(Boolean).reverse();
     }
 
@@ -1504,19 +1523,19 @@ function getDadosCompletos() {
 
     // LEITURA DA ABA "EMPRÉSTIMOS"
     let listaEmprestimos = [];
-    let terceirosAbertoMesPorForma = {};
-    let terceirosFuturoPorForma = {};
-    let terceirosTotalMesPorForma = {};
-    let terceirosAReceberPorMes = {};
-    let terceirosCartaoPorFormaMes = {};
+    let terceirosAbertoMesPorForma = Object.create(null);
+    let terceirosFuturoPorForma = Object.create(null);
+    let terceirosTotalMesPorForma = Object.create(null);
+    let terceirosAReceberPorMes = Object.create(null);
+    let terceirosCartaoPorFormaMes = Object.create(null);
     let empKpiAReceberMes = 0, empKpiRecebidoMes = 0, empKpiTotalAReceberGeral = 0, empKpiLimiteOcupado = 0;
     let empKpiAtrasados = 0;
-    let freqPessoasEmp = {};
+    let freqPessoasEmp = Object.create(null);
 
     if (empSheet && empSheet.getLastRow() > 1) {
       const uLEmp = empSheet.getLastRow();
-      const rawEmp = empSheet.getRange(2, 1, uLEmp - 1, 11).getValues();
-      const dispEmp = empSheet.getRange(2, 1, uLEmp - 1, 11).getDisplayValues();
+      const rawEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getValues();
+      const dispEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getDisplayValues();
 
       rawEmp.forEach((r, idx) => {
         const d = dispEmp[idx];
@@ -1565,8 +1584,8 @@ function getDadosCompletos() {
             }
           }
 
-          if (consomeLimiteCartao && infoFat.time >= timeMesAtual) {
-            if (!terceirosCartaoPorFormaMes[chaveForma]) terceirosCartaoPorFormaMes[chaveForma] = {};
+          if (consomeLimiteCartao && r[14] !== 'Pago') {
+            if (!terceirosCartaoPorFormaMes[chaveForma]) terceirosCartaoPorFormaMes[chaveForma] = Object.create(null);
             terceirosCartaoPorFormaMes[chaveForma][mesFat] = (terceirosCartaoPorFormaMes[chaveForma][mesFat] || 0) + valParc;
 
             // A devolução da pessoa não quita a fatura do banco. Por isso o limite
@@ -1576,12 +1595,15 @@ function getDadosCompletos() {
               terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + valParc;
             } else if (infoFat.time > timeMesAtual) {
               terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + valParc;
+            } else if (infoFat.time > 0) {
+              terceirosVencidoPorForma[chaveForma] = (terceirosVencidoPorForma[chaveForma] || 0) + valParc;
             }
           }
         }
 
         listaEmprestimos.push({
           linha: idx + 2,
+          registroId: r[11], compraId: r[12], versao: Number(r[13] || 1), estadoBanco: r[14] || 'Em Aberto',
           data: dtLimpa,
           pessoa: pessoa,
           descricao: desc,
@@ -1624,7 +1646,7 @@ function getDadosCompletos() {
         mesesContinuos.forEach(mHoriz => {
           const infoH = parseMesFat(mHoriz);
           if (infoH.time > ass.timeRef) {
-            if (!pivotFaturas[ass.forma]) pivotFaturas[ass.forma] = {};
+            if (!pivotFaturas[ass.forma]) pivotFaturas[ass.forma] = Object.create(null);
             pivotFaturas[ass.forma][mHoriz] = (pivotFaturas[ass.forma][mHoriz] || 0) + ass.valorRaw;
           }
         });
@@ -1634,8 +1656,8 @@ function getDadosCompletos() {
     let somaFuturoCartoes = 0;
     let somaAbertoMesCartoes = 0;
     let somaTerceirosMesCartoes = 0;
-    let pivotTotalCarteira = {};
-    let pivotTotalBanco = {};
+    let pivotTotalCarteira = Object.create(null);
+    let pivotTotalBanco = Object.create(null);
     mesesContinuos.forEach(m => { pivotTotalCarteira[m] = 0; pivotTotalBanco[m] = 0; });
 
     listaFormasPagto.forEach(f => {
@@ -1653,6 +1675,8 @@ function getDadosCompletos() {
       const tercFuturo = terceirosFuturoPorForma[fNomeTrim] || 0;
       const tercTotalMes = terceirosTotalMesPorForma[fNomeTrim] || 0;
 
+      const vencidoCard = (vencidoPorForma[fNomeTrim] || 0) + (terceirosVencidoPorForma[fNomeTrim] || 0);
+      f.atrasadoRaw = vencidoCard;
       f.limiteRaw = limRaw;
       f.gastoMesRaw = gastoMesPessoal;
       f.abertoMesRaw = abertoMesPessoal + tercAbertoMes;
@@ -1683,6 +1707,7 @@ function getDadosCompletos() {
         const abertoTotalCard = abertoMesPessoal + tercAbertoMes;
         const futuroTotalCard = futuroParcPessoal + tercFuturo;
 
+        somaVencidoCartoes += vencidoCard;
         somaFuturoCartoes += futuroTotalCard;
         somaAbertoMesCartoes += abertoTotalCard;
         somaTerceirosMesCartoes += tercTotalMes;
@@ -1690,7 +1715,7 @@ function getDadosCompletos() {
         f.utilizado = formatBRL(gastoMesPessoal);
         f.totalFuturo = futuroTotalCard > 0 ? formatBRL(futuroTotalCard) : 'R$ 0,00';
 
-        const comprometidoCard = abertoTotalCard + futuroTotalCard;
+        const comprometidoCard = abertoTotalCard + futuroTotalCard + vencidoCard;
         f.disponivelRaw = limRaw > 0 ? (limRaw - comprometidoCard) : 0;
         if (limRaw > 0) {
           f.pctUso = Math.round((comprometidoCard / limRaw) * 100) + '%';
@@ -1702,26 +1727,10 @@ function getDadosCompletos() {
       }
     });
 
-    const agoraVenc = getHojeSeguro();
-    const diasAteVencimento = [];
-    listaFormasPagto.forEach(function (f) {
-      const nomeLower = String(f.nome || '').toLowerCase();
-      const ehCarteiraTotal = nomeLower.includes('total') || nomeLower.includes('carteira');
-      const diaVenc = parseInt(f.vencimento, 10);
-      const abertoFatura = Number(f.abertoMesRaw || 0);
-      if (ehCarteiraTotal || formaEmprestimoConsomeLimite_(nomeLower) !== true || !diaVenc || abertoFatura <= 0) return;
-      const ultimoDiaMes = new Date(agoraVenc.getFullYear(), agoraVenc.getMonth() + 1, 0).getDate();
-      const dataVenc = new Date(agoraVenc.getFullYear(), agoraVenc.getMonth(), Math.min(diaVenc, ultimoDiaMes));
-      const dias = Math.round((Date.UTC(dataVenc.getFullYear(), dataVenc.getMonth(), dataVenc.getDate()) - Date.UTC(agoraVenc.getFullYear(), agoraVenc.getMonth(), agoraVenc.getDate())) / 86400000);
-      if (dias <= 7) {
-        diasAteVencimento.push({ forma: f.nome, valorRaw: abertoFatura, valor: formatBRL(abertoFatura), dias: dias,
-          data: pad2(dataVenc.getDate()) + '/' + pad2(dataVenc.getMonth() + 1) + '/' + dataVenc.getFullYear() });
-      }
-    });
-    diasAteVencimento.sort(function (a, b) { return a.dias - b.dias; });
+    const diasAteVencimento = calcularAlertasVencimento_(listaFormasPagto, lancamentosValidos, getHojeSeguro());
 
     const chaveTotalCarteira = listaFormasPagto.find(f => f.nome.toLowerCase().includes('total') || f.nome.toLowerCase().includes('carteira'))?.nome || 'Total Carteira';
-    const pivotTerceirosAReceber = {};
+    const pivotTerceirosAReceber = Object.create(null);
     mesesContinuos.forEach(function (m) { pivotTerceirosAReceber[m] = terceirosAReceberPorMes[m] || 0; });
     pivotFaturas[chaveTotalCarteira] = pivotTotalCarteira;
     pivotFaturas['__TERCEIROS_A_RECEBER__'] = pivotTerceirosAReceber;
@@ -1731,7 +1740,8 @@ function getDadosCompletos() {
       const nomeLower = f.nome.toLowerCase();
       if (nomeLower.includes('total') || nomeLower.includes('carteira')) {
         const gastoMesCartoes = pivotTotalCarteira[mesAtualStr] || 0;
-        const comprometidoTotal = somaAbertoMesCartoes + somaFuturoCartoes;
+        const comprometidoTotal = somaAbertoMesCartoes + somaFuturoCartoes + somaVencidoCartoes;
+        f.atrasadoRaw = somaVencidoCartoes;
         const limRaw = extractNum(f.limiteTotal);
 
         f.utilizado = formatBRL(gastoMesCartoes);
@@ -1782,7 +1792,7 @@ function getDadosCompletos() {
     categorias.sort((a, b) => b.total - a.total);
 
     let anosUnicos = [...new Set(mesesUnicos.map(m => m.split('/')[1]))].sort((a, b) => b - a);
-    let estruturaMesesPorAno = {};
+    let estruturaMesesPorAno = Object.create(null);
     mesesUnicos.forEach(mFat => {
       let [m, a] = mFat.split('/');
       if (!estruturaMesesPorAno[a]) estruturaMesesPorAno[a] = [];
@@ -1794,22 +1804,11 @@ function getDadosCompletos() {
       .map(f => f.nome)
       .filter(nome => !nome.toLowerCase().includes('total') && !nome.toLowerCase().includes('carteira'));
 
-    let listaNotas = [];
-    if (notasSheet && notasSheet.getLastRow() >= 2) {
-      const nRows = notasSheet.getRange(2, 1, notasSheet.getLastRow() - 1, 4).getDisplayValues();
-      nRows.forEach(nr => {
-        if (nr[0] || nr[1]) {
-          listaNotas.push({
-            id: String(nr[0] || ''),
-            texto: String(nr[1] || ''),
-            concluida: String(nr[2] || '').toLowerCase() === 'true',
-            data: String(nr[3] || '')
-          });
-        }
-      });
-    }
+    const estadoNotas = lerNotasGestor_(notasSheet);
+    const listaNotas = estadoNotas.anotacoes;
 
     return {
+      protocoloGestor: 2,
       kpis: {
         totalAberto: formatBRL(calcAberto),
         totalPago: formatBRL(calcPago),
@@ -1835,6 +1834,7 @@ function getDadosCompletos() {
       autofillPrefixos: mapPrefixosAutofill,
       assinaturas: Object.values(listaAssinaturas),
       anotacoes: listaNotas,
+      notasRevision: estadoNotas.revision,
       emprestimos: {
         kpis: {
           aReceberMes: formatBRL(empKpiAReceberMes),
@@ -1870,7 +1870,7 @@ function doPost(e) {
     const result = executarAcaoApi_(payload.action, payload.param);
     return output.setContent(JSON.stringify({ sucesso: true, dados: result }));
   } catch (err) {
-    return output.setContent(JSON.stringify({ sucesso: false, erro: err.message }));
+    return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true }));
   }
 }
 
@@ -1883,44 +1883,50 @@ function apiCallServidor(action, param) {
     }
     return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param) });
   } catch (err) {
-    return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err) });
+    return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err), resultadoIncerto: !!(err && err.resultadoIncerto) });
   }
 }
 
 // Exportação para arquivo local. Inclui valores, fórmulas e valores exibidos
 // das abas usadas pelo app; não inclui Script Properties nem tokens secretos.
 function exportarBackupDadosWeb() {
-  const ss = obterPlanilhaGestor_();
-  const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
-  const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
-  const abas = nomes.map(function (nome) {
-    const sh = ss.getSheetByName(nome);
-    if (!sh) return null;
-    const range = sh.getDataRange();
-    const valores = range.getValues().map(function (linha) {
-      return linha.map(function (valor) {
-        if (valor instanceof Date) return { tipo: 'data', valor: Utilities.formatDate(valor, fuso, "yyyy-MM-dd'T'HH:mm:ss") };
-        return valor;
+  const lock = obterLockGestor_();
+  lock.waitLock(15000);
+  try {
+    const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
+    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
+    const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
+    const abas = nomes.map(function (nome) {
+      const sh = ss.getSheetByName(nome);
+      if (!sh) return null;
+      const range = sh.getDataRange();
+      const valores = range.getValues().map(function (linha) {
+        return linha.map(function (valor) {
+          if (valor instanceof Date) return { tipo: 'data', valor: Utilities.formatDate(valor, fuso, "yyyy-MM-dd'T'HH:mm:ss") };
+          return valor;
+        });
       });
-    });
-    return { nome: nome, valores: valores, exibidos: range.getDisplayValues(), formulas: range.getFormulas() };
-  }).filter(function (aba) { return !!aba; });
+      return { nome: nome, valores: valores, exibidos: range.getDisplayValues(), formulas: range.getFormulas(), formatosNumericos: range.getNumberFormats() };
+    }).filter(function (aba) { return !!aba; });
 
-  return {
-    formato: 'gestor-financeiro-backup-v1',
-    geradoEm: Utilities.formatDate(new Date(), fuso, 'yyyy-MM-dd HH:mm:ss'),
-    fusoHorario: fuso,
-    planilha: ss.getName(),
-    observacao: 'Cópia de segurança dos dados das abas. Não inclui o código do app nem restauração automática.',
-    abas: abas
-  };
+    return {
+      formato: 'gestor-financeiro-backup-v1',
+      geradoEm: Utilities.formatDate(new Date(), fuso, 'yyyy-MM-dd HH:mm:ss'),
+      fusoHorario: fuso,
+      planilha: ss.getName(),
+      observacao: 'Cópia de segurança dos dados das abas. Não inclui o código do app nem restauração automática.',
+      abas: abas
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function propriedade_(nome) {
   return PropertiesService.getScriptProperties().getProperty(nome) || '';
 }
 
-function executarAcaoApi_(action, param) {
+function executarAcaoApiInterna_(action, param) {
   switch (action) {
     case 'getDadosCompletos': return getDadosCompletos();
     case 'exportarBackupDadosWeb': return exportarBackupDadosWeb();
@@ -1963,6 +1969,7 @@ function limparApostrofo(v) { return String(v == null ? '' : v).replace(/^'/, ''
 function arred2(n) { return Math.round(Number(n || 0) * 100) / 100; }
 
 function lerAbaCompleta(sheet, numCols) {
+  if (sheet && ehAbaRegistrosGestor_(sheet.getName())) numCols = COLUNAS_GESTOR_;
   if (!sheet || sheet.getLastRow() < 2) return { raw: [], disp: [] };
   const rng = sheet.getRange(2, 1, sheet.getLastRow() - 1, numCols);
   return { raw: rng.getValues(), disp: rng.getDisplayValues() };
@@ -1973,42 +1980,33 @@ function lerAbaCompleta(sheet, numCols) {
 // Lançamentos: desc na coluna B (idx 1). Empréstimos: desc na coluna C (idx 2).
 // ----------------------------------------------------------------------------
 function localizarIndiceSeguro(dispAll, linha, descricao, mesFatura, parcela) {
-  const descN = normalizarTexto(descricao);
-  const mes = limparApostrofo(mesFatura);
-  const parc = limparApostrofo(parcela);
-  const confere = function (d) {
-    const bateDesc = normalizarTexto(d[1]) === descN || normalizarTexto(d[2]) === descN;
-    const bateMes = !mes || limparApostrofo(d[8]) === mes;
-    const bateParc = !parc || limparApostrofo(d[6]) === parc;
-    return bateDesc && bateMes && bateParc;
-  };
-  const idxLinha = parseInt(linha, 10) - 2;
-  if (!isNaN(idxLinha) && idxLinha >= 0 && idxLinha < dispAll.length && confere(dispAll[idxLinha])) return idxLinha;
-  for (let i = 0; i < dispAll.length; i++) {
-    if (confere(dispAll[i])) return i;
+  const ctx = CONTEXTO_GESTOR_, p = ctx ? ctx.param : {};
+  if (p.registroId) {
+    const idx = dispAll.findIndex(function (r) { return String(r[11]) === String(p.registroId); });
+    if (idx < 0) throw new Error('Este registro foi removido ou movido. Atualize a tela.');
+    if (!Number.isInteger(Number(p.versao)) || Number(p.versao) !== Number(dispAll[idx][13])) throw new Error('Este registro mudou em outra tela. Atualize antes de gravar.');
+    if (p.compraId && String(p.compraId) !== String(dispAll[idx][12])) throw new Error('A compra mudou. Atualize a tela.');
+    return idx;
   }
-  return -1;
+  const descN = normalizarTexto(descricao), mes = limparApostrofo(mesFatura), parc = limparApostrofo(parcela);
+  const ehEmp = ctx && /Emprestimo|GastosPessoais/.test(ctx.action) && ctx.action !== 'moverParaEmprestimosWeb';
+  const candidatos = [];
+  dispAll.forEach(function (d, i) { const desc = ehEmp ? d[2] : d[1]; if (normalizarTexto(desc) === descN && (!mes || limparApostrofo(d[8]) === mes) && (!parc || limparApostrofo(d[6]) === parc)) candidatos.push(i); });
+  if (candidatos.length > 1) throw new Error('Há registros semelhantes. Atualize o app para selecionar pelo identificador seguro.');
+  if (ctx && !p.registroId) throw new Error('Atualize o app antes de editar este registro: falta a identificação segura.');
+  return candidatos.length === 1 ? candidatos[0] : -1;
 }
 
 // Índices de todas as parcelas da mesma compra (Lançamentos)
 function indicesMesmaCompra(dispAll, idxAlvo) {
-  const a = dispAll[idxAlvo];
-  const parcAlvo = limparApostrofo(a[6]);
-  const info = parseNumParcela(parcAlvo);
-  const lista = [idxAlvo];
-  if (info.total <= 1 || parcAlvo === '∞/∞') return lista;
-  const sufixo = '/' + info.total;
-  for (let i = 0; i < dispAll.length; i++) {
-    if (i === idxAlvo) continue;
-    const d = dispAll[i];
-    if (
-      limparApostrofo(d[6]).endsWith(sufixo) &&
-      limparApostrofo(d[0]) === limparApostrofo(a[0]) &&
-      normalizarTexto(d[1]) === normalizarTexto(a[1]) &&
-      normalizarTexto(d[2]) === normalizarTexto(a[2])
-    ) lista.push(i);
-  }
-  return lista;
+  const alvo = dispAll[idxAlvo];
+  if (!alvo) return [];
+  if (String(alvo[15] || '').indexOf('ambíguo') >= 0) throw new Error('Esta compra antiga possui parcelas ambíguas. Revise os registros individualmente antes de usar uma ação em lote.');
+  const id = String(alvo[12] || '');
+  if (!id) return [idxAlvo];
+  const indices = [];
+  dispAll.forEach(function (r, i) { if (String(r[12] || '') === id) indices.push(i); });
+  return indices;
 }
 
 // Monta uma linha de 11 colunas de "Lançamentos" aplicando alterações (over)
@@ -2027,7 +2025,7 @@ function montarLinhaLanc(d, r, over) {
     "'" + (o.mes !== undefined ? o.mes : limparApostrofo(d[8])),
     o.status !== undefined ? o.status : d[9],
     o.tags !== undefined ? o.tags : d[10]
-  ];
+  ].concat(r.slice(11, COLUNAS_GESTOR_));
 }
 
 function escreverLinhaPlanilha(sheet, numLinha, linha) {
@@ -2040,8 +2038,9 @@ function escreverLinhaPlanilha(sheet, numLinha, linha) {
 // LANÇAMENTOS: EDITAR / EXCLUIR / ADIANTAR / QUITAR FATURA
 // ============================================================================
 
-function editarLancamentoLinhaWeb(dados) {
-  const lock = LockService.getScriptLock();
+function editarLancamentoLinhaWebInterno_(dados) {
+  validarEdicaoGestor_(dados, false);
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
@@ -2059,7 +2058,7 @@ function editarLancamentoLinhaWeb(dados) {
     const ehParcelado = infoAlvo.total > 1 && parcAlvo !== '∞/∞';
 
     const descFmt = formatarTituloInteligente(dados.descricao);
-    const valor = extractNum(dados.valorParcela);
+    const valor = centavosGestor_(dados.valorParcela) / 100;
     const novaData = limparApostrofo(dados.dataCompra);
     const novoMes = limparApostrofo(dados.mesFatura);
     const mudouMes = novoMes !== limparApostrofo(alvo[8]);
@@ -2067,7 +2066,7 @@ function editarLancamentoLinhaWeb(dados) {
     const tags = dados.tags || '';
 
     const grupo = ehParcelado ? indicesMesmaCompra(disp, idx) : [idx];
-    const novas = {};
+    const novas = Object.create(null);
 
     grupo.forEach(function (i) {
       const d = disp[i], r = raw[i];
@@ -2108,8 +2107,8 @@ function editarLancamentoLinhaWeb(dados) {
   }
 }
 
-function excluirLancamentoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function excluirLancamentoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
@@ -2140,8 +2139,8 @@ function excluirLancamentoWeb(dados) {
 }
 
 // Antecipação estilo Nubank: puxa as últimas parcelas futuras em aberto para a fatura destino
-function adiantarParcelasWeb(dados) {
-  const lock = LockService.getScriptLock();
+function adiantarParcelasWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
@@ -2153,7 +2152,7 @@ function adiantarParcelasWeb(dados) {
     const idx = localizarIndiceSeguro(disp, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idx < 0) throw new Error('Compra não localizada.');
 
-    const mesDestino = limparApostrofo(dados.mesDestino);
+    const mesDestino = validarMesFaturaWeb_(dados.mesDestino);
     const infoDest = parseMesFat(mesDestino);
     if (infoDest.time === 0) throw new Error('Fatura destino inválida. Use o formato MM/AAAA.');
 
@@ -2171,10 +2170,13 @@ function adiantarParcelasWeb(dados) {
     const somaOrig = candidatas.reduce(function (acc, i) { return acc + extractNum(raw[i][7]); }, 0);
     const desconto = Math.min(Math.max(extractNum(dados.descontoTotal), 0), somaOrig);
 
-    const novas = {};
-    candidatas.forEach(function (i) {
-      const v = extractNum(raw[i][7]);
-      const novoV = arred2(v - (somaOrig > 0 ? desconto * v / somaOrig : 0));
+    const novas = Object.create(null);
+    let descontoRestante = centavosGestor_(desconto), somaRestante = candidatas.reduce(function (a, i) { return a + centavosGestor_(raw[i][7]); }, 0);
+    candidatas.forEach(function (i, pos) {
+      const vCentavos = centavosGestor_(raw[i][7]);
+      const abatimento = pos === candidatas.length - 1 ? descontoRestante : Math.min(vCentavos, Math.floor(descontoRestante * vCentavos / somaRestante));
+      descontoRestante -= abatimento; somaRestante -= vCentavos;
+      const novoV = (vCentavos - abatimento) / 100;
       novas[i] = montarLinhaLanc(disp[i], raw[i], {
         valor: novoV,
         mes: mesDestino,
@@ -2203,18 +2205,16 @@ function adiantarParcelasWeb(dados) {
   }
 }
 
-function quitarFaturaWeb(dados) {
-  const lock = LockService.getScriptLock();
+function quitarFaturaWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
     const lancSheet = ss.getSheetByName('Lançamentos');
     const lido = lerAbaCompleta(lancSheet, 11);
     const disp = lido.disp;
-    if (disp.length === 0) return { sucesso: true, qtd: 0 };
-
     const forma = normalizarTexto(dados.forma);
-    const mes = limparApostrofo(dados.mesFatura);
+    const mes = validarMesFaturaWeb_(dados.mesFatura);
     const info = parseMesFat(mes);
     const hoje = getHojeSeguro();
     const mesPassado = info.a < hoje.getFullYear() || (info.a === hoje.getFullYear() && info.m < (hoje.getMonth() + 1));
@@ -2230,7 +2230,15 @@ function quitarFaturaWeb(dados) {
       qtd++;
     });
     if (qtd > 0) lancSheet.getRange(2, 10, colStatus.length, 1).setValues(colStatus);
-    return { sucesso: true, qtd: qtd };
+    const emp = ss.getSheetByName('Empréstimos');
+    let qtdTerceiros = 0;
+    if (emp && emp.getLastRow() > 1) {
+      const e = lerAbaCompleta(emp, COLUNAS_GESTOR_);
+      e.raw.forEach(function (r, i) {
+        if (normalizarTexto(e.disp[i][3]) === forma && limparApostrofo(e.disp[i][8]) === mes && r[14] !== 'Pago') { emp.getRange(i + 2, 15).setValue('Pago'); qtdTerceiros++; }
+      });
+    }
+    return { sucesso: true, qtd: qtd, qtdTerceiros: qtdTerceiros };
   } catch (e) {
     throw new Error('Falha ao quitar fatura: ' + e.message);
   } finally {
@@ -2242,114 +2250,79 @@ function quitarFaturaWeb(dados) {
 // ASSINATURAS (DESPESAS FIXAS)
 // ============================================================================
 
-function editarAssinaturaWeb(dados) {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(15000);
-    const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
-    const lido = lerAbaCompleta(lancSheet, 11);
-    const raw = lido.raw, disp = lido.disp;
-
-    const chaveOrig = normalizarTexto(dados.descOriginal) + '_' + normalizarTexto(dados.formaOriginal);
-    const descNova = formatarTituloInteligente(dados.novaDesc);
-    const chaveNova = normalizarTexto(descNova) + '_' + normalizarTexto(dados.novaForma);
-    const chaveMudou = chaveNova !== chaveOrig;
-    const valorNovo = extractNum(dados.novaValor);
-
-    const hoje = getHojeSeguro();
-    const timeMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1).getTime();
-
-    const novas = {};
-    let qtd = 0;
-    disp.forEach(function (d, i) {
-      if (limparApostrofo(d[6]) !== '∞/∞') return;
-      if (normalizarTexto(d[1]) + '_' + normalizarTexto(d[2]) !== chaveOrig) return;
-      const st = String(d[9] || '').trim();
-      if (isStatusCancelado(st) || st === 'Pago (Cancelada)') return;
-
-      if (parseMesFat(d[8]).time >= timeMesAtual) {
-        novas[i] = montarLinhaLanc(d, raw[i], { desc: descNova, forma: dados.novaForma, cat: dados.novaCat, valor: valorNovo });
-        qtd++;
-      } else if (chaveMudou) {
-        novas[i] = montarLinhaLanc(d, raw[i], { status: isStatusPago(st) ? 'Pago (Cancelada)' : 'Assinatura Cancelada' });
-      }
-    });
-
-    Object.keys(novas).forEach(function (k) {
-      escreverLinhaPlanilha(lancSheet, parseInt(k, 10) + 2, novas[k]);
-    });
-    organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
-    return { sucesso: true, qtd: qtd };
-  } catch (e) {
-    throw new Error('Falha ao editar assinatura: ' + e.message);
-  } finally {
-    lock.releaseLock();
+function editarAssinaturaWebInterno_(dados) {
+  const ss = obterPlanilhaGestor_(), lancSheet = ss.getSheetByName('Lançamentos'), pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+  const lido = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_), raw = lido.raw, disp = lido.disp;
+  const idx = localizarIndiceSeguro(disp, dados.linhaBase, dados.descOriginal, '', '∞/∞');
+  if (idx < 0 || limparApostrofo(disp[idx][6]) !== '∞/∞') throw new Error('Assinatura não localizada. Atualize a tela.');
+  const grupo = indicesMesmaCompra(disp, idx), descNova = formatarTituloInteligente(dados.novaDesc), formaNova = String(dados.novaForma || '').trim(), catNova = String(dados.novaCat || '').trim();
+  const valorNovo = centavosGestor_(dados.novaValor) / 100;
+  if (!descNova || !formaNova || !catNova || valorNovo <= 0) throw new Error('Informe descrição, forma de pagamento, categoria e valor válido.');
+  const mudouChave = normalizarTexto(descNova) !== normalizarTexto(disp[idx][1]) || normalizarTexto(formaNova) !== normalizarTexto(disp[idx][2]);
+  if (disp.some(function (r) { return r[12] !== disp[idx][12] && limparApostrofo(r[6]) === '∞/∞' && !isStatusCancelado(r[9]) && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descNova) && normalizarTexto(r[2]) === normalizarTexto(formaNova); })) throw new Error('Já existe outra assinatura ativa com esta descrição e forma de pagamento.');
+  const hoje = getHojeSeguro(), mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1).getTime();
+  let qtd = 0;
+  grupo.forEach(function (i) {
+    const st = String(disp[i][9]);
+    if (isStatusCancelado(st) || st === 'Pago (Cancelada)') return;
+    if (parseMesFat(disp[i][8]).time >= mesAtual && !isStatusPago(st)) {
+      escreverLinhaPlanilha(lancSheet, i + 2, montarLinhaLanc(disp[i], raw[i], { desc: descNova, forma: formaNova, cat: catNova, valor: valorNovo })); qtd++;
+    } else if (mudouChave) {
+      escreverLinhaPlanilha(lancSheet, i + 2, montarLinhaLanc(disp[i], raw[i], { status: isStatusPago(st) ? 'Pago (Cancelada)' : 'Assinatura Cancelada' }));
+    }
+  });
+  // Uma fatura já paga é histórica: a nova condição começa no próximo mês.
+  if (!qtd) {
+    const ref = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 1), mes = pad2(ref.getMonth() + 1) + '/' + ref.getFullYear();
+    const nova = montarLinhaLanc(disp[idx], raw[idx], { desc: descNova, forma: formaNova, cat: catNova, valor: valorNovo, mes: mes, status: 'Assinatura Ativa' });
+    const dataBase = parseDataBR(disp[idx][0]), dia = Math.min(dataBase ? dataBase.getDate() : 1, new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate());
+    nova[0] = "'" + pad2(dia) + '/' + mes; nova[11] = gerarIdGestor_(); nova[13] = 1; nova[14] = 'Em Aberto';
+    escreverLinhaPlanilha(lancSheet, Math.max(2, lancSheet.getLastRow() + 1), nova); qtd++;
   }
+  organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
+  return { sucesso: true, qtd: qtd };
 }
 
-function cancelarAssinaturaWeb(dados) {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(15000);
-    const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const lido = lerAbaCompleta(lancSheet, 11);
-    const disp = lido.disp;
-    if (disp.length === 0) return { sucesso: true, qtd: 0 };
-
-    const chave = normalizarTexto(dados.descricao) + '_' + normalizarTexto(dados.forma);
-    const colStatus = disp.map(function (d) { return [d[9]]; });
-    let qtd = 0;
-    disp.forEach(function (d, i) {
-      if (limparApostrofo(d[6]) !== '∞/∞') return;
-      if (normalizarTexto(d[1]) + '_' + normalizarTexto(d[2]) !== chave) return;
-      const st = String(d[9] || '').trim();
-      if (isStatusCancelado(st) || st === 'Pago (Cancelada)') return;
-      colStatus[i][0] = isStatusPago(st) ? 'Pago (Cancelada)' : 'Assinatura Cancelada';
-      qtd++;
-    });
-    if (qtd > 0) lancSheet.getRange(2, 10, colStatus.length, 1).setValues(colStatus);
-    return { sucesso: true, qtd: qtd };
-  } catch (e) {
-    throw new Error('Falha ao cancelar assinatura: ' + e.message);
-  } finally {
-    lock.releaseLock();
-  }
+function cancelarAssinaturaWebInterno_(dados) {
+  const ss = obterPlanilhaGestor_(), sheet = ss.getSheetByName('Lançamentos'), lido = lerAbaCompleta(sheet, COLUNAS_GESTOR_);
+  const idx = localizarIndiceSeguro(lido.disp, dados.linhaBase, dados.descricao, '', '∞/∞');
+  if (idx < 0 || limparApostrofo(lido.disp[idx][6]) !== '∞/∞') throw new Error('Assinatura não localizada. Atualize a tela.');
+  const grupo = indicesMesmaCompra(lido.disp, idx); let qtd = 0;
+  grupo.forEach(function (i) { const st = String(lido.disp[i][9] || ''); if (isStatusCancelado(st) || st === 'Pago (Cancelada)') return; sheet.getRange(i + 2, 10).setValue(isStatusPago(st) ? 'Pago (Cancelada)' : 'Assinatura Cancelada'); qtd++; });
+  return { sucesso: true, qtd: qtd };
 }
 
 // ============================================================================
 // NOTAS
 // ============================================================================
 
-function salvarNotasWeb(notas) {
-  const lock = LockService.getScriptLock();
-  try {
-    lock.waitLock(10000);
-    const ss = obterPlanilhaGestor_();
-    let sh = ss.getSheetByName('Anotações');
-    if (!sh) {
-      sh = ss.insertSheet('Anotações');
-      sh.getRange(1, 1, 1, 4).setValues([['ID', 'Texto', 'Concluída', 'Data']]).setFontWeight('bold');
-      sh.setFrozenRows(1);
-    }
-    if (sh.getLastRow() >= 2) sh.getRange(2, 1, sh.getLastRow() - 1, 4).clearContent();
-    const lista = Array.isArray(notas) ? notas : [];
-    if (lista.length > 0) {
-      const linhas = lista.map(function (n) {
-        let texto = String(n.texto || '');
-        if (/^[=+\-@]/.test(texto)) texto = "'" + texto;
-        return ["'" + String(n.id || ''), texto, n.concluida === true, "'" + String(n.data || '')];
-      });
-      sh.getRange(2, 1, linhas.length, 4).setValues(linhas);
-    }
-    return { sucesso: true, qtd: lista.length };
-  } catch (e) {
-    throw new Error('Falha ao salvar notas: ' + e.message);
-  } finally {
-    lock.releaseLock();
-  }
+function lerNotasGestor_(sh) {
+  if (!sh || sh.getLastRow() < 2) return { anotacoes: [], revision: 0 };
+  const v = sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues();
+  const notas = v.filter(function (r) { return r[0] && r[5] !== true; }).map(function (r) { return { id: limparApostrofo(r[0]), texto: limparTextoLiteralGestor_(r[1]), concluida: r[2] === true || String(r[2]).toLowerCase() === 'true', data: limparApostrofo(r[3]), revision: Number(r[4] || 1) }; });
+  return { anotacoes: notas, revision: v.reduce(function (soma, r) { return soma + (r[0] ? Number(r[4] || 1) : 0); }, 0) };
+}
+function salvarNotasWebInterno_(param) {
+  if (!param || !Array.isArray(param.operacoes) || param.operacoes.length > 500) throw new Error('Atualize o app para sincronizar as alterações das notas.');
+  const ss = obterPlanilhaGestor_(); let sh = ss.getSheetByName('Anotações');
+  if (!sh) { sh = ss.insertSheet('Anotações'); sh.getRange(1, 1, 1, 6).setValues([['ID','Texto','Concluída','Data','Versão','Excluída']]); sh.setFrozenRows(1); }
+  const linhas = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues() : [];
+  const vistos = new Set();
+  param.operacoes.forEach(function (op) {
+    const id = String(op.id || '');
+    if (!id || id.length > 160 || vistos.has(id)) throw new Error('Identificação de nota inválida ou repetida.'); vistos.add(id);
+    const i = linhas.findIndex(function (r) { return limparApostrofo(r[0]) === id; }), atual = i >= 0 ? linhas[i] : null;
+    if (atual && Number(op.revision) !== Number(atual[4] || 1)) throw new Error('Esta nota mudou em outro dispositivo. Atualize as notas antes de gravar.');
+    if (op.tipo === 'delete') { if (atual) { atual[4] = Number(atual[4] || 1) + 1; atual[5] = true; } return; }
+    if (op.tipo !== 'upsert' || !op.nota || !String(op.nota.texto || '').trim()) throw new Error('Nota inválida.');
+    if (atual && atual[5] === true) throw new Error('Esta nota foi excluída em outro dispositivo.');
+    const n = op.nota;
+    const linha = ["'" + id, textoLiteralGestor_(n.texto), n.concluida === true, "'" + String(n.data || ''), atual ? Number(atual[4] || 1) + 1 : 1, false];
+    if (i >= 0) linhas[i] = linha; else linhas.push(linha);
+  });
+  if (linhas.length) sh.getRange(2, 1, linhas.length, 6).setValues(linhas);
+  const estado = lerNotasGestor_(sh);
+  return { sucesso: true, anotacoes: estado.anotacoes, revision: estado.revision, operacoesConfirmadas: param.operacoes.map(function (op) { return op.id; }) };
 }
 
 // ============================================================================
@@ -2363,8 +2336,8 @@ function formaEmprestimoConsomeLimite_(forma) {
 // EMPRÉSTIMOS: NOVO REGISTRO
 // ============================================================================
 
-function salvarEmprestimoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function salvarEmprestimoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     if (!dados || typeof dados !== 'object' || Array.isArray(dados)) throw new Error('Dados do empréstimo inválidos.');
@@ -2387,15 +2360,16 @@ function salvarEmprestimoWeb(dados) {
     const ss = obterPlanilhaGestor_();
     const empSheet = garantirAbaEmprestimos(ss);
 
-    const valorTotal = extractNum(dados.valorTotal);
+    const valorTotal = centavosGestor_(dados.valorTotal) / 100;
     if (!Number.isFinite(valorTotal) || valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
     const numParcelas = isPix ? 1 : Number(dados.numParcelas || 1);
     const parcelaInicial = isPix ? 1 : Number(dados.parcelaInicial || 1);
-    if (!Number.isInteger(numParcelas) || numParcelas < 1) throw new Error('O número de parcelas deve ser um inteiro positivo.');
+    if (!Number.isInteger(numParcelas) || numParcelas < 1 || numParcelas > 600) throw new Error('O número de parcelas deve ser um inteiro positivo.');
     if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
       throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');
     }
     const totalCentavos = Math.round(valorTotal * 100);
+    if (totalCentavos < numParcelas) throw new Error('Cada parcela deve ter pelo menos um centavo.');
     const centavosBase = Math.floor(totalCentavos / numParcelas);
     const sobraCentavos = totalCentavos % numParcelas;
 
@@ -2462,8 +2436,8 @@ function renomearFormaNasAbas(ss, de, para) {
   });
 }
 
-function salvarFormaPagamentoWeb(dados) {
-  const lock = LockService.getScriptLock();
+function salvarFormaPagamentoWebInterno_(dados) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
@@ -2497,7 +2471,7 @@ function salvarFormaPagamentoWeb(dados) {
       }
     }
 
-    sh.getRange(linha, 2, 1, 5).setValues([[nome, banco, limite, isNaN(fech) ? '' : fech, isNaN(venc) ? '' : venc]]);
+    sh.getRange(linha, 2, 1, 5).setValues([[textoLiteralGestor_(nome), textoLiteralGestor_(banco), limite, isNaN(fech) ? '' : fech, isNaN(venc) ? '' : venc]]);
     if (orig && orig !== nome) renomearFormaNasAbas(ss, orig, nome);
     organizarFormasPagamento(sh);
     return { sucesso: true };
@@ -2508,8 +2482,9 @@ function salvarFormaPagamentoWeb(dados) {
   }
 }
 
-function reordenarFormasPagamentoWeb(nomes) {
-  const lock = LockService.getScriptLock();
+function reordenarFormasPagamentoWebInterno_(param) {
+  const nomes = param.ordem || [];
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
@@ -2540,8 +2515,9 @@ function reordenarFormasPagamentoWeb(nomes) {
   }
 }
 
-function excluirFormaPagamentoWeb(nome) {
-  const lock = LockService.getScriptLock();
+function excluirFormaPagamentoWebInterno_(param) {
+  const nome = param.nome;
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
@@ -2576,8 +2552,8 @@ function excluirFormaPagamentoWeb(nome) {
 // CATEGORIAS E METAS (Dashboard & Resumo: nomes B17:B41, metas D17:D41)
 // ============================================================================
 
-function salvarCategoriasWeb(param) {
-  const lock = LockService.getScriptLock();
+function salvarCategoriasWebInterno_(param) {
+  const lock = obterLockGestor_();
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
@@ -2594,7 +2570,7 @@ function salvarCategoriasWeb(param) {
       const c = cats[i];
       const nome = c ? String(c.nome || '').trim() : '';
       const meta = c ? extractNum(c.meta) : 0;
-      nomes.push([nome]);
+      nomes.push([textoLiteralGestor_(nome)]);
       metas.push([nome && meta > 0 ? meta : '']);
     }
     dash.getRange('B17:B41').setValues(nomes);
@@ -2607,7 +2583,7 @@ function salvarCategoriasWeb(param) {
       if (lanc && lanc.getLastRow() >= 2) {
         const rng = lanc.getRange(2, 4, lanc.getLastRow() - 1, 1);
         const vals = rng.getValues();
-        const mapa = {};
+        const mapa = Object.create(null);
         renomeacoes.forEach(function (r) {
           // Use a mesma chave tolerante dos relatórios para incluir registros
           // antigos que diferem apenas por acento, emoji ou pontuação.
@@ -2672,7 +2648,7 @@ function previsualizarUnificacaoCategoriasNaPlanilha() {
   }
   const rng = lanc.getRange(2, 4, lanc.getLastRow() - 1, 1);
   const vals = rng.getValues();
-  const porCategoria = {};
+  const porCategoria = Object.create(null);
   vals.forEach(function (l) {
     const atual = String(l[0] || '').trim();
     if (!atual || nomesConfig.indexOf(atual) >= 0) return;
@@ -2698,8 +2674,8 @@ function previsualizarUnificacaoCategoriasNaPlanilha() {
 }
 
 // Depois de conferir a prévia, rode esta função para gravar as unificações.
-function unificarCategoriasNaPlanilha() {
-  const lock = LockService.getScriptLock();
+function unificarCategoriasNaPlanilhaInterno_() {
+  const lock = obterLockGestor_();
   let lockObtido = false;
   try {
     lock.waitLock(10000);
@@ -2754,14 +2730,14 @@ function lerLancamentosParaRelatorio() {
       status: String(d[9] || '').trim(),
       tags: String(d[10] || '').trim(),
       data: limparApostrofo(d[0]),
-      chave: limparApostrofo(d[0]) + '_' + normalizarTexto(desc) + '_' + normalizarTexto(d[2]) + '_' + infoParc.total
+      chave: String(r[12] || r[11] || ('linha-' + i))
     });
   });
   return linhas;
 }
 
 function calcularResumoParcelas(linhas) {
-  const mapa = {};
+  const mapa = Object.create(null);
   linhas.forEach(function (l) {
     if (isStatusCancelado(l.status) || l.infoParc.total <= 1 || l.parc === '∞/∞') return;
     if (!mapa[l.chave]) mapa[l.chave] = { faltam: 0, maxTime: 0, fimMes: '' };
@@ -2781,13 +2757,13 @@ function calcularResumoParcelas(linhas) {
 function itemLancamento(l, resumo, modo) {
   const base = [l.data, l.d[1], l.d[2], l.d[3], l.d[4], l.d[5], l.parc, formatBRL(l.valor), l.mes, l.d[9]];
   const res = resumo[l.chave] || null;
-  return modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res]);
+  return (modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res])).concat([l.r[11], l.r[12], Number(l.r[13] || 1), l.r[14]]);
 }
 
 function lerMetasCategorias() {
   const ss = obterPlanilhaGestor_();
   const dash = ss.getSheetByName('Dashboard & Resumo');
-  const mapa = {};
+  const mapa = Object.create(null);
   if (!dash) return mapa;
   const nomes = dash.getRange('B17:B41').getValues();
   const metas = dash.getRange('D17:D41').getValues();
@@ -2798,24 +2774,45 @@ function lerMetasCategorias() {
   return mapa;
 }
 
-function lerTerceirosDoMes(mes) {
+function lerEmprestimosRelatorio_(periodo) {
   const ss = obterPlanilhaGestor_();
   const sh = ss.getSheetByName('Empréstimos');
-  const mapa = {};
-  if (!sh || sh.getLastRow() < 2) return mapa;
+  const itens = [];
+  if (!sh || sh.getLastRow() < 2) return itens;
   const lido = lerAbaCompleta(sh, 11);
   lido.raw.forEach(function (r, i) {
     const d = lido.disp[i];
-    if (limparApostrofo(d[8]) !== mes) return;
-    const k = normalizarTexto(d[3]);
-    if (!mapa[k]) mapa[k] = { nome: String(d[3] || '').trim(), total: 0 };
-    mapa[k].total += extractNum(r[7]);
+    const mes = limparApostrofo(d[8]);
+    const status = String(d[9] || 'A Receber').trim();
+    const corresponde = String(periodo).includes('/') ? mes === periodo : mes.slice(3) === String(periodo);
+    const valor = extractNum(r[7]);
+    if (!corresponde || isStatusCancelado(status) || valor <= 0) return;
+    itens.push({ data: limparApostrofo(d[0]), pessoa: String(d[1] || ''), descricao: String(d[2] || ''),
+      forma: String(d[3] || '').trim(), parcela: limparApostrofo(d[6]), mes: mes,
+      valorRaw: valor, valor: formatBRL(valor), status: status, observacoes: String(d[10] || '') });
+  });
+  return itens;
+}
+
+function resumirTerceirosRelatorio_(itens) {
+  let total = 0, recebido = 0;
+  itens.forEach(function (item) { total += item.valorRaw; if (item.status === 'Recebido') recebido += item.valorRaw; });
+  return { totalRaw: arred2(total), recebidoRaw: arred2(recebido), aReceberRaw: arred2(total - recebido), itens: itens };
+}
+
+function lerTerceirosDoMes(mes) {
+  const mapa = Object.create(null);
+  lerEmprestimosRelatorio_(mes).forEach(function (item) {
+    const k = normalizarTexto(item.forma);
+    if (!mapa[k]) mapa[k] = { nome: item.forma, total: 0, itens: [] };
+    mapa[k].total += item.valorRaw;
+    mapa[k].itens.push(item);
   });
   return mapa;
 }
 
 function somarTags(linhas) {
-  const mapa = {};
+  const mapa = Object.create(null);
   linhas.forEach(function (l) {
     if (!l.tags) return;
     l.tags.split(',').forEach(function (t) {
@@ -2830,7 +2827,7 @@ function somarTags(linhas) {
 }
 
 function somarPor(linhas, campo) {
-  const mapa = {};
+  const mapa = Object.create(null);
   linhas.forEach(function (l) { mapa[l[campo]] = (mapa[l[campo]] || 0) + l.valor; });
   return Object.keys(mapa).map(function (k) { return { nome: k, total: mapa[k] }; })
     .filter(function (x) { return x.total > 0; })
@@ -2889,7 +2886,7 @@ function obterRelatorioMes(mesFiltro) {
   });
 
   const terceiros = lerTerceirosDoMes(mes);
-  const mapaForma = {};
+  const mapaForma = Object.create(null);
   doMes.forEach(function (l) {
     const k = normalizarTexto(l.forma);
     if (!mapaForma[k]) mapaForma[k] = { nome: l.forma, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
@@ -2897,7 +2894,7 @@ function obterRelatorioMes(mesFiltro) {
     if (!isStatusPago(l.status)) mapaForma[k].aberto += l.valor;
   });
   Object.keys(terceiros).forEach(function (k) {
-    if (!mapaForma[k]) mapaForma[k] = { nome: terceiros[k].nome || terceiros[k].nome, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
+    if (!mapaForma[k]) mapaForma[k] = { nome: terceiros[k].nome, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
     mapaForma[k].terceiros = terceiros[k].total;
   });
   const formas = Object.values(mapaForma).map(function (f) {
@@ -2920,6 +2917,7 @@ function obterRelatorioMes(mesFiltro) {
     },
     categorias: categorias,
     formas: formas,
+    terceiros: resumirTerceirosRelatorio_(Object.values(terceiros).reduce(function (itens, grupo) { return itens.concat(grupo.itens); }, [])),
     tags: somarTags(doMes),
     lancamentos: doMes.map(function (l) { return itemLancamento(l, resumo, 'relatorio'); })
   };
@@ -2964,6 +2962,7 @@ function obterRelatorioAnual(ano) {
     graficoMeses: grafico.map(arred2),
     categorias: somarPor(doAno, 'catRes'),
     formas: somarPor(doAno, 'forma'),
+    terceiros: resumirTerceirosRelatorio_(lerEmprestimosRelatorio_(String(anoNum))),
     tags: somarTags(doAno)
   };
 }
@@ -2975,7 +2974,7 @@ function obterRelatorioAnual(ano) {
 function filtrarLancamentosWeb(filtros, offset, limite) {
   const f = filtros || {};
   const off = Math.max(0, parseInt(offset, 10) || 0);
-  const lim = Math.max(1, parseInt(limite, 10) || 50);
+  const lim = Math.min(500, Math.max(1, parseInt(limite, 10) || 50));
 
   const todas = lerLancamentosParaRelatorio();
   const resumo = calcularResumoParcelas(todas);
@@ -2992,6 +2991,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 
   const filtrados = todas.filter(function (l) {
     if (f.mes && l.mes !== f.mes) return false;
+    if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
     if (f.forma && normalizarTexto(l.forma) !== normalizarTexto(f.forma)) return false;
     if (f.categoria && normalizarTexto(l.cat) !== normalizarTexto(f.categoria) && normalizarTexto(l.catRes) !== normalizarTexto(f.categoria)) return false;
 
@@ -3034,3 +3034,337 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
     somaMetade: formatBRL(soma / 2)
   };
 }
+
+function executarAcaoApi_(action, param) {
+  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb'];
+  if (leituras.indexOf(action) >= 0) return executarOperacaoGestor_(action, param, function () { return executarAcaoApiInterna_(action, param); }, true);
+  return executarAcaoApiInterna_(action, param);
+}
+
+function editarLancamentoLinhaWeb(param) { return executarOperacaoGestor_('editarLancamentoLinhaWeb', param, function () { return editarLancamentoLinhaWebInterno_(param); }, false); }
+
+function excluirLancamentoWeb(param) { return executarOperacaoGestor_('excluirLancamentoWeb', param, function () { return excluirLancamentoWebInterno_(param); }, false); }
+
+function adiantarParcelasWeb(param) { return executarOperacaoGestor_('adiantarParcelasWeb', param, function () { return adiantarParcelasWebInterno_(param); }, false); }
+
+function quitarFaturaWeb(param) { return executarOperacaoGestor_('quitarFaturaWeb', param, function () { return quitarFaturaWebInterno_(param); }, false); }
+
+function salvarNotasWeb(param) { return executarOperacaoGestor_('salvarNotasWeb', param, function () { return salvarNotasWebInterno_(param); }, false); }
+
+function salvarEmprestimoWeb(param) { return executarOperacaoGestor_('salvarEmprestimoWeb', param, function () { return salvarEmprestimoWebInterno_(param); }, false); }
+
+function alternarStatusEmprestimoWeb(param) { return executarOperacaoGestor_('alternarStatusEmprestimoWeb', param, function () { return alternarStatusEmprestimoWebInterno_(param); }, false); }
+
+function excluirEmprestimoWeb(param) { return executarOperacaoGestor_('excluirEmprestimoWeb', param, function () { return excluirEmprestimoWebInterno_(param); }, false); }
+
+function editarEmprestimoLinhaWeb(param) { return executarOperacaoGestor_('editarEmprestimoLinhaWeb', param, function () { return editarEmprestimoLinhaWebInterno_(param); }, false); }
+
+function dividirParcelaEmprestimoWeb(param) { return executarOperacaoGestor_('dividirParcelaEmprestimoWeb', param, function () { return dividirParcelaEmprestimoWebInterno_(param); }, false); }
+
+function moverParaEmprestimosWeb(param) { return executarOperacaoGestor_('moverParaEmprestimosWeb', param, function () { return moverParaEmprestimosWebInterno_(param); }, false); }
+
+function moverParaGastosPessoaisWeb(param) { return executarOperacaoGestor_('moverParaGastosPessoaisWeb', param, function () { return moverParaGastosPessoaisWebInterno_(param); }, false); }
+
+function editarAssinaturaWeb(param) { return executarOperacaoGestor_('editarAssinaturaWeb', param, function () { return editarAssinaturaWebInterno_(param); }, false); }
+
+function cancelarAssinaturaWeb(param) { return executarOperacaoGestor_('cancelarAssinaturaWeb', param, function () { return cancelarAssinaturaWebInterno_(param); }, false); }
+
+function salvarFormaPagamentoWeb(param) { return executarOperacaoGestor_('salvarFormaPagamentoWeb', param, function () { return salvarFormaPagamentoWebInterno_(param); }, false); }
+
+function reordenarFormasPagamentoWeb(param) { return executarOperacaoGestor_('reordenarFormasPagamentoWeb', param, function () { return reordenarFormasPagamentoWebInterno_(param); }, false); }
+
+function excluirFormaPagamentoWeb(param) { return executarOperacaoGestor_('excluirFormaPagamentoWeb', param, function () { return excluirFormaPagamentoWebInterno_(param); }, false); }
+
+function salvarCategoriasWeb(param) { return executarOperacaoGestor_('salvarCategoriasWeb', param, function () { return salvarCategoriasWebInterno_(param); }, false); }
+
+
+// ============================================================================
+// INTEGRIDADE: IDENTIDADES, VERSÕES E DIÁRIO RECUPERÁVEL DE OPERAÇÕES
+// As colunas L:Q pertencem ao app; as onze primeiras colunas continuam legíveis.
+// As escritas são planejadas em memória. O diário é persistido e confirmado antes
+// de aplicar os dados; um reenvio ou reinício reaplica o mesmo resultado.
+// ============================================================================
+const COLUNAS_GESTOR_ = 17;
+const ABA_DIARIO_GESTOR_ = '_Gestor_Operacoes';
+let CONTEXTO_GESTOR_ = null;
+
+function obterLockGestor_() {
+  if (CONTEXTO_GESTOR_) return { waitLock: function () {}, tryLock: function () { return true; }, releaseLock: function () {} };
+  return LockService.getScriptLock();
+}
+
+function gerarIdGestor_() { return Utilities.getUuid(); }
+function serializarGestor_(valor) {
+  if (valor instanceof Date) return { __gestorData: valor.toISOString() };
+  if (Array.isArray(valor)) return valor.map(serializarGestor_);
+  if (valor && typeof valor === 'object') {
+    const saida = Object.create(null);
+    Object.keys(valor).sort().forEach(function (k) { if (valor[k] !== undefined) saida[k] = serializarGestor_(valor[k]); });
+    return saida;
+  }
+  return valor;
+}
+function desserializarGestor_(valor) {
+  if (Array.isArray(valor)) return valor.map(desserializarGestor_);
+  if (valor && typeof valor === 'object') {
+    if (valor.__gestorData) return new Date(valor.__gestorData);
+    const saida = Object.create(null); Object.keys(valor).forEach(function (k) { saida[k] = desserializarGestor_(valor[k]); }); return saida;
+  }
+  return valor;
+}
+function copiarGestor_(valor) { return desserializarGestor_(JSON.parse(JSON.stringify(serializarGestor_(valor)))); }
+function hashGestor_(valor) {
+  const texto = JSON.stringify(serializarGestor_(valor));
+  return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8)
+    .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
+}
+function centavosGestor_(valor) {
+  const n = extractNum(valor);
+  if (!Number.isFinite(n) || Math.abs(n) > Number.MAX_SAFE_INTEGER / 100) throw new Error('Valor monetário inválido.');
+  return Math.round((n + Math.sign(n) * Number.EPSILON) * 100);
+}
+function parcelasCentavosGestor_(valor, quantidade) {
+  const total = centavosGestor_(valor);
+  const base = Math.floor(total / quantidade), sobra = total % quantidade;
+  return Array.from({ length: quantidade }, function (_, i) { return (base + (i < sobra ? 1 : 0)) / 100; });
+}
+function validarEdicaoGestor_(dados, emprestimo) {
+  validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
+  validarMesFaturaWeb_(dados.mesFatura);
+  if (!String(dados.descricao || '').trim() || !String(dados.formaPagto || '').trim()) throw new Error('Informe a descrição e a forma de pagamento.');
+  if (centavosGestor_(dados.valorParcela) <= 0) throw new Error('Informe um valor maior que zero.');
+  const estados = emprestimo ? ['A Receber', 'Recebido'] : ['Pago', 'Em Aberto', 'Agendado', 'Assinatura Ativa', 'Assinatura Paga', 'Assinatura Cancelada', 'Pago (Cancelada)'];
+  if (estados.indexOf(String(dados.status)) < 0) throw new Error('Situação inválida. Atualize o app.');
+  if (emprestimo && !String(dados.pessoa || '').trim()) throw new Error('Informe a pessoa.');
+  if (!emprestimo && !String(dados.categoria || '').trim()) throw new Error('Selecione uma categoria.');
+}
+
+function ehAbaRegistrosGestor_(nome) { return nome === 'Lançamentos' || nome === 'Empréstimos'; }
+function chaveLegadoGestor_(r, emprestimo) {
+  if (!emprestimo && limparApostrofo(r[6]) === '∞/∞') return ['assinatura', normalizarTexto(r[1]), normalizarTexto(r[2])].join('|');
+  return [limparApostrofo(r[0]), normalizarTexto(r[emprestimo ? 1 : 1]), emprestimo ? normalizarTexto(r[2]) : '', normalizarTexto(r[emprestimo ? 3 : 2]), centavosGestor_(r[4]), parseNumParcela(r[6]).total].join('|');
+}
+function migrarIdentidadesGestor_(aba, contexto) {
+  if (!ehAbaRegistrosGestor_(aba.nome)) return;
+  const emp = aba.nome === 'Empréstimos';
+  const titulos = ['Registro ID', 'Compra ID', 'Versão', 'Estado Banco', 'Migração', 'Conteúdo SHA256'];
+  if (aba.antes && aba.antes.some(function (r) { return r.slice(11, 17).some(function (v) { return v !== '' && v !== null; }); })) {
+    if (!titulos.every(function (v, i) { return String((aba.antes[0] || [])[11 + i] || '') === v || (i === 5 && !aba.antes.some(function (r) { return r[16] !== '' && r[16] != null; })); })) throw new Error('As colunas L:Q de ' + aba.nome + ' já possuem dados. Preserve essas colunas em um backup e libere-as antes de migrar o app.');
+  }
+  const ids = new Set();
+  aba.valores.slice(1).forEach(function (r) { if (!r[11]) return; if (ids.has(String(r[11]))) throw new Error('Há identificadores repetidos em ' + aba.nome + '. Revise linhas copiadas antes de continuar.'); ids.add(String(r[11])); });
+  if (!aba.valores.length) aba.valores.push([]);
+  ['Registro ID', 'Compra ID', 'Versão', 'Estado Banco', 'Migração', 'Conteúdo SHA256'].forEach(function (v, i) { aba.valores[0][11 + i] = v; });
+  const grupos = Object.create(null);
+  aba.valores.slice(1).forEach(function (r) {
+    if (!String(r[emp ? 2 : 1] || '').trim()) return;
+    while (r.length < COLUNAS_GESTOR_) r.push('');
+    if (r[11]) {
+      if (!r[12] || !Number.isInteger(Number(r[13])) || Number(r[13]) < 1) throw new Error('Metadados inválidos em ' + aba.nome + '. Preserve a linha e confira as colunas de controle.');
+      const fingerprint = hashRegistroGestor_(r);
+      if (r[16] && r[16] !== fingerprint) r[13] = Number(r[13]) + 1;
+      r[16] = fingerprint;
+      return;
+    }
+    const chave = chaveLegadoGestor_(r, emp);
+    (grupos[chave] || (grupos[chave] = [])).push(r);
+  });
+  Object.keys(grupos).forEach(function (chave) {
+    const linhas = grupos[chave], info = parseNumParcela(linhas[0][6]);
+    const novos = contexto && linhas.every(function (r) { return !contexto.idsIniciais.has(String(r[11])); });
+    const parcelas = linhas.map(function (r) { return limparApostrofo(r[6]); });
+    const meses = linhas.map(function (r) { return limparApostrofo(r[8]); });
+    const recorrente = limparApostrofo(linhas[0][6]) === '∞/∞';
+    const inequivoco = recorrente ? new Set(meses).size === linhas.length : info.total > 1 && linhas.length <= info.total && new Set(parcelas).size === linhas.length;
+    const compra = gerarIdGestor_();
+    linhas.forEach(function (r) {
+      r[11] = gerarIdGestor_();
+      // Compras à vista de mesmo nome nunca são fundidas; duplicidade antiga de
+      // parcelas também não é resolvida por adivinhação.
+      r[12] = inequivoco ? compra : gerarIdGestor_();
+      r[13] = 1;
+      r[14] = emp ? (formaEmprestimoConsomeLimite_(r[3]) ? 'Em Aberto' : 'Pago') : (isStatusPago(r[9]) ? 'Pago' : 'Em Aberto');
+      r[16] = hashRegistroGestor_(r);
+      r[15] = (!inequivoco && (info.total > 1 || recorrente)) ? 'Legado ambíguo: revisar compra' : (novos ? '' : 'Migrado');
+    });
+  });
+  aba.colunas = Math.max(aba.colunas, COLUNAS_GESTOR_);
+}
+
+function lerEstadoAbaGestor_(sh) {
+  if (!sh || sh.getLastRow() === 0) return [];
+  const rng = sh.getDataRange(), valores = rng.getValues(), formulas = rng.getFormulas();
+  return valores.map(function (r, i) { return r.map(function (v, j) { return formulas[i][j] || v; }); });
+}
+function criarPlanilhaVirtualGestor_(ss, contexto) {
+  const abas = Object.create(null);
+  function abrir(nome, criar) {
+    if (abas[nome]) return abas[nome];
+    const real = ss.getSheetByName(nome);
+    if (!real && !criar) return null;
+    const antes = lerEstadoAbaGestor_(real);
+    const aba = { nome: nome, antes: copiarGestor_(antes), valores: copiarGestor_(antes), exibidos: real && real.getLastRow() ? real.getDataRange().getDisplayValues() : [], alterados: Object.create(null), colunas: antes.reduce(function (n, r) { return Math.max(n, r.length); }, 1), existente: !!real, calculados: real && real.getLastRow() ? real.getDataRange().getValues() : [] };
+    aba.getName = function () { return nome; };
+    aba.getLastRow = function () { let i = aba.valores.length; while (i > 0 && !aba.valores[i - 1].some(function (v) { return v !== '' && v !== null; })) i--; return i; };
+    aba.getDataRange = function () { return aba.getRange(1, 1, Math.max(1, aba.getLastRow()), Math.max(1, aba.colunas)); };
+    aba.getRange = function (linha, coluna, qtdLinhas, qtdCols) {
+      if (typeof linha === 'string') {
+        const a = linha.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/i);
+        if (!a) throw new Error('Intervalo não suportado: ' + linha);
+        const numero = function (letras) { return letras.toUpperCase().split('').reduce(function (n, l) { return n * 26 + l.charCodeAt(0) - 64; }, 0); };
+        linha = Number(a[2]); coluna = numero(a[1]); qtdLinhas = a[4] ? Number(a[4]) - linha + 1 : 1; qtdCols = a[3] ? numero(a[3]) - coluna + 1 : 1;
+      }
+      qtdLinhas = qtdLinhas || 1; qtdCols = qtdCols || 1;
+      if (linha < 1 || coluna < 1 || qtdLinhas < 1 || qtdCols < 1) throw new Error('Intervalo inválido.');
+      const range = Object.create(null);
+      range.getValues = function () { return Array.from({ length: qtdLinhas }, function (_, i) { return Array.from({ length: qtdCols }, function (_, j) { const rr = linha - 1 + i, cc = coluna - 1 + j; const original = !aba.alterados[rr + ':' + cc] && aba.calculados[rr] && aba.calculados[rr][cc] !== undefined; const valor = original ? aba.calculados[rr][cc] : ((aba.valores[rr] || [])[cc] === undefined ? '' : aba.valores[rr][cc]); if (!original && typeof valor === 'string' && valor.charAt(0) === '=') { const candidatos = []; aba.antes.forEach(function (l, i) { l.forEach(function (v, j) { if (v === valor && aba.calculados[i]) candidatos.push(aba.calculados[i][j]); }); }); if (!candidatos.length || candidatos.some(function (v) { return hashGestor_(v) !== hashGestor_(candidatos[0]); })) throw new Error('Uma fórmula exige recálculo da planilha. Reabra o app antes de continuar.'); return copiarGestor_(candidatos[0]); } return copiarGestor_(valor); }); }); };
+      range.getDisplayValues = function () { return range.getValues().map(function (r, i) { return r.map(function (v, j) { const key = (linha - 1 + i) + ':' + (coluna - 1 + j); if (!aba.alterados[key] && aba.exibidos[linha - 1 + i] && aba.exibidos[linha - 1 + i][coluna - 1 + j] !== undefined) return aba.exibidos[linha - 1 + i][coluna - 1 + j]; if (v instanceof Date) return Utilities.formatDate(v, getTimezone(), 'dd/MM/yyyy'); return String(v === null ? '' : v).replace(/^'/, ''); }); }); };
+      range.setValues = function (valores) { if (valores.some(function (r) { return r.some(function (v) { return typeof v === 'string' && v.length > 49000; }); })) throw new Error('Um campo está longo demais para a planilha. Reduza o texto para menos de 49 mil caracteres.'); if (valores.length !== qtdLinhas || valores.some(function (r) { return r.length !== qtdCols; })) throw new Error('Dimensões de gravação incompatíveis.'); valores.forEach(function (r, i) { aba.valores[linha - 1 + i] = aba.valores[linha - 1 + i] || []; r.forEach(function (v, j) { aba.valores[linha - 1 + i][coluna - 1 + j] = copiarGestor_(v); aba.alterados[(linha - 1 + i) + ':' + (coluna - 1 + j)] = true; }); }); aba.colunas = Math.max(aba.colunas, coluna + qtdCols - 1); if (ehAbaRegistrosGestor_(nome)) { migrarIdentidadesGestor_(aba, contexto); atualizarVersoesGestor_(aba, contexto); aba.valores.forEach(function (_, r) { for (let c = 11; c < COLUNAS_GESTOR_; c++) aba.alterados[r + ':' + c] = true; }); } return range; };
+      range.setValue = function (v) { return range.setValues([[v]]); };
+      range.clearContent = function () { return range.setValues(Array.from({ length: qtdLinhas }, function () { return Array(qtdCols).fill(''); })); };
+      range.getFormulas = function () { return Array.from({ length: qtdLinhas }, function (_, i) { return Array.from({ length: qtdCols }, function (_, j) { const v = (aba.valores[linha - 1 + i] || [])[coluna - 1 + j]; return typeof v === 'string' && v.charAt(0) === '=' ? v : ''; }); }); };
+      range.getNumberFormats = function () { return Array.from({ length: qtdLinhas }, function () { return Array(qtdCols).fill('General'); }); };
+      ['setNumberFormat', 'setFontWeight', 'setBackground', 'setFontColor'].forEach(function (m) { range[m] = function () { return range; }; });
+      return range;
+    };
+    aba.deleteRow = function (linha) { aba.valores.splice(linha - 1, 1); aba.exibidos.splice(linha - 1, 1); aba.calculados.splice(linha - 1, 1); aba.alterados = Object.create(null); for (let r = linha - 1; r < aba.valores.length; r++) for (let c = 0; c < aba.colunas; c++) aba.alterados[r + ':' + c] = true; };
+    aba.setFrozenRows = function () {};
+    abas[nome] = aba;
+    if (ehAbaRegistrosGestor_(nome)) {
+      migrarIdentidadesGestor_(aba, contexto);
+      aba.valores.slice(1).forEach(function (r) { if (r[11]) { contexto.idsIniciais.add(String(r[11])); contexto.registrosIniciais[String(r[11])] = copiarGestor_(r); } });
+      // Metadados recém-criados devem ser exibidos como valores, não como células
+      // vazias do snapshot anterior.
+      aba.valores.forEach(function (_, r) { for (let c = 11; c < COLUNAS_GESTOR_; c++) aba.alterados[r + ':' + c] = true; });
+    }
+    return aba;
+  }
+  return { abas: abas, getSheetByName: function (n) { return abrir(n, false); }, insertSheet: function (n) { return abrir(n, true); }, getName: function () { return ss.getName(); }, getSpreadsheetTimeZone: function () { return ss.getSpreadsheetTimeZone(); }, toast: function () {} };
+}
+
+function atualizarVersoesGestor_(aba, ctx) {
+  aba.valores.slice(1).forEach(function (r) {
+    if (!r[11]) return;
+    if (aba.nome === 'Lançamentos') r[14] = isStatusPago(r[9]) ? 'Pago' : 'Em Aberto';
+    const anterior = ctx.registrosIniciais[String(r[11])];
+    if (anterior && hashRegistroGestor_(r) !== hashRegistroGestor_(anterior)) r[13] = Number(anterior[13] || 1) + 1;
+    r[16] = hashRegistroGestor_(r);
+  });
+}
+
+function finalizarPlanoGestor_(ctx) {
+  const mudancas = [];
+  Object.keys(ctx.ss.abas).forEach(function (nome) {
+    const aba = ctx.ss.abas[nome];
+    if (ehAbaRegistrosGestor_(nome)) {
+      migrarIdentidadesGestor_(aba, ctx);
+      aba.valores.slice(1).forEach(function (r) {
+        if (!r[11]) return;
+        if (nome === 'Lançamentos') r[14] = isStatusPago(r[9]) ? 'Pago' : 'Em Aberto';
+        const anterior = ctx.registrosIniciais[String(r[11])];
+        if (anterior && hashRegistroGestor_(r) !== hashRegistroGestor_(anterior)) r[13] = Number(anterior[13] || 1) + 1;
+    r[16] = hashRegistroGestor_(r);
+      });
+    }
+    const linhas = aba.getLastRow(), colunas = Math.max(1, aba.colunas);
+    const depois = Array.from({ length: linhas }, function (_, r) { return Array.from({ length: colunas }, function (_, c) { return (aba.valores[r] || [])[c] === undefined ? '' : aba.valores[r][c]; }); });
+    if (hashEstadoGestor_(aba.antes) !== hashEstadoGestor_(depois)) {
+      const alteracoes = [];
+      for (let i = 0; i < Math.max(aba.antes.length, depois.length); i++) if (hashEstadoGestor_([aba.antes[i] || []]) !== hashEstadoGestor_([depois[i] || []])) alteracoes.push([i, depois[i] || []]);
+      mudancas.push({ nome: nome, antes: hashEstadoGestor_(aba.antes), depois: hashEstadoGestor_(depois), linhas: depois.length, colunas: colunas, alteracoes: alteracoes });
+    }
+  });
+  return mudancas;
+}
+function abrirDiarioGestor_(ss) {
+  let sh = ss.getSheetByName(ABA_DIARIO_GESTOR_);
+  if (!sh) { sh = ss.insertSheet(ABA_DIARIO_GESTOR_); sh.getRange(1, 1, 1, 6).setValues([['Operação', 'Payload SHA256', 'Estado', 'Parte', 'Conteúdo', 'Data']]); sh.setFrozenRows(1); if (typeof sh.hideSheet === 'function') sh.hideSheet(); }
+  return sh;
+}
+function lerPlanoDiarioGestor_(linhas, cabecalho) {
+  const id = String(linhas[cabecalho][0]), qtd = Number(linhas[cabecalho][3]);
+  const partes = linhas.slice(cabecalho + 1, cabecalho + 1 + qtd);
+  if (partes.length !== qtd || partes.some(function (r, i) { return r[0] !== id || Number(r[3]) !== i + 1; })) throw new Error('Diário incompleto. Não faça novos lançamentos; confira o backup e a operação ' + id + '.');
+  return desserializarGestor_(JSON.parse(partes.map(function (r) { return JSON.parse(String(r[4])); }).join('')));
+}
+function aplicarPlanoGestor_(ss, plano) {
+  (plano.mudancas || []).forEach(function (m) {
+    let sh = ss.getSheetByName(m.nome);
+    const atual = lerEstadoAbaGestor_(sh), hash = hashEstadoGestor_(atual);
+    if (hash === m.depois) return;
+    if (hash !== m.antes) throw new Error('A aba ' + m.nome + ' mudou durante uma gravação interrompida. A operação foi preservada para conferência, sem sobrescrever suas alterações.');
+    if (!sh) sh = ss.insertSheet(m.nome);
+    const cols = Math.max(1, m.colunas), rows = Math.max(1, m.linhas, atual.length);
+    const alvo = copiarGestor_(atual); (m.alteracoes || []).forEach(function (a) { alvo[a[0]] = a[1]; }); alvo.length = m.linhas;
+    const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if (ehAbaRegistrosGestor_(m.nome) && i > 0 && [0,1,2,3,6,8,9,10,11,12,14,15].indexOf(j) >= 0 && typeof v === 'string') v = textoLiteralGestor_(v); return v; }); });
+    if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
+    if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
+    sh.getRange(1, 1, rows, cols).setValues(valores);
+    if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
+    SpreadsheetApp.flush();
+  });
+}
+function recuperarDiarioGestor_(ss, diario, linhas) {
+  for (let i = 0; i < linhas.length; i++) {
+    if (linhas[i][2] !== 'PRONTO') continue;
+    const plano = lerPlanoDiarioGestor_(linhas, i);
+    aplicarPlanoGestor_(ss, plano);
+    diario.getRange(i + 2, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush(); linhas[i][2] = 'CONFIRMADO';
+  }
+}
+function executarOperacaoGestor_(acao, param, executar, leitura) {
+  if (CONTEXTO_GESTOR_) return executar();
+  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  let resultadoIncerto = false;
+  try {
+    const real = obterPlanilhaGestor_(), diario = abrirDiarioGestor_(real);
+    const linhas = diario.getLastRow() > 1 ? diario.getRange(2, 1, diario.getLastRow() - 1, 6).getValues() : [];
+    resultadoIncerto = linhas.some(function (r) { return r[2] === 'PRONTO'; });
+    recuperarDiarioGestor_(real, diario, linhas);
+    resultadoIncerto = false;
+    const requestId = !leitura && param && !Array.isArray(param) ? String(param.requestId || '') : '';
+    if (!leitura && (!/^[A-Za-z0-9_.:-]{8,160}$/.test(requestId))) throw new Error('Atualize o app antes de gravar: falta o identificador seguro da operação.');
+    const id = acao + ':' + (requestId || gerarIdGestor_()), fingerprint = hashGestor_(param || null);
+    const anterior = linhas.findIndex(function (r) { return r[0] === id && r[2] === 'CONFIRMADO'; });
+    if (anterior >= 0) { if (linhas[anterior][1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.'); return lerPlanoDiarioGestor_(linhas, anterior).resultado; }
+    const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real };
+    ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
+    let resultado;
+    try { resultado = executar(); } finally { CONTEXTO_GESTOR_ = null; }
+    const mudancas = finalizarPlanoGestor_(ctx);
+    if (leitura && mudancas.length === 0) return resultado;
+    const plano = { mudancas: mudancas, resultado: resultado }, texto = JSON.stringify(serializarGestor_(plano));
+    // Cada parte é uma string JSON, com aspas no começo: mesmo se um corte cair
+    // em '=...', o conteúdo do diário nunca é interpretado como fórmula.
+    const partes = texto.match(/[\s\S]{1,12000}/g) || [''];
+    const inicio = diario.getLastRow() + 1;
+    diario.getRange(inicio, 1, 1, 6).setValues([[id, fingerprint, 'PREPARANDO', partes.length, '', new Date()]]);
+    diario.getRange(inicio + 1, 1, partes.length, 6).setValues(partes.map(function (p, i) { return [id, '', 'PARTE', i + 1, JSON.stringify(p), '']; })); SpreadsheetApp.flush();
+    resultadoIncerto = true;
+    diario.getRange(inicio, 3).setValue('PRONTO'); SpreadsheetApp.flush();
+    aplicarPlanoGestor_(real, plano);
+    diario.getRange(inicio, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush();
+    return resultado;
+  } catch (e) {
+    if (resultadoIncerto) e.resultadoIncerto = true;
+    throw e;
+  } finally { CONTEXTO_GESTOR_ = null; lock.releaseLock(); }
+}
+
+function limparTextoLiteralGestor_(valor) { return String(valor == null ? '' : valor).replace(/^'(?=[=+@-])/, ''); }
+function textoLiteralGestor_(valor) { const texto = String(valor == null ? '' : valor); return /^[=+@-]/.test(texto) ? "'" + texto : texto; }
+function hashEstadoGestor_(matriz) {
+  const m = matriz.map(function (r) { const linha = r.map(function (v) { return typeof v === 'string' ? v.replace(/^'/, '') : v; }); while (linha.length && (linha[linha.length - 1] === '' || linha[linha.length - 1] == null)) linha.pop(); return linha; });
+  while (m.length && !m[m.length - 1].length) m.pop(); return hashGestor_(m);
+}
+
+function exportarBackupRealGestor_(ctx) {
+  const anterior = CONTEXTO_GESTOR_; CONTEXTO_GESTOR_ = null;
+  try { return exportarBackupDadosWeb(); } finally { CONTEXTO_GESTOR_ = anterior; }
+}
+
+function atualizarStatusAutomatico() { return executarOperacaoGestor_('manutencao', null, function () { return atualizarStatusAutomaticoInterno_(); }, true); }
+
+function unificarCategoriasNaPlanilha() { return executarOperacaoGestor_('unificarCategorias', null, function () { return unificarCategoriasNaPlanilhaInterno_(); }, true); }
+
+function hashRegistroGestor_(registro) { return hashEstadoGestor_([registro.slice(0, 11).concat([registro[14]])]); }

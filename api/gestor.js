@@ -6,11 +6,13 @@ const ACAO_PERMITIDA = new Set([
   'dividirParcelaEmprestimoWeb', 'moverParaEmprestimosWeb', 'moverParaGastosPessoaisWeb',
   'editarAssinaturaWeb', 'cancelarAssinaturaWeb', 'salvarFormaPagamentoWeb',
   'reordenarFormasPagamentoWeb', 'excluirFormaPagamentoWeb', 'salvarCategoriasWeb',
-  'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb'
+  'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb',
+  'exportarBackupDadosWeb'
 ]);
 
 module.exports = async function gestor(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
 
   // O plano gratuito protege os endereços de Preview com Vercel Authentication.
   // Mantemos o endereço de produção sem acesso à planilha.
@@ -31,9 +33,18 @@ module.exports = async function gestor(req, res) {
   }
 
   let payload = req.body;
+  // Rejeita pedidos malformados antes de encaminhar uma operação à planilha.
   try {
+    const serializado = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    if (!serializado || Buffer.byteLength(serializado, 'utf8') > 1024 * 1024) {
+      return res.status(413).json({ sucesso: false, erro: 'Envio muito grande. Sincronize em lotes menores.' });
+    }
     if (typeof payload === 'string') payload = JSON.parse(payload);
-    if (!payload || typeof payload !== 'object' || !ACAO_PERMITIDA.has(payload.action)) {
+  } catch (_) {
+    return res.status(400).json({ sucesso: false, erro: 'Solicitação inválida.' });
+  }
+  try {
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !ACAO_PERMITIDA.has(payload.action)) {
       return res.status(400).json({ sucesso: false, erro: 'Solicitação inválida.' });
     }
 

@@ -17,7 +17,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.7/Sortable.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js"></script>
   
   <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -182,7 +183,7 @@
 
       <!-- Grupo 2: Relatórios -->
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Relatórios e Análises</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Dados e Relatórios</span>
         <div class="grid grid-cols-1 gap-2.5">
           <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
             <div class="flex items-center gap-3">
@@ -194,12 +195,12 @@
             </div>
             <span class="text-slate-500 text-xs font-bold">➔</span>
           </button>
-          <button type="button" onclick="exportarBackupDados()" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+          <button type="button" onclick="abrirExportacaoDados()" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-lg">💾</div>
               <div>
-                <div class="text-sm font-bold text-white">Exportar cópia de segurança</div>
-                <div class="text-[11px] text-slate-400">Baixa os dados das abas em um arquivo JSON</div>
+                <div class="text-sm font-bold text-white">Exportar dados e backup</div>
+                <div class="text-[11px] text-slate-400">Cópia JSON ou planilhas CSV</div>
               </div>
             </div>
             <span class="text-slate-500 text-xs font-bold">⇩</span>
@@ -255,6 +256,27 @@
     </div>
   </div>
   
+  <div id="modalExportarDados" role="dialog" aria-modal="true" aria-labelledby="tituloExportarDados" onkeydown="conterFocoExportacao(event)" onclick="if(event.target === this) fecharExportacaoDados()" class="hidden fixed inset-0 z-[160] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between gap-3">
+        <h3 id="tituloExportarDados" class="text-base font-bold text-white">Exportar dados</h3>
+        <button id="btnFecharExportacao" type="button" onclick="fecharExportacaoDados()" aria-label="Fechar exportação" class="bg-slate-800 text-slate-200 rounded-lg px-3 py-2">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">Os arquivos contêm os dados já sincronizados na planilha. Lançamentos que ainda aguardam envio neste aparelho entram na próxima exportação, após sincronizar.</p>
+      <button type="button" data-exportar-dados onclick="exportarBackupDados('json')" class="w-full p-4 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-left disabled:opacity-50 transition">
+        <span class="block text-sm font-bold text-white">Baixar cópia de segurança — JSON</span>
+        <span class="block text-xs text-emerald-50 mt-1">Lançamentos, empréstimos, notas, categorias, formas de pagamento e fórmulas das abas.</span>
+      </button>
+      <p class="text-[11px] text-slate-400 leading-relaxed">Guarde esse arquivo em um local seguro. A restauração automática ainda não está disponível; ele preserva os dados para recuperação assistida. O código do app e as configurações salvas apenas no aparelho ficam fora desta cópia.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button type="button" data-exportar-dados onclick="exportarBackupDados('lancamentos')" class="rounded-xl border border-slate-600 bg-slate-800 hover:bg-slate-700 p-3 text-xs font-bold text-white disabled:opacity-50">Lançamentos — CSV</button>
+        <button type="button" data-exportar-dados onclick="exportarBackupDados('emprestimos')" class="rounded-xl border border-slate-600 bg-slate-800 hover:bg-slate-700 p-3 text-xs font-bold text-white disabled:opacity-50">Empréstimos — CSV</button>
+      </div>
+      <p class="text-[11px] text-slate-400">CSV abre no Excel ou Google Planilhas e inclui todo o histórico, inclusive cancelamentos.</p>
+      <p id="statusExportacaoDados" role="status" aria-live="polite" class="text-xs text-sky-200 min-h-[2rem]"></p>
+    </div>
+  </div>
+
   <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-sm no-print">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20">💳</div>
@@ -388,7 +410,7 @@
               <button type="button" id="btnLimparTags" onclick="vibrar(); limparCampoEVoltarFoco('inpTags', 'btnLimparTags')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
             </div>
             <div id="chipsTagsNovo" class="flex flex-wrap gap-1.5 mt-2"></div>
-            <button type="button" id="btnTagsFrequentes" onclick="aplicarTagsFrequentes()" class="hidden mt-2 px-2.5 py-1 rounded-lg text-[10px] font-bold text-indigo-200 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 transition"></button>
+            <button type="button" id="btnTagsFrequentes" onclick="aplicarTagsFrequentes()" class="hidden mt-2 max-w-full break-words text-left px-2.5 py-1 rounded-lg text-[10px] font-bold text-indigo-200 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 transition"></button>
             <datalist id="listaTagsOpcionais"></datalist>
           </div>
 
@@ -427,6 +449,7 @@
         </div>
       </div>
 
+      <div id="badgeAnoHistorico" class="hidden text-xs text-sky-200 bg-sky-500/10 border border-sky-500/30 rounded-xl px-3 py-2" role="status"></div>
       <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-1">
         <button onclick="aplicarFiltroRapidoHist('')" id="chip-hist-todos" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 text-white transition">Todos</button>
         <button onclick="aplicarFiltroRapidoHist('mesatual')" id="chip-hist-mesatual" class="whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition">📅 Mês Atual</button>
@@ -638,13 +661,11 @@
         </div>
         <span class="text-xs font-bold text-amber-400 whitespace-nowrap">Ver e Cobrar ➔</span>
       </button>
-      <button type="button" id="bannerVencimentoFatura" onclick="setAba('relatorio')" aria-label="Abrir a fatura mensal com vencimento próximo" class="hidden w-full card-glass p-3.5 border-l-4 border-l-sky-400 bg-sky-500/10 hover:bg-sky-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 text-left cursor-pointer transition flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2.5 text-xs sm:text-sm min-w-0">
-          <span class="text-lg">💳</span>
-          <span id="txtVencimentoFatura" class="text-sky-100 font-semibold">Há uma fatura próxima do vencimento.</span>
-        </div>
-        <span class="text-xs font-bold text-sky-300 whitespace-nowrap">Ver fatura ➔</span>
-      </button>
+      <section id="bannerVencimentoFatura" aria-labelledby="txtVencimentoFatura" class="hidden w-full card-glass p-3.5 border-l-4 border-l-sky-400 bg-sky-500/10">
+        <h2 id="txtVencimentoFatura" class="text-xs sm:text-sm text-sky-100 font-semibold mb-2">Confira suas faturas nos próximos 7 dias.</h2>
+        <div id="listaVencimentosFaturas" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        <p class="mt-2 text-[10px] text-slate-300">Avisos conforme vencimento e pagamento registrados no app. Toque na fatura para conferir.</p>
+      </section>
 
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
@@ -813,6 +834,7 @@
                 💾 Registrar Empréstimo
               </button>
             </div>
+            <div id="avisoResultadoIncertoEmp" class="hidden rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 space-y-2 text-xs text-amber-100" role="status"></div>
           </form>
          </div>
 
@@ -1254,7 +1276,8 @@
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl">
       <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
       <div class="space-y-4">
-        <div><label class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
+        <div><label for="filtAno" class="block text-xs font-bold text-slate-400 mb-1">Ano da fatura</label><input id="filtAno" type="number" min="1900" max="2200" step="1" placeholder="Todos os anos" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"></div>
+        <div><label for="filtMes" class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Cartão/Forma</label><select id="filtForma" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
         <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="filtCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todas</option></select></div>
         <div>
@@ -1469,7 +1492,9 @@
             reg.onupdatefound = () => {
               const w = reg.installing;
               w.onstatechange = () => {
-                if (w.state === 'installed' && navigator.serviceWorker.controller) window.location.reload();
+                if (w.state === 'installed' && navigator.serviceWorker.controller) {
+                  mostrarAviso('Nova versão disponível', 'Conclua o que está preenchendo e use Atualizar app no Menu quando quiser carregar a nova versão.');
+                }
               };
             };
           }).catch(err => console.log('SW fail:', err));
@@ -1477,6 +1502,9 @@
     }
 
     async function forcarAtualizacaoApp() {
+      if (!navigator.onLine) { mostrarAviso('Atualização precisa de conexão', 'Conecte-se antes de buscar uma nova versão do app.'); return; }
+      salvarRascunho();
+      salvarRascunhoEmp();
       mostrarAviso('Atualizando 🔄', 'Limpando cache do aparelho e buscando versão nova...');
       try {
         if ('serviceWorker' in navigator) {
@@ -1505,7 +1533,12 @@
           .withSuccessHandler((resposta) => {
             try {
               const resultado = JSON.parse(resposta);
-              if (!resultado.sucesso) throw new Error(resultado.erro || 'Erro no servidor da planilha.');
+              if (!resultado.sucesso) {
+                const falha = new Error(resultado.erro || 'Erro no servidor da planilha.');
+                falha.doServidor = true;
+                falha.resultadoIncerto = resultado.resultadoIncerto === true;
+                throw falha;
+              }
               resolve(resultado.dados);
             } catch (erro) {
               reject(erro);
@@ -1601,6 +1634,46 @@
       'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó'
     };
 
+    // Textos da planilha são dados: nunca entram como código em eventos inline.
+    function escaparHTML(valor) {
+      return String(valor == null ? '' : valor).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    const ACOES_RENDERIZADAS = new Set([
+      'setAba', 'toggleTagChip', 'filtrarPorTagRapida', 'repetirLancamentoHoje',
+      'abrirModalEdicaoLanc', 'excluirLancamentoLocal', 'selecionarPessoaChipEmp',
+      'quitarMesPessoaEmprestimo', 'copiarCobrancaPessoaWhats', 'alternarStatusItemEmprestimo',
+      'abrirModalEdicaoEmp', 'excluirItemEmprestimo', 'removerPessoaRachaDet',
+      'removerItemRachaDet', 'lancarParteIndividualDet', 'selecionarCartaoSimulador',
+      'excluirFormaLocal', 'abrirModalForma', 'editarCategoriaUi', 'removerCategoriaUi',
+      'irParaFaturaMensal', 'aplicarFiltroInternoMensal', 'quitarFaturaCartaoMes',
+      'auditarItemAnual', 'abrirModalEdicaoAss', 'cancelarAssinaturaLocal'
+    ]);
+
+    function acaoHTML(nome, argumentos = []) {
+      if (!ACOES_RENDERIZADAS.has(nome)) throw new Error('Ação de tela inválida.');
+      return `data-gestor-acao="${nome}" data-gestor-argumentos="${escaparHTML(JSON.stringify(argumentos))}"`;
+    }
+
+    document.addEventListener('click', function (event) {
+      const alvo = event.target instanceof Element ? event.target.closest('[data-gestor-acao]') : null;
+      if (!alvo || alvo.disabled || !ACOES_RENDERIZADAS.has(alvo.dataset.gestorAcao)) return;
+      const executar = window[alvo.dataset.gestorAcao];
+      if (typeof executar !== 'function') return;
+      // A ação mais interna é a única executada (ex.: Quitar dentro do cartão).
+      event.stopPropagation();
+      if (alvo.tagName === 'BUTTON') event.preventDefault();
+      let argumentos;
+      try { argumentos = JSON.parse(alvo.dataset.gestorArgumentos || '[]'); }
+      catch (_) { return; }
+      if (Array.isArray(argumentos)) executar.apply(window, argumentos);
+    });
+
+    function selecionarCartaoSimulador(nome) {
+      document.getElementById('simCartao').value = nome;
+      rodarSimuladorCompra();
+    }
+
     function formatarTituloInteligente(texto) {
       if (!texto) return '';
       const normTotal = normalizarTexto(texto);
@@ -1616,7 +1689,7 @@
         if (palavra.length > 1 && palavra === palavra.toUpperCase() && /[A-Z]/.test(palavra)) return palavra;
         let limpa = palavra.toLowerCase();
         const semAcento = normalizarTexto(limpa);
-        if (DICIONARIO_ACENTOS_PT[semAcento]) limpa = DICIONARIO_ACENTOS_PT[semAcento];
+        if (Object.prototype.hasOwnProperty.call(DICIONARIO_ACENTOS_PT, semAcento)) limpa = DICIONARIO_ACENTOS_PT[semAcento];
         const anterior = index > 0 ? palavras[index - 1] : '';
         if (index > 0 && anterior !== '-' && anterior !== '–' && conectivos.has(limpa)) return limpa;
         return limpa.charAt(0).toUpperCase() + limpa.slice(1);
@@ -1950,13 +2023,15 @@
     let cartaoMaisFrequenteGlobal = '';
     let consumoCategoriasPorMesGlobal = {};
     let dadosCarregadosIniciais = false;
+    let rascunhosRestauradosGestor = false;
     let evolucaoMeses = [], evolucaoPivot = {}, evolucaoIdx = 0, evolucaoMesAtual = '';
     let ultimosLancamentosCache = [], itensFiltradosAtualCache = [];
     let ultimoResumoSomaFiltro = null;
-    let dicionarioAutofill = {}, dicionarioPrefixosAutofill = {};
+    let dicionarioAutofill = Object.create(null), dicionarioPrefixosAutofill = Object.create(null);
     let modoEdicaoFormas = false, modoEdicaoCategorias = false, modoEdicaoLancamentos = false;
     let arvoreMesesAno = {};
     let ultimoRelatorioMensalCache = null, ultimoRelatorioAnualCache = null;
+    let requisicaoRelatorioMensal = 0, requisicaoRelatorioAnual = 0;
     let filtroInternoMensalAtivo = { tipo: 'todos', valor: '' };
     let abaAtivaAtual = 'novo';
     let relatorioMensalPendente = true, relatorioAnualPendente = true;
@@ -1964,9 +2039,330 @@
     let tagDivididoAutoAdicionada = false;
     let ultimoValorSugeridoTemp = 0;
     let notasGlobais = [];
+    const GESTOR_FILA_PREFIXO = 'gestorFilaItemV2:';
+    const GESTOR_NOTAS_OP_PREFIXO = 'gestorNotasOpV2:';
+    let sincronizacaoFilaEmAndamento = false;
+    let sincronizacaoNotasEmAndamento = false;
+    let novaSincronizacaoNotasSolicitada = false;
+    let revisaoNotasServidor = 0;
+    let notasBaseServidor = [];
+    let notasLocaisInicializadas = false;
+    const identidadesRegistrosGestor = new Map();
+    const mutacoesGestorEmAndamento = new Map();
+    let identidadeAssinaturaEdicaoGestor = null;
+    let protocoloServidorGestor = 0;
+    let verificacaoProtocoloGestor = null;
+
+    function novoRequestIdGestor() {
+      if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+      const bytes = new Uint8Array(16);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(bytes, n => n.toString(16).padStart(2, '0')).join('');
+    }
+
+    function lerJSONLocalGestor(chave, padrao) {
+      try { const valor = localStorage.getItem(chave); return valor ? JSON.parse(valor) : padrao; }
+      catch (erro) { return padrao; }
+    }
+
+    function lerEntradasLocaisGestor(prefixo) {
+      const entradas = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const chave = localStorage.key(i);
+        if (chave?.startsWith(prefixo)) {
+          const valor = lerJSONLocalGestor(chave, null);
+          if (valor) entradas.push({ chave, valor });
+        }
+      }
+      return entradas;
+    }
+
+    function lerFilaOfflineGestor() {
+      // A migração é determinística: duas abas não criam IDs diferentes para o mesmo item antigo.
+      const legadoTexto = localStorage.getItem('filaOfflineGestor');
+      if (legadoTexto) {
+        const legado = JSON.parse(legadoTexto);
+        if (!Array.isArray(legado)) throw new Error('A fila local precisa ser conferida antes de sincronizar.');
+        legado.forEach((item, indice) => {
+          let hash = 2166136261;
+          for (const letra of JSON.stringify(item)) hash = Math.imul(hash ^ letra.charCodeAt(0), 16777619);
+          const requestId = item.requestId || `legacy-${(hash >>> 0).toString(16)}-${indice}`;
+          const chave = GESTOR_FILA_PREFIXO + requestId;
+          if (!localStorage.getItem(chave)) localStorage.setItem(chave, JSON.stringify({ ...item, requestId }));
+        });
+        if (localStorage.getItem('filaOfflineGestor') === legadoTexto) localStorage.removeItem('filaOfflineGestor');
+      }
+      return lerEntradasLocaisGestor(GESTOR_FILA_PREFIXO).map(e => e.valor);
+    }
+
+    function enfileirarGastoOfflineGestor(payload) {
+      lerFilaOfflineGestor();
+      const item = { ...payload, requestId: payload.requestId || novoRequestIdGestor() };
+      // Uma chave por operação preserva os itens adicionados por outras abas durante o envio.
+      localStorage.setItem(GESTOR_FILA_PREFIXO + item.requestId, JSON.stringify(item));
+      return item;
+    }
+
+    function referenciaRegistroGestor(tipo, item, modoRelatorio = false) {
+      const linha = Array.isArray(item) ? item[modoRelatorio ? 11 : 10] : item?.linha;
+      const registroId = Array.isArray(item) ? item[13] : item?.registroId;
+      const versao = Array.isArray(item) ? item[15] : item?.versao;
+      return registroId && versao ? `${tipo}:${registroId}:${versao}:${linha}` : linha;
+    }
+
+    function referenciaLinhaSegura(tipo, linha, registroId, versao) {
+      return registroId && versao ? `${tipo}:${registroId}:${versao}:${linha}` : linha;
+    }
+
+    function detalhesReferenciaGestor(referencia) {
+      const partes = /^([ge]):([^:]+):(\d+):(\d+)$/.exec(String(referencia || ''));
+      return partes ? { tipo: partes[1], registroId: partes[2], versao: Number(partes[3]), linha: Number(partes[4]) } : null;
+    }
+
+    function registrarIdentidadesGestor(action, dados, confirmarProtocolo = false) {
+      function guardar(item, tipo, relatorio) {
+        const array = Array.isArray(item);
+        const registroId = array ? item[13] : item?.registroId;
+        if (!registroId) return;
+        identidadesRegistrosGestor.set(String(registroId), {
+          tipo, linha: array ? item[relatorio ? 11 : 10] : item.linha,
+          registroId, compraId: array ? item[14] : item.compraId,
+          versao: array ? item[15] : item.versao
+        });
+      }
+      if (!dados || typeof dados !== 'object') return;
+      if (action === 'getDadosCompletos') {
+        if (confirmarProtocolo) protocoloServidorGestor = Number(dados.protocoloGestor || 0);
+        (dados.lancamentos || []).forEach(item => guardar(item, 'g', false));
+        (dados.emprestimos?.itens || []).forEach(item => guardar(item, 'e', false));
+      } else if (action === 'filtrarLancamentosWeb') (dados.itens || []).forEach(item => guardar(item, 'g', false));
+      else if (action === 'obterRelatorioMes') (dados.lancamentos || []).forEach(item => guardar(item, 'g', true));
+    }
+
+    function prepararMutacaoGestor(action, param) {
+      if (!param || typeof param !== 'object' || Array.isArray(param)) return param;
+      const pronto = { ...param };
+      const referencia = detalhesReferenciaGestor(pronto.linha);
+      if (referencia) {
+        const identidade = identidadesRegistrosGestor.get(referencia.registroId) || {};
+        Object.assign(pronto, identidade, referencia);
+        delete pronto.tipo;
+      }
+      return pronto;
+    }
+
+    async function comTravaAbasGestor(nome, tarefa) {
+      if (navigator.locks?.request) {
+        return navigator.locks.request('gestor:' + nome, { ifAvailable: true }, trava => trava ? tarefa() : false);
+      }
+      const chave = 'gestorTravaV2:' + nome;
+      const dono = novoRequestIdGestor();
+      const anterior = lerJSONLocalGestor(chave, null);
+      if (anterior && anterior.expira > Date.now()) return false;
+      localStorage.setItem(chave, JSON.stringify({ dono, expira: Date.now() + 180000 }));
+      await new Promise(resolve => setTimeout(resolve, 30));
+      if (lerJSONLocalGestor(chave, null)?.dono !== dono) return false;
+      const renovar = setInterval(() => {
+        if (lerJSONLocalGestor(chave, null)?.dono === dono) localStorage.setItem(chave, JSON.stringify({ dono, expira: Date.now() + 180000 }));
+      }, 15000);
+      try { return await tarefa(); }
+      finally {
+        clearInterval(renovar);
+        if (lerJSONLocalGestor(chave, null)?.dono === dono) localStorage.removeItem(chave);
+      }
+    }
+
+    function emprestimoPendenteGestor() {
+      try {
+        const legado = JSON.parse(sessionStorage.getItem('gestorEmprestimoPendenteV2') || 'null');
+        if (legado?.payload) {
+          const requestId = legado.payload.requestId || novoRequestIdGestor();
+          localStorage.setItem('gestorEmprestimoPendenteV3:' + requestId, JSON.stringify({ ...legado, payload: { ...legado.payload, requestId }, criadoEm: Date.now() }));
+          sessionStorage.removeItem('gestorEmprestimoPendenteV2');
+        }
+      } catch (erro) { /* As novas pendências permanecem no armazenamento durável. */ }
+      const lista = lerEntradasLocaisGestor('gestorEmprestimoPendenteV3:').map(e => e.valor);
+      return lista.sort((a, b) => (a.criadoEm || 0) - (b.criadoEm || 0))[0] || null;
+    }
+
+    function exibirPendenciaEmprestimoGestor() {
+      const pendente = emprestimoPendenteGestor();
+      const painel = document.getElementById('avisoResultadoIncertoEmp');
+      const salvar = document.getElementById('btnSalvarEmp');
+      if (!painel || !salvar) return;
+      painel.classList.toggle('hidden', !pendente);
+      if (!pendente) {
+        if (!salvandoEmprestimoTrava) { salvar.disabled = false; salvar.textContent = salvar.dataset.rotulo || '💾 Registrar Empréstimo'; }
+        return;
+      }
+      salvar.disabled = true;
+      salvar.textContent = 'Confira o registro pendente';
+      painel.replaceChildren();
+      const texto = document.createElement('p');
+      texto.textContent = `A resposta da nuvem não foi confirmada para ${pendente.payload.pessoa || 'este empréstimo'}: ${pendente.payload.descricao || ''}, ${formatBRL(pendente.payload.valorTotal || 0)}. Confira a lista ou repita o envio protegido; a mesma operação não será registrada duas vezes.`;
+      painel.appendChild(texto);
+      function botao(rotulo, acao) {
+        const elemento = document.createElement('button');
+        elemento.type = 'button'; elemento.className = 'mr-2 rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-bold';
+        elemento.textContent = rotulo; elemento.onclick = acao; painel.appendChild(elemento);
+      }
+      botao('Atualizar lista', () => carregarDados());
+      botao('Repetir envio protegido', () => gravarEmprestimoSeguroGestor(pendente.payload));
+      botao('Já apareceu na lista', () => mostrarConfirmacao('Confirmar empréstimo encontrado', 'Você conferiu que este empréstimo já aparece na lista? Os campos serão limpos.', () => {
+        localStorage.removeItem('gestorEmprestimoPendenteV3:' + pendente.payload.requestId);
+        localStorage.removeItem('gestorMutacaoV3:' + pendente.payload.requestId);
+        painel.classList.add('hidden'); salvar.disabled = false; salvar.textContent = '💾 Registrar Empréstimo';
+        limparFormularioEmprestimo(); exibirPendenciaEmprestimoGestor(); carregarDados();
+      }, false, 'Sim, já apareceu', 'success'));
+    }
+
+    async function gravarEmprestimoSeguroGestor(payload) {
+      if (salvandoEmprestimoTrava) return;
+      const btn = document.getElementById('btnSalvarEmp');
+      if (!navigator.onLine) { mostrarAviso('Sem conexão', 'Conecte-se para registrar o empréstimo. Os campos continuam preenchidos.'); return; }
+      payload = { ...payload, requestId: payload.requestId || novoRequestIdGestor() };
+      try { localStorage.setItem('gestorEmprestimoPendenteV3:' + payload.requestId, JSON.stringify({ payload, criadoEm: Date.now() })); }
+      catch (erro) { mostrarAviso('Não foi possível proteger o envio', 'O armazenamento do aparelho está indisponível. Mantenha os dados preenchidos e tente novamente.'); return; }
+      salvandoEmprestimoTrava = true;
+      const controles = Array.from(document.getElementById('formEmprestimo').elements).map(campo => [campo, campo.disabled]);
+      controles.forEach(([campo]) => { campo.disabled = true; });
+      btn.textContent = 'Salvando...';
+      let resultadoIncerto = false;
+      try {
+        await apiCall('salvarEmprestimoWeb', payload);
+        localStorage.removeItem('gestorEmprestimoPendenteV3:' + payload.requestId);
+        salvandoEmprestimoTrava = false;
+        limparFormularioEmprestimo();
+        document.getElementById('avisoResultadoIncertoEmp')?.classList.add('hidden');
+        mostrarAviso('Sucesso 🤝', 'Empréstimo registrado sem afetar seus gastos pessoais!');
+        carregarDados();
+      } catch (erro) {
+        resultadoIncerto = Boolean(erro.resultadoIncerto);
+        if (!resultadoIncerto) localStorage.removeItem('gestorEmprestimoPendenteV3:' + payload.requestId);
+        mostrarAviso(resultadoIncerto ? 'Confira o empréstimo' : 'Erro', erro.message);
+        if (resultadoIncerto) carregarDados();
+      } finally {
+        salvandoEmprestimoTrava = false;
+        controles.forEach(([campo, desabilitado]) => { campo.disabled = desabilitado; });
+        btn.disabled = false; btn.textContent = btn.dataset.rotulo || '💾 Registrar Empréstimo';
+        exibirPendenciaEmprestimoGestor();
+      }
+    }
+
+    function registrarOperacaoNotaGestor(tipo, notaOuId) {
+      const nota = typeof notaOuId === 'object' ? { ...notaOuId } : null;
+      const opId = novoRequestIdGestor();
+      const id = String(nota ? nota.id : notaOuId);
+      const original = nota || notasGlobais.find(n => String(n.id) === id);
+      const anteriores = operacoesNotasPendentesGestor();
+      const operacao = { opId, id, tipo, criadoEm: Math.max(Date.now(), ...anteriores.map(op => op.criadoEm + 1)), revision: Number(original?.revision || 0) };
+      if (nota) operacao.nota = nota;
+      localStorage.setItem(GESTOR_NOTAS_OP_PREFIXO + opId, JSON.stringify(operacao));
+      return operacao;
+    }
+
+    function operacoesNotasPendentesGestor() {
+      return lerEntradasLocaisGestor(GESTOR_NOTAS_OP_PREFIXO).map(e => e.valor)
+        .sort((a, b) => a.criadoEm - b.criadoEm || a.opId.localeCompare(b.opId));
+    }
+
+    function inicializarNotasLocaisGestor() {
+      if (notasLocaisInicializadas) return;
+      const base = lerJSONLocalGestor('gestorNotasBaseV2', null);
+      const cache = lerJSONLocalGestor('cacheDadosGestorV11', {});
+      const locais = lerJSONLocalGestor('notasLocaisGestorV11', []);
+      notasBaseServidor = base?.anotacoes || cache.anotacoes || [];
+      revisaoNotasServidor = Number(base?.revision || cache.notasRevision || 0);
+      if (!base && Array.isArray(locais)) {
+        const idsBase = new Map(notasBaseServidor.map(n => [String(n.id), n]));
+        locais.forEach(nota => {
+          if (JSON.stringify(idsBase.get(String(nota.id))) !== JSON.stringify(nota)) registrarOperacaoNotaGestor('upsert', nota);
+        });
+      }
+      notasLocaisInicializadas = true;
+      recomporNotasLocaisGestor();
+    }
+
+    function recomporNotasLocaisGestor() {
+      let lista = (notasBaseServidor || []).map(nota => ({ ...nota }));
+      operacoesNotasPendentesGestor().forEach(op => {
+        const indice = lista.findIndex(nota => String(nota.id) === String(op.id));
+        if (op.tipo === 'delete') lista = lista.filter(nota => String(nota.id) !== String(op.id));
+        else if (op.nota) {
+          const nota = { ...op.nota, id: String(op.id) };
+          if (indice >= 0) lista[indice] = nota; else lista.unshift(nota);
+        }
+      });
+      notasGlobais = lista;
+      localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+      renderizarNotasUI();
+      atualizarEstadoNotasGestor();
+    }
+
+    function atualizarEstadoNotasGestor() {
+      const lista = document.getElementById('listaNotasUI');
+      if (!lista?.parentNode) return;
+      let painel = document.getElementById('estadoSincronizacaoNotas');
+      if (!painel) {
+        painel = document.createElement('div'); painel.id = 'estadoSincronizacaoNotas'; painel.setAttribute('role', 'status');
+        painel.className = 'rounded-xl border border-amber-400/30 p-3 text-xs text-amber-100 space-y-2';
+        lista.before(painel);
+      }
+      const pendentes = operacoesNotasPendentesGestor().length;
+      const conflito = lerJSONLocalGestor('gestorNotasConflitoV2', null);
+      painel.classList.toggle('hidden', !pendentes && !conflito);
+      painel.replaceChildren();
+      if (!pendentes && !conflito) return;
+      const texto = document.createElement('p');
+      texto.textContent = conflito ? 'Uma nota mudou em outro aparelho. Suas alterações estão guardadas aqui. Atualize e escolha qual versão deseja manter.' : `${pendentes} alteração(ões) nas notas aguardando confirmação da nuvem.`;
+      painel.appendChild(texto);
+      function adicionarBotao(rotulo, acao) {
+        const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'mr-2 rounded-lg border border-amber-300/40 px-3 py-2 font-bold';
+        btn.textContent = rotulo; btn.onclick = acao; painel.appendChild(btn);
+      }
+      if (!conflito) { adicionarBotao('Sincronizar notas', sincronizarNotasNuvem); return; }
+      adicionarBotao('Usar notas da planilha', () => mostrarConfirmacao('Descartar alterações locais das notas', 'Confirma descartar as alterações das notas ainda pendentes neste aparelho e usar a versão da planilha?', async () => {
+        const operacoesConfirmadas = operacoesNotasPendentesGestor();
+        if (!await carregarDados()) return;
+        operacoesConfirmadas.forEach(op => localStorage.removeItem(GESTOR_NOTAS_OP_PREFIXO + op.opId));
+        localStorage.removeItem('gestorNotasEnvioV2'); localStorage.removeItem('gestorNotasConflitoV2'); recomporNotasLocaisGestor();
+      }));
+      adicionarBotao('Manter minhas alterações', () => mostrarConfirmacao('Confirmar alterações das notas', 'Após atualizar, deseja aplicar suas alterações locais sobre a versão atual? Notas excluídas em outro aparelho serão criadas novamente como novas notas.', async () => {
+        const operacoesConfirmadas = operacoesNotasPendentesGestor();
+        if (!await carregarDados()) return;
+        const atuais = new Map(notasBaseServidor.map(n => [String(n.id), n]));
+        const novosIds = new Map();
+        operacoesConfirmadas.forEach(op => {
+          if (!localStorage.getItem(GESTOR_NOTAS_OP_PREFIXO + op.opId)) return;
+          let id = op.id;
+          if (op.tipo === 'upsert' && !atuais.has(String(id))) {
+            if (!novosIds.has(id)) novosIds.set(id, novoRequestIdGestor());
+            id = novosIds.get(id);
+          }
+          localStorage.setItem(GESTOR_NOTAS_OP_PREFIXO + op.opId, JSON.stringify({ ...op, id, ...(op.nota ? { nota: { ...op.nota, id } } : {}), revision: Number(atuais.get(String(op.id))?.revision || 0) }));
+        });
+        localStorage.removeItem('gestorNotasEnvioV2'); localStorage.removeItem('gestorNotasConflitoV2'); recomporNotasLocaisGestor(); sincronizarNotasNuvem();
+      }, false, 'Sim, manter minhas alterações', 'neutral'));
+    }
+
+    function receberNotasServidorGestor(anotacoes, revision) {
+      inicializarNotasLocaisGestor();
+      const atual = lerJSONLocalGestor('gestorNotasBaseV2', null);
+      const recebida = Number(revision || 0);
+      if (Array.isArray(anotacoes) && recebida >= Math.max(revisaoNotasServidor, Number(atual?.revision || 0))) {
+        notasBaseServidor = anotacoes;
+        revisaoNotasServidor = recebida;
+        localStorage.setItem('gestorNotasBaseV2', JSON.stringify({ anotacoes, revision: recebida }));
+      } else if (atual) {
+        notasBaseServidor = atual.anotacoes || [];
+        revisaoNotasServidor = Number(atual.revision || 0);
+      }
+      recomporNotasLocaisGestor();
+    }
     let emprestimosGlobal = { kpis: {}, pessoasFrequentes: [], itens: [] };
     const acoesStatusEmprestimoEmAndamento = new Set();
     let salvandoGastoTrava = false;
+    let salvandoEmprestimoTrava = false;
     let conexaoAnterior = navigator.onLine;
 
     let offsetAtual = 0;
@@ -1987,11 +2383,27 @@
 
     document.addEventListener("DOMContentLoaded", function() {
       renderizarMenusNavegacao();
-      window.addEventListener('online', () => atualizarStatusConexao(true));
+      window.addEventListener('online', () => {
+        atualizarStatusConexao(true);
+        sincronizarNotasNuvem();
+      });
       window.addEventListener('offline', () => atualizarStatusConexao(true));
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && navigator.onLine) sincronizarNotasNuvem();
+      });
+      window.addEventListener('storage', event => {
+        if (event.key?.startsWith(GESTOR_FILA_PREFIXO) || event.key === 'filaOfflineGestor') atualizarIndicadorOffline();
+        if (event.key?.startsWith(GESTOR_NOTAS_OP_PREFIXO) || event.key === 'gestorNotasBaseV2') {
+          const base = lerJSONLocalGestor('gestorNotasBaseV2', null);
+          if (base) { notasBaseServidor = base.anotacoes || []; revisaoNotasServidor = Number(base.revision || 0); }
+          recomporNotasLocaisGestor();
+        }
+        if (event.key?.startsWith('gestorEmprestimoPendenteV3:')) exibirPendenciaEmprestimoGestor();
+      });
       window.addEventListener('resize', () => { if (evolucaoMeses.length > 0) renderTabelaEvolucao(); });
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+          if (!document.getElementById('modalExportarDados').classList.contains('hidden')) fecharExportacaoDados();
           fecharMenuMobile();
           fecharModalFiltros();
           fecharModalForma();
@@ -2025,8 +2437,8 @@
       const abasPrincipais = ['novo', 'dashboard', 'lancamentos', 'relatorio'];
       abasPrincipais.forEach(id => {
         const config = abasConfig.find(a => a.id === id);
-        navDesktop.innerHTML += `<button onclick="setAba('${id}')" id="btn-desk-${id}" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs ${config.cor} hover:text-white transition cursor-pointer">${config.icone} ${config.titulo}</button>`;
-        navMobile.innerHTML += `<button onclick="setAba('${id}')" id="btn-mob-${id}" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl ${config.cor} transition active:scale-95"><span class="text-lg mb-0.5 leading-none">${config.icone}</span><span class="text-[10px] font-bold tracking-tight">${config.titulo}</span></button>`;
+        navDesktop.innerHTML += `<button type="button" ${acaoHTML('setAba', [id])} id="btn-desk-${id}" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs ${config.cor} hover:text-white transition cursor-pointer">${escaparHTML(config.icone)} ${escaparHTML(config.titulo)}</button>`;
+        navMobile.innerHTML += `<button type="button" ${acaoHTML('setAba', [id])} id="btn-mob-${id}" class="tab-btn-global flex flex-col items-center justify-center py-1.5 px-1 rounded-xl ${config.cor} transition active:scale-95"><span class="text-lg mb-0.5 leading-none">${escaparHTML(config.icone)}</span><span class="text-[10px] font-bold tracking-tight">${escaparHTML(config.titulo)}</span></button>`;
       });
 
       navDesktop.innerHTML += `<button onclick="abrirMenuMobile()" id="btn-desk-menu" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs text-slate-300 hover:text-white transition cursor-pointer">☰ <span id="txt-desk-menu">Menu</span></button>`;
@@ -2088,8 +2500,8 @@
         if (btnMenuD) { btnMenuD.classList.remove('bg-blue-600', 'text-white', 'shadow-md'); btnMenuD.classList.add('text-slate-300'); document.getElementById('txt-desk-menu').textContent = 'Menu'; }
         if (btnMenuM) { btnMenuM.classList.remove('bg-blue-600', 'text-white', 'shadow-md'); btnMenuM.classList.add('text-slate-300'); document.getElementById('txt-mob-menu').textContent = 'Menu'; }
       } else if (configAtiva) {
-        if (btnMenuD) { btnMenuD.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuD.classList.remove('text-slate-300'); document.getElementById('txt-desk-menu').textContent = configAtiva.titulo; }
-        if (btnMenuM) { btnMenuM.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuM.classList.remove('text-slate-300'); document.getElementById('txt-mob-menu').textContent = configAtiva.titulo; }
+        if (btnMenuD) { btnMenuD.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuD.classList.remove('text-slate-300'); document.getElementById('txt-desk-menu').textContent = 'Menu'; }
+        if (btnMenuM) { btnMenuM.classList.add('bg-blue-600', 'text-white', 'shadow-md'); btnMenuM.classList.remove('text-slate-300'); document.getElementById('txt-mob-menu').textContent = 'Menu'; }
         if (btnMenuModalAtivo) { btnMenuModalAtivo.classList.remove('border-slate-700/80', 'bg-slate-800/80'); btnMenuModalAtivo.classList.add('border-blue-500', 'bg-blue-950/40'); }
       }
 
@@ -2145,8 +2557,7 @@
 
       const tagsParaExibir = opcoesTagsGlobal.slice(0, 14);
       const gerarHtml = (ctx) => tagsParaExibir.map(t => {
-        const tSafe = t.replace(/'/g, "\\'");
-        return `<button type="button" data-tag="${t}" onclick="toggleTagChip('${tSafe}', '${ctx}')" class="chip-tag-${ctx} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95">${t}</button>`;
+        return `<button type="button" data-tag="${escaparHTML(t)}" ${acaoHTML('toggleTagChip', [t, ctx])} class="chip-tag-${ctx} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95">${escaparHTML(t)}</button>`;
       }).join('');
 
       if (boxNovo) boxNovo.innerHTML = gerarHtml('novo');
@@ -2341,12 +2752,12 @@
       if (boxInfo) {
         boxInfo.classList.remove('hidden');
         if (nomeSelecionado.toLowerCase().includes('pix')) {
-          boxInfo.innerHTML = `<span class="text-emerald-400">⚡ Pix • Gasto no mês: ${formaObj.utilizado || 'R$ 0,00'}</span>`;
+          boxInfo.innerHTML = `<span class="text-emerald-400">⚡ Pix • Gasto no mês: ${escaparHTML(formaObj.utilizado || 'R$ 0,00')}</span>`;
         } else if (calc.fechou) {
-          boxInfo.innerHTML = `<span class="text-sky-400">🚀 Fatura fechada ➔ vai p/ <strong>${calc.mesFat}</strong> • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
+          boxInfo.innerHTML = `<span class="text-sky-400">🚀 Fatura fechada ➔ vai p/ <strong>${escaparHTML(calc.mesFat)}</strong> • Disp: <strong class="text-emerald-400">${escaparHTML(formaObj.disponivel)}</strong></span>`;
         } else {
           const txtFech = calc.diaFech ? ` (fecha dia ${calc.diaFech})` : '';
-          boxInfo.innerHTML = `<span class="text-slate-300">🟢 Fatura aberta${txtFech} • Disp: <strong class="text-emerald-400">${formaObj.disponivel}</strong></span>`;
+          boxInfo.innerHTML = `<span class="text-slate-300">🟢 Fatura aberta${txtFech} • Disp: <strong class="text-emerald-400">${escaparHTML(formaObj.disponivel)}</strong></span>`;
         }
       }
       atualizarVisorMetaCategoria();
@@ -2407,6 +2818,7 @@
     }
 
     function checarAutopreenchimento() {
+      atualizarSugestaoTagsFrequentes('');
       const descRaw = document.getElementById('inpDesc')?.value || '';
       const descNorm = normalizarTexto(descRaw);
       const btnUltVal = document.getElementById('btnSugestaoUltimoValor');
@@ -2443,6 +2855,7 @@
       if (dicionarioAutofill[descNorm]) {
         const item = dicionarioAutofill[descNorm];
         aplicarSugestao(item.forma, item.categoria, item.ultimoValor);
+        atualizarSugestaoTagsFrequentes(item.ultimasTags);
         return;
       }
 
@@ -2474,7 +2887,29 @@
       }
     }
 
+    function atualizarSugestaoTagsFrequentes(tags) {
+      const btn = document.getElementById('btnTagsFrequentes');
+      if (!btn) return;
+      const lista = [...new Set(String(tags || '').split(',').map(t => t.trim().replace(/^#/, '').toLowerCase()).filter(Boolean))];
+      btn.dataset.tags = lista.join(',');
+      btn.textContent = lista.length ? 'Usar tags anteriores: ' + lista.map(t => '#' + t).join(', ') : '';
+      btn.classList.toggle('hidden', lista.length === 0);
+    }
+
+    function aplicarTagsFrequentes() {
+      const btn = document.getElementById('btnTagsFrequentes');
+      const inp = document.getElementById('inpTags');
+      if (!btn || !inp) return;
+      const lista = [...new Set((inp.value + ',' + (btn.dataset.tags || '')).split(',').map(t => t.trim().replace(/^#/, '').toLowerCase()).filter(Boolean))];
+      inp.value = lista.map(t => '#' + t).join(', ');
+      toggleBotaoLimpar('inpTags', 'btnLimparTags');
+      sincronizarChipsTags('novo');
+      salvarRascunho();
+      atualizarSugestaoTagsFrequentes('');
+    }
+
     function limparFormularioNovoGasto() {
+      atualizarSugestaoTagsFrequentes('');
       document.getElementById('formLancamento')?.reset();
 document.getElementById('inpDesc').value = '';
 sessionStorage.removeItem('rascunhoLancamento');
@@ -2593,69 +3028,51 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
       if (limpa === '∞/∞') return 'Fixo Mensal (∞)';
       if (limpa.includes('/') && !limpa.endsWith('/1')) {
         if (resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes) {
-          return `Parc: ${limpa} <span class="text-sky-400">• fim ${resParcObj.fimMes}</span>`;
+          return `Parc: ${escaparHTML(limpa)} <span class="text-sky-400">• fim ${escaparHTML(resParcObj.fimMes)}</span>`;
         }
-        return `Parc: ${limpa}`;
+        return `Parc: ${escaparHTML(limpa)}`;
       }
-      return `Parc: ${limpa || '1/1'}`;
+      return `Parc: ${escaparHTML(limpa || '1/1')}`;
     }
 
     function renderTabelaLancamentos(lista, append = false) {
       if (!append) itensFiltradosAtualCache = [...lista];
       else itensFiltradosAtualCache = [...itensFiltradosAtualCache, ...lista];
-
       let htmlL = '';
       lista.forEach(l => {
         const badgeColor = obterClasseBadgeStatus(l[9]);
-        const descSafe = String(l[1]).replace(/'/g, "\\'");
-        const formaSafe = String(l[2]).replace(/'/g, "\\'");
-        const catSafe = String(l[3]).replace(/'/g, "\\'");
-        const tagSafe = String(l[11] || '').replace(/'/g, "\\'");
-        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
-        const resParc = l[12] || null;
-
-        let tagsHtml = '';
-        if (l[11]) {
-          String(l[11]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
-            const tSafeClick = t.replace(/'/g, "\\'");
-            tagsHtml += `<button type="button" onclick="filtrarPorTagRapida('${tSafeClick}')" class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95" title="Toque para filtrar por ${t}">${t}</button>`;
-          });
-        }
-
+        const referencia = referenciaLinhaSegura('g', l[10], l[13], l[15]);
+        const tagsHtml = String(l[11] || '').split(',').map(t => t.trim()).filter(Boolean).map(t =>
+          `<button type="button" ${acaoHTML('filtrarPorTagRapida', [t])} class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95" title="Toque para filtrar por ${escaparHTML(t)}">${escaparHTML(t)}</button>`
+        ).join('');
         htmlL += `<div class="bg-slate-800/40 border border-slate-700/80 p-4 rounded-2xl flex flex-col gap-2 relative shadow-sm">
-          <div class="flex justify-between items-start gap-2">
-            <div class="min-w-0">
-              <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${l[0]}</div>
-              <div class="text-white font-bold text-base mt-0.5 leading-tight break-words">${l[1]}</div>
-              <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div>
-              <div>${tagsHtml}</div>
-            </div>
-            <div class="text-right shrink-0">
-              <div class="text-emerald-400 font-bold text-lg leading-tight tracking-tight">${l[7]}</div>
-              <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], resParc)}</div>
-            </div>
-          </div>
+          <div class="flex justify-between items-start gap-2"><div class="min-w-0">
+            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${escaparHTML(l[0])}</div>
+            <div class="text-white font-bold text-base mt-0.5 leading-tight break-words">${escaparHTML(l[1])}</div>
+            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(l[3])}</div><div>${tagsHtml}</div>
+          </div><div class="text-right shrink-0">
+            <div class="text-emerald-400 font-bold text-lg leading-tight tracking-tight">${escaparHTML(l[7])}</div>
+            <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null)}</div>
+          </div></div>
           <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
-            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${l[9]}</span>
-            <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${l[8]}</span></span>
+            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${escaparHTML(l[9])}</span>
+            <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${escaparHTML(l[8])}</span></span>
           </div>
           <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50 ${modoEdicaoLancamentos ? 'flex' : 'hidden'}">
-            <button onclick="repetirLancamentoHoje('${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${tagSafe}')" class="flex-1 text-emerald-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
-            <button onclick="abrirModalEdicaoLanc('${l[10]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}','${tagSafe}','${parcSafe}')" class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
-            <button onclick="excluirLancamentoLocal('${l[10]}','${descSafe}','${parcSafe}','${l[8]}')" class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
+            <button type="button" ${acaoHTML('repetirLancamentoHoje', [l[1], l[2], l[3], l[7], l[11] || ''])} class="flex-1 text-emerald-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
+            <button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[11] || '', l[6] || ''])} class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
+            <button type="button" ${acaoHTML('excluirLancamentoLocal', [referencia, l[1], l[6] || '', l[8]])} class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
           </div>
         </div>`;
       });
-
-      if (lista.length === 0 && !append) {
-        htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado para este filtro.</div>';
-      }
+      if (lista.length === 0 && !append) htmlL = '<div class="col-span-full py-8 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum resultado encontrado para este filtro.</div>';
       const boxLanc = document.getElementById('lista-lancamentos');
       if (boxLanc) {
         if (append) boxLanc.insertAdjacentHTML('beforeend', htmlL);
         else boxLanc.innerHTML = htmlL;
       }
     }
+
 
     function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
       limparFormularioNovoGasto();
@@ -2678,8 +3095,18 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
       aplicarFiltros();
     }
 
+    function atualizarIndicadorAnoHistorico() {
+      const badge = document.getElementById('badgeAnoHistorico');
+      if (!badge) return;
+      const ano = document.getElementById('filtAno').value;
+      badge.textContent = ano ? 'Histórico do ano ' + ano + ' • Altere em Filtros ou use Limpar para ver todos os anos.' : '';
+      badge.classList.toggle('hidden', !ano);
+    }
+
     function auditarItemAnual(tipo, valor) {
+      const anoSelecionado = document.getElementById('selFiltroAnoSimples').value;
       setAba('lancamentos');
+      document.getElementById('filtAno').value = anoSelecionado;
       document.getElementById('inpBusca').value = '';
       document.getElementById('filtMes').value = '';
       document.getElementById('filtForma').value = tipo === 'forma' ? valor : '';
@@ -2711,6 +3138,8 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
     function fecharModalFiltros() { document.getElementById('modalFiltros').classList.add('hidden'); }
 
     function limparFiltros() {
+      document.getElementById('filtAno').value = '';
+      atualizarIndicadorAnoHistorico();
       document.getElementById('inpBusca').value = '';
       document.getElementById('filtMes').value = '';
       document.getElementById('filtForma').value = '';
@@ -2725,7 +3154,7 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
     }
 
     function temAlgumFiltroAtivo() {
-      return Boolean(filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido);
+      return Boolean(filtrosAtuais.ano || filtrosAtuais.termo || filtrosAtuais.mes || filtrosAtuais.forma || filtrosAtuais.categoria || filtrosAtuais.status || filtrosAtuais.tag || filtrosAtuais.tipoRapido);
     }
 
     let isFetchingFiltros = false;
@@ -2733,6 +3162,9 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
     function aplicarFiltros() {
       if (isFetchingFiltros) return; // Trava contra múltiplos cliques rápidos
       isFetchingFiltros = true;
+
+      filtrosAtuais.ano = document.getElementById('filtAno').value;
+      atualizarIndicadorAnoHistorico();
 
       filtrosAtuais.termo = document.getElementById('inpBusca').value.trim();
       filtrosAtuais.mes = document.getElementById('filtMes').value;
@@ -2749,9 +3181,6 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
     }
 
     function carregarMaisLancamentos() {
-      offsetAtual += LIMITE_PAGINA;
-      const btn = document.querySelector('#boxCarregarMais button');
-      if (btn) btn.textContent = 'Baixando...';
       chamarFiltroBackend(true);
     }
 
@@ -3147,8 +3576,7 @@ function chamarFiltroBackend(append = false) {
       const pFreq = emprestimosGlobal.pessoasFrequentes || [];
       if (chipsPessoas) {
         chipsPessoas.innerHTML = pFreq.slice(0, 8).map(p => {
-          const pSafe = String(p || '').replace(/'/g, "\\'");
-          return `<button type="button" onclick="selecionarPessoaChipEmp('${pSafe}')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition">👤 ${p}</button>`;
+          return `<button type="button" ${acaoHTML('selecionarPessoaChipEmp', [p])} class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 transition">👤 ${escaparHTML(p)}</button>`;
         }).join('');
         chipsPessoas.classList.toggle('hidden', pFreq.length === 0);
       }
@@ -3166,7 +3594,7 @@ function chamarFiltroBackend(append = false) {
           const [mA, aA] = String(a).split('/').map(Number), [mB, aB] = String(b).split('/').map(Number);
           return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
         });
-        selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${m}">${m}</option>`).join('');
+        selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${escaparHTML(m)}">${escaparHTML(m)}</option>`).join('');
         const pessoasEmp = [...new Set(todosItens.map(i => String(i.pessoa || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
         const formasEmp = [...new Set(todosItens.map(i => String(i.forma || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
         selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pessoasEmp.map(p => `<option value="${pxEscHtml(p)}">${pxEscHtml(p)}</option>`).join('');
@@ -3201,7 +3629,7 @@ function chamarFiltroBackend(append = false) {
         return true;
       });
 
-      const mapaPessoas = {};
+      const mapaPessoas = Object.create(null);
       filtrados.forEach(it => {
         const pessoaNome = String(it.pessoa || 'Desconhecido');
         if (!mapaPessoas[pessoaNome]) mapaPessoas[pessoaNome] = { nome: pessoaNome, aReceber: 0, recebido: 0, itens: [] };
@@ -3218,15 +3646,14 @@ function chamarFiltroBackend(append = false) {
           boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
         } else {
           boxPessoas.innerHTML = arrPessoas.map(p => {
-            const pSafe = String(p.nome).replace(/'/g, "\\'");
             const btnQuitarMes = p.aReceber > 0
-              ? `<button onclick="quitarMesPessoaEmprestimo('${pSafe}', '${fMes}')" class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">✅ Quitar ${fMes || 'Tudo'}</button>`
+              ? `<button type="button" ${acaoHTML('quitarMesPessoaEmprestimo', [p.nome, fMes])} class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">✅ Quitar ${escaparHTML(fMes || 'Tudo')}</button>`
               : '';
             return `<div class="bg-slate-900/70 border border-slate-700/80 p-4 rounded-2xl flex flex-col justify-between gap-3">
               <div class="flex justify-between items-start">
                 <div>
-                  <h4 class="text-amber-300 font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${p.nome}</h4>
-                  <span class="text-[11px] text-slate-400">${p.itens.length} parcela(s) ${fMes ? `em ${fMes}` : 'listadas'}</span>
+                  <h4 class="text-amber-300 font-bold text-sm sm:text-base flex items-center gap-1.5">👤 ${escaparHTML(p.nome)}</h4>
+                  <span class="text-[11px] text-slate-400">${p.itens.length} parcela(s) ${fMes ? `em ${escaparHTML(fMes)}` : 'listadas'}</span>
                 </div>
                 <div class="text-right">
                   <span class="text-[10px] font-bold text-slate-400 uppercase block">A Receber</span>
@@ -3234,7 +3661,7 @@ function chamarFiltroBackend(append = false) {
                 </div>
               </div>
               <div class="flex gap-2 pt-2 border-t border-slate-800">
-                <button onclick="copiarCobrancaPessoaWhats('${pSafe}')" class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">📲 Cobrar no WhatsApp</button>
+                <button type="button" ${acaoHTML('copiarCobrancaPessoaWhats', [p.nome])} class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">📲 Cobrar no WhatsApp</button>
                 ${btnQuitarMes}
               </div>
             </div>`;
@@ -3248,28 +3675,25 @@ function chamarFiltroBackend(append = false) {
           boxItens.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs">Nenhuma parcela encontrada.</div>';
         } else {
           boxItens.innerHTML = filtrados.map(it => {
-            const pSafe = String(it.pessoa || '').replace(/'/g, "\\'");
-            const dSafe = String(it.descricao || '').replace(/'/g, "\\'");
-            const parcSafe = String(it.parcela || '').replace(/'/g, "\\'");
             const isRec = it.status === 'Recebido';
             const badge = obterClasseBadgeStatus(it.status);
             return `<div class="bg-slate-800/40 border border-slate-700/70 p-3.5 rounded-2xl flex flex-col gap-2">
               <div class="flex justify-between items-start">
                 <div>
-                  <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${it.pessoa} • ${it.data}</span>
-                  <div class="text-white font-bold text-sm mt-0.5">${it.descricao}</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">💰 ${it.forma} • Mês: <strong class="text-slate-200">${it.mesFatura}</strong> • Parc: <strong>${it.parcela}</strong></div>
-                  ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${it.observacoes}</div>` : ''}
+                  <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${escaparHTML(it.pessoa)} • ${escaparHTML(it.data)}</span>
+                  <div class="text-white font-bold text-sm mt-0.5">${escaparHTML(it.descricao)}</div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">💰 ${escaparHTML(it.forma)} • Mês: <strong class="text-slate-200">${escaparHTML(it.mesFatura)}</strong> • Parc: <strong>${escaparHTML(it.parcela)}</strong></div>
+                  ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${escaparHTML(it.observacoes)}</div>` : ''}
                 </div>
                 <div class="text-right">
-                  <div class="text-emerald-400 font-bold text-base">${it.valorFmt}</div>
-                  <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${it.status}</span>
+                  <div class="text-emerald-400 font-bold text-base">${escaparHTML(it.valorFmt)}</div>
+                  <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${escaparHTML(it.status)}</span>
                 </div>
               </div>
             <div class="flex gap-2 pt-2 border-t border-slate-700/40">
-                <button onclick="alternarStatusItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="flex-1 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : '✅ Marcar Recebido'}</button>
-                <button onclick="abrirModalEdicaoEmp('${it.linha}', '${it.data}', '${pSafe}', '${dSafe}', '${it.forma}', '${it.valorRaw}', '${it.mesFatura}', '${it.status}', '${parcSafe}', '${it.observacoes ? String(it.observacoes).replace(/'/g, "\\'") : ''}')" class="bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">Editar</button>
-                <button onclick="excluirItemEmprestimo('${it.linha}','${pSafe}','${dSafe}','${parcSafe}')" class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️</button>
+                <button type="button" ${acaoHTML('alternarStatusItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="flex-1 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : '✅ Marcar Recebido'}</button>
+                <button type="button" ${acaoHTML('abrirModalEdicaoEmp', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.data, it.pessoa || '', it.descricao || '', it.forma, it.valorRaw, it.mesFatura, it.status, it.parcela || '', it.observacoes || ''])} class="bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">Editar</button>
+                <button type="button" ${acaoHTML('excluirItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️</button>
               </div>
             </div>`;
           }).join('');
@@ -3278,7 +3702,8 @@ function chamarFiltroBackend(append = false) {
     }
 
     function alternarStatusItemEmprestimo(linha, pessoa, descricao, parcela) {
-      const itemRecebido = emprestimosGlobal.itens?.find(it => String(it.linha) === String(linha));
+      const referencia = detalhesReferenciaGestor(linha);
+      const itemRecebido = emprestimosGlobal.itens?.find(it => referencia ? String(it.registroId) === referencia.registroId : String(it.linha) === String(linha));
       const vaiMarcarRecebido = itemRecebido?.status !== 'Recebido';
       mostrarConfirmacao(
         vaiMarcarRecebido ? 'Confirmar recebimento' : 'Reabrir valor a receber',
@@ -3301,7 +3726,7 @@ function chamarFiltroBackend(append = false) {
       acoesStatusEmprestimoEmAndamento.add(chaveAcao);
       mostrarAviso('Salvando recebimento…', `Atualizando a parcela ${parcela} de ${pessoa}.`);
       try {
-        const res = await apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela });
+        const res = await apiCall('alternarStatusEmprestimoWeb', { linha, pessoa, descricao, parcela, statusDesejado: vaiMarcarRecebido ? 'Recebido' : 'A Receber' });
         const dadosAtualizados = await carregarDados();
         if (dadosAtualizados) {
           mostrarAviso('Atualizado ✅', `Status alterado para ${res.novoStatus}!`);
@@ -3370,7 +3795,7 @@ function chamarFiltroBackend(append = false) {
       const selCat = document.getElementById('selMoverPessoalCat');
       if (selCat) {
         selCat.innerHTML = '<option value="">Selecione a Categoria...</option>';
-        categoriasGlobaisEdit.forEach(c => selCat.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
+        categoriasGlobaisEdit.forEach(c => selCat.add(new Option(c.nome, c.nome)));
       }
       document.getElementById('modalEdicaoEmp').classList.remove('hidden');
     }
@@ -3677,15 +4102,15 @@ function chamarFiltroBackend(append = false) {
 
       boxLista.innerHTML = rachaDetPessoas.map((nome, idx) => `
         <span class="bg-slate-800 border border-slate-700 text-slate-200 px-2.5 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5">
-          👤 ${nome}
-          ${rachaDetPessoas.length > 1 ? `<button type="button" onclick="removerPessoaRachaDet(${idx})" class="text-rose-400 hover:text-white ml-1">✕</button>` : ''}
+          👤 ${escaparHTML(nome)}
+          ${rachaDetPessoas.length > 1 ? `<button type="button" ${acaoHTML('removerPessoaRachaDet', [idx])} class="text-rose-400 hover:text-white ml-1">✕</button>` : ''}
         </span>
       `).join('');
 
       boxCheck.innerHTML = rachaDetPessoas.map((nome, idx) => `
         <label class="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer">
           <input type="checkbox" value="${idx}" checked class="chk-pessoa-item-racha w-3.5 h-3.5 rounded text-emerald-500 bg-slate-900 border-slate-600">
-          <span>${nome}</span>
+          <span>${escaparHTML(nome)}</span>
         </label>
       `).join('');
     }
@@ -3751,16 +4176,16 @@ function chamarFiltroBackend(append = false) {
           return `
             <div class="flex justify-between items-center bg-slate-950/70 border border-slate-800 px-3 py-2 rounded-xl text-xs">
               <div class="min-w-0">
-                <strong class="text-white">${it.desc}</strong> <span class="text-emerald-400 font-bold ml-1">${formatBRL(totalItemCentavos / 100)}</span>
-                <div class="text-[10px] text-slate-400 break-words">Partes exatas: ${resumoItem}</div>
+                <strong class="text-white">${escaparHTML(it.desc)}</strong> <span class="text-emerald-400 font-bold ml-1">${formatBRL(totalItemCentavos / 100)}</span>
+                <div class="text-[10px] text-slate-400 break-words">Partes exatas: ${escaparHTML(resumoItem)}</div>
               </div>
-              <button type="button" onclick="removerItemRachaDet(${it.id})" class="text-rose-400 hover:text-white px-2">🗑️</button>
+              <button type="button" ${acaoHTML('removerItemRachaDet', [it.id])} class="text-rose-400 hover:text-white px-2">🗑️</button>
             </div>
           `;
         }).join('');
       }
 
-      const mapaPorPessoa = {};
+      const mapaPorPessoa = Object.create(null);
       rachaDetPessoas.forEach(p => mapaPorPessoa[p] = { baseCentavos: 0, taxaCentavos: 0, finalCentavos: 0, itens: [] });
       let totalBaseCentavos = 0;
 
@@ -3799,12 +4224,12 @@ function chamarFiltroBackend(append = false) {
             const pSafe = p.replace(/'/g, "\\'");
             return `<div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl border border-slate-800">
               <div>
-                <strong class="text-white text-sm">👤 ${p}</strong>
-                <div class="text-[10px] text-slate-400">${dP.itens.join(', ') || 'Sem consumo'}${com10 && dP.baseCentavos > 0 ? ' (+10% proporcional)' : ''}</div>
+                <strong class="text-white text-sm">👤 ${escaparHTML(p)}</strong>
+                <div class="text-[10px] text-slate-400">${escaparHTML(dP.itens.join(', ') || 'Sem consumo')}${com10 && dP.baseCentavos > 0 ? ' (+10% proporcional)' : ''}</div>
               </div>
               <div class="flex items-center gap-2">
                 <strong class="text-emerald-400 text-sm sm:text-base">${formatBRL(dP.finalCentavos / 100)}</strong>
-                ${dP.finalCentavos > 0 ? `<button type="button" onclick="lancarParteIndividualDet('${pSafe}', ${dP.finalCentavos})" class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-2 py-1 rounded-lg text-[10px] font-bold">➕ Lançar</button>` : ''}
+                ${dP.finalCentavos > 0 ? `<button type="button" ${acaoHTML('lancarParteIndividualDet', [p, dP.finalCentavos])} class="bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 px-2 py-1 rounded-lg text-[10px] font-bold">➕ Lançar</button>` : ''}
               </div>
             </div>`;
           }).join('') + `<div class="flex justify-between items-center pt-2 text-xs font-bold text-slate-300"><span>Total da Conta:</span><span class="text-white text-sm">${formatBRL(totalGeralFinal)}</span></div>`;
@@ -3888,9 +4313,9 @@ function chamarFiltroBackend(append = false) {
         const dispDepois = dispAntes - valTotal;
         const isMaisUsado = (c.nome === cartaoMaisFrequenteGlobal);
         const cSafe = c.nome.replace(/'/g, "\\'");
-        return `<tr onclick="document.getElementById('simCartao').value='${cSafe}'; rodarSimuladorCompra()" class="border-b border-slate-800/80 hover:bg-slate-800/50 cursor-pointer transition ${nomeCartao === c.nome ? 'bg-sky-950/40' : ''}">
-          <td class="py-2 pl-2 font-bold text-white">${c.nome} ${isMaisUsado ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded ml-1">⭐ Mais usado</span>' : ''}</td>
-          <td class="py-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${calc.fechou ? 'bg-sky-500/20 text-sky-300' : 'bg-emerald-500/20 text-emerald-300'}">${calc.mesFat} ${calc.fechou ? '🚀' : '🟢'}</span></td>
+        return `<tr ${acaoHTML('selecionarCartaoSimulador', [c.nome])} class="border-b border-slate-800/80 hover:bg-slate-800/50 cursor-pointer transition ${nomeCartao === c.nome ? 'bg-sky-950/40' : ''}">
+          <td class="py-2 pl-2 font-bold text-white">${escaparHTML(c.nome)} ${isMaisUsado ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded ml-1">⭐ Mais usado</span>' : ''}</td>
+          <td class="py-2 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${calc.fechou ? 'bg-sky-500/20 text-sky-300' : 'bg-emerald-500/20 text-emerald-300'}">${escaparHTML(calc.mesFat)} ${calc.fechou ? '🚀' : '🟢'}</span></td>
           <td class="py-2 pr-2 text-right font-bold ${dispDepois < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispDepois)}</td>
         </tr>`;
       }).join('');
@@ -3923,11 +4348,11 @@ function chamarFiltroBackend(append = false) {
           blocoDetalheCartao = `
             <div class="pt-3 border-t border-slate-800 space-y-3">
               <div class="grid grid-cols-2 gap-3 text-xs bg-slate-950/70 p-3 rounded-xl border border-slate-800">
-                <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Limite Disponível (${nomeCartao})</span><span class="text-slate-400">${formatBRL(dispAtual)} ➔</span> <strong class="${dispApos < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispApos)}</strong></div>
+                <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Limite Disponível (${escaparHTML(nomeCartao)})</span><span class="text-slate-400">${formatBRL(dispAtual)} ➔</span> <strong class="${dispApos < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatBRL(dispApos)}</strong></div>
                 <div><span class="text-slate-400 block text-[10px] uppercase font-bold">Uso do Limite</span><span class="text-slate-400">${pctAntes}% ➔</span> <strong class="text-amber-400">${pctDepois}%</strong></div>
               </div>
               <div>
-                <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Projeção nas Faturas de ${nomeCartao}:</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Projeção nas Faturas de ${escaparHTML(nomeCartao)}:</span>
                 ${linhasMeses}
               </div>
             </div>`;
@@ -4071,44 +4496,113 @@ function chamarFiltroBackend(append = false) {
         box.innerHTML = '<div class="py-6 text-center text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">Nenhuma anotação ou lembrete salvo.</div>';
         return;
       }
-      box.innerHTML = notasGlobais.map(n => `
-        <div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl border ${n.concluida ? 'bg-slate-900/30 border-slate-800 opacity-60' : 'bg-slate-800/70 border-slate-700'}">
-          <label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">
-            <input type="checkbox" ${n.concluida ? 'checked' : ''} onchange="toggleNotaConcluida('${n.id}')" class="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-600 shrink-0">
-            <div class="min-w-0">
-              <p class="text-xs sm:text-sm font-semibold ${n.concluida ? 'line-through text-slate-500' : 'text-white'} break-words">${n.texto}</p>
-              <span class="text-[10px] text-slate-500">${n.data || ''}</span>
-            </div>
-          </label>
-          <button onclick="excluirNotaRapida('${n.id}')" class="text-rose-400 hover:text-white bg-rose-900/20 hover:bg-rose-600 p-2 rounded-xl text-xs transition shrink-0">🗑️</button>
-        </div>
-      `).join('');
+      box.replaceChildren();
+      notasGlobais.forEach(n => {
+        const card = document.createElement('div');
+        card.className = 'flex items-center justify-between gap-3 p-3.5 rounded-2xl border ' + (n.concluida ? 'bg-slate-900/30 border-slate-800 opacity-60' : 'bg-slate-800/70 border-slate-700');
+        const label = document.createElement('label');
+        label.className = 'flex items-center gap-3 flex-1 cursor-pointer min-w-0';
+        const check = document.createElement('input');
+        check.type = 'checkbox'; check.checked = Boolean(n.concluida);
+        check.className = 'w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-600 shrink-0';
+        check.addEventListener('change', () => toggleNotaConcluida(n.id));
+        const texto = document.createElement('div'); texto.className = 'min-w-0';
+        const paragrafo = document.createElement('p');
+        paragrafo.className = 'text-xs sm:text-sm font-semibold break-words whitespace-pre-line ' + (n.concluida ? 'line-through text-slate-500' : 'text-white');
+        paragrafo.textContent = n.texto || '';
+        const data = document.createElement('span'); data.className = 'text-[10px] text-slate-500';
+        data.textContent = n.data || '';
+        texto.append(paragrafo, data); label.append(check, texto);
+        const excluir = document.createElement('button'); excluir.type = 'button';
+        excluir.className = 'text-rose-400 hover:text-white bg-rose-900/20 hover:bg-rose-600 p-2 rounded-xl text-xs transition shrink-0';
+        excluir.textContent = '🗑️'; excluir.setAttribute('aria-label', 'Excluir lembrete');
+        excluir.addEventListener('click', () => excluirNotaRapida(n.id));
+        card.append(label, excluir); box.appendChild(card);
+      });
     }
 
     function adicionarNotaRapida() {
       const inp = document.getElementById('inpNovaNotaTexto');
       const txt = (inp?.value || '').trim();
       if (!txt) return;
-      notasGlobais.unshift({ id: String(Date.now()), texto: txt, concluida: false, data: new Date().toLocaleDateString('pt-BR') });
+      inicializarNotasLocaisGestor();
+      try { registrarOperacaoNotaGestor('upsert', { id: novoRequestIdGestor(), texto: txt, concluida: false, data: new Date().toLocaleDateString('pt-BR') }); }
+      catch (erro) { mostrarAviso('Não foi possível guardar a nota', 'O armazenamento deste aparelho está indisponível. Copie o texto antes de fechar o app.'); return; }
       inp.value = '';
-      renderizarNotasUI();
+      recomporNotasLocaisGestor();
       sincronizarNotasNuvem();
     }
 
     function toggleNotaConcluida(id) {
+      inicializarNotasLocaisGestor();
       const item = notasGlobais.find(n => String(n.id) === String(id));
-      if (item) { item.concluida = !item.concluida; renderizarNotasUI(); sincronizarNotasNuvem(); }
+      if (item) {
+        try { registrarOperacaoNotaGestor('upsert', { ...item, concluida: !item.concluida }); recomporNotasLocaisGestor(); sincronizarNotasNuvem(); }
+        catch (erro) { mostrarAviso('Nota não alterada', 'Não foi possível guardar a alteração neste aparelho.'); }
+      }
     }
 
     function excluirNotaRapida(id) {
-      notasGlobais = notasGlobais.filter(n => String(n.id) !== String(id));
-      renderizarNotasUI();
-      sincronizarNotasNuvem();
+      inicializarNotasLocaisGestor();
+      try { registrarOperacaoNotaGestor('delete', id); recomporNotasLocaisGestor(); sincronizarNotasNuvem(); }
+      catch (erro) { mostrarAviso('Nota não excluída', 'Não foi possível guardar a alteração neste aparelho.'); }
     }
 
-    function sincronizarNotasNuvem() {
-      localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
-      if (navigator.onLine) apiCall('salvarNotasWeb', notasGlobais).catch(e => console.warn(e));
+    async function sincronizarNotasNuvem() {
+      inicializarNotasLocaisGestor();
+      if (sincronizacaoNotasEmAndamento) { novaSincronizacaoNotasSolicitada = true; return; }
+      if (!navigator.onLine || lerJSONLocalGestor('gestorNotasConflitoV2', null)) return;
+      sincronizacaoNotasEmAndamento = true;
+      novaSincronizacaoNotasSolicitada = false;
+      try {
+        await comTravaAbasGestor('notas', async () => {
+          while (navigator.onLine) {
+            let envio = lerJSONLocalGestor('gestorNotasEnvioV2', null);
+            if (!envio) {
+              const pendentes = operacoesNotasPendentesGestor();
+              if (!pendentes.length) break;
+              const consolidadas = new Map();
+              pendentes.forEach(op => {
+                const primeira = consolidadas.get(op.id);
+                consolidadas.set(op.id, { id: op.id, tipo: op.tipo, ...(op.nota ? { nota: op.nota } : {}), revision: primeira ? primeira.revision : Number(op.revision || 0) });
+              });
+              const operacoes = Array.from(consolidadas.values()).slice(0, 500);
+              const idsSelecionados = new Set(operacoes.map(op => op.id));
+              envio = { requestId: novoRequestIdGestor(), operacoes, opIds: pendentes.filter(op => idsSelecionados.has(op.id)).map(op => op.opId), baseVersion: revisaoNotasServidor };
+              localStorage.setItem('gestorNotasEnvioV2', JSON.stringify(envio));
+            }
+            const resultado = await apiCall('salvarNotasWeb', envio);
+            // Apaga apenas as operações deste envio. Novas edições continuam pendentes.
+            (envio.opIds || envio.operacoes.map(op => op.opId)).forEach(id => localStorage.removeItem(GESTOR_NOTAS_OP_PREFIXO + id));
+            localStorage.removeItem('gestorNotasEnvioV2');
+            const enviadas = new Map(envio.operacoes.map(op => [String(op.id), op]));
+            const confirmadas = new Map((resultado.anotacoes || []).map(nota => [String(nota.id), nota]));
+            operacoesNotasPendentesGestor().forEach(op => {
+              const enviada = enviadas.get(String(op.id)), confirmada = confirmadas.get(String(op.id));
+              if (enviada && confirmada && Number(op.revision || 0) === Number(enviada.revision || 0)) {
+                localStorage.setItem(GESTOR_NOTAS_OP_PREFIXO + op.opId, JSON.stringify({ ...op, ...(op.nota ? { nota: { ...op.nota, revision: Number(confirmada.revision) } } : {}), revision: Number(confirmada.revision) }));
+              }
+            });
+            receberNotasServidorGestor(resultado.anotacoes, resultado.revision);
+          }
+        });
+      } catch (erro) {
+        console.warn('Notas aguardam sincronização:', erro.message);
+        if (erro.doServidor && !erro.resultadoIncerto) {
+          localStorage.removeItem('gestorNotasEnvioV2');
+          localStorage.setItem('gestorNotasConflitoV2', JSON.stringify({ mensagem: erro.message }));
+        }
+        mostrarAviso('Notas guardadas neste aparelho', 'As alterações continuam salvas aqui e serão sincronizadas quando a conexão voltar.');
+      } finally {
+        sincronizacaoNotasEmAndamento = false;
+        const repetir = novaSincronizacaoNotasSolicitada && navigator.onLine &&
+          !lerJSONLocalGestor('gestorNotasConflitoV2', null) && operacoesNotasPendentesGestor().length > 0;
+        novaSincronizacaoNotasSolicitada = false;
+        atualizarEstadoNotasGestor();
+        // Reproduz somente uma solicitação que chegou durante o envio anterior.
+        // Sem nova solicitação, uma falha de rede não provoca repetição sem fim.
+        if (repetir) setTimeout(sincronizarNotasNuvem, 0);
+      }
     }
 
     // ============================================================================
@@ -4150,7 +4644,9 @@ function chamarFiltroBackend(append = false) {
     }
 
     function atualizarIndicadorOffline() {
-      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
+      let fila;
+      try { fila = lerFilaOfflineGestor(); }
+      catch (erro) { mostrarAviso('Fila local preservada', erro.message); return; }
       const btn = document.getElementById('btnSyncOffline');
       const resultadoIncerto = localStorage.getItem('syncOfflineResultadoIncerto') === 'true';
       if (fila.length > 0) {
@@ -4183,33 +4679,33 @@ function chamarFiltroBackend(append = false) {
       atualizarIndicadorOffline();
     }
 
-    function sincronizarFilaOffline() {
+    async function sincronizarFilaOffline() {
       if (!navigator.onLine) { mostrarAviso('Aviso', 'Você ainda está sem internet.'); return; }
-      if (localStorage.getItem('syncOfflineResultadoIncerto') === 'true') {
-        mostrarConfirmacao(
-          'Confira antes de sincronizar novamente',
-          'A tentativa anterior pode ter gravado os itens, mesmo sem confirmar o resultado. Confira o Histórico. Se todos já aparecerem, cancele. Se nenhum aparecer, confirme para tentar novamente.',
-          function () {
-            localStorage.removeItem('syncOfflineResultadoIncerto');
-            sincronizarFilaOffline();
-          }
-        );
-        return;
-      }
-      let fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
-      if (fila.length === 0) return;
+      if (sincronizacaoFilaEmAndamento) return;
+      sincronizacaoFilaEmAndamento = true;
       const btn = document.getElementById('btnSyncOffline'); btn.textContent = 'Enviando...'; btn.disabled = true;
-      apiCall('sincronizarLoteWeb', fila).then(res => {
-        localStorage.removeItem('filaOfflineGestor'); btn.disabled = false;
-        localStorage.removeItem('syncOfflineResultadoIncerto');
-        mostrarAviso('Sucesso', `Sincronização concluída! ${res.qtd} item(ns) enviado(s).`);
-        atualizarIndicadorOffline(); carregarDados();
-      }).catch(err => {
+      try {
+        const executou = await comTravaAbasGestor('fila', async () => {
+          const fila = lerFilaOfflineGestor();
+          if (!fila.length) return true;
+          const res = await apiCall('sincronizarLoteWeb', fila);
+          const confirmados = new Set(Array.isArray(res.requestIds) ? res.requestIds : []);
+          fila.forEach(item => { if (confirmados.has(item.requestId)) localStorage.removeItem(GESTOR_FILA_PREFIXO + item.requestId); });
+          if (res.completo === false || confirmados.size !== fila.length) throw new Error(res.erro || 'A nuvem ainda não confirmou todos os itens.');
+          localStorage.removeItem('syncOfflineResultadoIncerto');
+          mostrarAviso('Sucesso', `Sincronização concluída! ${confirmados.size} item(ns) enviado(s).`);
+          carregarDados();
+          return true;
+        });
+        if (executou === false) mostrarAviso('Sincronização em outra aba', 'Aguarde a outra aba terminar. Os itens continuam guardados neste aparelho.');
+      } catch (err) {
         localStorage.setItem('syncOfflineResultadoIncerto', 'true');
-        mostrarAviso('Confira o Histórico', 'Não foi possível confirmar a sincronização. Alguns itens podem ter sido gravados. Confira o Histórico antes de sincronizar novamente. Detalhe: ' + err.message);
+        mostrarAviso('Sincronização pendente', 'Os itens não confirmados continuam guardados neste aparelho. Você pode sincronizar novamente sem duplicar os itens já confirmados. Detalhe: ' + err.message);
+      } finally {
         btn.disabled = false;
+        sincronizacaoFilaEmAndamento = false;
         atualizarIndicadorOffline();
-      });
+      }
     }
 
     function toggleEdicaoFormas() {
@@ -4225,7 +4721,7 @@ function chamarFiltroBackend(append = false) {
       const listaFormas = document.getElementById('lista-formas'); if (!listaFormas) return;
       const novaOrdemNomes = Array.from(listaFormas.children).map(c => c.getAttribute('data-nome'));
       const btnSalvar = document.getElementById('btnSalvarFormas'); btnSalvar.textContent = 'Salvando...'; btnSalvar.disabled = true;
-      apiCall('reordenarFormasPagamentoWeb', novaOrdemNomes).then(() => {
+      apiCall('reordenarFormasPagamentoWeb', { ordem: novaOrdemNomes }).then(() => {
         btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; toggleEdicaoFormas(); carregarDados();
       }).catch(err => { mostrarAviso('Erro', err.message); btnSalvar.textContent = '💾 Salvar'; btnSalvar.disabled = false; });
     }
@@ -4237,7 +4733,6 @@ function chamarFiltroBackend(append = false) {
       } else {
         formasGlobais.forEach(p => {
           const nomeSeguro = String(p.nome || ''), bancoSeguro = String(p.banco || '');
-          const nomeEscaped = nomeSeguro.replace(/'/g, "\\'"), bancoEscaped = bancoSeguro.replace(/'/g, "\\'");
           const nLower = nomeSeguro.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
           const isPagamentoAVista = /pix|debito|transferencia|dinheiro|\bted\b|\bdoc\b/.test(nLower);
           const isTotal = nLower.includes('total') || nLower.includes('carteira');
@@ -4249,22 +4744,22 @@ function chamarFiltroBackend(append = false) {
             margemInterna = 'ml-9';
             if (!isFixed) {
               iconeDrag = `<span class="drag-handle-fp text-slate-500 hover:text-white text-2xl pr-3 cursor-grab">☰</span>`;
-              botaoExcluir = `<button onclick="excluirFormaLocal('${nomeEscaped}')" class="text-rose-400 hover:text-white text-xs font-bold px-4 py-2 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 rounded-xl transition">Excluir</button>`;
+              botaoExcluir = `<button type="button" ${acaoHTML('excluirFormaLocal', [nomeSeguro])} class="text-rose-400 hover:text-white text-xs font-bold px-4 py-2 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 rounded-xl transition">Excluir</button>`;
             } else {
               iconeDrag = `<span class="text-slate-600 text-lg pr-3">🔒</span>`;
               lockClass = 'locked-card opacity-90';
             }
-            const botaoEditar = `<button onclick="abrirModalForma('${nomeEscaped}', '${bancoEscaped}', '${p.limiteTotal || ''}', '${p.fechamento || ''}', '${p.vencimento || ''}')" class="text-blue-400 hover:text-white text-xs font-bold px-4 py-2 bg-blue-900/20 border border-blue-500/20 hover:bg-blue-600 rounded-xl transition">Editar</button>`;
+            const botaoEditar = `<button type="button" ${acaoHTML('abrirModalForma', [nomeSeguro, bancoSeguro, p.limiteTotal || '', p.fechamento || '', p.vencimento || ''])} class="text-blue-400 hover:text-white text-xs font-bold px-4 py-2 bg-blue-900/20 border border-blue-500/20 hover:bg-blue-600 rounded-xl transition">Editar</button>`;
             botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
           }
 
           const labelFatura = isPagamentoAVista ? 'Gasto no Mês' : 'Sua Fatura Atual';
-          const htmlTotalFuturo = !isPagamentoAVista ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${p.totalFuturo || 'R$ 0,00'}</span></div>` : '';
+          const htmlTotalFuturo = !isPagamentoAVista ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Total Futuro</span><span class="text-sky-400 font-bold text-base">${escaparHTML(p.totalFuturo || 'R$ 0,00')}</span></div>` : '';
           const htmlTerceiros = (!isPagamentoAVista && p.terceirosMesRaw > 0)
-            ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${p.terceirosMes} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${p.totalBancoMes}</strong></span></div>`
+            ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${escaparHTML(p.terceirosMes)} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${escaparHTML(p.totalBancoMes)}</strong></span></div>`
             : '';
 
-          htmlP += `<div data-nome="${nomeEscaped}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${nomeSeguro}</h3><p class="text-slate-400 text-xs mt-0.5">${bancoSeguro}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${p.pctUso || '0%'} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${p.limiteTotal || 'R$ 0,00'}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${p.disponivel || 'R$ 0,00'}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPagamentoAVista ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${p.utilizado || 'R$ 0,00'}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
+          htmlP += `<div data-nome="${escaparHTML(nomeSeguro)}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${escaparHTML(nomeSeguro)}</h3><p class="text-slate-400 text-xs mt-0.5">${escaparHTML(bancoSeguro)}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${escaparHTML(p.pctUso || '0%')} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${escaparHTML(p.limiteTotal || 'R$ 0,00')}</span></div><div><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${escaparHTML(p.disponivel || 'R$ 0,00')}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPagamentoAVista ? 'col-span-2' : ''}"><span class="text-slate-500 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${escaparHTML(p.utilizado || 'R$ 0,00')}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
         });
       }
       
@@ -4312,7 +4807,7 @@ function chamarFiltroBackend(append = false) {
 
     function excluirFormaLocal(nome) {
       mostrarConfirmacao("Excluir Cartão", `Deseja excluir "${nome}" permanentemente?`, () => {
-        apiCall('excluirFormaPagamentoWeb', nome).then(() => { mostrarAviso('Sucesso', 'Cartão excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', err.message));
+        apiCall('excluirFormaPagamentoWeb', { nome }).then(() => { mostrarAviso('Sucesso', 'Cartão excluído!'); carregarDados(); }).catch(err => mostrarAviso('Erro', err.message));
       });
     }
 
@@ -4340,7 +4835,7 @@ function chamarFiltroBackend(append = false) {
         if (sel.id === 'filtCat') sel.innerHTML = '<option value="">Todas</option>';
         else if (sel.id === 'selCat') sel.innerHTML = '<option value="">Selecione...</option>';
         else sel.innerHTML = '';
-        categoriasGlobaisEdit.forEach(c => sel.innerHTML += `<option value="${c.nome}">${c.nome}</option>`);
+        categoriasGlobaisEdit.forEach(c => sel.add(new Option(c.nome, c.nome)));
         sel.value = valAtual || '';
       });
 
@@ -4352,9 +4847,9 @@ function chamarFiltroBackend(append = false) {
           espacamentoItem = 'pl-2 pr-4 py-2.5';
           if (isFixa) { iconeDrag = `<span class="text-slate-600 text-lg px-3">🔒</span>`; classeLock = 'locked-item opacity-80'; }
           else { iconeDrag = `<span class="drag-handle-cat text-slate-500 hover:text-white text-2xl px-3 py-1 bg-slate-900/50 rounded-lg cursor-grab">☰</span>`; }
-          botoesAcao = `<div class="flex gap-2"><button type="button" onclick="editarCategoriaUi(${index})" class="text-blue-400 bg-blue-900/20 p-2 rounded-lg">✏️</button><button type="button" onclick="removerCategoriaUi(${index})" class="text-rose-400 bg-rose-900/20 p-2 rounded-lg">🗑</button></div>`;
+          botoesAcao = `<div class="flex gap-2"><button type="button" ${acaoHTML('editarCategoriaUi', [index])} class="text-blue-400 bg-blue-900/20 p-2 rounded-lg">✏️</button><button type="button" ${acaoHTML('removerCategoriaUi', [index])} class="text-rose-400 bg-rose-900/20 p-2 rounded-lg">🗑</button></div>`;
         }
-        ul.innerHTML += `<li data-nome="${c.nome}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${c.nome}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
+        ul.innerHTML += `<li data-nome="${escaparHTML(c.nome)}" class="${classeLock} flex justify-between items-center bg-slate-800/80 ${espacamentoItem} rounded-xl border border-slate-700/80"><div class="flex items-center gap-2">${iconeDrag}<div><span class="text-sm text-white font-bold">${escaparHTML(c.nome)}</span> ${metaStr}</div></div>${botoesAcao}</li>`;
       });
 
       // Verifica se o 'ul' existe antes de tentar destruir ou criar o Sortable
@@ -4412,7 +4907,8 @@ function chamarFiltroBackend(append = false) {
       }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = '💾 Salvar'; btn.disabled = false; });
     }
 
-    function abrirModalEdicaoAss(desc, forma, cat, valor) {
+    function abrirModalEdicaoAss(desc, forma, cat, valor, identidade = null) {
+      identidadeAssinaturaEdicaoGestor = identidade ? { ...identidade } : null;
       document.getElementById('inpAssDescOrig').value = desc;
       document.getElementById('inpAssFormaOrig').value = forma;
       document.getElementById('inpAssDesc').value = desc;
@@ -4430,6 +4926,7 @@ function chamarFiltroBackend(append = false) {
       assDescEl.value = formatarTituloInteligente(assDescEl.value);
       const btn = document.getElementById('btnSalvarEdAss'); btn.textContent = 'Salvando...'; btn.disabled = true;
       apiCall('editarAssinaturaWeb', {
+        ...(identidadeAssinaturaEdicaoGestor || {}),
         descOriginal: document.getElementById('inpAssDescOrig').value,
         formaOriginal: document.getElementById('inpAssFormaOrig').value,
         novaDesc: assDescEl.value,
@@ -4440,9 +4937,9 @@ function chamarFiltroBackend(append = false) {
         .catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Atualizar Assinatura'; btn.disabled = false; });
     }
 
-    function cancelarAssinaturaLocal(descricao, forma) {
+    function cancelarAssinaturaLocal(descricao, forma, identidade = null) {
       mostrarConfirmacao("Desativar Assinatura", `Deseja desativar "${descricao}"?`, () => {
-        apiCall('cancelarAssinaturaWeb', { descricao, forma }).then(() => carregarDados()).catch(err => mostrarAviso('Erro', err.message));
+        apiCall('cancelarAssinaturaWeb', { ...(identidade || {}), descricao, forma }).then(() => carregarDados()).catch(err => mostrarAviso('Erro', err.message));
       });
     }
 
@@ -4462,7 +4959,7 @@ function chamarFiltroBackend(append = false) {
       let th = `<th class="py-2.5 pl-2">Forma</th>`;
       mToShow.forEach(m => {
         const mCurto = m.length === 7 ? `${m.substring(0, 3)}${m.substring(5, 7)}` : m;
-        th += `<th class="py-2.5 text-center"><button onclick="irParaFaturaMensal('${m}')" class="text-sky-400 hover:text-white underline decoration-sky-500/40 font-bold px-1.5 py-0.5 rounded hover:bg-slate-800 transition" title="Abrir fatura de ${m}">${mCurto} ↗</button></th>`;
+        th += `<th class="py-2.5 text-center"><button ${acaoHTML('irParaFaturaMensal', [m])} class="text-sky-400 hover:text-white underline decoration-sky-500/40 font-bold px-1.5 py-0.5 rounded hover:bg-slate-800 transition" title="Abrir fatura de ${escaparHTML(m)}">${escaparHTML(mCurto)} ↗</button></th>`;
       });
       th += `<th class="py-2.5 text-right pr-2">Total</th>`;
       const hdr = document.getElementById('faturas-header'); if (hdr) hdr.innerHTML = th;
@@ -4492,7 +4989,7 @@ function chamarFiltroBackend(append = false) {
           totalLinha += val;
           return `<td class="py-2.5 text-center text-slate-300 font-medium whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
         });
-        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${forma}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${escaparHTML(forma)}</td>${cols.join('')}<td class="py-3 font-bold text-amber-400 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
 
       formasTotal.forEach(forma => {
@@ -4504,7 +5001,7 @@ function chamarFiltroBackend(append = false) {
         });
         
         const nomeExibicao = forma;
-        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">${nomeExibicao}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">${escaparHTML(nomeExibicao)}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
       });
 
       const linhaTotalBanco = evolucaoPivot[chaveLinhaBanco] || {};
@@ -4564,8 +5061,8 @@ function chamarFiltroBackend(append = false) {
         const anosUnicosStr = Object.keys(arvoreMesesAno).sort((a, b) => b - a);
         selAno.innerHTML = ''; selAnoSimples.innerHTML = '';
         anosUnicosStr.forEach(a => {
-          selAno.innerHTML += `<option value="${a}">${a}</option>`;
-          selAnoSimples.innerHTML += `<option value="${a}">${a}</option>`;
+          selAno.add(new Option(a, a));
+          selAnoSimples.add(new Option(a, a));
         });
         if (anosUnicosStr.includes(anoPadrao)) {
           selAno.value = anoPadrao;
@@ -4583,7 +5080,7 @@ function chamarFiltroBackend(append = false) {
       const mesesDoAno = arvoreMesesAno[selAno.value] || [];
       const mesesUnicosInt = [...new Set(mesesDoAno.map(str => str.split('/')[0]))].sort((a, b) => parseInt(a) - parseInt(b));
       selMes.innerHTML = '';
-      mesesUnicosInt.forEach(m => selMes.innerHTML += `<option value="${m}">${getNomeMes(m)}</option>`);
+      mesesUnicosInt.forEach(m => selMes.add(new Option(getNomeMes(m), m)));
       if (mesPadraoForcado && mesesUnicosInt.includes(mesPadraoForcado)) selMes.value = mesPadraoForcado;
       else if (mesesUnicosInt.length > 0) selMes.value = mesesUnicosInt[0];
       atualizarEstadoSetasMensal();
@@ -4685,6 +5182,27 @@ function chamarFiltroBackend(append = false) {
       renderizarListaItensFaturaMensal();
     }
 
+    function montarCardFaturaMensalSeguro(l) {
+      const badge = obterClasseBadgeStatus(l[9]);
+      const tags = String(l[10] || '').split(',').map(t => t.trim()).filter(Boolean);
+      const tagsHTML = tags.map(t => `<button type="button" ${acaoHTML('aplicarFiltroInternoMensal', ['tag', t])} class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${escaparHTML(t)}</button>`).join('');
+      const referencia = referenciaLinhaSegura('g', l[11], l[13], l[15]);
+      return `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2">
+        <div class="flex justify-between items-start"><div>
+          <div class="text-[10px] text-slate-400 font-bold uppercase">${escaparHTML(l[0])}</div>
+          <div class="text-white font-bold text-sm mt-0.5 leading-tight">${escaparHTML(l[1])}</div>
+          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(l[3])}</div><div>${tagsHTML}</div>
+        </div><div class="text-right flex flex-col items-end">
+          <div class="text-purple-400 font-bold text-base tracking-tight">${escaparHTML(l[7])}</div>
+          <span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${escaparHTML(l[9])}</span>
+        </div></div>
+        <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
+          <span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null)}</span>
+          <button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button>
+        </div>
+      </div>`;
+    }
+
     function renderizarListaItensFaturaMensal() {
       if (!ultimoRelatorioMensalCache) return;
       const todos = ultimoRelatorioMensalCache.lancamentos || [];
@@ -4714,35 +5232,19 @@ function chamarFiltroBackend(append = false) {
         if (banner) { banner.classList.add('hidden'); banner.classList.remove('flex'); }
       }
 
-      let html = '';
-      filtrados.slice().reverse().forEach(l => {
-        const badge = obterClasseBadgeStatus(l[9]);
-        const descSafe = String(l[1]).replace(/'/g, "\\'");
-        const formaSafe = String(l[2]).replace(/'/g, "\\'");
-        const catSafe = String(l[3]).replace(/'/g, "\\'");
-        const tagSafe = String(l[10] || '').replace(/'/g, "\\'");
-        const parcSafe = String(l[6] || '').replace(/'/g, "\\'");
-        const resParc = l[12] || null;
-
-        let tagsHtml = '';
-        if (l[10]) {
-          String(l[10]).split(',').map(t => t.trim()).filter(Boolean).forEach(t => {
-            const tSafe = t.replace(/'/g, "\\'");
-            tagsHtml += `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${tSafe}')" class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${t}</button>`;
-          });
-        }
-
-        html += `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">${l[0]}</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">${l[1]}</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${l[2]} • 🏷️ ${l[3]}</div><div>${tagsHtml}</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">${l[7]}</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${l[9]}</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], resParc)}</span><button onclick="abrirModalEdicaoLanc('${l[11]}','${l[0]}','${descSafe}','${formaSafe}','${catSafe}','${l[7]}','${l[8]}','${l[9]}','${tagSafe}','${parcSafe}')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>`;
-      });
+      let html = filtrados.slice().reverse().map(montarCardFaturaMensalSeguro).join('');
 
       if (filtrados.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento encontrado.</div>';
       document.getElementById('lista-relatorio').innerHTML = html;
     }
 
     function carregarRelatorioMesUnico(mesFiltro) {
+      const requisicao = ++requisicaoRelatorioMensal;
+      ultimoRelatorioMensalCache = null;
       document.getElementById('lista-relatorio').innerHTML = '<div class="py-4 text-center text-slate-500">Buscando dados...</div>';
       apiCall('obterRelatorioMes', mesFiltro).then(res => {
-        if (!res) return;
+        if (!res || requisicao !== requisicaoRelatorioMensal) return;
+        res.periodoReferencia = mesFiltro;
         ultimoRelatorioMensalCache = res;
         filtroInternoMensalAtivo = { tipo: 'todos', valor: '' };
 
@@ -4787,13 +5289,13 @@ function chamarFiltroBackend(append = false) {
           const pct = totalMesRaw > 0 ? Math.round((f.total / totalMesRaw) * 100) : 0;
           const fSafe = f.nome.replace(/'/g, "\\'");
           const btnQuitar = (f.aberto > 0 && !f.nome.toLowerCase().includes('pix'))
-            ? `<button type="button" onclick="event.stopPropagation(); quitarFaturaCartaoMes('${fSafe}', '${mesFiltro}')" class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">✅ Quitar</button>`
+            ? `<button type="button" ${acaoHTML('quitarFaturaCartaoMes', [f.nome, mesFiltro])} class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">✅ Quitar</button>`
             : '';
           const infoTerc = (f.terceiros > 0)
-            ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>Total Banco: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
+            ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>${f.nome.toLowerCase().includes('pix') ? 'Total Pix' : 'Fatura total'}: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
             : '';
           // ADICIONADO data-forma e card-filtro-mensal para o efeito visual de selecao
-          htmlFormas += `<div data-forma="${fSafe}" onclick="aplicarFiltroInternoMensal('forma', '${fSafe}')" class="card-filtro-mensal bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold">${f.nome}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
+          htmlFormas += `<div data-forma="${escaparHTML(f.nome)}" ${acaoHTML('aplicarFiltroInternoMensal', ['forma', f.nome])} class="card-filtro-mensal bg-slate-900/50 hover:bg-slate-800 px-3 py-2 rounded-xl border border-slate-800 cursor-pointer transition"><div class="flex justify-between items-center"><span class="text-slate-300 font-semibold">${escaparHTML(f.nome)}</span><div class="flex items-center"><span class="text-white font-bold">${formatBRL(f.total)}</span> <span class="text-[10px] text-slate-400 ml-1">(${pct}%)</span>${btnQuitar}</div></div>${infoTerc}</div>`;
         });
         document.getElementById('rel-formas-usadas').innerHTML = htmlFormas || '<p class="text-xs text-slate-500 text-center">Nenhuma forma utilizada.</p>';
 
@@ -4803,7 +5305,7 @@ function chamarFiltroBackend(append = false) {
           boxTags.classList.remove('hidden');
           containerTags.innerHTML = res.tags.map(t => {
             const tSafe = t.nome.replace(/'/g, "\\'");
-            return `<button type="button" onclick="aplicarFiltroInternoMensal('tag', '${tSafe}')" class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[10px]">(${t.qtd}x)</span></button>`;
+            return `<button type="button" ${acaoHTML('aplicarFiltroInternoMensal', ['tag', t.nome])} class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-2.5 py-1 rounded-lg text-[11px] font-bold transition">${escaparHTML(t.nome)} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[10px]">(${escaparHTML(t.qtd)}x)</span></button>`;
           }).join('');
         } else {
           boxTags.classList.add('hidden');
@@ -4820,22 +5322,29 @@ function chamarFiltroBackend(append = false) {
             if (realPct >= 75 && realPct < 100) { corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; }
             else if (realPct >= 100) { corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; }
             const cSafe = c.nome.replace(/'/g, "\\'");
-            htmlMetas += `<div onclick="aplicarFiltroInternoMensal('categoria', '${cSafe}')" class="cursor-pointer hover:opacity-90 transition"><div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">${c.nome} 🔍</span><span class="${corTexto}">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></div><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
+            htmlMetas += `<div ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="cursor-pointer hover:opacity-90 transition"><div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">${escaparHTML(c.nome)} 🔍</span><span class="${corTexto}">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></div><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
           }
         });
         document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
 
         renderizarListaItensFaturaMensal();
-      }).catch(err => mostrarAviso('Erro', 'Erro no relatório: ' + err.message));
+      }).catch(err => {
+        if (requisicao !== requisicaoRelatorioMensal) return;
+        relatorioMensalPendente = true;
+        mostrarAviso('Erro', 'Erro no relatório: ' + err.message);
+      });
     }
 
     function carregarRelatorioAnual() {
       const ano = document.getElementById('selFiltroAnoSimples').value; if (!ano) return;
+      const requisicao = ++requisicaoRelatorioAnual;
+      ultimoRelatorioAnualCache = null;
       relatorioAnualPendente = false;
       atualizarEstadoSetasAnual();
       document.getElementById('tabela-anual-cat').innerHTML = '<tr><td colspan="2" class="py-4 text-center text-slate-500">Buscando...</td></tr>';
       apiCall('obterRelatorioAnual', ano).then(res => {
-        if (!res) return;
+        if (!res || requisicao !== requisicaoRelatorioAnual) return;
+        res.periodoReferencia = String(ano);
         ultimoRelatorioAnualCache = res;
 
         document.getElementById('anual-total').textContent = res.total;
@@ -4859,7 +5368,7 @@ function chamarFiltroBackend(append = false) {
         res.categorias.forEach(c => {
           const pct = totalAnoRaw > 0 ? Math.round((c.total / totalAnoRaw) * 100) : 0;
           const cSafe = c.nome.replace(/'/g, "\\'");
-          htmlCat += `<tr onclick="auditarItemAnual('categoria', '${cSafe}')" class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${c.nome} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-white">${formatBRL(c.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
+          htmlCat += `<tr ${acaoHTML('auditarItemAnual', ['categoria', c.nome])} class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${escaparHTML(c.nome)} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-white">${formatBRL(c.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
         });
         document.getElementById('tabela-anual-cat').innerHTML = htmlCat || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>';
 
@@ -4867,7 +5376,7 @@ function chamarFiltroBackend(append = false) {
         (res.formas || []).forEach(f => {
           const pct = totalAnoRaw > 0 ? Math.round((f.total / totalAnoRaw) * 100) : 0;
           const fSafe = f.nome.replace(/'/g, "\\'");
-          htmlFormas += `<tr onclick="auditarItemAnual('forma', '${fSafe}')" class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${f.nome} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-amber-400">${formatBRL(f.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
+          htmlFormas += `<tr ${acaoHTML('auditarItemAnual', ['forma', f.nome])} class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${escaparHTML(f.nome)} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-amber-400">${formatBRL(f.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
         });
         document.getElementById('tabela-anual-formas').innerHTML = htmlFormas || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhuma forma utilizada.</td></tr>';
 
@@ -4875,47 +5384,267 @@ function chamarFiltroBackend(append = false) {
         if (res.tags && res.tags.length > 0) {
           boxTagsAnual.innerHTML = res.tags.map(t => {
             const tSafe = t.nome.replace(/'/g, "\\'");
-            return `<button type="button" onclick="auditarItemAnual('tag', '${tSafe}')" class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold transition">${t.nome} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[10px]">(${t.qtd}x)</span></button>`;
+            return `<button type="button" ${acaoHTML('auditarItemAnual', ['tag', t.nome])} class="bg-indigo-500/15 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 px-3 py-1.5 rounded-xl text-xs font-bold transition">${escaparHTML(t.nome)} • <span class="text-white">${formatBRL(t.total)}</span> <span class="text-indigo-400/80 text-[10px]">(${escaparHTML(t.qtd)}x)</span></button>`;
           }).join('');
         } else {
           boxTagsAnual.innerHTML = '<p class="text-xs text-slate-500 py-2">Nenhuma tag registrada neste ano.</p>';
         }
-      }).catch(err => mostrarAviso('Erro', err.message));
+      }).catch(err => {
+        if (requisicao !== requisicaoRelatorioAnual) return;
+        relatorioAnualPendente = true;
+        mostrarAviso('Erro', 'Erro no balanço anual: ' + err.message);
+      });
     }
 
-    function gerarPDFExecutivo(tipo) {
-      const dataGeracao = new Date().toLocaleDateString('pt-BR') + ' às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      let htmlDoc = '', nomeArquivo = '';
-
-      if (tipo === 'mensal') {
-        if (!ultimoRelatorioMensalCache) { mostrarAviso('Aviso', 'Aguarde o carregamento do relatório mensal.'); return; }
-        const d = ultimoRelatorioMensalCache;
-        const selMes = document.getElementById('selFiltroRelMes'), selAno = document.getElementById('selFiltroRelAno');
-        const nomeMes = selMes && selMes.selectedIndex >= 0 ? selMes.options[selMes.selectedIndex].text : '';
-        const ano = selAno ? selAno.value : '';
-        nomeArquivo = `Relatorio_Mensal_${nomeMes}_${ano}.pdf`;
-        const totalRaw = d.totalRaw || 0, est = d.estatisticas || {};
-
-        let linhasFormas = (d.formas || []).map(f => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${f.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(f.total)}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${totalRaw > 0 ? ((f.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
-        let linhasCategorias = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${c.meta > 0 ? formatBRL(c.meta) : '-'}</td><td style="padding:6px 8px;text-align:right;color:#64748b;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
-        let linhasExtrato = (d.lancamentos || []).map((l, i) => `<tr style="background:${i % 2 === 0 ? '#ffffff' : '#f8fafc'};border-bottom:1px solid #e2e8f0;"><td style="padding:6px;font-size:10px;">${l[0]}</td><td style="padding:6px;font-size:10px;font-weight:600;">${l[1]}</td><td style="padding:6px;font-size:10px;">${l[2]}</td><td style="padding:6px;font-size:10px;">${l[3]}</td><td style="padding:6px;font-size:9px;color:#4f46e5;">${l[10] || '-'}</td><td style="padding:6px;font-size:10px;text-align:center;">${l[6]}</td><td style="padding:6px;font-size:10px;text-align:center;">${l[9]}</td><td style="padding:6px;font-size:10px;text-align:right;font-weight:700;">${l[7]}</td></tr>`).join('');
-
-        htmlDoc = `<div style="font-family:Arial,sans-serif;color:#0f172a;background:#fff;padding:16px;"><div style="display:flex;justify-content:space-between;border-bottom:3px solid #1e293b;padding-bottom:12px;margin-bottom:16px;"><div><div style="font-size:10px;font-weight:700;color:#2563eb;">RELATÓRIO FINANCEIRO EXECUTIVO</div><h1 style="font-size:20px;font-weight:800;margin:2px 0 0 0;">Fechamento Mensal — ${nomeMes} de ${ano}</h1></div><div style="font-size:10px;color:#64748b;">Gerado em ${dataGeracao}</div></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;"><div style="border:1px solid #cbd5e1;border-left:4px solid #f59e0b;border-radius:8px;padding:10px;"><div>Total a Pagar: <strong>${d.kpis.aberto}</strong></div><div style="font-size:10px;color:#475569;">${est.qtdLancamentos || 0} itens • Méd: ${est.ticketMedio || 'R$ 0,00'}</div></div><div style="border:1px solid #cbd5e1;border-left:4px solid #10b981;border-radius:8px;padding:10px;"><div>Total Pago: <strong>${d.kpis.pago}</strong></div><div style="font-size:10px;color:#475569;">Quitado: ${est.pctQuitado || '0%'}</div></div><div style="border:1px solid #cbd5e1;border-left:4px solid #7c3aed;border-radius:8px;padding:10px;"><div>Total Fatura: <strong>${d.kpis.total}</strong></div><div style="font-size:10px;color:#475569;">Ritmo: ${est.ritmoTexto || '-'}</div></div></div><div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px;margin-bottom:16px;"><div><h3 style="font-size:12px;font-weight:700;">Por Forma</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>${linhasFormas}</tbody></table></div><div><h3 style="font-size:12px;font-weight:700;">Por Categoria vs. Meta</h3><table style="width:100%;border-collapse:collapse;font-size:11px;"><tbody>${linhasCategorias}</tbody></table></div></div><h3 style="font-size:12px;font-weight:700;">Extrato Detalhado</h3><table style="width:100%;border-collapse:collapse;"><tbody>${linhasExtrato}</tbody></table></div>`;
-      } else {
-        if (!ultimoRelatorioAnualCache) { mostrarAviso('Aviso', 'Aguarde o carregamento do balanço anual.'); return; }
-        const d = ultimoRelatorioAnualCache;
-        const ano = document.getElementById('selFiltroAnoSimples').value;
-        nomeArquivo = `Balanco_Anual_${ano}.pdf`;
-        const totalRaw = d.totalRaw || 0;
-        let linhasCat = (d.categorias || []).map(c => `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:6px 8px;font-weight:600;">${c.nome}</td><td style="padding:6px 8px;text-align:right;">${formatBRL(c.total)}</td><td style="padding:6px 8px;text-align:right;">${totalRaw > 0 ? ((c.total / totalRaw) * 100).toFixed(1) + '%' : '0%'}</td></tr>`).join('');
-        htmlDoc = `<div style="font-family:Arial,sans-serif;color:#0f172a;background:#fff;padding:16px;"><h1>Balanço Anual — ${ano}</h1><p>Total: <strong>${d.total}</strong> • Média/Mês: <strong>${d.media}</strong> • Pico: <strong>${d.maiorMes}</strong></p><table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;"><tbody>${linhasCat}</tbody></table></div>`;
+    function montarDocumentoPDF(tipo, d, periodo) {
+      // Texto e tabelas são paginados diretamente: o tamanho do relatório não depende de um canvas.
+      const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      const mensal = tipo === 'mensal', ano = String(periodo.ano || '');
+      const nomePeriodo = mensal ? String(periodo.nomeMes || '') + ' de ' + ano : ano;
+      const texto = valor => String(valor == null ? '' : valor).normalize('NFC')
+        .replace(/[\u2010-\u2015]/g, '-').replace(/[\u2018\u2019]/g, "'").replace(/[\u201c\u201d]/g, '"')
+        .replace(/[^\x20-\x7e\xa0-\xff\n]/gu, '').replace(/\s*\|\s*/g, ' | ');
+      const moeda = valor => texto(formatBRL(Number(valor) || 0));
+      const porcentagem = valor => d.totalRaw > 0 ? (100 * valor / d.totalRaw).toFixed(1).replace('.', ',') + '%' : '0%';
+      let y = 44;
+      const novaPagina = () => { pdf.addPage(); y = 25; };
+      const espaco = altura => { if (y + altura > 278) novaPagina(); };
+      function nota(conteudo) {
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(71, 85, 105);
+        // Uma nota também pode ser longa, então cada linha respeita a margem da página.
+        pdf.splitTextToSize(texto(conteudo), 182).forEach(linha => { espaco(5); pdf.text(linha, 14, y); y += 4.4; });
+        y += 3;
       }
-
-      const containerTemp = document.createElement('div');
-      containerTemp.innerHTML = htmlDoc;
-      document.body.appendChild(containerTemp);
-      html2pdf().set({ margin: 0.35, filename: nomeArquivo, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(containerTemp).save().then(() => document.body.removeChild(containerTemp));
+      function titulo(conteudo) {
+        espaco(24); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(30, 58, 138);
+        const linhas = pdf.splitTextToSize(texto(conteudo), 182);
+        pdf.text(linhas, 14, y); y += linhas.length * 5.5 + 4;
+      }
+      function tabela(cabecalhos, linhas, larguras) {
+        espaco(18);
+        pdf.autoTable({ startY: y, head: [cabecalhos.map(texto)],
+          body: linhas.length ? linhas.map(linha => linha.map(texto)) : [[{ content: 'Nenhum registro neste período.', colSpan: cabecalhos.length }]],
+          margin: { top: 24, bottom: 20, left: 14, right: 14 }, tableWidth: 182,
+          theme: 'striped', showHead: 'everyPage', rowPageBreak: 'avoid',
+          styles: { font: 'helvetica', fontSize: 8, cellPadding: 2.5, overflow: 'linebreak', textColor: [15, 23, 42], lineColor: [226, 232, 240], lineWidth: 0.1 },
+          headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+          alternateRowStyles: { fillColor: [241, 245, 249] },
+          columnStyles: Object.fromEntries((larguras || []).map((largura, i) => [i, { cellWidth: largura }]))
+        });
+        y = pdf.lastAutoTable.finalY + 10;
+      }
+      function indicadores(itens) {
+        espaco(24);
+        itens.forEach((item, i) => {
+          const x = 14 + i * 62;
+          pdf.setFillColor(248, 250, 252); pdf.setDrawColor(203, 213, 225); pdf.roundedRect(x, y, 58, 22, 2, 2, 'FD');
+          pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(71, 85, 105);
+          pdf.text(pdf.splitTextToSize(texto(item[0]), 52), x + 3, y + 5);
+          pdf.setFont('helvetica', 'bold'); pdf.setFontSize(12); pdf.setTextColor(...item[2]);
+          const valor = texto(item[1]);
+          if (pdf.getTextWidth(valor) > 52) pdf.setFontSize(Math.max(7, 12 * 52 / pdf.getTextWidth(valor)));
+          pdf.text(valor, x + 3, y + 17);
+        });
+        y += 30;
+      }
+      pdf.setProperties({ title: (mensal ? 'Relatório mensal - ' : 'Balanço anual - ') + nomePeriodo, author: 'Gestor de Gastos', subject: 'Gastos pessoais e valores de terceiros discriminados' });
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(37, 99, 235); pdf.setFontSize(9); pdf.text('GESTOR DE GASTOS', 14, 14);
+      pdf.setTextColor(15, 23, 42); pdf.setFontSize(22); pdf.text(mensal ? 'Relatório mensal' : 'Balanço anual', 14, 25);
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(12); pdf.text(texto(nomePeriodo), 14, 33);
+      pdf.setDrawColor(37, 99, 235); pdf.line(14, 38, 196, 38);
+      titulo('1. Seus gastos pessoais');
+      if (mensal) {
+        const k = d.kpis || {}, e = d.estatisticas || {};
+        indicadores([['Pessoal em aberto', k.aberto || moeda(0), [180, 83, 9]], ['Pessoal pago', k.pago || moeda(0), [4, 120, 87]], ['Total pessoal', k.total || moeda(0), [109, 40, 217]]]);
+        nota((e.qtdLancamentos || 0) + ' lançamentos | Valor médio: ' + (e.ticketMedio || moeda(0)) + ' | Pago: ' + (e.pctQuitado || '0%') + '. Comparação: ' + (e.ritmoTexto || 'sem período anterior.'));
+        nota('Maior gasto: ' + (e.maiorGasto || '-') + '. À vista / 1x: ' + (e.aVistaValor || moeda(0)) + '; parcelados e fixos: ' + (e.rigidoValor || moeda(0)) + '.');
+      } else {
+        indicadores([['Total pessoal no ano', d.total || moeda(0), [109, 40, 217]], ['Média dos meses com gastos', d.media || moeda(0), [3, 105, 161]], ['Lançamentos pessoais', d.qtdTransacoes || 0, [4, 120, 87]]]);
+        nota('Mês com maior gasto: ' + (d.maiorMes || '-') + '. Mês com menor gasto (entre os meses com registros): ' + (d.menorMes || '-') + '.');
+        const comp = d.composicao || {};
+        nota('À vista / 1x: ' + (comp.aVistaValor || moeda(0)) + ' (' + (comp.aVistaPct || 0) + '%). Parcelados e fixos: ' + (comp.rigidoValor || moeda(0)) + ' (' + (comp.rigidoPct || 0) + '%).');
+        titulo('Evolução mensal dos gastos pessoais');
+        const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        tabela(['Mês', 'Total pessoal', 'Participação no ano'], meses.map((mes, i) => [mes, moeda((d.graficoMeses || [])[i]), porcentagem((d.graficoMeses || [])[i] || 0)]));
+        novaPagina();
+      }
+      titulo(mensal ? 'Categorias e metas do mês' : 'Categorias no ano');
+      tabela(mensal ? ['Categoria', 'Gasto pessoal', 'Meta mensal', 'Uso da meta'] : ['Categoria', 'Gasto pessoal', 'Participação'], (d.categorias || []).map(c => mensal ? [c.nome, moeda(c.total), c.meta > 0 ? moeda(c.meta) : 'Sem meta', c.meta > 0 ? Math.round(c.total / c.meta * 100) + '%' : '-'] : [c.nome, moeda(c.total), porcentagem(c.total)]));
+      titulo('Seus gastos por forma de pagamento');
+      tabela(['Forma de pagamento', 'Gasto pessoal', 'Participação pessoal'], (d.formas || []).filter(f => f.total > 0).map(f => [f.nome, moeda(f.total), porcentagem(f.total)]));
+      if ((d.tags || []).length) {
+        titulo('Seus gastos por tag');
+        nota('Um lançamento pode ter várias tags. Somar as linhas desta tabela pode ultrapassar o total pessoal.');
+        tabela(['Tag', 'Lançamentos', 'Valor associado'], d.tags.map(t => [t.nome, t.qtd || 0, moeda(t.total)]));
+      }
+      const terceiros = d.terceiros || { totalRaw: 0, aReceberRaw: 0, recebidoRaw: 0, itens: [] };
+      if ((terceiros.itens || []).length) novaPagina();
+      titulo('2. Terceiros - valores emprestados');
+      nota('Registros por mês a receber / mês da fatura. Estes valores são separados dos seus gastos pessoais. Receber da pessoa não confirma o pagamento da fatura ao banco.');
+      indicadores([['Terceiros no período', moeda(terceiros.totalRaw), [180, 83, 9]], ['Ainda a receber', moeda(terceiros.aReceberRaw), [180, 83, 9]], ['Já recebido', moeda(terceiros.recebidoRaw), [4, 120, 87]]]);
+      const porPessoa = new Map();
+      (terceiros.itens || []).forEach(item => {
+        const nome = item.pessoa || 'Sem pessoa', resumo = porPessoa.get(nome) || { total: 0, recebido: 0 };
+        resumo.total += Math.round((Number(item.valorRaw) || 0) * 100);
+        if (item.status === 'Recebido') resumo.recebido += Math.round((Number(item.valorRaw) || 0) * 100);
+        porPessoa.set(nome, resumo);
+      });
+      if (porPessoa.size) tabela(['Pessoa', 'Total no período', 'A receber', 'Recebido'], [...porPessoa].sort(([a], [b]) => a.localeCompare(b, 'pt-BR')).map(([nome, r]) => [nome, moeda(r.total / 100), moeda((r.total - r.recebido) / 100), moeda(r.recebido / 100)]));
+      tabela(['Pessoa / compra', 'Pagamento / parcela', 'Mês / data da compra', 'Valor', 'Recebimento'], (terceiros.itens || []).map(item => [item.pessoa + ' - ' + item.descricao + (item.observacoes ? ' | ' + item.observacoes : ''), item.forma + ' | ' + item.parcela, item.mes + ' | ' + item.data, item.valor, item.status]), [62, 35, 30, 27, 28]);
+      if (mensal && terceiros.totalRaw > 0) {
+        titulo('3. Conferência por forma de pagamento');
+        nota('Total registrado = seus gastos + compras de terceiros, incluindo as já reembolsadas. No cartão compõe a fatura; no Pix representa pagamentos à vista. Esta tabela não confirma pagamento ao banco.');
+        tabela(['Forma', 'Seus gastos', 'Terceiros', 'Total registrado'], (d.formas || []).map(f => [f.nome, moeda(f.total), moeda(f.terceiros), moeda(f.totalBanco == null ? f.total + (f.terceiros || 0) : f.totalBanco)]));
+      }
+      if (mensal) {
+        titulo((terceiros.totalRaw > 0 ? '4' : '3') + '. Extrato dos seus lançamentos');
+        nota('Critério: gastos pessoais por mês da fatura e empréstimos por mês a receber. Cancelados são excluídos. Todos os registros do período são incluídos, independentemente dos filtros visuais de categoria ou tag.');
+        tabela(['Data / parcela', 'Descrição / tags', 'Forma / categoria', 'Situação', 'Valor pessoal'], (d.lancamentos || []).map(l => [l[0] + ' | ' + l[6], l[1] + (l[10] ? ' | ' + l[10] : ''), l[2] + ' | ' + l[3], l[9], l[7]]), [27, 65, 35, 27, 28]);
+      }
+      if (!mensal) nota('Critério: gastos pessoais por mês da fatura e empréstimos por mês a receber. Cancelados são excluídos. Todos os registros do período são incluídos, independentemente dos filtros visuais de categoria ou tag.');
+      const paginas = pdf.internal.getNumberOfPages();
+      const geradoEm = texto(new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }));
+      for (let pagina = 1; pagina <= paginas; pagina++) {
+        pdf.setPage(pagina); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(100, 116, 139);
+        if (pagina > 1) { pdf.text('Gestor de Gastos | ' + texto(nomePeriodo), 14, 14); pdf.setDrawColor(226, 232, 240); pdf.line(14, 18, 196, 18); }
+        pdf.text('Gerado em ' + geradoEm, 14, 289);
+        pdf.text('Página ' + pagina + ' de ' + paginas, 196, 289, { align: 'right' });
+      }
+      return { pdf, nomeArquivo: (mensal ? 'Relatorio_Mensal_' + String(periodo.mes || '') + '_' : 'Balanco_Anual_') + ano + '.pdf' };
     }
+
+    async function gerarPDFExecutivo(tipo) {
+      if (gerarPDFExecutivo.emAndamento) return;
+      const mensal = tipo === 'mensal';
+      const dados = mensal ? ultimoRelatorioCache : ultimoRelatorioAnualCache;
+      if (!dados) { mostrarAviso('Aguarde', 'Carregue o relatório do período antes de exportar.'); return; }
+      if (!dados.terceiros) { mostrarAviso('Atualização necessária', 'Atualize o Código.gs e a implantação do Apps Script para incluir terceiros no relatório.'); return; }
+      if (!window.jspdf?.jsPDF || !window.jspdf.jsPDF.API.autoTable) { mostrarAviso('PDF indisponível', 'Conecte-se à internet e abra o app novamente para carregar o gerador de PDF.'); return; }
+      const selMes = document.getElementById('selFiltroRelMes');
+      const periodo = mensal ? { mes: selMes.value, nomeMes: selMes.options[selMes.selectedIndex]?.text || '', ano: document.getElementById('selFiltroRelAno').value } : { ano: document.getElementById('selFiltroAnoSimples').value };
+      if (dados.periodoReferencia !== (mensal ? periodo.mes + '/' + periodo.ano : String(periodo.ano))) { mostrarAviso('Aguarde', 'O período selecionado ainda está sendo atualizado.'); return; }
+      gerarPDFExecutivo.emAndamento = true;
+      mostrarAviso('Preparando relatório', 'O PDF completo será baixado quando estiver pronto.');
+      try {
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const documento = montarDocumentoPDF(tipo, dados, periodo);
+        await documento.pdf.save(documento.nomeArquivo, { returnPromise: true });
+      } catch (err) {
+        mostrarAviso('Não foi possível gerar o PDF', err?.message || 'Tente novamente com menos aplicativos abertos.');
+      } finally { gerarPDFExecutivo.emAndamento = false; }
+    }
+
+
+    function abrirExportacaoDados() {
+      fecharMenuMobile();
+      const modal = document.getElementById('modalExportarDados');
+      modal.classList.remove('hidden');
+      document.getElementById('btnFecharExportacao').focus();
+    }
+
+    function conterFocoExportacao(event) {
+      if (event.key !== 'Tab') return;
+      const botoes = [...event.currentTarget.querySelectorAll('button:not(:disabled)')];
+      const primeiro = botoes[0], ultimo = botoes[botoes.length - 1];
+      if (event.shiftKey && document.activeElement === primeiro) { event.preventDefault(); ultimo?.focus(); }
+      else if (!event.shiftKey && document.activeElement === ultimo) { event.preventDefault(); primeiro?.focus(); }
+    }
+
+    function fecharExportacaoDados() {
+      document.getElementById('modalExportarDados').classList.add('hidden');
+      const nav = window.matchMedia('(max-width: 639px)').matches ? 'btn-mob-menu' : 'btn-desk-menu';
+      document.getElementById(nav)?.focus();
+    }
+
+    function converterAbaCSV(linhas) {
+      const celula = valor => {
+        let texto = String(valor == null ? '' : valor);
+        if (/^[\s]*[=+@-]/.test(texto)) texto = "'" + texto;
+        return '"' + texto.replace(/"/g, '""') + '"';
+      };
+      return '\uFEFF' + linhas.map(linha => linha.map(celula).join(';')).join('\r\n');
+    }
+
+    async function exportarBackupDados(formato = 'json') {
+      if (exportarBackupDados.emAndamento) return;
+      if (!navigator.onLine) { mostrarAviso('Sem internet', 'Conecte-se para exportar os dados atuais da planilha.'); return; }
+      const status = document.getElementById('statusExportacaoDados');
+      exportarBackupDados.emAndamento = true;
+      if (status) status.textContent = 'Preparando o arquivo com os dados da planilha…';
+      document.querySelectorAll('[data-exportar-dados]').forEach(btn => { btn.disabled = true; });
+      try {
+        const dados = await apiCall('exportarBackupDadosWeb', null, 1);
+        if (dados?.formato !== 'gestor-financeiro-backup-v1' || !Array.isArray(dados.abas)) throw new Error('Atualize a implantação do Código.gs para habilitar a exportação.');
+        const data = String(dados.geradoEm).slice(0, 19).replace(/[^0-9]/g, '-');
+        let conteudo, tipo, nome;
+        if (formato === 'json') {
+          conteudo = JSON.stringify(dados, null, 2);
+          tipo = 'application/json;charset=utf-8';
+          nome = 'Backup_Gestor_' + data + '.json';
+        } else {
+          const abaNome = formato === 'emprestimos' ? 'Empréstimos' : 'Lançamentos';
+          const aba = dados.abas.find(a => a.nome === abaNome);
+          if (!aba?.exibidos) throw new Error('A aba ' + abaNome + ' ainda não existe na planilha.');
+          conteudo = converterAbaCSV(aba.exibidos);
+          tipo = 'text/csv;charset=utf-8';
+          nome = (formato === 'emprestimos' ? 'Emprestimos_' : 'Lancamentos_') + data + '.csv';
+        }
+        const url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+        const link = document.createElement('a');
+        link.href = url; link.download = nome; document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        if (status) status.textContent = 'Arquivo preparado. Confira a pasta de downloads do aparelho.';
+      } catch (err) {
+        if (status) status.textContent = 'A exportação não foi concluída. Você pode tentar novamente.';
+        mostrarAviso('Falha na exportação', err?.message || 'Não foi possível obter os dados da planilha.');
+      } finally {
+        exportarBackupDados.emAndamento = false;
+        document.querySelectorAll('[data-exportar-dados]').forEach(btn => { btn.disabled = false; });
+      }
+    }
+
+    function renderizarAlertasVencimento(alertas) {
+      const box = document.getElementById('bannerVencimentoFatura');
+      const texto = document.getElementById('txtVencimentoFatura');
+      const lista = document.getElementById('listaVencimentosFaturas');
+      if (!box || !texto || !lista) return;
+      box.classList.toggle('hidden', !alertas?.length);
+      lista.replaceChildren();
+      if (!alertas?.length) return;
+      const atrasadas = alertas.filter(a => a.dias < 0).length;
+      texto.textContent = atrasadas ? 'Há faturas com gastos pessoais em aberto após o vencimento.' : 'Confira suas faturas nos próximos 7 dias.';
+      const ordenados = alertas.slice().sort((a, b) => a.dias < 0 && b.dias < 0 ? b.dias - a.dias : a.dias >= 0 && b.dias >= 0 ? a.dias - b.dias : a.dias < 0 ? 1 : -1);
+      ordenados.forEach((alerta, indice) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full rounded-xl border border-sky-500/20 bg-slate-900/50 p-3 text-left hover:bg-sky-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition';
+        if (indice >= 3) { btn.classList.add('hidden'); btn.dataset.vencimentoExtra = 'true'; }
+        const prazo = alerta.dias < 0 ? 'Venceu há ' + Math.abs(alerta.dias) + ' dia(s)' : alerta.dias === 0 ? 'Vence hoje' : alerta.dias === 1 ? 'Vence amanhã' : 'Vence em ' + alerta.dias + ' dias';
+        const titulo = document.createElement('span');
+        titulo.className = 'block text-xs font-bold text-sky-100';
+        titulo.textContent = alerta.forma + ' • ' + prazo;
+        const detalhe = document.createElement('span');
+        detalhe.className = 'block mt-1 text-[11px] text-slate-300';
+        detalhe.textContent = alerta.valor + ' pessoal em aberto • Fatura ' + alerta.mes + ' • ' + alerta.data + ' →';
+        btn.append(titulo, detalhe);
+        btn.onclick = () => irParaFaturaMensal(alerta.mes);
+        lista.appendChild(btn);
+      });
+      if (ordenados.length > 3) {
+        const mais = document.createElement('button');
+        mais.type = 'button'; mais.className = 'text-left text-xs font-bold text-sky-200 p-2 sm:col-span-2';
+        mais.textContent = 'Mostrar outras ' + (ordenados.length - 3) + ' faturas';
+        mais.setAttribute('aria-expanded', 'false');
+        mais.onclick = () => {
+          const expandir = mais.getAttribute('aria-expanded') !== 'true';
+          lista.querySelectorAll('[data-vencimento-extra]').forEach(btn => btn.classList.toggle('hidden', !expandir));
+          mais.setAttribute('aria-expanded', String(expandir));
+          mais.textContent = expandir ? 'Mostrar menos' : 'Mostrar outras ' + (ordenados.length - 3) + ' faturas';
+        };
+        lista.appendChild(mais);
+      }
+    }
+
 
     // ============================================================================
     // RENDERIZAÇÃO GERAL + ABERTURA INSTANTÂNEA EM 0,01s (CACHE V11)
@@ -4923,16 +5652,17 @@ function chamarFiltroBackend(append = false) {
 
     function renderizarDados(dados) {
       if (!dados) return;
+      registrarIdentidadesGestor('getDadosCompletos', dados);
 
       formasGlobais = dados.formasPagamento || [];
+      renderizarAlertasVencimento(dados.alertasVencimento || []);
       cartaoMaisFrequenteGlobal = dados.cartaoMaisFrequente || '';
       categoriasGlobaisEdit = dados.configCategorias ? [...dados.configCategorias] : [];
       consumoCategoriasPorMesGlobal = dados.consumoCategoriasPorMes || {};
       opcoesTagsGlobal = dados.opcoesTags || [];
       
       if (dados.anotacoes) {
-        notasGlobais = dados.anotacoes;
-        localStorage.setItem('notasLocaisGestorV11', JSON.stringify(notasGlobais));
+        receberNotasServidorGestor(dados.anotacoes, dados.notasRevision);
       }
       
       if (dados.emprestimos) {
@@ -4946,11 +5676,11 @@ function chamarFiltroBackend(append = false) {
         if (bannerEmp && txtBannerEmp && (aReceberMesRaw > 0 || atrasadosRaw > 0)) {
           bannerEmp.classList.remove('hidden');
           if (atrasadosRaw > 0 && aReceberMesRaw > 0) {
-            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${kpisEmprestimos.atrasadosFmt}</strong> em atraso e <strong class="text-white">${kpisEmprestimos.aReceberMes}</strong> a receber neste mês.`;
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${escaparHTML(kpisEmprestimos.atrasadosFmt)}</strong> em atraso e <strong class="text-white">${escaparHTML(kpisEmprestimos.aReceberMes)}</strong> a receber neste mês.`;
           } else if (atrasadosRaw > 0) {
-            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${kpisEmprestimos.atrasadosFmt}</strong> em atraso com terceiros.`;
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-rose-200">${escaparHTML(kpisEmprestimos.atrasadosFmt)}</strong> em atraso com terceiros.`;
           } else {
-            txtBannerEmp.innerHTML = `Você tem <strong class="text-white">${kpisEmprestimos.aReceberMes}</strong> a receber de terceiros neste mês.`;
+            txtBannerEmp.innerHTML = `Você tem <strong class="text-white">${escaparHTML(kpisEmprestimos.aReceberMes)}</strong> a receber de terceiros neste mês.`;
           }
         } else if (bannerEmp) {
           bannerEmp.classList.add('hidden');
@@ -4970,16 +5700,16 @@ function chamarFiltroBackend(append = false) {
         }
       }
 
-      dicionarioAutofill = dados.autofill || {};
-      dicionarioPrefixosAutofill = dados.autofillPrefixos || {};
+      dicionarioAutofill = Object.assign(Object.create(null), dados.autofill || {});
+      dicionarioPrefixosAutofill = Object.assign(Object.create(null), dados.autofillPrefixos || {});
       const dl = document.getElementById('listaDescricoes');
       if (dl) {
         dl.innerHTML = '';
-        Object.values(dicionarioAutofill).forEach(item => { dl.innerHTML += `<option value="${item.original}">`; });
+        Object.values(dicionarioAutofill).forEach(item => { const option = document.createElement('option'); option.value = String(item.original || ''); dl.appendChild(option); });
       }
 
       const dlTags = document.getElementById('listaTagsUI');
-      if (dlTags) { dlTags.innerHTML = ''; opcoesTagsGlobal.forEach(t => dlTags.innerHTML += `<option value="${t}">`); }
+      if (dlTags) { dlTags.innerHTML = ''; opcoesTagsGlobal.forEach(t => { const option = document.createElement('option'); option.value = String(t); dlTags.appendChild(option); }); }
 
       if (dados.kpis) {
         document.getElementById('kpi-aberto').textContent = dados.kpis.totalAberto || '...';
@@ -5005,7 +5735,7 @@ function chamarFiltroBackend(append = false) {
         (dados.opcoesFormas || []).forEach(f => {
           if (sel.id === 'simCartao' && String(f).toLowerCase().includes('pix')) return;
           const star = (sel.id === 'simCartao' && f === cartaoMaisFrequenteGlobal) ? ' ⭐' : '';
-          sel.innerHTML += `<option value="${f}">${f}${star}</option>`;
+          sel.add(new Option(String(f) + star, f));
         });
         if (sel.id === 'selEmpForma' || sel.id === 'selEdEmpForma') {
           const normalizarForma = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -5026,8 +5756,12 @@ function chamarFiltroBackend(append = false) {
         document.getElementById('simCartao').value = '';
         atualizarLayoutParcelas();
         dadosCarregadosIniciais = true;
+        restaurarRascunhosCompletosGestor();
       } else {
+        const mesPreenchido = document.getElementById('inpMesFat')?.value || '';
         atualizarRegrasForma();
+        if (mesPreenchido) document.getElementById('inpMesFat').value = mesPreenchido;
+        atualizarVisorMetaCategoria();
       }
 
       arvoreMesesAno = dados.estruturaMesesAno || {};
@@ -5035,7 +5769,7 @@ function chamarFiltroBackend(append = false) {
       if (filtMesClassico) {
         const v = filtMesClassico.value;
         filtMesClassico.innerHTML = '<option value="">Todos</option>';
-        (dados.mesesDisponiveis || []).forEach(m => filtMesClassico.innerHTML += `<option value="${m}">${m}</option>`);
+        (dados.mesesDisponiveis || []).forEach(m => filtMesClassico.add(new Option(m, m)));
         filtMesClassico.value = v;
       }
       
@@ -5061,7 +5795,7 @@ function chamarFiltroBackend(append = false) {
         if (chartGlobal) chartGlobal.destroy();
         const canvasEl = document.getElementById('chartCategorias');
         if (canvasEl) {
-           const catAgrupadas = {};
+           const catAgrupadas = Object.create(null);
            dados.categorias.forEach(c => {
                let nomePronto = getCategoriaExibicao(c.nome);
                if(nomePronto === "Categorias Antigas") nomePronto = c.nome + " (Histórico)"; 
@@ -5096,10 +5830,10 @@ function chamarFiltroBackend(append = false) {
           const catVisor = getCategoriaExibicao(a.categoria);
           const jaPaga = (a.status === 'Assinatura Paga');
           const badgeCor = jaPaga ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
-          htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base">${a.descricao}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${a.forma} • 🏷 ${catVisor}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg">${a.valor}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${badgeCor}">${jaPaga ? 'Paga no Mês' : 'Ativa / A Pagar'}</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button onclick="abrirModalEdicaoAss('${descSafe}','${formaSafe}','${catSafe}','${a.valor}')" class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Editar</button><button onclick="cancelarAssinaturaLocal('${descSafe}','${formaSafe}')" class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Desativar</button></div></div>`;
+          htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base">${escaparHTML(a.descricao)}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${escaparHTML(a.forma)} • 🏷 ${escaparHTML(catVisor)}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg">${escaparHTML(a.valor)}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${badgeCor}">${jaPaga ? 'Paga no Mês' : 'Ativa / A Pagar'}</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button type="button" ${acaoHTML('abrirModalEdicaoAss', [a.descricao, a.forma, a.categoria, a.valor, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Editar</button><button type="button" ${acaoHTML('cancelarAssinaturaLocal', [a.descricao, a.forma, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Desativar</button></div></div>`;
         });
         inativas.forEach(a => {
-          htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${a.descricao}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${a.forma} • ${a.valor}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`;
+          htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${escaparHTML(a.descricao)}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${escaparHTML(a.forma)} • ${escaparHTML(a.valor)}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`;
         });
       }
       document.getElementById('lista-assinaturas-ativas').innerHTML = htmlAtivas || '<div class="col-span-full py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhuma assinatura ativa.</div>';
@@ -5107,6 +5841,8 @@ function chamarFiltroBackend(append = false) {
 
       ultimosLancamentosCache = dados.lancamentos || [];
       if (!temAlgumFiltroAtivo()) {
+        offsetAtual = 0;
+        if (typeof invalidarPaginacaoHistoricoGestor === 'function') invalidarPaginacaoHistoricoGestor();
         renderTabelaLancamentos(ultimosLancamentosCache, false);
         const box = document.getElementById('boxCarregarMais');
         if (dados.temMaisLancamentos && box) box.classList.remove('hidden');
@@ -5120,6 +5856,7 @@ function chamarFiltroBackend(append = false) {
 
     function carregarDados() {
       const idRequisicao = ++requisicaoCarregarDadosAtual;
+      inicializarNotasLocaisGestor();
       const cacheLocal = localStorage.getItem('cacheDadosGestorV11');
       if (cacheLocal && !dadosCarregadosIniciais) {
         try { renderizarDados(JSON.parse(cacheLocal)); } catch (e) {}
@@ -5135,6 +5872,7 @@ function chamarFiltroBackend(append = false) {
           if (idRequisicao !== requisicaoCarregarDadosAtual) return true;
           localStorage.setItem('cacheDadosGestorV11', JSON.stringify(dados));
           renderizarDados(dados);
+          sincronizarNotasNuvem();
           return true;
         })
         .catch(err => {
@@ -5288,7 +6026,11 @@ function limparSimuladorTudo() {
         desc: document.getElementById('inpDesc')?.value || '',
         valor: document.getElementById('inpValor')?.value || '',
         parc: document.getElementById('inpParc')?.value || '1',
-        forma: document.getElementById('selForma')?.value || ''
+        forma: document.getElementById('selForma')?.value || '',
+        campos: Object.fromEntries(['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData', 'inpMesFat', 'inpDesc', 'selForma', 'selCat', 'inpValor', 'inpParc', 'inpParcIni', 'inpTags', 'checkAssinatura'].map(id => {
+          const campo = document.getElementById(id);
+          return [id, campo?.type === 'checkbox' ? campo.checked : campo?.value || ''];
+        }))
       };
       sessionStorage.setItem('rascunhoLancamento', JSON.stringify(rascunho));
     }
@@ -5297,9 +6039,31 @@ function limparSimuladorTudo() {
       const rascunho = {
         pessoa: document.getElementById('inpEmpPessoa')?.value || '',
         desc: document.getElementById('inpEmpDesc')?.value || '',
-        valor: document.getElementById('inpEmpValor')?.value || ''
+        valor: document.getElementById('inpEmpValor')?.value || '',
+        campos: Object.fromEntries(['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData', 'inpEmpMesFat', 'inpEmpPessoa', 'inpEmpDesc', 'selEmpForma', 'inpEmpValor', 'inpEmpParc', 'inpEmpParcIni', 'inpEmpObs'].map(id => [id, document.getElementById(id)?.value || '']))
       };
       sessionStorage.setItem('rascunhoEmprestimo', JSON.stringify(rascunho));
+    }
+
+    function restaurarRascunhosCompletosGestor() {
+      if (rascunhosRestauradosGestor) return;
+      for (const chave of ['rascunhoLancamento', 'rascunhoEmprestimo']) {
+        try {
+          const dados = JSON.parse(sessionStorage.getItem(chave) || 'null');
+          if (!dados?.campos) continue;
+          Object.entries(dados.campos).forEach(([id, valor]) => {
+            const campo = document.getElementById(id);
+            if (!campo) return;
+            if (campo.type === 'checkbox') campo.checked = Boolean(valor); else campo.value = valor;
+          });
+        } catch (erro) { console.warn('Rascunho não restaurado:', erro.message); }
+      }
+      rascunhosRestauradosGestor = true;
+      atualizarLayoutParcelas();
+      atualizarLayoutParcelasEmprestimo();
+      atualizarPreviewParcEmp();
+      sincronizarChipsTags('novo');
+      atualizarVisorMetaCategoria();
     }
 
     // Recupera os dados se o utilizador atualizar a página acidentalmente
@@ -5363,6 +6127,7 @@ try {
   function pxEl(id) { return document.getElementById(id); }
   var PX_CHAVE_RESULTADO_INCERTO = 'lancamentoResultadoIncerto';
   var pxLiberandoLimpezaIncerta = false;
+  var pxGastoPendenteId = null;
   function pxDefinirEstadoIncerto(ativo, avisar) {
     var painel = pxEl('avisoResultadoIncerto');
     var botao = pxEl('btnSalvar');
@@ -5378,9 +6143,24 @@ try {
     if (botao) { botao.disabled = false; botao.textContent = botao.dataset.rotulo || '💾 Lançar Despesa'; }
   }
   function pxRestaurarEstadoIncerto() {
+    var pendente = lerEntradasLocaisGestor('gestorMutacaoV3:').find(function (e) {
+      return e.valor.action === 'salvarLancamentoWeb' && e.valor.estado !== 'retry_liberado';
+    });
+    if (pendente) { pxGastoPendenteId = pendente.valor.requestId; pxDefinirEstadoIncerto(true, false); return; }
     try { if (sessionStorage.getItem(PX_CHAVE_RESULTADO_INCERTO) === 'true') pxDefinirEstadoIncerto(true, false); } catch (e) {}
   }
   function pxResolverResultadoIncerto(encontrado) {
+    var pendente = pxGastoPendenteId ? 'gestorMutacaoV3:' + pxGastoPendenteId : null;
+    if (!pendente) {
+      var entrada = lerEntradasLocaisGestor('gestorMutacaoV3:').find(function (e) { return e.valor.action === 'salvarLancamentoWeb' && e.valor.estado !== 'retry_liberado'; });
+      if (entrada) pendente = entrada.chave;
+    }
+    if (pendente) {
+      var dadosPendentes = lerJSONLocalGestor(pendente, null);
+      if (encontrado) localStorage.removeItem(pendente);
+      else if (dadosPendentes) localStorage.setItem(pendente, JSON.stringify({ ...dadosPendentes, estado: 'retry_liberado' }));
+    }
+    pxGastoPendenteId = null;
     pxDefinirEstadoIncerto(false, false);
     salvandoGastoTrava = false;
     if (encontrado) {
@@ -5412,20 +6192,10 @@ try {
   }
 
   // Escape completo (texto puro dentro de HTML)
-  function pxEscHtml(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-  }
+  function pxEscHtml(s) { return escaparHTML(s); }
   // A renderização principal roda fora desta IIFE e também usa esta função.
   window.pxEscHtml = pxEscHtml;
-  // Escape de copia (nao mexe em & nem em '): protege < > " em textos E dentro de onclick="..."
-  function pxEscapar(v) {
-    if (typeof v === 'string') return v.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    if (Array.isArray(v)) return v.map(pxEscapar);
-    if (v && typeof v === 'object') { var o = {}; for (var k in v) o[k] = pxEscapar(v[k]); return o; }
-    return v;
-  }
   function pxChaveCat(s) { return normalizarTexto(s).replace(/[^a-z0-9]/g, ''); }
-  function pxJs(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/'/g, "\\'"); }
 
   var CLS_FIXO_OFF = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm';
   var CLS_METADE_OFF = 'h-6 inline-flex items-center justify-center text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 rounded border border-indigo-500/30 transition active:scale-95';
@@ -5437,24 +6207,67 @@ try {
     window.apiCall = async function (action, param, tentativas) {
       if (param === undefined) param = null;
       if (tentativas === undefined) tentativas = 3;
-      if (estaNoAppsScript()) return chamarApiAppsScript(action, param);
-      var LEITURAS = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb'];
+      var LEITURAS = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb'];
       var ehLeitura = LEITURAS.indexOf(action) >= 0;
       if (!ehLeitura) tentativas = 1;
-      for (var i = 0; i < tentativas; i++) {
+      if (!ehLeitura && protocoloServidorGestor < 2) {
+        if (!verificacaoProtocoloGestor) verificacaoProtocoloGestor = window.apiCall('getDadosCompletos', null, 1).finally(function () { verificacaoProtocoloGestor = null; });
+        await verificacaoProtocoloGestor;
+        if (protocoloServidorGestor < 2) throw new Error('Atualize a implantação do Apps Script antes de gravar: a nuvem ainda está com uma versão anterior do aplicativo. Seus dados continuam neste aparelho.');
+      }
+      var chaveJournal = null;
+      var assinatura = null;
+      var chaveEmAndamento = null;
+      try {
+        if (!ehLeitura && param && typeof param === 'object' && !Array.isArray(param)) {
+          param = prepararMutacaoGestor(action, param);
+          function canonico(valor) {
+            if (Array.isArray(valor)) return valor.map(canonico);
+            if (valor && typeof valor === 'object') return Object.keys(valor).sort().reduce(function (obj, chave) { if (chave !== 'requestId') obj[chave] = canonico(valor[chave]); return obj; }, {});
+            return valor;
+          }
+          assinatura = JSON.stringify(canonico(param));
+          var preparou = await comTravaAbasGestor('preparar-mutacao', async function () {
+            var salvo = lerEntradasLocaisGestor('gestorMutacaoV3:').map(function (e) { return e.valor; })
+              .find(function (e) { return e.action === action && e.assinatura === assinatura; });
+            if (!param.requestId) param.requestId = salvo ? salvo.requestId : novoRequestIdGestor();
+            chaveJournal = 'gestorMutacaoV3:' + param.requestId;
+            // Persiste antes da rede. Fechar o PWA não cria outra operação ao repetir o envio.
+            localStorage.setItem(chaveJournal, JSON.stringify({ action, assinatura, requestId: param.requestId, estado: 'pendente', criadoEm: salvo?.criadoEm || Date.now() }));
+            return true;
+          });
+          if (preparou === false) throw new Error('Outra aba está preparando uma gravação. Aguarde e tente novamente.');
+          chaveEmAndamento = action + ':' + param.requestId;
+          if (mutacoesGestorEmAndamento.has(chaveEmAndamento)) return mutacoesGestorEmAndamento.get(chaveEmAndamento);
+        }
+      } catch (erroLocal) {
+        return Promise.reject(new Error('Não foi possível proteger esta gravação no aparelho. Libere o armazenamento e tente novamente.'));
+      }
+      var operacao = (async function () {
+       for (var i = 0; i < tentativas; i++) {
         var ctrl = new AbortController();
         var timer = setTimeout(function () { ctrl.abort(); }, 45000);
         try {
+          if (estaNoAppsScript()) {
+            var respostaAppsScript = await Promise.race([
+              chamarApiAppsScript(action, param),
+              new Promise(function (_, reject) { ctrl.signal.addEventListener('abort', function () { var falha = new Error('Tempo de resposta excedido.'); falha.name = 'AbortError'; reject(falha); }, { once: true }); })
+            ]);
+            clearTimeout(timer);
+            registrarIdentidadesGestor(action, respostaAppsScript, true);
+            return respostaAppsScript;
+          }
           var response = await fetch(API_URL, {
             method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
             body: JSON.stringify({ action: action, param: param }),
             signal: ctrl.signal
           });
-          clearTimeout(timer);
           if (!response.ok) { var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
           var data = await response.json();
-          if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.doServidor = true; throw e1; }
+          clearTimeout(timer);
+          if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
+          registrarIdentidadesGestor(action, data.dados, true);
           return data.dados;
         } catch (err) {
           clearTimeout(timer);
@@ -5462,7 +6275,7 @@ try {
           if (err && err.name === 'AbortError') {
             erro = new Error(ehLeitura ? 'A nuvem demorou demais para responder.' : 'A nuvem demorou para responder.');
           }
-          var resultadoIncerto = !err.doServidor || err.name === 'AbortError' || (err.status >= 500);
+          var resultadoIncerto = err.resultadoIncerto === true || !err.doServidor || err.name === 'AbortError' || (err.status >= 500);
           if (!ehLeitura && resultadoIncerto) {
             erro = new Error('Não foi possível confirmar se a gravação foi concluída. Confira o Histórico antes de tentar novamente. Detalhe: ' + (erro.message || 'falha de comunicação'));
             erro.doServidor = true;
@@ -5471,7 +6284,21 @@ try {
           if (i === tentativas - 1 || (erro && erro.doServidor)) throw erro;
           await new Promise(function (r) { setTimeout(r, 600 * (i + 1)); });
         }
-      }
+       }
+      })();
+      operacao = operacao.then(function (resposta) {
+        if (chaveJournal) localStorage.removeItem(chaveJournal);
+        return resposta;
+      }, function (erro) {
+        if (chaveJournal && !erro.resultadoIncerto) localStorage.removeItem(chaveJournal);
+        else if (chaveJournal) {
+          var pendente = lerJSONLocalGestor(chaveJournal, null);
+          if (pendente) localStorage.setItem(chaveJournal, JSON.stringify({ ...pendente, estado: 'incerto' }));
+        }
+        throw erro;
+      }).finally(function () { if (chaveEmAndamento) mutacoesGestorEmAndamento.delete(chaveEmAndamento); });
+      if (chaveEmAndamento) mutacoesGestorEmAndamento.set(chaveEmAndamento, operacao);
+      return operacao;
     };
   });
 
@@ -5757,6 +6584,10 @@ try {
     };
 
     window.limparFormularioEmprestimo = function () {
+      if (salvandoEmprestimoTrava || emprestimoPendenteGestor()) {
+        mostrarAviso('Confira antes de limpar', 'Conclua a conferência do empréstimo pendente antes de limpar os campos.');
+        return;
+      }
       var f = pxEl('formEmprestimo'); if (f) f.reset();
       ['inpEmpPessoa', 'inpEmpDesc', 'inpEmpValor', 'inpEmpObs', 'inpEmpMesFat'].forEach(function (id) { var el = pxEl(id); if (el) el.value = ''; });
       pxEl('selEmpForma').value = '';
@@ -5817,9 +6648,12 @@ try {
       };
 
       if (!navigator.onLine) {
-        var fila = JSON.parse(localStorage.getItem('filaOfflineGestor') || '[]');
-        fila.push(payload);
-        localStorage.setItem('filaOfflineGestor', JSON.stringify(fila));
+        try { enfileirarGastoOfflineGestor(payload); }
+        catch (erroLocal) {
+          mostrarAviso('Gasto ainda não guardado', 'Não foi possível salvar neste aparelho. Mantenha os campos preenchidos e tente novamente quando houver rede.');
+          btn.textContent = rotulo; btn.disabled = false; salvandoGastoTrava = false;
+          return;
+        }
         mostrarAviso('Offline ⚡', 'Gasto salvo no aparelho! Sincronize quando voltar a ter rede.');
         limparFormularioNovoGasto();
         atualizarIndicadorOffline();
@@ -5834,6 +6668,7 @@ try {
         carregarDados();
       }).catch(function (err) {
         if (err && err.resultadoIncerto) {
+          pxRestaurarEstadoIncerto();
           pxDefinirEstadoIncerto(true, true);
           // Atualiza o Histórico em segundo plano para ajudar a pessoa a conferir.
           try { Promise.resolve(carregarDados()).catch(function (falhaAtualizacao) { console.warn('Falha ao atualizar após resultado incerto:', falhaAtualizacao); }); } catch (falhaAtualizacao) {}
@@ -5848,6 +6683,8 @@ try {
 
     window.enviarEmprestimo = function (e) {
       e.preventDefault();
+      if (salvandoEmprestimoTrava) return;
+      if (emprestimoPendenteGestor()) { exibirPendenciaEmprestimoGestor(); return; }
       formatarZeroData(pxEl('inpEmpDataDia'), 2);
       formatarZeroData(pxEl('inpEmpDataMes'), 2);
       if (!pxDataTriplaValida('emp')) return;
@@ -5856,9 +6693,6 @@ try {
       var valTotal = lerValorMoeda('inpEmpValor');
       if (valTotal <= 0) { mostrarAviso('Atenção', 'Informe um valor maior que R$ 0,00.'); return; }
 
-      var btn = pxEl('btnSalvarEmp');
-      var rotulo = btn.dataset.rotulo || '💾 Registrar Empréstimo';
-      btn.textContent = 'Salvando...'; btn.disabled = true;
       var ehPixEmprestimo = String(pxEl('selEmpForma').value || '').toLowerCase().includes('pix');
 
       var payload = {
@@ -5873,24 +6707,28 @@ try {
         observacoes: pxEl('inpEmpObs').value
       };
 
-      apiCall('salvarEmprestimoWeb', payload).then(function () {
-        mostrarAviso('Sucesso 🤝', 'Empréstimo registrado sem afetar seus gastos pessoais!');
-        limparFormularioEmprestimo();
-        btn.textContent = rotulo; btn.disabled = false;
-        carregarDados();
-      }).catch(function (err) {
-        mostrarAviso('Erro', err.message);
-        btn.textContent = rotulo; btn.disabled = false;
-      });
+      gravarEmprestimoSeguroGestor(payload);
     };
+    setTimeout(exibirPendenciaEmprestimoGestor, 0);
   });
 
   /* ------------------------------------------------------------------ 9 */
   /* Historico: busca sem travar, Limpar correto, WhatsApp com TODOS os itens */
   var pxReqFiltroId = 0;
+  var pxPaginaHistoricoEmAndamento = false;
+  window.invalidarPaginacaoHistoricoGestor = function () {
+    pxReqFiltroId++;
+    pxPaginaHistoricoEmAndamento = false;
+    var botao = pxEl('boxCarregarMais')?.querySelector('button');
+    if (botao) { botao.disabled = false; botao.textContent = 'Carregar mais antigas 👇'; }
+  };
 
   seguro('filtros', function () {
     window.aplicarFiltros = function () {
+      var anoFiltro = pxEl('filtAno');
+      if (anoFiltro && anoFiltro.value && (!/^\d{4}$/.test(anoFiltro.value) || +anoFiltro.value < 1900 || +anoFiltro.value > 2200)) { mostrarAviso('Ano inválido', 'Informe um ano entre 1900 e 2200.'); return; }
+      filtrosAtuais.ano = anoFiltro ? anoFiltro.value : '';
+      atualizarIndicadorAnoHistorico();
       filtrosAtuais.termo = pxEl('inpBusca').value.trim();
       filtrosAtuais.mes = pxEl('filtMes').value;
       filtrosAtuais.forma = pxEl('filtForma').value;
@@ -5905,10 +6743,16 @@ try {
     };
 
     window.chamarFiltroBackend = function (append) {
+      if (append && pxPaginaHistoricoEmAndamento) return;
       var meuId = ++pxReqFiltroId; // respostas antigas sao ignoradas
-      apiCall('filtrarLancamentosWeb', { filtros: filtrosAtuais, offset: offsetAtual, limite: LIMITE_PAGINA })
+      var offsetSolicitado = append ? offsetAtual + LIMITE_PAGINA : 0;
+      var botaoMais = pxEl('boxCarregarMais')?.querySelector('button');
+      pxPaginaHistoricoEmAndamento = true;
+      if (botaoMais) { botaoMais.disabled = true; botaoMais.textContent = 'Baixando...'; }
+      return apiCall('filtrarLancamentosWeb', { filtros: { ...filtrosAtuais }, offset: offsetSolicitado, limite: LIMITE_PAGINA })
         .then(function (res) {
           if (meuId !== pxReqFiltroId) return;
+          offsetAtual = offsetSolicitado;
           if (!append) pxEl('lista-lancamentos').innerHTML = '';
           renderTabelaLancamentos(res.itens, !!append);
           ultimoResumoSomaFiltro = res;
@@ -5931,11 +6775,17 @@ try {
         .catch(function (err) {
           if (meuId !== pxReqFiltroId) return;
           mostrarAviso('Erro', 'Erro na busca: ' + err.message);
-          pxEl('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-rose-500 font-bold">Falha ao buscar os dados. Tente novamente.</div>';
+          if (!append) pxEl('lista-lancamentos').innerHTML = '<div class="col-span-full py-6 text-center text-rose-500 font-bold">Falha ao buscar os dados. Tente novamente.</div>';
+        }).finally(function () {
+          if (meuId !== pxReqFiltroId) return;
+          pxPaginaHistoricoEmAndamento = false;
+          if (botaoMais) { botaoMais.disabled = false; botaoMais.textContent = 'Carregar mais antigas 👇'; }
         });
     };
 
     window.limparFiltros = function () {
+      pxEl('filtAno').value = '';
+      atualizarIndicadorAnoHistorico();
       pxEl('inpBusca').value = '';
       pxEl('filtMes').value = '';
       pxEl('filtForma').value = '';
@@ -5985,43 +6835,13 @@ try {
   /* ----------------------------------------------------------------- 10 */
   /* Protecao contra < > " nos textos (cards, empréstimos, assinaturas, notas) */
   seguro('escape', function () {
-    var origTabela = window.renderTabelaLancamentos;
-    window.renderTabelaLancamentos = function (lista, append) { return origTabela(pxEscapar(lista), append); };
-
-    var origEmp = window.renderizarPainelEmprestimos;
-    window.renderizarPainelEmprestimos = function () {
-      var real = emprestimosGlobal;
-      emprestimosGlobal = pxEscapar(real);
-      try { origEmp(); } finally { emprestimosGlobal = real; }
-    };
-
     var origDados = window.renderizarDados;
     window.renderizarDados = function (dados) {
       if (dados && typeof dados === 'object') {
         pxConfigCatsServidor = JSON.parse(JSON.stringify(dados.configCategorias || []));
-        pxRenomeacoesCat = {};
-        dados = Object.assign({}, dados, { assinaturas: pxEscapar(dados.assinaturas || []) });
+        pxRenomeacoesCat = Object.create(null);
       }
       return origDados(dados);
-    };
-
-    // Notas: texto protegido + quebras de linha preservadas
-    window.renderizarNotasUI = function () {
-      var box = pxEl('listaNotasUI');
-      if (!box) return;
-      if (!notasGlobais || notasGlobais.length === 0) {
-        box.innerHTML = '<div class="py-6 text-center text-slate-500 text-xs bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">Nenhuma anotação ou lembrete salvo.</div>';
-        return;
-      }
-      box.innerHTML = notasGlobais.map(function (n) {
-        var id = String(n.id).replace(/[^\w-]/g, '');
-        return '<div class="flex items-center justify-between gap-3 p-3.5 rounded-2xl border ' + (n.concluida ? 'bg-slate-900/30 border-slate-800 opacity-60' : 'bg-slate-800/70 border-slate-700') + '">' +
-          '<label class="flex items-center gap-3 flex-1 cursor-pointer min-w-0">' +
-          '<input type="checkbox" ' + (n.concluida ? 'checked' : '') + ' onchange="toggleNotaConcluida(\'' + id + '\')" class="w-4 h-4 rounded text-amber-500 bg-slate-900 border-slate-600 shrink-0">' +
-          '<div class="min-w-0"><p class="text-xs sm:text-sm font-semibold ' + (n.concluida ? 'line-through text-slate-500' : 'text-white') + ' break-words whitespace-pre-line">' + pxEscHtml(n.texto) + '</p>' +
-          '<span class="text-[10px] text-slate-500">' + pxEscHtml(n.data || '') + '</span></div></label>' +
-          '<button onclick="excluirNotaRapida(\'' + id + '\')" class="text-rose-400 hover:text-white bg-rose-900/20 hover:bg-rose-600 p-2 rounded-xl text-xs transition shrink-0">🗑️</button></div>';
-      }).join('');
     };
 
     // Fatura mensal: texto protegido + filtro de tag EXATO + categoria tolerante a emoji
@@ -6058,23 +6878,7 @@ try {
         mostrarBanner('Tag: ' + f.valor + ' (' + filtrados.length + ')');
       } else if (banner) { banner.classList.add('hidden'); banner.classList.remove('flex'); }
 
-      var html = '';
-      filtrados.slice().reverse().forEach(function (lRaw) {
-        var l = pxEscapar(lRaw);
-        var badge = obterClasseBadgeStatus(l[9]);
-        var descSafe = pxJs(l[1]), formaSafe = pxJs(l[2]), catSafe = pxJs(l[3]);
-        var tagSafe = pxJs(l[10] || ''), parcSafe = pxJs(l[6] || '');
-        var resParc = l[12] || null;
-
-        var tagsHtml = '';
-        if (l[10]) {
-          String(l[10]).split(',').map(function (t) { return t.trim(); }).filter(Boolean).forEach(function (t) {
-            tagsHtml += '<button type="button" onclick="aplicarFiltroInternoMensal(\'tag\', \'' + pxJs(t) + '\')" class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">' + t + '</button>';
-          });
-        }
-
-        html += '<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2"><div class="flex justify-between items-start"><div><div class="text-[10px] text-slate-400 font-bold uppercase">' + l[0] + '</div><div class="text-white font-bold text-sm mt-0.5 leading-tight">' + l[1] + '</div><div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ' + l[2] + ' • 🏷️ ' + l[3] + '</div><div>' + tagsHtml + '</div></div><div class="text-right flex flex-col items-end"><div class="text-purple-400 font-bold text-base tracking-tight">' + l[7] + '</div><span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ' + badge + '">' + l[9] + '</span></div></div><div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30"><span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">' + formatarInfoParcelaCard(l[6], resParc) + '</span><button onclick="abrirModalEdicaoLanc(\'' + l[11] + '\',\'' + l[0] + '\',\'' + descSafe + '\',\'' + formaSafe + '\',\'' + catSafe + '\',\'' + l[7] + '\',\'' + l[8] + '\',\'' + l[9] + '\',\'' + tagSafe + '\',\'' + parcSafe + '\')" class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button></div></div>';
-      });
+      var html = filtrados.slice().reverse().map(montarCardFaturaMensalSeguro).join('');
 
       if (filtrados.length === 0) html = '<div class="py-6 text-center text-slate-500 bg-slate-800/30 rounded-2xl border border-dashed border-slate-700">Nenhum lançamento encontrado.</div>';
       pxEl('lista-relatorio').innerHTML = html;
@@ -6113,7 +6917,7 @@ try {
 
   /* ----------------------------------------------------------------- 12 */
   /* Categorias: editar o nome RENOMEIA (nao vira "antiga") */
-  var pxRenomeacoesCat = {};
+  var pxRenomeacoesCat = Object.create(null);
   var pxConfigCatsServidor = [];
   var pxSalvandoCats = false;
 
@@ -6156,7 +6960,7 @@ try {
         btn.textContent = '💾 Salvar'; btn.disabled = false;
         toggleEdicaoCategorias();
         pxSalvandoCats = false;
-        pxRenomeacoesCat = {};
+        pxRenomeacoesCat = Object.create(null);
         var n = res && res.qtdRenomeadas ? ' ' + res.qtdRenomeadas + ' lançamento(s) atualizado(s).' : '';
         mostrarAviso('Sucesso', 'Categorias salvas!' + n);
         carregarDados();
@@ -6172,7 +6976,7 @@ try {
     window.toggleEdicaoCategorias = function () {
       if (modoEdicaoCategorias && !pxSalvandoCats) {
         categoriasGlobaisEdit = JSON.parse(JSON.stringify(pxConfigCatsServidor));
-        pxRenomeacoesCat = {};
+        pxRenomeacoesCat = Object.create(null);
         indexEdicaoCat = -1;
         var b = pxEl('btnAdicionarCat');
         if (b) { b.textContent = 'Adicionar'; b.classList.replace('bg-amber-500', 'bg-blue-600'); }
