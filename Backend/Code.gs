@@ -302,7 +302,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
           nFatStr,
           'Assinatura Ativa',
           ass.dispBase[10] || ''
-        ].concat([gerarIdGestor_(), ass.linhaBase[12] || gerarIdGestor_(), 1, 'Em Aberto', '', '']));
+        ].concat([gerarIdGestor_(), ass.linhaBase[12] || gerarIdGestor_(), 1, 'Em Aberto', '', '', 0]));
       }
     }
   });
@@ -618,6 +618,9 @@ function dividirParcelaEmprestimoWebInterno_(dados) {
       throw new Error("O valor recebido deve ser menor que o total da parcela e maior que zero.");
     }
 
+    const pagoBancoOriginal = centavosGestor_(valorPagoBancoGestor_(rawAll[idxAlvo], true));
+    const pagoBancoRecebido = Math.floor(pagoBancoOriginal * centavosGestor_(valorRecebido) / valorOriginalParc) / 100;
+    if (rawAll[idxAlvo][14] !== 'Pago') empSheet.getRange(idxAlvo + 2, 18).setValue((pagoBancoOriginal - centavosGestor_(pagoBancoRecebido)) / 100);
     empSheet.getRange(idxAlvo + 2, 8).setValue(valorRestante);
 
     const d = dispAll[idxAlvo];
@@ -638,7 +641,7 @@ function dividirParcelaEmprestimoWebInterno_(dados) {
       mStr ? "'" + mStr : '',
       'Recebido',
       String(d[10] || '') + ' (Pagamento Parcial)'
-    ].concat([gerarIdGestor_(), r[12], 1, r[14], r[15], '']);
+    ].concat([gerarIdGestor_(), r[12], 1, r[14], r[15], '', pagoBancoRecebido]);
 
     const prox = empSheet.getLastRow() + 1;
     empSheet.getRange(prox, 1, 1, COLUNAS_GESTOR_).setValues([novaLinhaPago]);
@@ -899,7 +902,7 @@ function moverParaEmprestimosWebInterno_(dados) {
         "'" + fatClean,
         'A Receber',
         d[10] || ''
-      ].concat([r[11], r[12], r[13], jaPago ? 'Pago' : 'Em Aberto', r[15], r[16]]);
+      ].concat([r[11], r[12], r[13], jaPago ? 'Pago' : 'Em Aberto', r[15], r[16], r[17] || 0]);
     });
 
     const proxEmp = Math.max(2, empSheet.getLastRow() + 1);
@@ -1182,7 +1185,7 @@ function calcularAlertasVencimento_(formas, lancamentos, hoje) {
     const ultimoDia = new Date(partes[1], partes[0], 0).getDate();
     const dia = Math.min(cartao.dia, ultimoDia);
     const dias = Math.round((Date.UTC(partes[1], partes[0] - 1, dia) - hojeUTC) / 86400000);
-    const valor = extractNum(item.raw[7]);
+    const valor = extractNum(item.raw[7]) - valorPagoBancoGestor_(item.raw, false);
     if (dias > 7 || valor <= 0) return;
     const chave = normalizarTexto(cartao.nome) + '|' + mes;
     if (!faturas[chave]) faturas[chave] = { forma: cartao.nome, mes: mes, data: pad2(dia) + '/' + mes, dias: dias, valorRaw: 0 };
@@ -1333,6 +1336,7 @@ function getDadosCompletos() {
         const statusRaw = String(dVals[9] || '').trim();
         const mesFat = String(dVals[8] || '').replace(/^'/, '').trim();
         const valor = extractNum(r[7]);
+        const pagoBanco = valorPagoBancoGestor_(r, false), saldoBanco = Math.max(0, arred2(valor - pagoBanco));
         const valorFmt = formatBRL(valor);
         const tagsDaLinha = String(dVals[10] || '').trim();
 
@@ -1445,13 +1449,13 @@ function getDadosCompletos() {
 
           if (mesFat === mesAtualStr) {
             calcCompromisso += valor;
-            if (pago) calcPago += valor;
-            else calcAberto += valor;
+            calcPago += pagoBanco;
+            calcAberto += saldoBanco;
 
             mapCatTotal[catRes] = (mapCatTotal[catRes] || 0) + valor;
             gastoMesPorForma[chaveForma] = (gastoMesPorForma[chaveForma] || 0) + valor;
             if (!pago) {
-              abertoMesPorForma[chaveForma] = (abertoMesPorForma[chaveForma] || 0) + valor;
+              abertoMesPorForma[chaveForma] = (abertoMesPorForma[chaveForma] || 0) + saldoBanco;
             }
           }
 
@@ -1459,15 +1463,15 @@ function getDadosCompletos() {
             mesesUnicos.push(mesFat);
             const isFuturo = (infoFat.a > anoAt) || (infoFat.a === anoAt && infoFat.m > mesAt);
 
-            if (!isFuturo && mesFat !== mesAtualStr && !pago && !isPix) vencidoPorForma[chaveForma] = (vencidoPorForma[chaveForma] || 0) + valor;
+            if (!isFuturo && mesFat !== mesAtualStr && !pago && !isPix) vencidoPorForma[chaveForma] = (vencidoPorForma[chaveForma] || 0) + saldoBanco;
             if (isFuturo && !pago && parcela !== '∞/∞' && !isPix) {
-              futuroParcelasPorForma[chaveForma] = (futuroParcelasPorForma[chaveForma] || 0) + valor;
+              futuroParcelasPorForma[chaveForma] = (futuroParcelasPorForma[chaveForma] || 0) + saldoBanco;
             }
 
             if (!pago || isPix) {
               setMeses.add(mesFat);
               if (!pivotFaturas[chaveForma]) pivotFaturas[chaveForma] = Object.create(null);
-              pivotFaturas[chaveForma][mesFat] = (pivotFaturas[chaveForma][mesFat] || 0) + valor;
+              pivotFaturas[chaveForma][mesFat] = (pivotFaturas[chaveForma][mesFat] || 0) + (isPix ? valor : saldoBanco);
             }
           }
         }
@@ -1549,6 +1553,7 @@ function getDadosCompletos() {
         const consomeLimiteCartao = formaEmprestimoConsomeLimite_(chaveForma);
         const parcLimpa = String(d[6] || '').replace(/^'/, '').trim();
         const valParc = extractNum(r[7]);
+        const saldoBancoEmp = Math.max(0, arred2(valParc - valorPagoBancoGestor_(r, true)));
         const mesFat = String(d[8] || '').replace(/^'/, '').trim();
         const status = String(d[9] || 'A Receber').trim();
         const obs = String(d[10] || '').trim();
@@ -1586,17 +1591,17 @@ function getDadosCompletos() {
 
           if (consomeLimiteCartao && r[14] !== 'Pago') {
             if (!terceirosCartaoPorFormaMes[chaveForma]) terceirosCartaoPorFormaMes[chaveForma] = Object.create(null);
-            terceirosCartaoPorFormaMes[chaveForma][mesFat] = (terceirosCartaoPorFormaMes[chaveForma][mesFat] || 0) + valParc;
+            terceirosCartaoPorFormaMes[chaveForma][mesFat] = (terceirosCartaoPorFormaMes[chaveForma][mesFat] || 0) + saldoBancoEmp;
 
             // A devolução da pessoa não quita a fatura do banco. Por isso o limite
             // continua ocupado pela parcela do cartão, mesmo com status Recebido.
-            empKpiLimiteOcupado += valParc;
+            empKpiLimiteOcupado += saldoBancoEmp;
             if (mesFat === mesAtualStr) {
-              terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + valParc;
+              terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + saldoBancoEmp;
             } else if (infoFat.time > timeMesAtual) {
-              terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + valParc;
+              terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + saldoBancoEmp;
             } else if (infoFat.time > 0) {
-              terceirosVencidoPorForma[chaveForma] = (terceirosVencidoPorForma[chaveForma] || 0) + valParc;
+              terceirosVencidoPorForma[chaveForma] = (terceirosVencidoPorForma[chaveForma] || 0) + saldoBancoEmp;
             }
           }
         }
@@ -1727,7 +1732,13 @@ function getDadosCompletos() {
       }
     });
 
-    const diasAteVencimento = calcularAlertasVencimento_(listaFormasPagto, lancamentosValidos, getHojeSeguro());
+    const itensAvisoFatura = lancamentosValidos.slice();
+    if (empSheet && empSheet.getLastRow() > 1) empSheet.getRange(2, 1, empSheet.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r) {
+      if (!r[11] || isStatusCancelado(r[9])) return;
+      const raw = r.slice(); raw[2] = r[3]; raw[9] = r[14] === 'Pago' ? 'Pago' : 'Em Aberto';
+      itensAvisoFatura.push({ raw: raw, disp: raw.map(function (v) { return String(v == null ? '' : v); }) });
+    });
+    const diasAteVencimento = calcularAlertasVencimento_(listaFormasPagto, itensAvisoFatura, getHojeSeguro());
 
     const chaveTotalCarteira = listaFormasPagto.find(f => f.nome.toLowerCase().includes('total') || f.nome.toLowerCase().includes('carteira'))?.nome || 'Total Carteira';
     const pivotTerceirosAReceber = Object.create(null);
@@ -1894,7 +1905,7 @@ function exportarBackupDadosWeb() {
   lock.waitLock(15000);
   try {
     const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
-    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
+    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', '_Gestor_Atividade'];
     const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
     const abas = nomes.map(function (nome) {
       const sh = ss.getSheetByName(nome);
@@ -1929,6 +1940,10 @@ function propriedade_(nome) {
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
     case 'getDadosCompletos': return getDadosCompletos();
+    case 'obterAtividadeWeb': return obterAtividadeWeb(param);
+    case 'desfazerAtividadeWeb': return desfazerAtividadeWeb(param);
+    case 'obterFaturaPagamentoWeb': return obterFaturaPagamentoWeb(param);
+    case 'registrarPagamentoFaturaWeb': return registrarPagamentoFaturaWeb(param);
     case 'exportarBackupDadosWeb': return exportarBackupDadosWeb();
     case 'salvarLancamentoWeb': return salvarLancamentoWeb(param);
     case 'sincronizarLoteWeb': return sincronizarLoteWeb(param);
@@ -2013,7 +2028,7 @@ function indicesMesmaCompra(dispAll, idxAlvo) {
 function montarLinhaLanc(d, r, over) {
   const o = over || {};
   const parc = limparApostrofo(d[6]);
-  return [
+  const linha = [
     "'" + (o.data !== undefined ? o.data : limparApostrofo(d[0])),
     o.desc !== undefined ? o.desc : d[1],
     o.forma !== undefined ? o.forma : d[2],
@@ -2026,6 +2041,9 @@ function montarLinhaLanc(d, r, over) {
     o.status !== undefined ? o.status : d[9],
     o.tags !== undefined ? o.tags : d[10]
   ].concat(r.slice(11, COLUNAS_GESTOR_));
+  if (o.status !== undefined && isStatusPago(d[9]) && !isStatusPago(o.status)) linha[17] = 0;
+  if (isStatusPago(linha[9])) linha[17] = extractNum(linha[7]);
+  return linha;
 }
 
 function escreverLinhaPlanilha(sheet, numLinha, linha) {
@@ -2789,7 +2807,7 @@ function lerEmprestimosRelatorio_(periodo) {
     if (!corresponde || isStatusCancelado(status) || valor <= 0) return;
     itens.push({ data: limparApostrofo(d[0]), pessoa: String(d[1] || ''), descricao: String(d[2] || ''),
       forma: String(d[3] || '').trim(), parcela: limparApostrofo(d[6]), mes: mes,
-      valorRaw: valor, valor: formatBRL(valor), status: status, observacoes: String(d[10] || '') });
+      valorRaw: valor, valor: formatBRL(valor), status: status, observacoes: String(d[10] || ''), pagoBancoRaw: valorPagoBancoGestor_(r, true) });
   });
   return itens;
 }
@@ -2804,8 +2822,9 @@ function lerTerceirosDoMes(mes) {
   const mapa = Object.create(null);
   lerEmprestimosRelatorio_(mes).forEach(function (item) {
     const k = normalizarTexto(item.forma);
-    if (!mapa[k]) mapa[k] = { nome: item.forma, total: 0, itens: [] };
+    if (!mapa[k]) mapa[k] = { nome: item.forma, total: 0, pagoBanco: 0, itens: [] };
     mapa[k].total += item.valorRaw;
+    mapa[k].pagoBanco += item.pagoBancoRaw || 0;
     mapa[k].itens.push(item);
   });
   return mapa;
@@ -2867,7 +2886,7 @@ function obterRelatorioMes(mesFiltro) {
   let total = 0, pago = 0, aberto = 0, maior = null;
   doMes.forEach(function (l) {
     total += l.valor;
-    if (isStatusPago(l.status)) pago += l.valor; else aberto += l.valor;
+    const valorPago = valorPagoBancoGestor_(l.r, false); pago += valorPago; aberto += arred2(l.valor - valorPago);
     if (!maior || l.valor > maior.valor) maior = l;
   });
 
@@ -2891,7 +2910,7 @@ function obterRelatorioMes(mesFiltro) {
     const k = normalizarTexto(l.forma);
     if (!mapaForma[k]) mapaForma[k] = { nome: l.forma, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
     mapaForma[k].total += l.valor;
-    if (!isStatusPago(l.status)) mapaForma[k].aberto += l.valor;
+    mapaForma[k].aberto += arred2(l.valor - valorPagoBancoGestor_(l.r, false));
   });
   Object.keys(terceiros).forEach(function (k) {
     if (!mapaForma[k]) mapaForma[k] = { nome: terceiros[k].nome, total: 0, aberto: 0, terceiros: 0, totalBanco: 0 };
@@ -2899,6 +2918,9 @@ function obterRelatorioMes(mesFiltro) {
   });
   const formas = Object.values(mapaForma).map(function (f) {
     f.totalBanco = f.total + f.terceiros;
+    const grupo = terceiros[normalizarTexto(f.nome)];
+    f.pagoBanco = arred2(f.total - f.aberto + (grupo ? grupo.pagoBanco : 0));
+    f.abertoBanco = arred2(f.totalBanco - f.pagoBanco);
     return f;
   }).sort(function (a, b) { return b.total - a.total; });
 
@@ -3036,7 +3058,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 }
 
 function executarAcaoApi_(action, param) {
-  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb'];
+  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','obterAtividadeWeb','obterFaturaPagamentoWeb'];
   if (leituras.indexOf(action) >= 0) return executarOperacaoGestor_(action, param, function () { return executarAcaoApiInterna_(action, param); }, true);
   return executarAcaoApiInterna_(action, param);
 }
@@ -3080,11 +3102,11 @@ function salvarCategoriasWeb(param) { return executarOperacaoGestor_('salvarCate
 
 // ============================================================================
 // INTEGRIDADE: IDENTIDADES, VERSÕES E DIÁRIO RECUPERÁVEL DE OPERAÇÕES
-// As colunas L:Q pertencem ao app; as onze primeiras colunas continuam legíveis.
+// As colunas L:R pertencem ao app; as onze primeiras colunas continuam legíveis.
 // As escritas são planejadas em memória. O diário é persistido e confirmado antes
 // de aplicar os dados; um reenvio ou reinício reaplica o mesmo resultado.
 // ============================================================================
-const COLUNAS_GESTOR_ = 17;
+const COLUNAS_GESTOR_ = 18;
 const ABA_DIARIO_GESTOR_ = '_Gestor_Operacoes';
 let CONTEXTO_GESTOR_ = null;
 
@@ -3147,18 +3169,20 @@ function chaveLegadoGestor_(r, emprestimo) {
 function migrarIdentidadesGestor_(aba, contexto) {
   if (!ehAbaRegistrosGestor_(aba.nome)) return;
   const emp = aba.nome === 'Empréstimos';
-  const titulos = ['Registro ID', 'Compra ID', 'Versão', 'Estado Banco', 'Migração', 'Conteúdo SHA256'];
+  const titulos = ['Registro ID', 'Compra ID', 'Versão', 'Estado Banco', 'Migração', 'Conteúdo SHA256', 'Pago ao banco'];
+  if (aba.antes.some(function (r) { return r[17] !== '' && r[17] != null; }) && String((aba.antes[0] || [])[17] || '') !== titulos[6]) throw new Error('A coluna R já possui dados particulares. Preserve-a antes de atualizar o app.');
   if (aba.antes && aba.antes.some(function (r) { return r.slice(11, 17).some(function (v) { return v !== '' && v !== null; }); })) {
-    if (!titulos.every(function (v, i) { return String((aba.antes[0] || [])[11 + i] || '') === v || (i === 5 && !aba.antes.some(function (r) { return r[16] !== '' && r[16] != null; })); })) throw new Error('As colunas L:Q de ' + aba.nome + ' já possuem dados. Preserve essas colunas em um backup e libere-as antes de migrar o app.');
+    if (!titulos.every(function (v, i) { return String((aba.antes[0] || [])[11 + i] || '') === v || (i >= 5 && !aba.antes.some(function (r) { return r[11 + i] !== '' && r[11 + i] != null; })); })) throw new Error('As colunas L:Q de ' + aba.nome + ' já possuem dados. Preserve essas colunas em um backup e libere-as antes de migrar o app.');
   }
   const ids = new Set();
   aba.valores.slice(1).forEach(function (r) { if (!r[11]) return; if (ids.has(String(r[11]))) throw new Error('Há identificadores repetidos em ' + aba.nome + '. Revise linhas copiadas antes de continuar.'); ids.add(String(r[11])); });
   if (!aba.valores.length) aba.valores.push([]);
-  ['Registro ID', 'Compra ID', 'Versão', 'Estado Banco', 'Migração', 'Conteúdo SHA256'].forEach(function (v, i) { aba.valores[0][11 + i] = v; });
+  titulos.forEach(function (v, i) { aba.valores[0][11 + i] = v; });
   const grupos = Object.create(null);
   aba.valores.slice(1).forEach(function (r) {
     if (!String(r[emp ? 2 : 1] || '').trim()) return;
     while (r.length < COLUNAS_GESTOR_) r.push('');
+    if (r[17] === '' || r[17] == null) r[17] = valorPagoBancoGestor_(r, emp);
     if (r[11]) {
       if (!r[12] || !Number.isInteger(Number(r[13])) || Number(r[13]) < 1) throw new Error('Metadados inválidos em ' + aba.nome + '. Preserve a linha e confira as colunas de controle.');
       const fingerprint = hashRegistroGestor_(r);
@@ -3233,6 +3257,7 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
     if (ehAbaRegistrosGestor_(nome)) {
       migrarIdentidadesGestor_(aba, contexto);
       aba.valores.slice(1).forEach(function (r) { if (r[11]) { contexto.idsIniciais.add(String(r[11])); contexto.registrosIniciais[String(r[11])] = copiarGestor_(r); } });
+      aba.idsOriginaisAtividade = aba.valores.slice(1).filter(function (r) { return r[11]; }).map(function (r) { return String(r[11]); });
       // Metadados recém-criados devem ser exibidos como valores, não como células
       // vazias do snapshot anterior.
       aba.valores.forEach(function (_, r) { for (let c = 11; c < COLUNAS_GESTOR_; c++) aba.alterados[r + ':' + c] = true; });
@@ -3245,7 +3270,10 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
 function atualizarVersoesGestor_(aba, ctx) {
   aba.valores.slice(1).forEach(function (r) {
     if (!r[11]) return;
+    const integral = aba.nome === 'Lançamentos' ? isStatusPago(r[9]) : r[14] === 'Pago';
+    if (!integral && r[17] && (centavosGestor_(r[17]) < 0 || centavosGestor_(r[17]) > centavosGestor_(r[7]))) throw new Error('O valor da parcela não pode ficar abaixo do pagamento já registrado ao banco. Desfaça o pagamento antes de reduzir o valor.');
     if (aba.nome === 'Lançamentos') r[14] = isStatusPago(r[9]) ? 'Pago' : 'Em Aberto';
+    r[17] = valorPagoBancoGestor_(r, aba.nome === 'Empréstimos');
     const anterior = ctx.registrosIniciais[String(r[11])];
     if (anterior && hashRegistroGestor_(r) !== hashRegistroGestor_(anterior)) r[13] = Number(anterior[13] || 1) + 1;
     r[16] = hashRegistroGestor_(r);
@@ -3300,7 +3328,8 @@ function aplicarPlanoGestor_(ss, plano) {
     if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
     sh.getRange(1, 1, rows, cols).setValues(valores);
-    if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
+    if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 18, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
+    if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     SpreadsheetApp.flush();
   });
 }
@@ -3330,7 +3359,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real };
     ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
     let resultado;
-    try { resultado = executar(); } finally { CONTEXTO_GESTOR_ = null; }
+    try {
+      resultado = executar();
+      if (!leitura) registrarAtividadeGestor_(ctx);
+    } finally { CONTEXTO_GESTOR_ = null; }
     const mudancas = finalizarPlanoGestor_(ctx);
     if (leitura && mudancas.length === 0) return resultado;
     const plano = { mudancas: mudancas, resultado: resultado }, texto = JSON.stringify(serializarGestor_(plano));
@@ -3367,4 +3399,166 @@ function atualizarStatusAutomatico() { return executarOperacaoGestor_('manutenca
 
 function unificarCategoriasNaPlanilha() { return executarOperacaoGestor_('unificarCategorias', null, function () { return unificarCategoriasNaPlanilhaInterno_(); }, true); }
 
-function hashRegistroGestor_(registro) { return hashEstadoGestor_([registro.slice(0, 11).concat([registro[14]])]); }
+function hashRegistroGestor_(registro) { return hashEstadoGestor_([registro.slice(0, 11).concat([registro[14], registro[17] || 0])]); }
+
+function valorPagoBancoGestor_(r, emprestimo) {
+  const total = Math.max(0, centavosGestor_(r[7]));
+  if (emprestimo ? r[14] === 'Pago' : isStatusPago(r[9])) return total / 100;
+  return Math.min(total, Math.max(0, centavosGestor_(r[17] || 0))) / 100;
+}
+
+function obterFaturaPagamentoWeb(param) {
+  const mes = validarMesFaturaWeb_(param && param.mesFatura), forma = String(param && param.forma || '').trim();
+  if (!forma || !formaEmprestimoConsomeLimite_(forma)) throw new Error('Selecione um cartão para conferir a fatura.');
+  const itens = [], ss = obterPlanilhaGestor_(); let total = 0, pago = 0;
+  ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
+    const sh = ss.getSheetByName(nome); if (!sh || sh.getLastRow() < 2) return;
+    const emp = nome === 'Empréstimos';
+    sh.getRange(2, 1, sh.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) {
+      if (!r[11] || isStatusCancelado(r[9]) || normalizarTexto(r[emp ? 3 : 2]) !== normalizarTexto(forma) || limparApostrofo(r[8]) !== mes) return;
+      const valor = Math.max(0, centavosGestor_(r[7])), recebidoBanco = centavosGestor_(valorPagoBancoGestor_(r, emp));
+      total += valor; pago += recebidoBanco;
+      itens.push({ aba: nome, linha: i + 2, registroId: r[11], versao: Number(r[13]), valor: valor / 100, pago: recebidoBanco / 100, resumo: resumirRegistroAtividade_(r, nome), hash: hashRegistroGestor_(r) });
+    });
+  });
+  const versao = hashGestor_(itens.map(function (i) { return [i.registroId, i.versao, i.hash]; }).sort(function (a, b) { return a[0].localeCompare(b[0]); }));
+  return { forma: forma, mesFatura: mes, total: total / 100, pago: pago / 100, restante: (total - pago) / 100, versaoFatura: versao, itens: itens };
+}
+
+function registrarPagamentoFaturaWeb(param) {
+  return executarOperacaoGestor_('registrarPagamentoFaturaWeb', param, function () {
+    const fatura = obterFaturaPagamentoWeb(param);
+    if (param.versaoFatura !== fatura.versaoFatura) throw new Error('A fatura mudou. Atualize os valores antes de confirmar o pagamento.');
+    const valor = centavosGestor_(param.valor), saldo = centavosGestor_(fatura.restante);
+    if (valor <= 0 || valor > saldo) throw new Error('Informe um pagamento maior que zero e até o saldo em aberto.');
+    let restante = valor; const ss = obterPlanilhaGestor_();
+    fatura.itens.sort(function (a, b) { return a.aba.localeCompare(b.aba) || a.registroId.localeCompare(b.registroId); }).forEach(function (item) {
+      if (!restante) return;
+      const falta = centavosGestor_(item.valor) - centavosGestor_(item.pago), aplicar = Math.min(falta, restante); if (!aplicar) return;
+      const sh = ss.getSheetByName(item.aba), r = sh.getRange(item.linha, 1, 1, COLUNAS_GESTOR_).getValues()[0];
+      r[17] = (centavosGestor_(item.pago) + aplicar) / 100;
+      if (centavosGestor_(r[17]) === centavosGestor_(r[7])) {
+        if (item.aba === 'Empréstimos') r[14] = 'Pago';
+        else r[9] = String(r[6]) === '∞/∞' ? 'Assinatura Paga' : 'Pago';
+      }
+      sh.getRange(item.linha, 1, 1, COLUNAS_GESTOR_).setValues([r]); restante -= aplicar;
+    });
+    return { sucesso: true, pago: valor / 100, restante: (saldo - valor) / 100 };
+  }, false);
+}
+
+// Histórico visível separado do diário técnico. Só desfaz registros específicos,
+// com conferência de identidade, conteúdo e versão; nunca restaura uma aba inteira.
+const ABA_ATIVIDADE_GESTOR_ = '_Gestor_Atividade';
+const ROTULOS_ATIVIDADE_GESTOR_ = {
+  salvarLancamentoWeb: 'Lançamento criado', salvarEmprestimoWeb: 'Empréstimo criado',
+  editarLancamentoLinhaWeb: 'Lançamento editado', editarEmprestimoLinhaWeb: 'Empréstimo editado',
+  excluirLancamentoWeb: 'Lançamento excluído', excluirEmprestimoWeb: 'Empréstimo excluído',
+  alternarStatusEmprestimoWeb: 'Recebimento alterado', dividirParcelaEmprestimoWeb: 'Recebimento parcial',
+  quitarFaturaWeb: 'Fatura quitada', registrarPagamentoFaturaWeb: 'Pagamento de fatura',
+  moverParaEmprestimosWeb: 'Compra movida para terceiros', moverParaGastosPessoaisWeb: 'Compra movida para pessoal',
+  adiantarParcelasWeb: 'Parcelas antecipadas', salvarNotasWeb: 'Notas atualizadas',
+  editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada',
+  salvarFormaPagamentoWeb: 'Forma de pagamento atualizada', excluirFormaPagamentoWeb: 'Forma de pagamento excluída',
+  reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas',
+  desfazerAtividadeWeb: 'Ação desfeita'
+};
+const ACOES_DESFAZER_GESTOR_ = ['excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
+
+function resumirRegistroAtividade_(r, aba) {
+  if (!r) return null;
+  const emp = aba === 'Empréstimos';
+  return { pessoa: emp ? limparApostrofo(r[1]) : '', descricao: limparApostrofo(r[emp ? 2 : 1]), forma: limparApostrofo(r[emp ? 3 : 2]), data: limparApostrofo(r[0]), mes: limparApostrofo(r[8]), parcela: limparApostrofo(r[6]), valor: extractNum(r[7]), situacao: String(r[9] || ''), estadoBanco: r[14] || '', pagoBanco: valorPagoBancoGestor_(r, emp) };
+}
+
+function registrarAtividadeGestor_(ctx) {
+  const alteracoes = [];
+  Object.keys(ctx.ss.abas).filter(ehAbaRegistrosGestor_).forEach(function (nome) {
+    const aba = ctx.ss.abas[nome], atuais = new Map();
+    aba.valores.slice(1).forEach(function (r) { if (r[11]) atuais.set(String(r[11]), r); });
+    const anteriores = new Map();
+    // A abertura guarda os IDs migrados por aba, inclusive os excluídos nesta operação.
+    (aba.idsOriginaisAtividade || []).forEach(function (id) { anteriores.set(id, ctx.registrosIniciais[id]); });
+    const ids = new Set([].concat(Array.from(anteriores.keys()), Array.from(atuais.keys())));
+    ids.forEach(function (id) {
+      const antes = anteriores.get(id) || null, depois = atuais.get(id) || null;
+      if ((!antes && depois) || (antes && !depois) || (antes && depois && hashRegistroGestor_(antes) !== hashRegistroGestor_(depois))) alteracoes.push({ aba: nome, id: id, antes: antes ? copiarGestor_(antes) : null, depois: depois ? copiarGestor_(depois) : null });
+    });
+  });
+  const sh = ctx.ss.getSheetByName(ABA_ATIVIDADE_GESTOR_) || ctx.ss.insertSheet(ABA_ATIVIDADE_GESTOR_);
+  const cabecalhoAtividade = ['Evento', 'Data', 'Ação', 'Resumo', 'Tipo', 'Conteúdo'];
+  if (!sh.getLastRow()) sh.getRange(1, 1, 1, 6).setValues([cabecalhoAtividade]);
+  else if (!sh.getRange(1, 1, 1, 6).getValues()[0].every(function (v, i) { return v === cabecalhoAtividade[i]; })) throw new Error('A aba _Gestor_Atividade já contém dados de outro formato. Preserve-a antes de usar o histórico.');
+  const id = ctx.action + ':' + ctx.param.requestId;
+  const rotulo = ROTULOS_ATIVIDADE_GESTOR_[ctx.action] || 'Dados atualizados';
+  const amostra = alteracoes[0], registro = amostra && (amostra.depois || amostra.antes);
+  const resumo = registro ? resumirRegistroAtividade_(registro, amostra.aba) : null;
+  const evento = { id: id, acao: ctx.action, titulo: rotulo, data: new Date().toISOString(), resumo: resumo, quantidade: alteracoes.length,
+    reverte: ctx.action === 'desfazerAtividadeWeb' ? String(ctx.param.eventoId) : '',
+    reversivel: ACOES_DESFAZER_GESTOR_.indexOf(ctx.action) >= 0 && alteracoes.length > 0, alteracoes: alteracoes };
+  const texto = JSON.stringify(serializarGestor_(evento)), partes = texto.match(/[\s\S]{1,12000}/g) || [''];
+  const inicio = sh.getLastRow() + 1;
+  sh.getRange(inicio, 1, 1 + partes.length, 6).setValues([[id, evento.data, ctx.action, rotulo, 'EVENTO', partes.length]].concat(partes.map(function (p, i) { return [id, '', '', '', 'PARTE ' + (i + 1), JSON.stringify(p)]; })));
+}
+
+function lerEventosAtividadeGestor_() {
+  const sh = obterPlanilhaGestor_().getSheetByName(ABA_ATIVIDADE_GESTOR_);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const linhas = sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues(), eventos = [];
+  for (let i = 0; i < linhas.length; i++) {
+    if (linhas[i][4] !== 'EVENTO') continue;
+    const qtd = Number(linhas[i][5]), partes = linhas.slice(i + 1, i + 1 + qtd);
+    if (!Number.isInteger(qtd) || qtd < 1 || partes.length !== qtd || partes.some(function (r, n) { return r[0] !== linhas[i][0] || r[4] !== 'PARTE ' + (n + 1); })) throw new Error('Histórico incompleto. Confira a operação antes de continuar.');
+    eventos.push(desserializarGestor_(JSON.parse(partes.map(function (r) { return JSON.parse(String(r[5])); }).join('')))); i += qtd;
+  }
+  return eventos;
+}
+
+function mapaRegistrosAtividadeGestor_() {
+  const mapa = new Map(), ss = obterPlanilhaGestor_();
+  ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
+    const sh = ss.getSheetByName(nome); if (!sh || sh.getLastRow() < 2) return;
+    sh.getRange(2, 1, sh.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) { if (r[11]) { if (mapa.has(String(r[11]))) throw new Error('Há registros com identificação repetida. Confira a planilha.'); mapa.set(String(r[11]), { aba: nome, linha: i + 2, registro: r }); } });
+  }); return mapa;
+}
+
+function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
+  if (!evento.reversivel) return 'Esta ação não oferece desfazer.';
+  if (revertidos.has(evento.id)) return 'Esta ação já foi desfeita.';
+  for (const a of evento.alteracoes) {
+    const atual = mapa.get(a.id);
+    if (!a.depois) { if (atual) return 'O registro já foi recuperado ou movido. Atualize a lista.'; }
+    else if (!atual || atual.aba !== a.aba || Number(atual.registro[13]) !== Number(a.depois[13]) || hashRegistroGestor_(atual.registro) !== hashRegistroGestor_(a.depois)) return 'O registro mudou depois desta ação. Confira a versão mais recente.';
+  } return '';
+}
+
+function obterAtividadeWeb(param) {
+  const p = param || {}, eventos = lerEventosAtividadeGestor_(), mapa = mapaRegistrosAtividadeGestor_();
+  const revertidos = new Set(eventos.filter(function (e) { return e.reverte; }).map(function (e) { return e.reverte; }));
+  const termo = normalizarTexto(String(p.termo || '').slice(0, 200)), tipo = String(p.tipo || '');
+  const filtrados = eventos.slice().reverse().filter(function (e) { return (!tipo || e.acao === tipo) && (!termo || normalizarTexto([e.titulo, JSON.stringify(e.resumo || {})].join(' ')).indexOf(termo) >= 0); });
+  const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
+  return { total: filtrados.length, temMais: offset + limite < filtrados.length, itens: filtrados.slice(offset, offset + limite).map(function (e) {
+    const motivo = motivoBloqueioDesfazerGestor_(e, mapa, revertidos);
+    return { id: e.id, titulo: e.titulo, acao: e.acao, data: e.data, resumo: e.resumo, quantidade: e.quantidade, podeDesfazer: !motivo, motivo: motivo, desfeita: revertidos.has(e.id),
+      detalhes: e.alteracoes.slice(0, 200).map(function (a) { return { antes: resumirRegistroAtividade_(a.antes, a.aba), depois: resumirRegistroAtividade_(a.depois, a.aba) }; }), detalhesTotal: e.alteracoes.length };
+  }) };
+}
+
+function desfazerAtividadeWeb(param) {
+  return executarOperacaoGestor_('desfazerAtividadeWeb', param, function () {
+    const eventos = lerEventosAtividadeGestor_(), evento = eventos.find(function (e) { return e.id === String(param.eventoId); });
+    if (!evento) throw new Error('Ação não encontrada no histórico.');
+    const mapa = mapaRegistrosAtividadeGestor_(), revertidos = new Set(eventos.filter(function (e) { return e.reverte; }).map(function (e) { return e.reverte; }));
+    const motivo = motivoBloqueioDesfazerGestor_(evento, mapa, revertidos); if (motivo) throw new Error(motivo);
+    const ss = obterPlanilhaGestor_();
+    evento.alteracoes.forEach(function (a) {
+      const sh = ss.getSheetByName(a.aba), atual = mapa.get(a.id);
+      if (!a.antes) { sh.getRange(atual.linha, 1, 1, COLUNAS_GESTOR_).clearContent(); return; }
+      const r = copiarGestor_(a.antes); while (r.length < COLUNAS_GESTOR_) r.push('');
+      r[13] = Math.max(Number(a.antes[13] || 1), Number(a.depois && a.depois[13] || 0)) + 1;
+      sh.getRange(atual ? atual.linha : sh.getLastRow() + 1, 1, 1, COLUNAS_GESTOR_).setValues([r]);
+    });
+    return { sucesso: true, quantidade: evento.alteracoes.length };
+  }, false);
+}

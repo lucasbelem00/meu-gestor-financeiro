@@ -185,6 +185,9 @@
       <div>
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Dados e Relatórios</span>
         <div class="grid grid-cols-1 gap-2.5">
+          <button type="button" onclick="abrirAtividadeGestor()" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
+            <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-lg">↻</div><div><div class="text-sm font-bold text-white">Atividade e sincronização</div><div class="text-[11px] text-slate-400">Pendências, histórico e recuperação de ações</div></div></div><span aria-hidden="true">➔</span>
+          </button>
           <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-lg">📆</div>
@@ -1267,7 +1270,30 @@
       </form>
     </div>
   </div>
+    <section id="view-atividade" class="hidden space-y-4" aria-labelledby="tituloAtividade">
+      <div class="card-glass p-4 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 id="tituloAtividade" class="text-lg font-bold text-white">Atividade e sincronização</h2><p id="ultimaAtualizacaoAtividade" class="text-xs text-slate-300 mt-1" role="status">Conferindo atualização…</p></div><button type="button" onclick="abrirConferenciaFaturaGestor()" class="rounded-xl border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 px-3 py-2 text-xs font-bold">Conferir fatura</button></div>
+        <div class="grid grid-cols-3 gap-2" aria-label="Seções de atividade"><button type="button" id="atividade-tab-pendentes" onclick="selecionarPainelAtividadeGestor('pendentes')" class="rounded-xl py-2 text-xs font-bold">Pendentes</button><button type="button" id="atividade-tab-historico" onclick="selecionarPainelAtividadeGestor('historico')" class="rounded-xl py-2 text-xs font-bold">Histórico</button><button type="button" id="atividade-tab-diagnostico" onclick="selecionarPainelAtividadeGestor('diagnostico')" class="rounded-xl py-2 text-xs font-bold">Diagnóstico</button></div>
+      </div>
+      <div id="atividade-pendentes" class="space-y-3"><p class="text-xs text-slate-300">Itens deste aparelho. Reenvios protegidos mantêm a identificação original da operação.</p><div id="listaPendenciasAtividade" class="space-y-3" aria-live="polite"></div></div>
+      <div id="atividade-historico" class="hidden space-y-3"><div class="card-glass p-4 space-y-3"><p class="text-xs text-slate-300">Ações confirmadas a partir desta versão, em todos os seus aparelhos. Desfazer depende da versão atual do registro.</p><form onsubmit="event.preventDefault(); carregarHistoricoAtividadeGestor(false)" class="flex gap-2"><label for="buscaAtividade" class="sr-only">Buscar pessoa, descrição ou ação no histórico</label><input id="buscaAtividade" placeholder="Pessoa, descrição ou ação…" class="min-w-0 flex-1 rounded-xl bg-slate-900 border border-slate-600 px-3 py-2 text-sm text-white"><button class="rounded-xl bg-blue-700 text-white text-xs font-bold px-3 py-2">Buscar</button></form></div><p id="estadoHistoricoAtividade" class="text-xs text-slate-300" role="status"></p><div id="listaHistoricoAtividade" class="space-y-3"></div><button type="button" id="maisHistoricoAtividade" onclick="carregarHistoricoAtividadeGestor(true)" class="hidden w-full rounded-xl bg-slate-800 border border-slate-600 p-3 text-sm text-white">Carregar mais</button></div>
+      <div id="atividade-diagnostico" class="hidden card-glass p-4 space-y-3"><h3 class="font-bold text-white">Conferência da conexão</h3><p id="textoDiagnosticoAtividade" class="text-sm text-slate-300"></p><p class="text-xs text-slate-300">O resumo técnico contém situação da conexão, contagens e códigos de falha. Não inclui valores, nomes, descrições, URLs ou segredos.</p><button type="button" onclick="copiarDiagnosticoGestor()" class="rounded-xl bg-slate-700 border border-slate-500 px-4 py-2 text-white text-xs font-bold">Copiar diagnóstico</button><button type="button" onclick="atualizarCentralAtividadeGestor()" class="rounded-xl border border-slate-500 px-4 py-2 text-white text-xs font-bold">Atualizar dados</button></div>
+    </section>
   </main>
+
+  <div id="modalPagamentoFaturaGestor" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloPagamentoFaturaGestor">
+    <div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto space-y-4">
+      <div class="flex justify-between gap-3 items-center"><h2 id="tituloPagamentoFaturaGestor" class="font-bold text-white">Conferir pagamento da fatura</h2><button type="button" onclick="fecharPagamentoFaturaGestor()" aria-label="Fechar conferência" class="p-2 text-slate-200">✕</button></div>
+      <p class="text-xs text-slate-300">Registre somente o que você pagou ao banco. O recebimento de terceiros continua separado.</p>
+      <form id="formPagamentoFaturaGestor" onsubmit="event.preventDefault(); confirmarPagamentoFaturaGestor()" class="space-y-4">
+        <div class="grid grid-cols-2 gap-3"><div><label for="cartaoPagamentoFaturaGestor" class="block text-xs text-slate-300 mb-1">Cartão</label><select id="cartaoPagamentoFaturaGestor" onchange="conferirPagamentoFaturaGestor()" class="w-full min-w-0 bg-slate-900 border border-slate-600 rounded-xl px-2 py-3 text-sm text-white"></select></div><div><label for="mesPagamentoFaturaGestor" class="block text-xs text-slate-300 mb-1">Mês da fatura</label><input id="mesPagamentoFaturaGestor" placeholder="MM/AAAA" onchange="conferirPagamentoFaturaGestor()" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-3 py-3 text-sm text-white" required></div></div>
+        <p id="estadoPagamentoFaturaGestor" class="text-xs text-slate-300" role="status"></p><div id="resumoPagamentoFaturaGestor" class="grid grid-cols-3 gap-2"></div>
+        <div><label for="valorPagamentoFaturaGestor" class="block text-xs text-slate-300 mb-1">Valor pago agora ao banco</label><input id="valorPagamentoFaturaGestor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="R$ 0,00" class="w-full rounded-xl bg-slate-900 border border-slate-600 px-3 py-3 font-bold text-white" required><button type="button" onclick="usarSaldoPagamentoFaturaGestor()" class="mt-2 text-xs text-emerald-200 underline">Usar saldo total em aberto</button></div>
+        <p class="text-xs text-slate-300">O pagamento é distribuído entre os itens da fatura para calcular o saldo e o limite. Isso não indica quem reembolsou você. Juros e encargos devem ser registrados como despesas separadas.</p>
+        <button type="submit" id="salvarPagamentoFaturaGestor" class="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 rounded-xl px-3 py-3 text-sm font-bold text-white">Registrar pagamento</button>
+      </form>
+    </div>
+  </div>
 
   <nav id="barraNavegacaoMobile" aria-label="Navegação principal" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2.5 pt-2 px-2 grid grid-cols-5 gap-1.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
 
@@ -5288,8 +5314,8 @@ function chamarFiltroBackend(append = false) {
         (res.formas || []).forEach(f => {
           const pct = totalMesRaw > 0 ? Math.round((f.total / totalMesRaw) * 100) : 0;
           const fSafe = f.nome.replace(/'/g, "\\'");
-          const btnQuitar = (f.aberto > 0 && !f.nome.toLowerCase().includes('pix'))
-            ? `<button type="button" ${acaoHTML('quitarFaturaCartaoMes', [f.nome, mesFiltro])} class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">✅ Quitar</button>`
+          const btnQuitar = ((f.totalBanco || f.total) > 0 && !f.nome.toLowerCase().includes('pix'))
+            ? `<button type="button" ${acaoHTML('quitarFaturaCartaoMes', [f.nome, mesFiltro])} class="ml-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">Conferir pagamento</button>`
             : '';
           const infoTerc = (f.terceiros > 0)
             ? `<div class="text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>${f.nome.toLowerCase().includes('pix') ? 'Total Pix' : 'Fatura total'}: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
@@ -5472,6 +5498,11 @@ function chamarFiltroBackend(append = false) {
       tabela(mensal ? ['Categoria', 'Gasto pessoal', 'Meta mensal', 'Uso da meta'] : ['Categoria', 'Gasto pessoal', 'Participação'], (d.categorias || []).map(c => mensal ? [c.nome, moeda(c.total), c.meta > 0 ? moeda(c.meta) : 'Sem meta', c.meta > 0 ? Math.round(c.total / c.meta * 100) + '%' : '-'] : [c.nome, moeda(c.total), porcentagem(c.total)]));
       titulo('Seus gastos por forma de pagamento');
       tabela(['Forma de pagamento', 'Gasto pessoal', 'Participação pessoal'], (d.formas || []).filter(f => f.total > 0).map(f => [f.nome, moeda(f.total), porcentagem(f.total)]));
+      if (mensal) {
+        titulo('Pagamento das faturas ao banco');
+        nota('Inclui seus gastos e as compras de terceiros no cartão. O pagamento ao banco é independente do reembolso das pessoas.');
+        tabela(['Cartão', 'Total registrado', 'Pago ao banco', 'Em aberto'], (d.formas || []).filter(f => !/pix|d[eé]bito|transfer[eê]ncia|dinheiro/i.test(f.nome)).map(f => [f.nome, moeda(f.totalBanco == null ? f.total + (f.terceiros || 0) : f.totalBanco), moeda(f.pagoBanco == null ? f.total - (f.aberto || 0) : f.pagoBanco), moeda(f.abertoBanco == null ? f.aberto : f.abertoBanco)]));
+      }
       if ((d.tags || []).length) {
         titulo('Seus gastos por tag');
         nota('Um lançamento pode ter várias tags. Somar as linhas desta tabela pode ultrapassar o total pessoal.');
@@ -6207,7 +6238,7 @@ try {
     window.apiCall = async function (action, param, tentativas) {
       if (param === undefined) param = null;
       if (tentativas === undefined) tentativas = 3;
-      var LEITURAS = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb'];
+      var LEITURAS = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb'];
       var ehLeitura = LEITURAS.indexOf(action) >= 0;
       if (!ehLeitura) tentativas = 1;
       if (!ehLeitura && protocoloServidorGestor < 2) {
@@ -7042,6 +7073,213 @@ try {
 } catch (e) { console.error('[PATCH] erro geral', e); }
   
 
+</script>
+<script>
+// Atividade: dados financeiros são apresentados por DOM, sem eventos com texto interpolado.
+let painelAtividadeGestor = 'pendentes', paginaAtividadeGestor = [], offsetAtividadeGestor = 0;
+let requisicaoAtividadeGestor = 0, carregandoAtividadeGestor = false;
+let faturaConferidaGestor = null, requisicaoPagamentoGestor = 0, pagamentoFaturaEmCursoGestor = false;
+const leiturasAtividadeGestor = new Set(['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb']);
+
+function elementoAtividadeGestor(tag, texto, classe) {
+  const el = document.createElement(tag); if (texto != null) el.textContent = String(texto); if (classe) el.className = classe; return el;
+}
+function botaoAtividadeGestor(texto, acao) {
+  const b = elementoAtividadeGestor('button', texto, 'rounded-lg border border-slate-500 bg-slate-700 hover:bg-slate-600 px-3 py-2 text-xs font-bold text-white');
+  b.type = 'button'; b.addEventListener('click', acao); return b;
+}
+function rotuloAcaoAtividadeGestor(acao) {
+  const mapa = { salvarLancamentoWeb: 'Lançamento', salvarEmprestimoWeb: 'Empréstimo', editarLancamentoLinhaWeb: 'Editar lançamento', editarEmprestimoLinhaWeb: 'Editar empréstimo', excluirLancamentoWeb: 'Excluir lançamento', excluirEmprestimoWeb: 'Excluir empréstimo', salvarNotasWeb: 'Notas', alternarStatusEmprestimoWeb: 'Recebimento', dividirParcelaEmprestimoWeb: 'Recebimento parcial', registrarPagamentoFaturaWeb: 'Pagamento de fatura', quitarFaturaWeb: 'Quitar fatura', desfazerAtividadeWeb: 'Desfazer ação' };
+  return Object.prototype.hasOwnProperty.call(mapa, acao) ? mapa[acao] : 'Atualização de dados';
+}
+function listarPendenciasAtividadeGestor() {
+  const mapa = new Map();
+  lerFilaOfflineGestor().forEach(p => mapa.set(p.requestId, { id: p.requestId, tipo: 'fila', action: 'salvarLancamentoWeb', payload: p, estado: 'Aguardando envio', descricao: p.descricao }));
+  lerEntradasLocaisGestor('gestorMutacaoV3:').forEach(({ valor: p }) => {
+    if (p.estado === 'retry_liberado' || p.action === 'salvarNotasWeb') return;
+    let payload = p.payload; try { if (!payload && p.assinatura) payload = JSON.parse(p.assinatura); } catch (_) {}
+    if (payload) payload = { ...payload, requestId: p.requestId };
+    mapa.set(p.requestId, { id: p.requestId, tipo: 'mutacao', action: p.action, payload, estado: p.estado === 'incerto' ? 'Precisa de conferência' : 'Envio ainda não confirmado', descricao: payload?.descricao || payload?.descOriginal || payload?.pessoa || '' });
+  });
+  lerEntradasLocaisGestor('gestorEmprestimoPendenteV3:').forEach(({ valor: p }) => { if (p.payload?.requestId) mapa.set(p.payload.requestId, { id: p.payload.requestId, tipo: 'emprestimo', action: 'salvarEmprestimoWeb', payload: p.payload, estado: 'Precisa de conferência', descricao: p.payload.pessoa + ' • ' + p.payload.descricao }); });
+  const notas = operacoesNotasPendentesGestor();
+  if (notas.length) mapa.set('notas', { id: 'notas', tipo: 'notas', action: 'salvarNotasWeb', estado: lerJSONLocalGestor('gestorNotasConflitoV2', null) ? 'Conflito nas notas' : 'Notas aguardando envio', descricao: notas.length + ' alteração(ões) guardada(s) neste aparelho' });
+  return Array.from(mapa.values());
+}
+function atualizarBadgeAtividadeGestor() {
+  try {
+    const n = listarPendenciasAtividadeGestor().length;
+    let badge = document.getElementById('badgeAtividadeGestor');
+    if (!badge) { const titulo = document.querySelector('header h1'); if (titulo) { badge = botaoAtividadeGestor('', abrirAtividadeGestor); badge.id = 'badgeAtividadeGestor'; badge.className = 'ml-2 rounded-md border border-amber-400/40 bg-amber-500/15 text-amber-200 px-2 py-1 text-[10px] font-bold'; titulo.appendChild(badge); } }
+    if (badge) { badge.textContent = n + (n === 1 ? ' pendência' : ' pendências'); badge.classList.toggle('hidden', !n); }
+  } catch (_) { /* A indicação não altera nem apaga as pendências. */ }
+}
+function abrirAtividadeGestor() {
+  fecharMenuMobile(); setAba('atividade'); selecionarPainelAtividadeGestor('pendentes'); atualizarBadgeAtividadeGestor();
+}
+function selecionarPainelAtividadeGestor(painel) {
+  painelAtividadeGestor = painel;
+  ['pendentes', 'historico', 'diagnostico'].forEach(id => {
+    document.getElementById('atividade-' + id).classList.toggle('hidden', id !== painel);
+    const b = document.getElementById('atividade-tab-' + id); b.setAttribute('aria-pressed', String(id === painel));
+    b.className = 'rounded-xl py-2 text-xs font-bold ' + (id === painel ? 'bg-blue-700 text-white' : 'bg-slate-800 text-slate-200 border border-slate-600');
+  });
+  renderizarPendenciasAtividadeGestor(); if (painel === 'historico') carregarHistoricoAtividadeGestor(false);
+}
+function renderizarPendenciasAtividadeGestor() {
+  const box = document.getElementById('listaPendenciasAtividade'); if (!box) return; box.replaceChildren();
+  const ultima = lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null);
+  document.getElementById('ultimaAtualizacaoAtividade').textContent = (navigator.onLine ? 'Com conexão' : 'Offline') + ' • ' + (ultima ? 'Última atualização dos dados: ' + new Date(ultima).toLocaleString('pt-BR') : 'Sem atualização confirmada neste aparelho');
+  let pendentes; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) { box.appendChild(elementoAtividadeGestor('p', 'Não foi possível ler as pendências. Não limpe o armazenamento deste aparelho.', 'text-sm text-amber-200')); return; }
+  if (!pendentes.length) box.appendChild(elementoAtividadeGestor('div', 'Tudo em dia. Nenhum envio aguardando confirmação neste aparelho.', 'card-glass p-5 text-sm text-emerald-200'));
+  pendentes.forEach(p => {
+    const card = elementoAtividadeGestor('article', null, 'card-glass p-4 space-y-2');
+    card.append(elementoAtividadeGestor('h3', rotuloAcaoAtividadeGestor(p.action), 'font-bold text-white text-sm'), elementoAtividadeGestor('p', p.estado, 'text-xs font-bold text-amber-200'), elementoAtividadeGestor('p', p.descricao, 'text-xs text-slate-200 break-words'));
+    const b = botaoAtividadeGestor(p.tipo === 'notas' ? 'Conferir notas' : 'Repetir envio protegido', async () => {
+      if (p.tipo === 'notas') { abrirFerramenta('notas'); return; }
+      if (!navigator.onLine) { mostrarAviso('Sem conexão', 'O item continua guardado neste aparelho.'); return; }
+      if (!p.payload) { mostrarAviso('Conferência necessária', 'Abra a seção original para conferir esta operação.'); return; }
+      mostrarConfirmacao('Repetir envio protegido', 'Será reenviada a mesma operação. Se a nuvem já a confirmou, ela não será registrada duas vezes.', async () => {
+        b.disabled = true;
+        try {
+          await apiCall(p.action, p.payload);
+          if (p.tipo === 'fila') localStorage.removeItem(GESTOR_FILA_PREFIXO + p.id);
+          localStorage.removeItem('gestorEmprestimoPendenteV3:' + p.id);
+          mostrarAviso('Envio confirmado', 'A nuvem confirmou esta operação.');
+          exibirPendenciaEmprestimoGestor(); await carregarDados();
+        } catch (e) { mostrarAviso('Envio ainda não confirmado', e.message); }
+        finally { b.disabled = false; renderizarPendenciasAtividadeGestor(); atualizarIndicadorOffline(); atualizarBadgeAtividadeGestor(); }
+      }, false, 'Repetir com proteção', 'neutral');
+    });
+    card.appendChild(b); box.appendChild(card);
+  });
+  document.getElementById('textoDiagnosticoAtividade').textContent = pendentes.length + ' grupo(s) pendente(s). ' + (navigator.onLine ? 'O navegador informa que há rede; a confirmação depende da resposta da nuvem.' : 'Sem rede no momento. Seus itens locais continuam guardados.');
+}
+async function atualizarCentralAtividadeGestor() {
+  await carregarDados(); renderizarPendenciasAtividadeGestor(); atualizarBadgeAtividadeGestor();
+}
+async function carregarHistoricoAtividadeGestor(append) {
+  if (append && carregandoAtividadeGestor) return;
+  const req = ++requisicaoAtividadeGestor, estado = document.getElementById('estadoHistoricoAtividade');
+  if (!append) { offsetAtividadeGestor = 0; paginaAtividadeGestor = []; }
+  if (!navigator.onLine) {
+    carregandoAtividadeGestor = false; document.getElementById('maisHistoricoAtividade').classList.add('hidden');
+    const cache = lerJSONLocalGestor('gestorHistoricoCacheV1', null); paginaAtividadeGestor = cache?.itens || [];
+    estado.textContent = cache ? 'Cópia offline de ' + new Date(cache.data).toLocaleString('pt-BR') + '. Conecte-se para conferir ou desfazer ações.' : 'Conecte-se para carregar o histórico confirmado.';
+    renderizarHistoricoAtividadeGestor(); return;
+  }
+  carregandoAtividadeGestor = true; document.getElementById('maisHistoricoAtividade').disabled = true; estado.textContent = 'Buscando ações confirmadas…';
+  const offset = append ? offsetAtividadeGestor + 20 : 0;
+  try {
+    const res = await apiCall('obterAtividadeWeb', { offset, limite: 20, termo: document.getElementById('buscaAtividade').value.trim() });
+    if (req !== requisicaoAtividadeGestor) return;
+    paginaAtividadeGestor = append ? paginaAtividadeGestor.concat(res.itens) : res.itens; offsetAtividadeGestor = offset;
+    estado.textContent = res.total + ' ação(ões) encontrada(s).';
+    document.getElementById('maisHistoricoAtividade').classList.toggle('hidden', !res.temMais);
+    try { localStorage.setItem('gestorHistoricoCacheV1', JSON.stringify({ data: Date.now(), itens: paginaAtividadeGestor.slice(0, 20) })); } catch (_) {}
+    renderizarHistoricoAtividadeGestor();
+  } catch (e) { if (req === requisicaoAtividadeGestor) estado.textContent = 'Não foi possível atualizar o histórico. ' + e.message; }
+  finally { if (req === requisicaoAtividadeGestor) { carregandoAtividadeGestor = false; document.getElementById('maisHistoricoAtividade').disabled = false; } }
+}
+function textoRegistroAtividadeGestor(r) {
+  if (!r) return 'Não existia';
+  return [r.pessoa, r.descricao, formatBRL(r.valor), r.forma, r.parcela, r.mes, r.situacao, 'Pago ao banco: ' + formatBRL(r.pagoBanco || 0)].filter(Boolean).join(' • ');
+}
+function renderizarHistoricoAtividadeGestor() {
+  const box = document.getElementById('listaHistoricoAtividade'); box.replaceChildren();
+  if (!paginaAtividadeGestor.length) { box.appendChild(elementoAtividadeGestor('p', 'Nenhuma ação neste histórico.', 'text-sm text-slate-300 py-4')); return; }
+  paginaAtividadeGestor.forEach(e => {
+    const card = elementoAtividadeGestor('article', null, 'card-glass p-4 space-y-2 break-words');
+    card.append(elementoAtividadeGestor('h3', e.titulo + (e.desfeita ? ' • Desfeita' : ''), 'font-bold text-white text-sm'), elementoAtividadeGestor('p', new Date(e.data).toLocaleString('pt-BR'), 'text-xs text-slate-300'));
+    if (e.resumo) card.appendChild(elementoAtividadeGestor('p', textoRegistroAtividadeGestor(e.resumo), 'text-xs text-slate-200 leading-relaxed'));
+    if (e.quantidade > 1) card.appendChild(elementoAtividadeGestor('p', e.quantidade + ' registros envolvidos', 'text-xs text-slate-300'));
+    if (e.detalhes?.length) {
+      const detalhes = elementoAtividadeGestor('details', null, 'text-xs text-slate-200'); detalhes.appendChild(elementoAtividadeGestor('summary', 'Ver alterações', 'cursor-pointer py-2 text-sky-200'));
+      e.detalhes.forEach(d => { const linha = elementoAtividadeGestor('div', null, 'border-t border-slate-700 py-2 space-y-1'); linha.append(elementoAtividadeGestor('p', 'Antes: ' + textoRegistroAtividadeGestor(d.antes)), elementoAtividadeGestor('p', 'Depois: ' + (d.depois ? textoRegistroAtividadeGestor(d.depois) : 'Excluído'))); detalhes.appendChild(linha); });
+      if (e.detalhesTotal > e.detalhes.length) detalhes.appendChild(elementoAtividadeGestor('p', 'Exibindo as primeiras ' + e.detalhes.length + ' alterações.')); card.appendChild(detalhes);
+    }
+    if (e.podeDesfazer && navigator.onLine) {
+      const b = botaoAtividadeGestor('Desfazer ação', () => mostrarConfirmacao('Desfazer esta ação?', 'O app vai conferir se os registros continuam na mesma versão antes de recuperar os dados anteriores.', async () => {
+        b.disabled = true;
+        try { await apiCall('desfazerAtividadeWeb', { eventoId: e.id }); mostrarAviso('Ação desfeita', 'Os registros foram recuperados. A recuperação também aparece no histórico.'); await carregarDados(); await carregarHistoricoAtividadeGestor(false); }
+        catch (erro) { mostrarAviso('Não foi possível desfazer', erro.message); await carregarHistoricoAtividadeGestor(false); }
+        finally { b.disabled = false; }
+      }, false, 'Desfazer com conferência', 'neutral')); card.appendChild(b);
+    } else if (e.motivo && e.motivo !== 'Esta ação não oferece desfazer.') card.appendChild(elementoAtividadeGestor('p', e.motivo, 'text-xs text-amber-200'));
+    box.appendChild(card);
+  });
+}
+function registrarDiagnosticoAtividadeGestor(action, erro) {
+  try {
+    const eventos = lerJSONLocalGestor('gestorDiagnosticoV1', []);
+    eventos.push({ data: new Date().toISOString(), acao: /^[A-Za-z]+$/.test(action) ? action : 'outra', resultado: erro ? (erro.resultadoIncerto ? 'confirmacao_pendente' : erro.status ? 'http_' + Number(erro.status) : 'nao_confirmado') : 'confirmado' });
+    localStorage.setItem('gestorDiagnosticoV1', JSON.stringify(eventos.slice(-30)));
+    if (!erro && action === 'getDadosCompletos') localStorage.setItem('gestorUltimaAtualizacaoV1', JSON.stringify(Date.now()));
+  } catch (_) { /* Diagnóstico não participa da gravação financeira. */ }
+}
+function montarDiagnosticoGestor() {
+  let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
+  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado })) };
+}
+function copiarDiagnosticoGestor() { copiarTextoAreaTransferencia(JSON.stringify(montarDiagnosticoGestor(), null, 2), 'Diagnóstico copiado.'); }
+
+async function abrirConferenciaFaturaGestor(forma, mes) {
+  fecharMenuMobile(); const modal = document.getElementById('modalPagamentoFaturaGestor');
+  const select = document.getElementById('cartaoPagamentoFaturaGestor'); select.replaceChildren();
+  formasGlobais.filter(f => { const n = typeof f === 'string' ? f : f.nome; return n && !/pix|d[eé]bito|transfer[eê]ncia|dinheiro|total|carteira/i.test(n); }).forEach(f => { const n = typeof f === 'string' ? f : f.nome; select.add(new Option(n, n)); });
+  if (forma) select.value = forma;
+  const hoje = new Date(); document.getElementById('mesPagamentoFaturaGestor').value = mes || String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+  document.getElementById('valorPagamentoFaturaGestor').value = ''; modal.classList.remove('hidden');
+  select.focus(); await conferirPagamentoFaturaGestor();
+}
+function fecharPagamentoFaturaGestor() { document.getElementById('modalPagamentoFaturaGestor').classList.add('hidden'); ++requisicaoPagamentoGestor; }
+async function conferirPagamentoFaturaGestor() {
+  const req = ++requisicaoPagamentoGestor; faturaConferidaGestor = null;
+  const estado = document.getElementById('estadoPagamentoFaturaGestor'), box = document.getElementById('resumoPagamentoFaturaGestor'); box.replaceChildren();
+  document.getElementById('salvarPagamentoFaturaGestor').disabled = true;
+  if (!navigator.onLine) { estado.textContent = 'Conecte-se para conferir o saldo atualizado antes de registrar um pagamento.'; return; }
+  estado.textContent = 'Conferindo a fatura…';
+  try {
+    const f = await apiCall('obterFaturaPagamentoWeb', { forma: document.getElementById('cartaoPagamentoFaturaGestor').value, mesFatura: document.getElementById('mesPagamentoFaturaGestor').value });
+    if (req !== requisicaoPagamentoGestor) return; faturaConferidaGestor = f;
+    [['Total registrado', f.total], ['Pago ao banco', f.pago], ['Em aberto', f.restante]].forEach(([rotulo, valor]) => { const c = elementoAtividadeGestor('div', null, 'rounded-xl bg-slate-900 border border-slate-600 p-2 min-w-0'); c.append(elementoAtividadeGestor('p', rotulo, 'text-[10px] text-slate-300'), elementoAtividadeGestor('p', formatBRL(valor), 'text-xs sm:text-sm text-white font-bold mt-1 break-words')); box.appendChild(c); });
+    estado.textContent = f.restante > 0 ? 'Você pode registrar um pagamento parcial ou o saldo total.' : 'Não há saldo em aberto nesta fatura.';
+    document.getElementById('salvarPagamentoFaturaGestor').disabled = f.restante <= 0;
+  } catch (e) { if (req === requisicaoPagamentoGestor) estado.textContent = e.message; }
+}
+function usarSaldoPagamentoFaturaGestor() { if (faturaConferidaGestor) definirValorMoeda('valorPagamentoFaturaGestor', faturaConferidaGestor.restante); }
+function confirmarPagamentoFaturaGestor() {
+  if (pagamentoFaturaEmCursoGestor || !faturaConferidaGestor) return;
+  const f = { ...faturaConferidaGestor }, valor = lerValorMoeda('valorPagamentoFaturaGestor');
+  if (valor <= 0 || Math.round(valor * 100) > Math.round(f.restante * 100)) { mostrarAviso('Confira o valor', 'Informe um valor maior que zero e até o saldo em aberto.'); return; }
+  mostrarConfirmacao('Confirmar pagamento ao banco', 'Registrar ' + formatBRL(valor) + ' pagos na fatura ' + f.mesFatura + ' de ' + f.forma + '? O recebimento de terceiros não será alterado.', async () => {
+    if (pagamentoFaturaEmCursoGestor) return; pagamentoFaturaEmCursoGestor = true;
+    const campos = Array.from(document.getElementById('formPagamentoFaturaGestor').elements); campos.forEach(c => { c.disabled = true; });
+    try { const r = await apiCall('registrarPagamentoFaturaWeb', { forma: f.forma, mesFatura: f.mesFatura, versaoFatura: f.versaoFatura, valor }); mostrarAviso('Pagamento registrado', 'Saldo restante: ' + formatBRL(r.restante) + '. Você pode conferir ou desfazer em Atividade.'); fecharPagamentoFaturaGestor(); await carregarDados(); }
+    catch (e) { mostrarAviso(e.resultadoIncerto ? 'Pagamento precisa de conferência' : 'Pagamento não confirmado', e.message); if (!e.resultadoIncerto) await conferirPagamentoFaturaGestor(); }
+    finally { pagamentoFaturaEmCursoGestor = false; campos.forEach(c => { c.disabled = false; }); atualizarBadgeAtividadeGestor(); }
+  }, false, 'Sim, paguei ao banco', 'success');
+}
+
+abasConfig.push({ id: 'atividade', icone: '↻', titulo: 'Atividade', tituloD: 'Atividade e sincronização', cor: 'text-slate-300', principal: false });
+const apiOriginalAtividadeGestor = window.apiCall;
+const indicadorOfflineOriginalAtividadeGestor = window.atualizarIndicadorOffline;
+window.atualizarIndicadorOffline = function () { indicadorOfflineOriginalAtividadeGestor(); atualizarBadgeAtividadeGestor(); };
+const notasUIOriginalAtividadeGestor = window.renderizarNotasUI;
+window.renderizarNotasUI = function () { notasUIOriginalAtividadeGestor(); atualizarBadgeAtividadeGestor(); };
+window.apiCall = async function (action, param, tentativas) {
+  try { const r = await apiOriginalAtividadeGestor(action, param, tentativas); registrarDiagnosticoAtividadeGestor(action, null); return r; }
+  catch (e) { registrarDiagnosticoAtividadeGestor(action, e); throw e; }
+  finally { atualizarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); }
+};
+window.quitarFaturaCartaoMes = abrirConferenciaFaturaGestor;
+document.addEventListener('DOMContentLoaded', atualizarBadgeAtividadeGestor);
+window.addEventListener('storage', () => { atualizarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); });
+document.addEventListener('keydown', e => {
+  const modal = document.getElementById('modalPagamentoFaturaGestor'); if (modal.classList.contains('hidden')) return;
+  if (e.key === 'Escape') fecharPagamentoFaturaGestor();
+  if (e.key === 'Tab') { const focaveis = Array.from(modal.querySelectorAll('button:not(:disabled),input:not(:disabled),select:not(:disabled)')); const primeiro = focaveis[0], ultimo = focaveis[focaveis.length - 1]; if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); } else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primeiro.focus(); } }
+});
 </script>
 </body>
 </html>

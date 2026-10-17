@@ -7,7 +7,8 @@ const ACAO_PERMITIDA = new Set([
   'editarAssinaturaWeb', 'cancelarAssinaturaWeb', 'salvarFormaPagamentoWeb',
   'reordenarFormasPagamentoWeb', 'excluirFormaPagamentoWeb', 'salvarCategoriasWeb',
   'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb',
-  'exportarBackupDadosWeb'
+  'exportarBackupDadosWeb', 'obterAtividadeWeb', 'desfazerAtividadeWeb',
+  'obterFaturaPagamentoWeb', 'registrarPagamentoFaturaWeb'
 ]);
 
 module.exports = async function gestor(req, res) {

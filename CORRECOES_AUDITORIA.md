@@ -33,9 +33,10 @@ A interface exige a versão compatível do backend antes de enviar alterações.
 ## Estrutura criada automaticamente
 
 - As onze primeiras colunas de Lançamentos e Empréstimos continuam sendo os dados financeiros.
-- As colunas **L:Q** guardam identidade, versão, estado do pagamento ao banco e conferência do registro. Não copie esses identificadores ao criar outra compra manualmente.
+- As colunas **L:R** guardam identidade, versão, estado do pagamento ao banco, conferência do registro e valor pago ao banco. Não copie esses identificadores ao criar outra compra manualmente.
 - Se essas colunas já tiverem dados particulares, a migração para e pede que sejam preservados antes de continuar.
 - A aba oculta **_Gestor_Operacoes** guarda o diário e os resultados dos envios. Não a apague: ela permite recuperar falhas e reconhecer reenvios.
+- A aba **_Gestor_Atividade** guarda o histórico visível e os dados necessários para desfazer ações. Ela também entra na exportação de backup quando existir.
 
 ## Registros antigos
 
@@ -47,7 +48,7 @@ Parcelamentos antigos que não possam ser agrupados com segurança são sinaliza
 
 Execute `node --test` na pasta do projeto para rodar os testes locais com dados fictícios. Eles não acessam contas ou planilhas reais.
 
-Na conferência final, os **57 testes passaram**. As duas cópias da interface também foram conferidas como idênticas ao `index.html` principal.
+Na conferência desta atualização, os **71 testes passaram**. As duas cópias da interface também foram conferidas como idênticas ao `index.html` principal.
 
 Além desses testes, foram preparados testes em navegador isolado para texto hostil, perda de resposta, reabertura do app, fila e notas offline, paginação e geração de PDFs grandes.
 
@@ -55,11 +56,26 @@ O fluxo integrado ligou a interface ao proxy e ao código real do Apps Script, s
 
 Esses testes não confirmam a configuração ativa das permissões Vercel/Apps Script. A rodada final na cópia de teste e no PWA instalado continua sendo necessária antes de conectar a planilha original.
 
-## Próximas melhorias úteis
+## Atividade, sincronização e pagamentos
 
-1. Uma central única com todos os itens aguardando sincronização e suas situações.
-2. Um histórico visível das alterações com desfazer para operações reversíveis.
-3. Restauração de backup com prévia dos registros e totais antes da confirmação.
-4. Gerar o CSS durante a publicação e reduzir as funções antigas redefinidas no HTML, para facilitar a manutenção e diminuir o trabalho do navegador.
+- No Menu, **Atividade e sincronização** reúne pendências, histórico e diagnóstico. As abas principais permanecem no lugar.
+- O reenvio usa a identificação original da operação. Só a pendência confirmada é removida.
+- O histórico começa nesta versão; não reconstrói alterações antigas. Exclusões, edições, recebimentos e pagamentos compatíveis oferecem desfazer com confirmação.
+- O desfazer confere identidade, conteúdo e versão. Se o registro mudou depois, ele bloqueia a recuperação para preservar as alterações recentes. Não restaura uma aba inteira nem oferece refazer.
+- **Conferir pagamento**, na aba Mensal ou na central, permite registrar pagamento parcial ou integral da fatura. Receber de uma pessoa continua independente de pagar ao banco.
+- O valor pago é distribuído entre os registros da fatura para controlar o saldo. Juros e encargos não são calculados automaticamente; registre-os como despesas quando existirem.
+- O diagnóstico copia informações técnicas, sem nomes, descrições, valores financeiros, chave Pix ou tokens.
 
-Esses itens são sugestões para uma etapa futura; não fazem parte desta correção.
+### Teste na cópia
+
+1. Abra o Menu e entre em Atividade e sincronização.
+2. Crie um lançamento fictício, exclua e recupere pelo histórico. Confira que apareceu apenas uma vez.
+3. Registre um pagamento parcial de fatura e confira saldo, limite e PDF mensal. O terceiro deve continuar devendo até registrar o recebimento.
+4. Desfaça o pagamento pelo histórico e confira os totais novamente.
+5. Confira uma pendência offline e o diagnóstico antes de copiar.
+
+O ensaio em navegador isolado cobriu pagamento parcial, desfazer, recuperação de exclusão e reenvio offline através da interface, proxy e backend, com planilha fictícia. Também foram gerados PDFs de até 34 páginas.
+
+### Adiado conforme combinado
+
+**Restaurar backup com prévia** e os recursos relacionados à restauração completa ficam para outra etapa. Gerar CSS durante a publicação e reduzir funções antigas do HTML também permanecem como manutenção futura.
