@@ -116,7 +116,7 @@ function validarLancamentoWeb_(dados, indice) {
 
   const isPix = String(dados.formaPagto).toLowerCase().includes('pix');
   const isAssinatura = Boolean(dados.isAssinatura);
-  const parcelas = (isPix || isAssinatura) ? 1 : Number(dados.numParcelas || 1);
+  const parcelas = (isAssinatura || (isPix && dados.pixParcelado !== true)) ? 1 : Number(dados.numParcelas || 1);
   const parcelaInicial = (parcelas <= 1) ? 1 : Number(dados.parcelaInicial || 1);
   if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > 600) throw new Error(contexto + 'o número de parcelas deve ser um inteiro positivo.');
   if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > parcelas) {
@@ -365,7 +365,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
         let jaVenceuOuPagou = false;
 
         if (isPix) {
-          if (!dtCompra || timeHoje >= dtCompra.getTime()) {
+          if (parseNumParcela(parcela).total <= 1 && (!dtCompra || timeHoje >= dtCompra.getTime())) {
             jaVenceuOuPagou = true;
           }
         } else if (infoFat.m > 0 && infoFat.a > 0) {
@@ -1081,7 +1081,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
       const isAssinatura = Boolean(dados.isAssinatura);
 
       let numParcelas = 1, parcelaInicial = 1;
-      if (!isAssinatura && !isPix) {
+      if (!isAssinatura && (!isPix || dados.pixParcelado === true)) {
         numParcelas = Math.max(1, parseInt(dados.numParcelas, 10) || 1);
         parcelaInicial = Math.max(1, parseInt(dados.parcelaInicial, 10) || 1);
         if (parcelaInicial > numParcelas) parcelaInicial = 1;
@@ -1124,7 +1124,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
           pTxt,
           valoresParcelas[p - 1],
           "'" + mFmt + '/' + aFmt,
-          statusPadrao,
+          isPix && numParcelas > 1 && (idx > 0 || dRef.getFullYear() > hoje.getFullYear() || (dRef.getFullYear() === hoje.getFullYear() && dRef.getMonth() > hoje.getMonth())) ? 'Em Aberto' : statusPadrao,
           dados.tags || ''
         ]);
       }
@@ -2381,8 +2381,8 @@ function salvarEmprestimoWebInterno_(dados) {
 
     const valorTotal = centavosGestor_(dados.valorTotal) / 100;
     if (!Number.isFinite(valorTotal) || valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
-    const numParcelas = isPix ? 1 : Number(dados.numParcelas || 1);
-    const parcelaInicial = isPix ? 1 : Number(dados.parcelaInicial || 1);
+    const numParcelas = (isPix && dados.pixParcelado !== true) ? 1 : Number(dados.numParcelas || 1);
+    const parcelaInicial = (isPix && dados.pixParcelado !== true) ? 1 : Number(dados.parcelaInicial || 1);
     if (!Number.isInteger(numParcelas) || numParcelas < 1 || numParcelas > 600) throw new Error('O número de parcelas deve ser um inteiro positivo.');
     if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
       throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');

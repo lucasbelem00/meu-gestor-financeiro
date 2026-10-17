@@ -19,6 +19,15 @@ Atualize primeiro o Apps Script da cópia de teste e depois publique a interface
 
 Conforme combinado, otimizações de velocidade e restauração completa de backup ficam para outra etapa. Esta atualização não faz migração de infraestrutura nem restaura dados.
 
+## Pix e horizonte
+
+- Pix continua sendo uma única forma de pagamento; não foi criado Boleto ou Pix parcelado.
+- Novo lançamento oferece **Pagamento em parcelas** ao selecionar Pix. As parcelas futuras ficam em aberto até confirmação, sem consumir limite de cartão.
+- Empréstimos oferece **Recebimento em parcelas**: representa a devolução pela pessoa, independente do Pix enviado à vista.
+- Sem marcar a opção, Pix continua único. A indicação 1/1 fica oculta nas listas e no detalhamento do PDF; o registro interno permanece compatível.
+- No celular, o horizonte mostra dois meses e omite o total da janela para caber melhor. Valores são apresentados sem repetir R$, com a unidade no cabeçalho. Comparar meses mostra a tabela mais ampla.
+- Atualize o backend antes de publicar a interface: versões anteriores não reconhecem o parcelamento opcional do Pix.
+
 ## Conferência manual sugerida
 
 Confira a ordem das categorias, a preferência Pix após reabrir o cadastro, a edição da mensagem antes de copiar, o último valor de um empréstimo conhecido e a posição do Histórico após editar um item de uma página posterior.

@@ -697,7 +697,7 @@
                 <button onclick="mudarMesEvolucao(1)" id="btnEvolNext" class="px-2.5 py-1.5 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition text-xs font-bold shadow-md whitespace-nowrap">Próx &rarr;</button>
               </div>
             </div>
-            <table class="w-full text-left text-xs sm:text-sm">
+            <table id="tabelaHorizonte" class="w-full text-left text-xs sm:text-sm">
               <thead class="text-slate-400 uppercase text-[10px] sm:text-[11px] border-b border-slate-700"><tr id="faturas-header"><th class="py-2">Forma</th><th>Meses</th><th>Total</th></tr></thead>
               <tbody id="faturas-body" class="divide-y divide-slate-800/50"><tr><td colspan="6" class="py-4 text-center text-slate-500">Carregando...</td></tr></tbody>
             </table>
@@ -1954,9 +1954,9 @@
 
     function validarLimitesDataTripla(contexto = 'novo') {
       const mapIds = {
-        'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
+        'novo': ['chkPixParcelado', 'inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
         'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
-        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'],
+        'emp': ['chkPixRecebimento', 'inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'],
         'empEd': ['inpEmpEdDataDia', 'inpEmpEdDataMes', 'inpEmpEdDataAno', 'inpEmpEdData'] // Adicionado!
       };
       const [idDia, idMes, idAno] = mapIds[contexto] || mapIds['novo'];
@@ -1989,7 +1989,7 @@
      const mapIds = {
         'novo': ['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData'],
         'edicao': ['inpEdDataDia', 'inpEdDataMes', 'inpEdDataAno', 'inpEdData'],
-        'emp': ['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'],
+        'emp': ['chkPixRecebimento', 'inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData'],
         'empEd': ['inpEmpEdDataDia', 'inpEmpEdDataMes', 'inpEmpEdDataAno', 'inpEmpEdData'] // Adicionado!
       };
       const [idDia, idMes, idAno, idHidden] = mapIds[contexto] || mapIds['novo'];
@@ -2685,7 +2685,9 @@
       const inpParcIni = document.getElementById('inpParcIni');
       if (!grid || !boxValor || !boxParc || !boxParcIni || !inpParc || !inpParcIni) return;
 
-      if (chkAss || isPix) {
+      const opcaoPix = document.getElementById('opcaoPixParcelado');
+      if (opcaoPix) opcaoPix.hidden = !isPix || chkAss;
+      if (chkAss || (isPix && !document.getElementById('chkPixParcelado')?.checked)) {
         inpParc.value = 1;
         inpParcIni.value = 1;
         boxParc.classList.add('hidden');
@@ -2998,7 +3000,7 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
       const isAssinatura = document.getElementById('checkAssinatura').checked;
       const isPix = formaVal.toLowerCase().includes('pix');
 
-      let qtdParc = (isAssinatura || isPix) ? 1 : (parseInt(document.getElementById('inpParc').value, 10) || 1);
+      let qtdParc = (isAssinatura || (isPix && !document.getElementById('chkPixParcelado')?.checked)) ? 1 : (parseInt(document.getElementById('inpParc').value, 10) || 1);
       let iniParc = (qtdParc <= 1) ? 1 : (parseInt(document.getElementById('inpParcIni').value, 10) || 1);
       if (iniParc > qtdParc) iniParc = 1;
 
@@ -3010,6 +3012,7 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
         categoria: document.getElementById('selCat').value,
         tags: tagsTratadas,
         valorTotal: valorFloat,
+        pixParcelado: Boolean(document.getElementById('chkPixParcelado')?.checked),
         numParcelas: qtdParc,
         parcelaInicial: iniParc,
         statusInicial: isAssinatura ? 'Assinatura Ativa' : (isPix ? 'Pago' : 'Em Aberto'),
@@ -3057,8 +3060,9 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
       return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
     }
 
-    function formatarInfoParcelaCard(parcStr, resParcObj) {
+    function formatarInfoParcelaCard(parcStr, resParcObj, forma) {
       const limpa = String(parcStr || '').replace(/^'/, '').trim();
+      if (/pix/i.test(forma || '') && (!limpa || limpa === '1/1')) return '';
       if (limpa === '∞/∞') return 'Fixo Mensal (∞)';
       if (limpa.includes('/') && !limpa.endsWith('/1')) {
         if (resParcObj && resParcObj.faltam > 0 && resParcObj.fimMes) {
@@ -3083,10 +3087,10 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
           <div class="flex justify-between items-start gap-2"><div class="min-w-0">
             <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${escaparHTML(l[0])}</div>
             <div class="text-white font-bold text-base mt-0.5 leading-tight break-words">${escaparHTML(l[1])}</div>
-            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(l[3])}</div><div>${tagsHtml}</div>
+            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHtml}</div>
           </div><div class="text-right shrink-0">
             <div class="text-emerald-400 font-bold text-lg leading-tight tracking-tight">${escaparHTML(l[7])}</div>
-            <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null)}</div>
+            <div class="${/pix/i.test(l[2]) && l[6] === '1/1' ? 'hidden' : ''} text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</div>
           </div></div>
           <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
             <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${escaparHTML(l[9])}</span>
@@ -3507,7 +3511,9 @@ function chamarFiltroBackend(append = false) {
       const inpParcIni = document.getElementById('inpEmpParcIni');
       if (!grid || !boxValor || !boxParc || !boxParcIni || !boxObs || !inpParc || !inpParcIni) return;
 
-      if (isPix) {
+      const opcaoPix = document.getElementById('opcaoPixRecebimento');
+      if (opcaoPix) opcaoPix.hidden = !isPix;
+      if (isPix && !document.getElementById('chkPixRecebimento')?.checked) {
         inpParc.value = '1';
         inpParcIni.value = '1';
         boxParc.classList.add('hidden');
@@ -3717,7 +3723,7 @@ function chamarFiltroBackend(append = false) {
                 <div>
                   <span class="text-[10px] font-bold text-amber-400 uppercase">👤 ${escaparHTML(it.pessoa)} • ${escaparHTML(it.data)}</span>
                   <div class="text-white font-bold text-sm mt-0.5">${escaparHTML(it.descricao)}</div>
-                  <div class="text-[11px] text-slate-400 mt-0.5">💰 ${escaparHTML(it.forma)} • Mês: <strong class="text-slate-200">${escaparHTML(it.mesFatura)}</strong> • Parc: <strong>${escaparHTML(it.parcela)}</strong></div>
+                  <div class="text-[11px] text-slate-400 mt-0.5">💰 ${escaparHTML(it.forma)} • Mês: <strong class="text-slate-200">${escaparHTML(it.mesFatura)}</strong>${/pix/i.test(it.forma) && it.parcela === '1/1' ? '' : ' • Parc: <strong>' + escaparHTML(it.parcela) + '</strong>'}</div>
                   ${it.observacoes ? `<div class="text-[10px] text-slate-400 italic mt-0.5">💬 ${escaparHTML(it.observacoes)}</div>` : ''}
                 </div>
                 <div class="text-right">
@@ -3934,7 +3940,7 @@ function chamarFiltroBackend(append = false) {
       msg.push('');
       itens.forEach(it => {
         total += it.valorRaw;
-        msg.push(`• ${it.descricao} (${it.parcela}) [${it.forma}]: *${it.valorFmt}*`);
+        msg.push(`• ${it.descricao} ${/pix/i.test(it.forma) && it.parcela === '1/1' ? '' : '(' + it.parcela + ')'} [${it.forma}]: *${it.valorFmt}*`);
       });
       msg.push('');
       msg.push(`💰 *${fSt === 'Recebido' ? 'Total Recebido' : 'Total em Aberto'}:* *${formatBRL(total)}*`);
@@ -4960,16 +4966,19 @@ function chamarFiltroBackend(append = false) {
       atualizarMesesDisponiveis(m, true);
     }
 
+    let compararHorizonteCompleto = false;
     function renderTabelaEvolucao() {
-      const qtdCols = window.innerWidth < 640 ? 3 : 4;
+      const compacto = window.innerWidth < 640 && !compararHorizonteCompleto;
+      const qtdCols = compacto ? 2 : 4;
+      const moedaHorizonte = valor => compacto ? Number(valor).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : formatBRL(valor);
       const mToShow = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + qtdCols);
 
-      let th = `<th class="py-2.5 pl-2">Forma</th>`;
+      let th = `<th class="py-2.5 pl-2">Forma${compacto ? '<span class="block text-[9px] font-normal">Valores em R$</span>' : ''}</th>`;
       mToShow.forEach(m => {
         const mCurto = m.length === 7 ? `${m.substring(0, 3)}${m.substring(5, 7)}` : m;
         th += `<th class="py-2.5 text-center"><button ${acaoHTML('irParaFaturaMensal', [m])} class="text-sky-400 hover:text-white underline decoration-sky-500/40 font-bold px-1.5 py-0.5 rounded hover:bg-slate-800 transition" title="Abrir fatura de ${escaparHTML(m)}">${escaparHTML(mCurto)} ↗</button></th>`;
       });
-      th += `<th class="py-2.5 text-right pr-2">Total</th>`;
+      th += `<th class="py-2.5 text-right pr-2 ${compacto ? 'hidden' : ''} ${compacto ? 'hidden' : ''}">Total</th>`;
       const hdr = document.getElementById('faturas-header'); if (hdr) hdr.innerHTML = th;
 
       let tb = '';
@@ -4995,9 +5004,9 @@ function chamarFiltroBackend(append = false) {
         let cols = mToShow.map(m => {
           const val = evolucaoPivot[forma][m] || 0;
           totalLinha += val;
-          return `<td class="py-2.5 text-center text-slate-300 font-medium whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+          return `<td class="py-2.5 text-center text-slate-300 font-medium whitespace-nowrap px-1">${val > 0 ? moedaHorizonte(val) : '-'}</td>`;
         });
-        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white whitespace-nowrap pr-1">${escaparHTML(forma)}</td>${cols.join('')}<td class="py-3 font-bold text-sky-200 text-right pr-2 whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+        tb += `<tr class="hover:bg-slate-800/40 border-b border-slate-800/70"><td class="py-3 pl-2 font-semibold text-white break-words pr-1">${escaparHTML(forma)}</td>${cols.join('')}<td class="py-3 font-bold text-sky-200 text-right pr-2 ${compacto ? 'hidden' : ''} whitespace-nowrap">${totalLinha > 0 ? moedaHorizonte(totalLinha) : '-'}</td></tr>`;
       });
 
       formasTotal.forEach(forma => {
@@ -5005,11 +5014,11 @@ function chamarFiltroBackend(append = false) {
         let cols = mToShow.map(m => {
           const val = evolucaoPivot[forma][m] || 0;
           totalLinha += val;
-          return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+          return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? moedaHorizonte(val) : '-'}</td>`;
         });
         
         const nomeExibicao = forma;
-        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">${escaparHTML(nomeExibicao)}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? formatBRL(totalLinha) : '-'}</td></tr>`;
+        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 break-words pr-1">${escaparHTML(nomeExibicao)}</td>${cols.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 ${compacto ? 'hidden' : ''} text-xs sm:text-base whitespace-nowrap">${totalLinha > 0 ? moedaHorizonte(totalLinha) : '-'}</td></tr>`;
       });
 
       const linhaTotalBanco = evolucaoPivot[chaveLinhaBanco] || {};
@@ -5021,9 +5030,9 @@ function chamarFiltroBackend(append = false) {
         const colsBanco = mToShow.map(m => {
           const val = linhaTotalBanco[m] || 0;
           totalBancoVisivel += val;
-          return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+          return `<td class="py-3.5 text-center text-purple-200 font-bold whitespace-nowrap px-1">${val > 0 ? moedaHorizonte(val) : '-'}</td>`;
         });
-        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 whitespace-nowrap pr-1">Fatura Real</td>${colsBanco.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 text-xs sm:text-base whitespace-nowrap">${totalBancoVisivel > 0 ? formatBRL(totalBancoVisivel) : '-'}</td></tr>`;
+        tb += `<tr class="bg-purple-950/25 border-t-2 border-purple-500/40"><td class="py-3.5 pl-2 font-extrabold text-purple-300 break-words pr-1">Fatura Real</td>${colsBanco.join('')}<td class="py-3.5 font-extrabold text-purple-400 text-right pr-2 ${compacto ? 'hidden' : ''} text-xs sm:text-base whitespace-nowrap">${totalBancoVisivel > 0 ? moedaHorizonte(totalBancoVisivel) : '-'}</td></tr>`;
       }
 
       const mapaTerceirosAReceber = evolucaoPivot[chaveLinhaTerceiros] || {};
@@ -5033,9 +5042,9 @@ function chamarFiltroBackend(append = false) {
         const colsTerceiros = mToShow.map(m => {
           const val = mapaTerceirosAReceber[m] || 0;
           totalTerceirosVisivel += val;
-          return `<td class="py-3 text-center text-amber-200 font-bold whitespace-nowrap px-1">${val > 0 ? formatBRL(val) : '-'}</td>`;
+          return `<td class="py-3 text-center text-amber-200 font-bold whitespace-nowrap px-1">${val > 0 ? moedaHorizonte(val) : '-'}</td>`;
         });
-        tb += `<tr class="bg-amber-950/20 border-t border-amber-500/30"><td title="Valores a receber de terceiros" class="py-3 pl-2 font-bold text-amber-300 whitespace-nowrap pr-1">Terceiros</td>${colsTerceiros.join('')}<td class="py-3 font-extrabold text-amber-300 text-right pr-2 whitespace-nowrap">${totalTerceirosVisivel > 0 ? formatBRL(totalTerceirosVisivel) : '-'}</td></tr>`;
+        tb += `<tr class="bg-amber-950/20 border-t border-amber-500/30"><td title="Valores a receber de terceiros" class="py-3 pl-2 font-bold text-amber-300 whitespace-nowrap pr-1">Terceiros</td>${colsTerceiros.join('')}<td class="py-3 font-extrabold text-amber-300 text-right pr-2 ${compacto ? 'hidden' : ''} whitespace-nowrap">${totalTerceirosVisivel > 0 ? moedaHorizonte(totalTerceirosVisivel) : '-'}</td></tr>`;
       }
 
       const fBody = document.getElementById('faturas-body'); if (fBody) fBody.innerHTML = tb;
@@ -5046,7 +5055,7 @@ function chamarFiltroBackend(append = false) {
     }
 
     function mudarMesEvolucao(step) {
-      const qtdCols = window.innerWidth < 640 ? 3 : 4;
+      const qtdCols = window.innerWidth < 640 && !compararHorizonteCompleto ? 2 : 4;
       evolucaoIdx += step;
       if (evolucaoIdx < 0) evolucaoIdx = 0;
       if (evolucaoIdx + qtdCols > evolucaoMeses.length) evolucaoIdx = Math.max(0, evolucaoMeses.length - qtdCols);
@@ -5199,13 +5208,13 @@ function chamarFiltroBackend(append = false) {
         <div class="flex justify-between items-start"><div>
           <div class="text-[10px] text-slate-400 font-bold uppercase">${escaparHTML(l[0])}</div>
           <div class="text-white font-bold text-sm mt-0.5 leading-tight">${escaparHTML(l[1])}</div>
-          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(l[3])}</div><div>${tagsHTML}</div>
+          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">💳 ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHTML}</div>
         </div><div class="text-right flex flex-col items-end">
           <div class="text-purple-400 font-bold text-base tracking-tight">${escaparHTML(l[7])}</div>
           <span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${escaparHTML(l[9])}</span>
         </div></div>
         <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
-          <span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null)}</span>
+          <span class="${/pix/i.test(l[2]) && l[6] === '1/1' ? 'hidden' : ''} text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</span>
           <button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button>
         </div>
       </div>`;
@@ -5287,7 +5296,7 @@ function chamarFiltroBackend(append = false) {
         if (chartRel) chartRel.destroy();
         chartRel = new Chart(document.getElementById('chartRelatorio').getContext('2d'), {
           type: 'pie',
-          data: { labels: res.categorias.map(c => c.nome), datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] },
+          data: { labels: res.categorias.map(c => isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome), datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] },
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } }
         });
 
@@ -5330,7 +5339,7 @@ function chamarFiltroBackend(append = false) {
             if (realPct >= 75 && realPct < 100) { corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; }
             else if (realPct >= 100) { corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; }
             const cSafe = c.nome.replace(/'/g, "\\'");
-            htmlMetas += `<div ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="cursor-pointer hover:opacity-90 transition"><div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">${escaparHTML(c.nome)} 🔍</span><span class="${corTexto}">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></div><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
+            htmlMetas += `<div ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="cursor-pointer hover:opacity-90 transition"><div class="flex justify-between text-xs font-semibold mb-1"><span class="text-slate-300">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)} 🔍</span><span class="${corTexto}">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></div><div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><div class="${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></div></div></div>`;
           }
         });
         document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
@@ -5376,7 +5385,7 @@ function chamarFiltroBackend(append = false) {
         res.categorias.forEach(c => {
           const pct = totalAnoRaw > 0 ? Math.round((c.total / totalAnoRaw) * 100) : 0;
           const cSafe = c.nome.replace(/'/g, "\\'");
-          htmlCat += `<tr ${acaoHTML('auditarItemAnual', ['categoria', c.nome])} class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${escaparHTML(c.nome)} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-white">${formatBRL(c.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
+          htmlCat += `<tr ${acaoHTML('auditarItemAnual', ['categoria', c.nome])} class="border-b border-slate-800/50 hover:bg-slate-800/50 cursor-pointer transition"><td class="py-2.5 text-slate-300 font-medium">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)} <span class="text-[10px] text-sky-400">↗</span></td><td class="py-2.5 text-right font-bold text-white">${formatBRL(c.total)} <span class="text-[10px] text-slate-400 font-normal ml-1">(${pct}%)</span></td></tr>`;
         });
         document.getElementById('tabela-anual-cat').innerHTML = htmlCat || '<tr><td colspan="2" class="py-4 text-center text-slate-500">Nenhum gasto.</td></tr>';
 
@@ -5503,7 +5512,7 @@ function chamarFiltroBackend(append = false) {
         porPessoa.set(nome, resumo);
       });
       if (porPessoa.size) tabela(['Pessoa', 'Total no período', 'A receber', 'Recebido'], [...porPessoa].sort(([a], [b]) => a.localeCompare(b, 'pt-BR')).map(([nome, r]) => [nome, moeda(r.total / 100), moeda((r.total - r.recebido) / 100), moeda(r.recebido / 100)]));
-      tabela(['Pessoa / compra', 'Pagamento / parcela', 'Mês / data da compra', 'Valor', 'Recebimento'], (terceiros.itens || []).map(item => [item.pessoa + ' - ' + item.descricao + (item.observacoes ? ' | ' + item.observacoes : ''), item.forma + ' | ' + item.parcela, item.mes + ' | ' + item.data, item.valor, item.status]), [62, 35, 30, 27, 28]);
+      tabela(['Pessoa / compra', 'Pagamento / parcela', 'Mês / data da compra', 'Valor', 'Recebimento'], (terceiros.itens || []).map(item => [item.pessoa + ' - ' + item.descricao + (item.observacoes ? ' | ' + item.observacoes : ''), item.forma + (/pix/i.test(item.forma) && item.parcela === '1/1' ? '' : ' | ' + item.parcela), item.mes + ' | ' + item.data, item.valor, item.status]), [62, 35, 30, 27, 28]);
       if (mensal && terceiros.totalRaw > 0) {
         titulo('3. Conferência por forma de pagamento');
         nota('Total registrado = seus gastos + compras de terceiros, incluindo as já reembolsadas. No cartão compõe a fatura; no Pix representa pagamentos à vista. Esta tabela não confirma pagamento ao banco.');
@@ -5512,7 +5521,7 @@ function chamarFiltroBackend(append = false) {
       if (mensal) {
         titulo((terceiros.totalRaw > 0 ? '4' : '3') + '. Extrato dos seus lançamentos');
         nota('Critério: gastos pessoais por mês da fatura e empréstimos por mês a receber. Cancelados são excluídos. Todos os registros do período são incluídos, independentemente dos filtros visuais de categoria ou tag.');
-        tabela(['Data / parcela', 'Descrição / tags', 'Forma / categoria', 'Situação', 'Valor pessoal'], (d.lancamentos || []).map(l => [l[0] + ' | ' + l[6], l[1] + (l[10] ? ' | ' + l[10] : ''), l[2] + ' | ' + l[3], l[9], l[7]]), [27, 65, 35, 27, 28]);
+        tabela(['Data / parcela', 'Descrição / tags', 'Forma / categoria', 'Situação', 'Valor pessoal'], (d.lancamentos || []).map(l => [l[0] + (/pix/i.test(l[2]) && l[6] === '1/1' ? '' : ' | ' + l[6]), l[1] + (l[10] ? ' | ' + l[10] : ''), l[2] + ' | ' + l[3], l[9], l[7]]), [27, 65, 35, 27, 28]);
       }
       if (!mensal) nota('Critério: gastos pessoais por mês da fatura e empréstimos por mês a receber. Cancelados são excluídos. Todos os registros do período são incluídos, independentemente dos filtros visuais de categoria ou tag.');
       const paginas = pdf.internal.getNumberOfPages();
@@ -6057,7 +6066,7 @@ function limparSimuladorTudo() {
         pessoa: document.getElementById('inpEmpPessoa')?.value || '',
         desc: document.getElementById('inpEmpDesc')?.value || '',
         valor: document.getElementById('inpEmpValor')?.value || '',
-        campos: Object.fromEntries(['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData', 'inpEmpMesFat', 'inpEmpPessoa', 'inpEmpDesc', 'selEmpForma', 'inpEmpValor', 'inpEmpParc', 'inpEmpParcIni', 'inpEmpObs'].map(id => [id, document.getElementById(id)?.value || '']))
+        campos: Object.fromEntries(['inpEmpDataDia', 'inpEmpDataMes', 'inpEmpDataAno', 'inpEmpData', 'inpEmpMesFat', 'inpEmpPessoa', 'inpEmpDesc', 'selEmpForma', 'inpEmpValor', 'inpEmpParc', 'inpEmpParcIni', 'inpEmpObs'].map(id => [id, document.getElementById(id)?.type === 'checkbox' ? document.getElementById(id).checked : document.getElementById(id)?.value || '']))
       };
       sessionStorage.setItem('rascunhoEmprestimo', JSON.stringify(rascunho));
     }
@@ -6647,7 +6656,7 @@ try {
       var isAssinatura = pxEl('checkAssinatura').checked;
       var isPix = formaVal.toLowerCase().indexOf('pix') >= 0;
 
-      var qtdParc = (isAssinatura || isPix) ? 1 : (parseInt(pxEl('inpParc').value, 10) || 1);
+      var qtdParc = (isAssinatura || (isPix && !document.getElementById('chkPixParcelado')?.checked)) ? 1 : (parseInt(pxEl('inpParc').value, 10) || 1);
       var iniParc = (qtdParc <= 1) ? 1 : (parseInt(pxEl('inpParcIni').value, 10) || 1);
       if (iniParc > qtdParc) iniParc = 1;
 
@@ -6659,6 +6668,7 @@ try {
         categoria: pxEl('selCat').value,
         tags: tagsTratadas,
         valorTotal: valorFloat,
+        pixParcelado: Boolean(document.getElementById('chkPixParcelado')?.checked),
         numParcelas: qtdParc,
         parcelaInicial: iniParc,
         statusInicial: isAssinatura ? 'Assinatura Ativa' : (isPix ? 'Pago' : 'Em Aberto'),
@@ -6720,8 +6730,9 @@ try {
         descricao: formatarTituloInteligente(pxEl('inpEmpDesc').value),
         formaPagto: pxEl('selEmpForma').value,
         valorTotal: valTotal,
-        numParcelas: ehPixEmprestimo ? 1 : (parseInt(pxEl('inpEmpParc').value, 10) || 1),
-        parcelaInicial: ehPixEmprestimo ? 1 : (parseInt(pxEl('inpEmpParcIni').value, 10) || 1),
+        numParcelas: (ehPixEmprestimo && !document.getElementById('chkPixRecebimento')?.checked) ? 1 : (parseInt(pxEl('inpEmpParc').value, 10) || 1),
+        parcelaInicial: (ehPixEmprestimo && !document.getElementById('chkPixRecebimento')?.checked) ? 1 : (parseInt(pxEl('inpEmpParcIni').value, 10) || 1),
+        pixParcelado: Boolean(document.getElementById('chkPixRecebimento')?.checked),
         observacoes: pxEl('inpEmpObs').value
       };
 
@@ -7309,6 +7320,24 @@ document.addEventListener('DOMContentLoaded', () => {
   window.selecionarPessoaChipEmp = function(...args) { selecionarOriginal(...args); atualizarUltimoEmp(); };
   const limparOriginal = window.limparFormularioEmprestimo;
   window.limparFormularioEmprestimo = function(...args) { const resultado = limparOriginal(...args); atualizarUltimoEmp(); return resultado; };
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const comparar = document.createElement('button'); comparar.type = 'button'; comparar.className = 'sm:hidden text-xs text-sky-300 mb-2'; comparar.textContent = 'Comparar meses';
+  const tabela = document.getElementById('tabelaHorizonte'); tabela.before(comparar);
+  comparar.addEventListener('click', () => { compararHorizonteCompleto = !compararHorizonteCompleto; comparar.textContent = compararHorizonteCompleto ? 'Mostrar dois meses' : 'Comparar meses'; renderTabelaEvolucao(); });
+  [['selForma','chkPixParcelado','opcaoPixParcelado','Pagamento em parcelas', atualizarLayoutParcelas, salvarRascunho], ['selEmpForma','chkPixRecebimento','opcaoPixRecebimento','Recebimento em parcelas', atualizarLayoutParcelasEmprestimo, salvarRascunhoEmp]].forEach(([selectId,id,boxId,titulo,atualizar,salvar]) => {
+    const select = document.getElementById(selectId);
+    const label = document.createElement('label'); label.id = boxId; label.hidden = true; label.className = 'mt-2 text-xs text-slate-300';
+    const check = document.createElement('input'); check.type = 'checkbox'; check.id = id; check.className = 'mr-2 rounded accent-indigo-500';
+    label.append(check, document.createTextNode(titulo)); select.parentElement.append(label);
+    check.addEventListener('change', () => { atualizar(); salvar(); });
+    select.addEventListener('change', () => { check.checked = false; atualizar(); salvar(); });
+    const limpar = id === 'chkPixParcelado' ? 'limparFormularioNovoGasto' : 'limparFormularioEmprestimo';
+    const original = window[limpar]; window[limpar] = function(...args) { check.checked = false; const resultado = original(...args); atualizar(); return resultado; };
+    atualizar();
+  });
 });
 </script>
 </body>
