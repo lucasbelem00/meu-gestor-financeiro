@@ -1803,6 +1803,9 @@ function getDadosCompletos() {
     }
     categorias.sort((a, b) => b.total - a.total);
 
+    // Empréstimos também acrescentam meses depois da primeira deduplicação.
+    // Consolidar só após reunir gastos pessoais e de terceiros.
+    mesesUnicos = [...new Set(mesesUnicos)].sort((a, b) => parseMesFat(b).time - parseMesFat(a).time);
     let anosUnicos = [...new Set(mesesUnicos.map(m => m.split('/')[1]))].sort((a, b) => b - a);
     let estruturaMesesPorAno = Object.create(null);
     mesesUnicos.forEach(mFat => {

@@ -4,6 +4,13 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {boot,fixture,personal,loan,launch}=require('./fixtures/gestor-mocks.cjs');
 const ler=ctx=>ctx.executarAcaoApi_('getDadosCompletos',null);
 
+test('dados consolidados não repetem meses compartilhados por gastos e empréstimos',()=>{
+  const {ctx}=boot(fixture([personal('Compra outubro'),personal('Compra novembro',50,'1/1','11/2026')],[loan('Ana'),loan('Bruno')]));
+  const dados=ler(ctx);
+  assert.equal(dados.mesesDisponiveis.length,new Set(dados.mesesDisponiveis).size);
+  assert.equal(dados.estruturaMesesAno['2026'].length,2);
+});
+
 test('inclusão com status e controles vazios completa a mesma linha sem duplicar',()=>{
   const {ctx,db}=boot(fixture([personal('Anterior',20)]));ler(ctx);
   const dados={...launch,isAssinatura:true,requestId:'fixo-incompleto-001'};

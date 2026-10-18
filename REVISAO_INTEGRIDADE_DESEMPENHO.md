@@ -39,3 +39,9 @@ A recuperação agora admite completar uma única linha acrescentada ao final qu
 Para aplicar na cópia de teste, substituir Backend/Code.gs no projeto correto e atualizar a implantação existente para uma nova versão. Depois atualizar os dados do app: a consulta tenta concluir a operação pendente e o histórico. Não cadastrar o gasto novamente nem editar o diário para forçar confirmação.
 
 A mensagem real de validação em J15 revelou uma lista antiga que só aceitava Pago, Em Aberto e Agendado. O backend agora atualiza a validação de J2:J nas linhas de Lançamentos antes da gravação, incluindo os estados de assinatura e cancelamento. A validação continua rejeitando estados desconhecidos. Um teste reproduz a regra antiga e exige sua atualização antes de salvar o gasto fixo.
+
+## Setas da aba Mensal
+
+Foi reproduzido o avanço de outubro para outubro: o backend removia meses repetidos dos gastos pessoais antes de acrescentar meses dos empréstimos. A interface deduplicava as opções visíveis do seletor, mas não a lista usada pelas setas. Com isso, a seta avançava para outra entrada do mesmo mês.
+
+A consolidação agora remove repetições depois de reunir pessoais e terceiros. A lista das setas também normaliza e deduplica os períodos, inclusive ao receber dados de um backend anterior. O teste com meses repetidos falhou antes da correção e passou depois. Os 22 testes direcionados de navegação, funcionalidades e relatórios passaram nesta etapa. Publicar a interface no GitHub/Vercel e atualizar a implantação existente do Apps Script para aplicar os dois lados da correção.

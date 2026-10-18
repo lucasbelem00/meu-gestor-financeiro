@@ -27,3 +27,12 @@ test('seta direita usa seleção existente sem reconstruir meses do mesmo ano',(
   ctx.atualizarMesesDisponiveis=()=>{throw Error('Não deve reconstruir o mesmo ano');};
   ctx.mudarMesRelatorio('1');assert.equal(els.selFiltroRelMes.value,'11');assert.deepEqual(buscas,['11/2026']);
 });
+
+test('meses repetidos por gastos e terceiros não fazem a seta recarregar o mesmo mês',()=>{
+  const {ctx,els,buscas}=ambiente();
+  ctx.arvoreMesesAno={'2026':['10/2026','11/2026','10/2026','10/2026','11/2026']};
+  ctx.preencherSeletoresInteligentes('2026','10',false);
+  ctx.mudarMesRelatorio(1);assert.equal(els.selFiltroRelMes.value,'11');assert.equal(els.btnMesNext.disabled,true);
+  ctx.mudarMesRelatorio(-1);assert.equal(els.selFiltroRelMes.value,'10');assert.equal(els.btnMesPrev.disabled,true);
+  assert.deepEqual(buscas,['11/2026','10/2026']);
+});
