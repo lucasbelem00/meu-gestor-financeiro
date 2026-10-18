@@ -29,3 +29,13 @@ Testes locais cobrem restauração, Pix à vista e parcelado, centavos, recebime
 As mudanças ainda precisam de publicação e conferência na cópia de teste real do Apps Script/Vercel. Não houve acesso à planilha original. Nenhuma revisão garante ausência de todos os erros futuros.
 
 Resultado final: 93 testes locais passaram, sem falhas nem testes ignorados. As três interfaces possuem o mesmo conteúdo.
+
+## Recuperação de inclusão incompleta — 18/10/2026
+
+O diagnóstico real encontrou um gasto fixo com os dados principais presentes, mas status e controles vazios. As linhas anteriores coincidiam com o estado anterior registrado no diário. A causa que esvaziou esses campos ainda não foi identificada.
+
+A recuperação agora admite completar uma única linha acrescentada ao final quando todas as linhas anteriores estão intactas, todos os campos preenchidos coincidem e faltam somente status ou controles. O resultado reconstruído deve coincidir integralmente com o hash preparado no diário. Qualquer divergência em valor, pessoa, descrição, data, forma ou registro anterior continua bloqueada. Não há confirmação manual nem descarte de pendências. A gravação também é relida antes da confirmação para detectar resultados incompletos.
+
+Para aplicar na cópia de teste, substituir Backend/Code.gs no projeto correto e atualizar a implantação existente para uma nova versão. Depois atualizar os dados do app: a consulta tenta concluir a operação pendente e o histórico. Não cadastrar o gasto novamente nem editar o diário para forçar confirmação.
+
+A mensagem real de validação em J15 revelou uma lista antiga que só aceitava Pago, Em Aberto e Agendado. O backend agora atualiza a validação de J2:J nas linhas de Lançamentos antes da gravação, incluindo os estados de assinatura e cancelamento. A validação continua rejeitando estados desconhecidos. Um teste reproduz a regra antiga e exige sua atualização antes de salvar o gasto fixo.

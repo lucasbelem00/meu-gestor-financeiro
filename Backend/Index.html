@@ -5099,6 +5099,17 @@ function chamarFiltroBackend(append = false) {
       return nomes[parseInt(numero, 10) - 1] || numero;
     }
 
+    function atualizarSeletoresRelatorioGestor() {
+      const anoSelecionado = document.getElementById('selFiltroRelAno')?.value;
+      const mesSelecionado = document.getElementById('selFiltroRelMes')?.value;
+      const anoAnual = document.getElementById('selFiltroAnoSimples')?.value;
+      const disponivel = (arvoreMesesAno[anoSelecionado] || []).some(m => String(m).split('/')[0] === mesSelecionado);
+      const hoje = new Date();
+      preencherSeletoresInteligentes(disponivel ? anoSelecionado : String(hoje.getFullYear()), disponivel ? mesSelecionado : String(hoje.getMonth()+1).padStart(2,'0'), false);
+      if (anoAnual && Object.prototype.hasOwnProperty.call(arvoreMesesAno, anoAnual)) document.getElementById('selFiltroAnoSimples').value = anoAnual;
+      atualizarEstadoSetasAnual();
+    }
+
     function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
       const selAno = document.getElementById('selFiltroRelAno');
       const selAnoSimples = document.getElementById('selFiltroAnoSimples');
@@ -5147,17 +5158,28 @@ function chamarFiltroBackend(append = false) {
       const btnPrev = document.getElementById('btnMesPrev'), btnNext = document.getElementById('btnMesNext');
       if (!selAno || !selMes || !btnPrev || !btnNext) return;
       const listaGlobalMeses = obterMesesRelatorioEmOrdem();
-      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
+      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && Number(item.mes) === Number(selMes.value));
       btnPrev.disabled = (idxAtual <= 0);
       btnNext.disabled = (idxAtual === -1 || idxAtual >= listaGlobalMeses.length - 1);
     }
 
     function mudarMesRelatorio(step) {
       const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
+      if (!selAno || !selMes || ![-1, 1].includes(Number(step))) return;
       const listaGlobalMeses = obterMesesRelatorioEmOrdem();
-      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && item.mes === selMes.value);
-      const alvo = listaGlobalMeses[idxAtual + step];
-      if (alvo) { selAno.value = alvo.ano; atualizarMesesDisponiveis(alvo.mes, true); }
+      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && Number(item.mes) === Number(selMes.value));
+      if (idxAtual < 0) return;
+      const alvo = listaGlobalMeses[idxAtual + Number(step)];
+      if (!alvo) return;
+      // No mesmo ano, usar as opções já exibidas: equivale à escolha manual.
+      if (selAno.value !== alvo.ano) {
+        selAno.value = alvo.ano;
+        atualizarMesesDisponiveis(null, false);
+      }
+      const opcao = Array.from(selMes.options).find(o => Number(o.value) === Number(alvo.mes));
+      if (!opcao) return;
+      selMes.value = opcao.value;
+      dispararBuscaRelatorioMensal();
     }
 
     function atualizarEstadoSetasAnual() {
@@ -5286,7 +5308,9 @@ function chamarFiltroBackend(append = false) {
     function carregarRelatorioMesUnico(mesFiltro) {
       const requisicao = ++requisicaoRelatorioMensal;
       ultimoRelatorioMensalCache = null;
-      document.getElementById('lista-relatorio').innerHTML = '<div class="py-4 text-center text-slate-500">Buscando dados...</div>';
+      document.getElementById('rel-badge-ritmo').textContent = 'Carregando ' + mesFiltro + '…';
+      document.getElementById('lista-relatorio').setAttribute('aria-busy', 'true');
+      document.getElementById('lista-relatorio').innerHTML = '<div role="status" class="py-4 text-center text-slate-300">Buscando dados de ' + escaparHTML(mesFiltro) + '…</div>';
       apiCall('obterRelatorioMes', mesFiltro).then(res => {
         if (!res || requisicao !== requisicaoRelatorioMensal) return;
         res.periodoReferencia = mesFiltro;
@@ -5373,9 +5397,13 @@ function chamarFiltroBackend(append = false) {
         document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-500 text-center">Nenhuma meta configurada.</p>';
 
         renderizarListaItensFaturaMensal();
+        document.getElementById('lista-relatorio').setAttribute('aria-busy', 'false');
       }).catch(err => {
         if (requisicao !== requisicaoRelatorioMensal) return;
         relatorioMensalPendente = true;
+        document.getElementById('lista-relatorio').setAttribute('aria-busy', 'false');
+        document.getElementById('lista-relatorio').textContent = 'Não foi possível carregar este mês. Selecione o mês novamente para tentar.';
+        document.getElementById('rel-badge-ritmo').textContent = 'Não atualizado';
         mostrarAviso('Erro', 'Erro no relatório: ' + err.message);
       });
     }
@@ -5827,10 +5855,9 @@ function chamarFiltroBackend(append = false) {
         filtMesClassico.value = v;
       }
 
-      const hoje = new Date();
       relatorioMensalPendente = true;
       relatorioAnualPendente = true;
-      preencherSeletoresInteligentes(hoje.getFullYear().toString(), String(hoje.getMonth() + 1).padStart(2, '0'), false);
+      atualizarSeletoresRelatorioGestor();
 
       if (abaAtivaAtual === 'relatorio') { relatorioMensalPendente = false; dispararBuscaRelatorioMensal(); }
       else if (abaAtivaAtual === 'anual') { relatorioAnualPendente = false; carregarRelatorioAnual(); }

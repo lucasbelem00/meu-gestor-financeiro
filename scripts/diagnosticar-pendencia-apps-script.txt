@@ -1,0 +1,38 @@
+// Cole temporariamente no editor Apps Script do MESMO projeto.
+// Execute diagnosticarPendenciaGestor. Apenas leitura: não confirma nem altera operações.
+function diagnosticarPendenciaGestor() {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const id = PropertiesService.getScriptProperties().getProperty('GESTOR_PLANILHA_ID');
+    if (!id) throw new Error('GESTOR_PLANILHA_ID não configurado.');
+    const ss = SpreadsheetApp.openById(id);
+    const diario = ss.getSheetByName('_Gestor_Operacoes');
+    if (!diario) throw new Error('Diário não encontrado.');
+    const linhas = localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO');
+    const tipo = function(v) { return v instanceof Date ? 'data' : v === '' || v == null ? 'vazio' : typeof v; };
+    const resultado = linhas.map(function(linha) {
+      const entrada = lerOperacaoTecnicaGestor_(diario, linha);
+      return {linhaDiario: linha, abas: entrada.plano.mudancas.map(function(m) {
+        const sh = ss.getSheetByName(m.nome);
+        if (m.modo === 'anexar') return {aba: m.nome, modo: m.modo, inicio: m.inicio, linhasAtuais: sh ? sh.getLastRow() : 0};
+        const atual = lerEstadoAbaGestor_(sh);
+        const hash = hashEstadoGestor_(atual);
+        const divergencias = [];
+        (m.alteracoes || []).forEach(function(a) {
+          const esperado = a[1], real = atual[a[0]] || [];
+          for (let c=0; c<Math.max(esperado.length,real.length); c++) {
+            const e = esperado[c] === undefined ? '' : esperado[c];
+            const r = real[c] === undefined ? '' : real[c];
+            if (hashEstadoGestor_([[e]]) !== hashEstadoGestor_([[r]])) divergencias.push({linha:a[0]+1,coluna:c+1,tipoEsperado:tipo(e),tipoAtual:tipo(r)});
+          }
+        });
+        const rel = {aba:m.nome,igualAntes:hash===m.antes,igualDepois:hash===m.depois,linhasAtuais:atual.length,linhasEsperadas:m.linhas,divergencias:divergencias};
+        // Verificação específica de inclusão de uma única linha ao final.
+        if (m.alteracoes.length===1 && m.alteracoes[0][0]===m.linhas-1 && atual.length===m.linhas) rel.anterioresIntactos=hashEstadoGestor_(atual.slice(0,-1))===m.antes;
+        return rel;
+      })};
+    });
+    console.log(JSON.stringify({pendencias:resultado},null,2));
+  } finally { lock.releaseLock(); }
+}

@@ -4,6 +4,40 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {boot,fixture,personal,loan,launch}=require('./fixtures/gestor-mocks.cjs');
 const ler=ctx=>ctx.executarAcaoApi_('getDadosCompletos',null);
 
+test('inclusão com status e controles vazios completa a mesma linha sem duplicar',()=>{
+  const {ctx,db}=boot(fixture([personal('Anterior',20)]));ler(ctx);
+  const dados={...launch,isAssinatura:true,requestId:'fixo-incompleto-001'};
+  db.failure={name:'Lançamentos',stage:'after'};assert.throws(()=>ctx.salvarLancamentoWeb(dados),/FALHA/);
+  const sh=db.sheets['Lançamentos'],r=sh.rows.at(-1),id=r[11];
+  [9,11,12,13,14,16,17].forEach(c=>r[c]='');
+  ctx.salvarLancamentoWeb(dados);ler(ctx);
+  assert.equal(sh.rows.length,3);assert.equal(sh.rows.at(-1)[11],id);assert.equal(sh.rows.at(-1)[9],'Assinatura Ativa');
+  assert(db.sheets['_Gestor_Operacoes'].rows.every(r=>r[2]!=='PRONTO'));
+});
+
+test('recuperação parcial recusa valor divergente e alteração em linha anterior',()=>{
+  for(const alterarAnterior of [false,true]){
+    const {ctx,db}=boot(fixture([personal('Anterior',20)]));ler(ctx);
+    const dados={...launch,isAssinatura:true,requestId:'fixo-conflito-'+alterarAnterior};
+    db.failure={name:'Lançamentos',stage:'after'};assert.throws(()=>ctx.salvarLancamentoWeb(dados),/FALHA/);
+    const sh=db.sheets['Lançamentos'];[9,11,12,13,14,16,17].forEach(c=>sh.rows.at(-1)[c]='');
+    sh.rows[alterarAnterior?1:2][7]=999;
+    assert.throws(()=>ctx.salvarLancamentoWeb(dados),/mudou durante/);assert.equal(sh.rows[alterarAnterior?1:2][7],999);
+  }
+});
+
+test('gasto fixo interrompido recupera sem duplicar e permite leitura posterior',()=>{
+  for(const stage of ['before','after']){
+    const {ctx,db}=boot(fixture());
+    const dados={...launch,isAssinatura:true,requestId:'fixo-interrompido-'+stage};
+    db.failure={name:'Lançamentos',stage};
+    assert.throws(()=>ctx.salvarLancamentoWeb(dados),/FALHA/);
+    ctx.salvarLancamentoWeb(dados);ler(ctx);ler(ctx);
+    const rows=db.sheets['Lançamentos'].rows.slice(1).filter(r=>r[11]);
+    assert.equal(rows.length,1);assert.equal(rows[0][6],'∞/∞');assert.equal(rows[0][7],100);
+  }
+});
+
 test('Pix parcelado conserva centavos e parcelas futuras não viram pagas ao abrir',()=>{
   const {ctx,db}=boot(fixture());
   ctx.salvarLancamentoWeb({...launch,formaPagto:'Pix',pixParcelado:true,requestId:'pix-parcelado-001'});
@@ -60,4 +94,18 @@ test('interrupção ao anexar atividade recupera sem repetir compra',()=>{
 test('aba particular com nome do diário não é sobrescrita',()=>{
   const {ctx,db}=boot(fixture());db.insertSheet('_Gestor_Operacoes').rows=[['Meus dados']];
   assert.throws(()=>ler(ctx),/estrutura incompatível/);assert.equal(db.sheets['_Gestor_Operacoes'].rows[0][0],'Meus dados');
+});
+
+
+test('validação antiga de status é atualizada antes de gravar assinatura',()=>{
+  const {ctx,db}=boot(fixture());const sh=db.sheets['Lançamentos'];
+  let permitidos=['Pago','Em Aberto','Agendado'];const getRange=sh.getRange.bind(sh);
+  sh.getRange=function(...args){
+    const rg=getRange(...args),setValues=rg.setValues.bind(rg);
+    rg.setDataValidation=function(regra){assert.equal(args[1],10);assert.equal(args[0],2);assert.equal(regra.allowInvalid,false);permitidos=Array.from(regra.values);return rg;};
+    rg.setValues=function(values){values.forEach((row,i)=>{const c=9-(args[1]-1);if(args[0]+i>1&&c>=0&&c<row.length&&row[c]&&!permitidos.includes(row[c]))throw Error('Validação antiga recusou status');});return setValues(values);};return rg;
+  };
+  ctx.salvarLancamentoWeb({...launch,isAssinatura:true,requestId:'validacao-assinatura-001'});
+  assert(permitidos.includes('Assinatura Ativa'));assert(permitidos.includes('Assinatura Cancelada'));
+  assert.equal(sh.rows[1][9],'Assinatura Ativa');ler(ctx);
 });
