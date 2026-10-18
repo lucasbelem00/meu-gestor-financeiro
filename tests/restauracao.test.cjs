@@ -63,3 +63,37 @@ test('identidade duplicada e aba desconhecida não passam pela prévia',()=>{
   assert.throws(()=>previa(ctx,repetido),/repetido/);
   const desconhecido=clone(b);desconhecido.abas.push({nome:'Outra aba',valores:[['X']]});assert.throws(()=>previa(ctx,desconhecido),/desconhecidas/);
 });
+
+test('abas ausentes são preservadas e informadas na prévia',()=>{
+  const f=fixture([personal()],[loan()]);f['Anotações']=[['ID','Texto','Concluída','Data','Versão','Excluída'],['nota-1','Manter esta nota',false,'16/10/2026',1,false]];
+  const {ctx,db}=boot(f);ler(ctx);const b=backup(ctx);
+  b.abas=b.abas.filter(a=>!['Empréstimos','Anotações'].includes(a.nome));
+  const p=previa(ctx,b);assert.deepEqual(Array.from(p.preservadas),['Empréstimos','Anotações']);assert(p.avisos.some(a=>a.includes('preservados')));
+  restaurar(ctx,b,p);assert.equal(rows(db,'Empréstimos').length,1);assert.equal(db.sheets['Anotações'].rows[1][1],'Manter esta nota');
+});
+
+test('notas truncadas e notas com IDs repetidos são rejeitadas',()=>{
+  const f=fixture();f['Anotações']=[['ID','Texto','Concluída','Data','Versão','Excluída'],['nota-1','Texto',false,'16/10/2026',1,false]];
+  const {ctx}=boot(f);ler(ctx);const b=backup(ctx),n=b.abas.find(a=>a.nome==='Anotações');
+  const truncado=clone(b);truncado.abas.find(a=>a.nome==='Anotações').valores=[['ID'],['nota-1']];assert.throws(()=>previa(ctx,truncado),/incompleta/);
+  n.valores.push(clone(n.valores[1]));assert.throws(()=>previa(ctx,b),/repetida/);
+});
+
+test('cartão com limite inválido e categoria com meta negativa são recusados',()=>{
+  const f=fixture();f['Dashboard & Resumo'][16]=['','Alimentação','',200];
+  const {ctx}=boot(f);ler(ctx);const b=backup(ctx);
+  const c=clone(b);c.abas.find(a=>a.nome==='Formas de Pagamento').valores[6][3]='mil';assert.throws(()=>previa(ctx,c),/pagamento inválida/);
+  const d=clone(b);d.abas.find(a=>a.nome==='Dashboard & Resumo').valores[16][3]=-1;assert.throws(()=>previa(ctx,d),/meta inválida/);
+});
+
+test('formatação malformada não bloqueia a restauração dos valores',()=>{
+  const {ctx,db}=boot(fixture([personal()]));ler(ctx);const b=backup(ctx);
+  b.abas.forEach(a=>{a.formatosNumericos={invalido:true};});const p=previa(ctx,b);
+  assert(p.avisos.some(a=>a.includes('formatação')));restaurar(ctx,b,p);assert.equal(rows(db,'Lançamentos').length,1);
+});
+
+test('máscara inválida de plano legado não impede recuperação do diário',()=>{
+  const {ctx,db}=boot(fixture());const sh=db.sheets['Lançamentos'];const original=sh.getRange.bind(sh);
+  sh.getRange=(...args)=>{const r=original(...args);r.setNumberFormats=()=>{throw Error('Formato inválido');};return r;};
+  assert.doesNotThrow(()=>ctx.aplicarFormatosRestauracaoGestor_(sh,{formatosRestauracao:[['inválido']]}));
+});

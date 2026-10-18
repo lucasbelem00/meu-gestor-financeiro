@@ -7,7 +7,7 @@
 - Consultas simultâneas de dados completos compartilham a mesma requisição. Iniciar ou concluir uma gravação invalida esse compartilhamento, para não aproveitar uma leitura anterior à gravação.
 - Gráficos existentes são atualizados sem destruir e criar tudo novamente, e sem repetir animações a cada atualização.
 - Não foi trocada a infraestrutura. A rede, o Apps Script e o tamanho da planilha continuam influenciando o tempo de gravação. Não foi medido um percentual de ganho.
-- Compilar Tailwind durante a publicação e reorganizar todo o HTML em módulos permanecem como manutenção separada; esta etapa não reescreve todo o aplicativo.
+- Tailwind agora é compilado durante a publicação; consulte REVISAO_INTEGRIDADE_DESEMPENHO.md. A separação do HTML em módulos permanece como manutenção futura.
 
 ## Onde restaurar
 
@@ -21,7 +21,7 @@ Menu → Dados e relatórios → Exportar dados. No fim da janela existe Restaur
 
 ## Conteúdo e proteções
 
-- Restaura os dados das abas Dashboard & Resumo, Formas de Pagamento, Lançamentos, Empréstimos e Anotações, incluindo categorias, metas, pagamentos, identidades e formatos numéricos compatíveis.
+- Restaura os dados das abas Dashboard & Resumo, Formas de Pagamento, Lançamentos, Empréstimos e Anotações, incluindo categorias, metas, pagamentos e identidades. Abas opcionais ausentes são preservadas; máscaras numéricas do arquivo não são importadas.
 - Preserva o histórico de atividade atual e registra a restauração. O histórico antigo presente no arquivo não substitui o atual.
 - Guarda a cópia anterior automaticamente na aba oculta _Gestor_Restauracoes, antes de aplicar as mudanças financeiras. O botão Baixar cópia anterior à última restauração permite recuperá-la como JSON.
 - A aplicação usa o diário recuperável existente e um identificador de operação. Se a resposta se perder, confira Atividade e sincronização e repita o mesmo envio protegido. Não inicie outra restauração com outro identificador.

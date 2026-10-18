@@ -1,0 +1,5 @@
+{
+  "framework": null,
+  "buildCommand": "node scripts/gerar-css.cjs && node scripts/publicar-estatico.cjs",
+  "outputDirectory": "dist"
+}

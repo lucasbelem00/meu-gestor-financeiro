@@ -13,6 +13,8 @@ class Sheet {
     const calc=(x,i,j)=>isFormula(x,i,j)?(x==='=1000+1000'?2000:Number(x.slice(1))||0):x;
     const rg={getValues:()=>raw().map((r,i)=>r.map((x,j)=>calc(x,i,j))),getFormulas:()=>raw().map((r,i)=>r.map((x,j)=>isFormula(x,i,j)?x:'')),getDisplayValues:()=>raw().map((r,i)=>r.map((x,j)=>x instanceof Date?formatDate(x,'','dd/MM/yyyy'):String(calc(x,i,j)))),getNumberFormats:()=>raw().map(()=>Array(m).fill('General')),
       setValues(values){if(n!==values.length||values.some(r=>r.length!==m))throw Error('dims '+sh.name);sh.db.maybeFail(sh.name,'before',row,col);values.forEach((r,i)=>r.forEach((v,j)=>{sh.rows[row-1+i]??=[];const literal=typeof v==='string'&&v.startsWith("'");const key=(row-1+i)+':'+(col-1+j);if(literal)sh.literais.add(key);else sh.literais.delete(key);sh.rows[row-1+i][col-1+j]=literal?v.slice(1):clone(v);}));sh.db.maybeFail(sh.name,'after',row,col);return rg;},getValue(){return rg.getValues()[0][0];},setValue(v){return rg.setValues([[v]]);},clearContent(){return rg.setValues(Array.from({length:n},()=>Array(m).fill('')));}};
+    rg.getRow=()=>row;
+    rg.createTextFinder=(texto)=>{let inteiro=false,caseSensitive=false;const finder={matchEntireCell(v){inteiro=v;return finder;},matchCase(v){caseSensitive=v;return finder;},findAll(){const found=[];raw().forEach((r,i)=>r.forEach((v,j)=>{let alvo=String(v),busca=String(texto);if(!caseSensitive){alvo=alvo.toLowerCase();busca=busca.toLowerCase();}if(inteiro?alvo===busca:alvo.includes(busca))found.push(sh.getRange(row+i,col+j));}));return found;}};return finder;};
     for(const k of ['setNumberFormats','setNumberFormat','setFontWeight','setBackground','setFontColor'])rg[k]=()=>rg;
     return rg;
   }

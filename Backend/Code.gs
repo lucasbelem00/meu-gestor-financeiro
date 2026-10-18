@@ -1821,6 +1821,7 @@ function getDadosCompletos() {
 
     return {
       protocoloGestor: 2,
+      historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
         totalAberto: formatBRL(calcAberto),
         totalPago: formatBRL(calcPago),
@@ -3307,11 +3308,12 @@ function finalizarPlanoGestor_(ctx) {
       mudancas.push({ formatosRestauracao: aba.formatosRestauracao || null, nome: nome, antes: hashEstadoGestor_(aba.antes), depois: hashEstadoGestor_(depois), linhas: depois.length, colunas: colunas, alteracoes: alteracoes });
     }
   });
-  return mudancas;
+  return mudancas.concat(ctx.anexosTecnicos || []);
 }
 function abrirDiarioGestor_(ss) {
   let sh = ss.getSheetByName(ABA_DIARIO_GESTOR_);
   if (!sh) { sh = ss.insertSheet(ABA_DIARIO_GESTOR_); sh.getRange(1, 1, 1, 6).setValues([['Operação', 'Payload SHA256', 'Estado', 'Parte', 'Conteúdo', 'Data']]); sh.setFrozenRows(1); if (typeof sh.hideSheet === 'function') sh.hideSheet(); }
+  else if (JSON.stringify(sh.getRange(1,1,1,6).getValues()[0]) !== JSON.stringify(['Operação','Payload SHA256','Estado','Parte','Conteúdo','Data'])) throw new Error('A aba _Gestor_Operacoes possui estrutura incompatível. Preserve os dados para conferência.');
   return sh;
 }
 function lerPlanoDiarioGestor_(linhas, cabecalho) {
@@ -3322,9 +3324,10 @@ function lerPlanoDiarioGestor_(linhas, cabecalho) {
 }
 function aplicarPlanoGestor_(ss, plano) {
   (plano.mudancas || []).forEach(function (m) {
+    if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     let sh = ss.getSheetByName(m.nome);
     const atual = lerEstadoAbaGestor_(sh), hash = hashEstadoGestor_(atual);
-    if (hash === m.depois) { if (m.formatosRestauracao && sh) sh.getRange(1,1,m.formatosRestauracao.length,m.formatosRestauracao[0].length).setNumberFormats(m.formatosRestauracao); return; }
+    if (hash === m.depois) { aplicarFormatosRestauracaoGestor_(sh, m); return; }
     if (hash !== m.antes) throw new Error('A aba ' + m.nome + ' mudou durante uma gravação interrompida. A operação foi preservada para conferência, sem sobrescrever suas alterações.');
     if (!sh) sh = ss.insertSheet(m.nome);
     const cols = Math.max(1, m.colunas), rows = Math.max(1, m.linhas, atual.length);
@@ -3334,7 +3337,7 @@ function aplicarPlanoGestor_(ss, plano) {
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
     sh.getRange(1, 1, rows, cols).setValues(valores);
     if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 18, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
-    if (m.formatosRestauracao) sh.getRange(1,1,m.formatosRestauracao.length,m.formatosRestauracao[0].length).setNumberFormats(m.formatosRestauracao);
+    aplicarFormatosRestauracaoGestor_(sh, m);
     if (m.nome === ABA_RESTAURACOES_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     SpreadsheetApp.flush();
@@ -3348,15 +3351,56 @@ function recuperarDiarioGestor_(ss, diario, linhas) {
     diario.getRange(i + 2, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush(); linhas[i][2] = 'CONFIRMADO';
   }
 }
+function estatisticasHistoricoTecnicoGestor_() {
+  const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
+  const contar = function (nome) { const sh = ss.getSheetByName(nome); return sh ? Math.max(0,sh.getLastRow()-1) : 0; };
+  const diario = contar(ABA_DIARIO_GESTOR_), atividade = contar(ABA_ATIVIDADE_GESTOR_), restauracoes = contar(ABA_RESTAURACOES_GESTOR_);
+  return {linhasDiario:diario, linhasAtividade:atividade, linhasRestauracoes:restauracoes, revisarCrescimento:diario>50000 || atividade>20000 || restauracoes>10000};
+}
+
+function localizarLinhasTecnicasGestor_(sh, coluna, texto) {
+  const ultimo = sh.getLastRow();
+  if (ultimo < 2) return [];
+  const range = sh.getRange(2,coluna,ultimo-1,1);
+  if (typeof range.createTextFinder === 'function') return range.createTextFinder(texto).matchEntireCell(true).matchCase(true).findAll().map(function (r) { return r.getRow(); }).sort(function(a,b) { return a-b; });
+  // Compatibilidade com ambientes de teste; nunca transfere o conteúdo das partes.
+  const linhas = [];
+  for (let inicio=2; inicio<=ultimo; inicio+=250) sh.getRange(inicio,coluna,Math.min(250,ultimo-inicio+1),1).getValues().forEach(function(r,i) { if (String(r[0]) === texto) linhas.push(inicio+i); });
+  return linhas;
+}
+
+function lerOperacaoTecnicaGestor_(sh, linha) {
+  const cabecalho = sh.getRange(linha,1,1,6).getValues()[0], qtd = Number(cabecalho[3]);
+  if (!Number.isInteger(qtd) || qtd<1 || linha+qtd>sh.getLastRow()) throw new Error('Diário incompleto. Preserve a planilha para conferência.');
+  return {cabecalho:cabecalho, plano:lerPlanoDiarioGestor_(sh.getRange(linha,1,qtd+1,6).getValues(),0)};
+}
+
+function aplicarAnexoTecnicoGestor_(ss, m) {
+  let sh = ss.getSheetByName(m.nome);
+  const fim = m.inicio + m.valores.length - 1;
+  if (sh && sh.getLastRow() >= fim && hashEstadoGestor_(sh.getRange(m.inicio,1,m.valores.length,6).getValues()) === hashEstadoGestor_(m.valores)) return;
+  if ((sh ? sh.getLastRow() : 0) !== m.inicio-1) throw new Error('O histórico mudou durante uma gravação interrompida. Preserve os dados para conferência.');
+  if (!sh) sh = ss.insertSheet(m.nome);
+  if (typeof sh.getMaxRows === 'function' && fim > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(),fim-sh.getMaxRows());
+  if (typeof sh.getMaxColumns === 'function' && sh.getMaxColumns()<6) sh.insertColumnsAfter(sh.getMaxColumns(),6-sh.getMaxColumns());
+  sh.getRange(m.inicio,1,m.valores.length,6).setValues(m.valores);
+  if (typeof sh.hideSheet === 'function') sh.hideSheet();
+  SpreadsheetApp.flush();
+}
+
 function executarOperacaoGestor_(acao, param, executar, leitura) {
   if (CONTEXTO_GESTOR_) return executar();
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   let resultadoIncerto = false;
   try {
     const real = obterPlanilhaGestor_(), diario = abrirDiarioGestor_(real);
-    const linhas = diario.getLastRow() > 1 ? diario.getRange(2, 1, diario.getLastRow() - 1, 6).getValues() : [];
-    resultadoIncerto = linhas.some(function (r) { return r[2] === 'PRONTO'; });
-    recuperarDiarioGestor_(real, diario, linhas);
+    const pendentes = localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO');
+    resultadoIncerto = pendentes.length > 0;
+    pendentes.forEach(function (linha) {
+      const entrada = lerOperacaoTecnicaGestor_(diario, linha);
+      aplicarPlanoGestor_(real, entrada.plano);
+      diario.getRange(linha, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush();
+    });
     resultadoIncerto = false;
     const requestId = !leitura && param && !Array.isArray(param) ? String(param.requestId || '') : '';
     if (!leitura && (!/^[A-Za-z0-9_.:-]{8,160}$/.test(requestId))) throw new Error('Atualize o app antes de gravar: falta o identificador seguro da operação.');
@@ -3365,8 +3409,13 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       const epoca = epocaRestauracaoGestor_();
       if (epoca && (!param || param.baseRestauracao !== epoca)) throw new Error('A planilha foi restaurada desde a preparação deste envio. Atualize o app e confira esta pendência antes de tentar novamente.');
     }
-    const anterior = linhas.findIndex(function (r) { return r[0] === id && r[2] === 'CONFIRMADO'; });
-    if (anterior >= 0) { if (linhas[anterior][1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.'); return lerPlanoDiarioGestor_(linhas, anterior).resultado; }
+    const anteriores = leitura ? [] : localizarLinhasTecnicasGestor_(diario, 1, id);
+    for (const linha of anteriores) {
+      const cabecalho = diario.getRange(linha, 1, 1, 6).getValues()[0];
+      if (cabecalho[2] !== 'CONFIRMADO') continue;
+      if (cabecalho[1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.');
+      return lerOperacaoTecnicaGestor_(diario, linha).plano.resultado;
+    }
     const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real };
     ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
     let resultado;
@@ -3498,10 +3547,10 @@ function registrarAtividadeGestor_(ctx) {
       if ((!antes && depois) || (antes && !depois) || (antes && depois && hashRegistroGestor_(antes) !== hashRegistroGestor_(depois))) alteracoes.push({ aba: nome, id: id, antes: antes ? copiarGestor_(antes) : null, depois: depois ? copiarGestor_(depois) : null });
     });
   });
-  const sh = ctx.ss.getSheetByName(ABA_ATIVIDADE_GESTOR_) || ctx.ss.insertSheet(ABA_ATIVIDADE_GESTOR_);
+  const sh = ctx.ss.abas[ABA_ATIVIDADE_GESTOR_] || null;
   const cabecalhoAtividade = ['Evento', 'Data', 'Ação', 'Resumo', 'Tipo', 'Conteúdo'];
-  if (!sh.getLastRow()) sh.getRange(1, 1, 1, 6).setValues([cabecalhoAtividade]);
-  else if (!sh.getRange(1, 1, 1, 6).getValues()[0].every(function (v, i) { return v === cabecalhoAtividade[i]; })) throw new Error('A aba _Gestor_Atividade já contém dados de outro formato. Preserve-a antes de usar o histórico.');
+  const real = sh || ctx.ssReal.getSheetByName(ABA_ATIVIDADE_GESTOR_);
+  if (real && real.getLastRow() && !real.getRange(1, 1, 1, 6).getValues()[0].every(function (v, i) { return v === cabecalhoAtividade[i]; })) throw new Error('A aba _Gestor_Atividade já contém dados de outro formato. Preserve-a antes de usar o histórico.');
   const id = ctx.action + ':' + ctx.param.requestId;
   const rotulo = ROTULOS_ATIVIDADE_GESTOR_[ctx.action] || 'Dados atualizados';
   const amostra = alteracoes[0], registro = amostra && (amostra.depois || amostra.antes);
@@ -3510,8 +3559,16 @@ function registrarAtividadeGestor_(ctx) {
     reverte: ctx.action === 'desfazerAtividadeWeb' ? String(ctx.param.eventoId) : '',
     reversivel: ACOES_DESFAZER_GESTOR_.indexOf(ctx.action) >= 0 && alteracoes.length > 0, alteracoes: alteracoes };
   const texto = JSON.stringify(serializarGestor_(evento)), partes = texto.match(/[\s\S]{1,12000}/g) || [''];
-  const inicio = sh.getLastRow() + 1;
-  sh.getRange(inicio, 1, 1 + partes.length, 6).setValues([[id, evento.data, ctx.action, rotulo, 'EVENTO', partes.length]].concat(partes.map(function (p, i) { return [id, '', '', '', 'PARTE ' + (i + 1), JSON.stringify(p)]; })));
+  const valores = [[id, evento.data, ctx.action, rotulo, 'EVENTO', partes.length]].concat(partes.map(function (p, i) { return [id, '', '', '', 'PARTE ' + (i + 1), JSON.stringify(p)]; }));
+  if (sh) {
+    if (!sh.getLastRow()) sh.getRange(1,1,1,6).setValues([cabecalhoAtividade]);
+    sh.getRange(sh.getLastRow()+1,1,valores.length,6).setValues(valores);
+  } else {
+    const inicio = real ? real.getLastRow()+1 : 1;
+    const linhas = inicio === 1 ? [cabecalhoAtividade].concat(valores) : valores;
+    ctx.anexosTecnicos = ctx.anexosTecnicos || [];
+    ctx.anexosTecnicos.push({modo:'anexar', nome:ABA_ATIVIDADE_GESTOR_, inicio:inicio, valores:linhas});
+  }
 }
 
 function lerEventosAtividadeGestor_() {
@@ -3580,6 +3637,54 @@ function desfazerAtividadeWeb(param) {
 const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
 const ABA_RESTAURACOES_GESTOR_ = '_Gestor_Restauracoes';
 
+function aplicarFormatosRestauracaoGestor_(sh, mudanca) {
+  if (!sh || !mudanca.formatosRestauracao) return;
+  // Compatibilidade com planos antigos já persistidos: um detalhe visual não bloqueia a recuperação.
+  try { sh.getRange(1,1,mudanca.formatosRestauracao.length,mudanca.formatosRestauracao[0].length).setNumberFormats(mudanca.formatosRestauracao); }
+  catch (_) { console.warn('Formatação de restauração ignorada; valores preservados.'); }
+}
+
+function validarConteudoAbaBackupGestor_(aba) {
+  const linhas = aba.valores, cols = linhas[0].length, nome = aba.nome;
+  const texto = function (v) { return typeof v === 'string' && v.trim().length > 0; };
+  const numero = function (v) { return typeof v === 'number' && Number.isFinite(v); };
+  const vazia = function (r) { return r.every(function (v) { return v === '' || v === null; }); };
+  const duplicados = new Set();
+  const registrar = function (id) { if (duplicados.has(id)) throw new Error('Identificação repetida em ' + nome); duplicados.add(id); };
+  if (nome === 'Anotações') {
+    const titulos = ['ID','Texto','Concluída','Data','Versão','Excluída'];
+    if (cols < 6 || titulos.some(function (t,i) { return linhas[0][i] !== t; })) throw new Error('Estrutura de Anotações incompleta.');
+    linhas.slice(1).filter(function (r) { return !vazia(r); }).forEach(function (r) {
+      if (!texto(r[0]) || r[0].length > 160 || (!texto(r[1]) && r[5] !== true) || typeof r[1] !== 'string' || ![true,false,''].includes(r[2]) || ![true,false,''].includes(r[5]) || !Number.isSafeInteger(r[4]) || r[4] < 1) throw new Error('Nota inválida ou incompleta no backup.');
+      registrar(r[0]);
+    });
+  }
+  if (nome === 'Formas de Pagamento') {
+    if (cols < 6) throw new Error('Estrutura de formas de pagamento incompleta.');
+    linhas.slice(6).forEach(function (r) {
+      if (!r[1] && !r.slice(2,6).some(function (v) { return v !== '' && v !== null; })) return;
+      if (!texto(r[1]) || !numero(r[3]) || r[3] < 0 || !['',null].includes(r[4]) && (!Number.isInteger(r[4]) || r[4]<1 || r[4]>31) || !['',null].includes(r[5]) && (!Number.isInteger(r[5]) || r[5]<1 || r[5]>31)) throw new Error('Cartão ou forma de pagamento inválida no backup.');
+      registrar(normalizarTexto(r[1]));
+    });
+  }
+  if (nome === 'Dashboard & Resumo') {
+    if (cols < 4) throw new Error('Estrutura de categorias e metas incompleta.');
+    linhas.slice(16,41).forEach(function (r) {
+      if (!r[1] && (r[3] === '' || r[3] === null)) return;
+      if (!texto(r[1]) || !['',null].includes(r[3]) && (!numero(r[3]) || r[3]<0)) throw new Error('Categoria ou meta inválida no backup.');
+      registrar(chaveCategoria(r[1]));
+    });
+  }
+  if (ehAbaRegistrosGestor_(nome)) linhas.slice(1).filter(function (r) { return !vazia(r); }).forEach(function (r) {
+    const emprestimo = nome === 'Empréstimos', parcela = limparApostrofo(r[6]);
+    if (!texto(r[1]) || !texto(r[2]) || !texto(r[3]) || !texto(r[9]) || !numero(r[7]) || r[7] < 0) throw new Error('Registro financeiro incompleto no backup.');
+    if (parcela !== '∞/∞') {
+      const p = parcela.match(/^(\d+)\/(\d+)$/);
+      if (!p || +p[1]<1 || +p[2]<1 || +p[1]>+p[2] || +p[2]>600 || !Number.isInteger(r[5]) || r[5]!==+p[2] || !numero(r[4]) || r[4]<r[7]) throw new Error('Parcelamento inconsistente no backup.');
+    } else if (emprestimo) throw new Error('Empréstimo com parcelamento inválido no backup.');
+  });
+}
+
 function estadoRestauracaoGestor_() {
   const ss = obterPlanilhaGestor_();
   return hashGestor_(ABAS_BACKUP_RESTAURAVEL_.map(function (nome) { return [nome, lerEstadoAbaGestor_(ss.getSheetByName(nome))]; }));
@@ -3596,6 +3701,7 @@ function validarBackupRestauracaoGestor_(backup) {
     if (!Array.isArray(aba.valores) || !aba.valores.length || aba.valores.length > 20000) throw new Error('Aba vazia ou com dimensões inválidas: ' + aba.nome);
     const cols = aba.valores[0].length;
     if (!cols || cols > 100 || aba.valores.some(function (r) { return !Array.isArray(r) || r.length !== cols; })) throw new Error('Linhas incompatíveis na aba ' + aba.nome);
+    validarConteudoAbaBackupGestor_(aba);
     celulas += cols * aba.valores.length;
     if (celulas > 100000) throw new Error('Este backup tem células demais para restauração pelo app.');
     if (aba.nome === '_Gestor_Atividade') return null; // Histórico atual permanece; o histórico antigo fica no arquivo.
@@ -3630,26 +3736,21 @@ function validarBackupRestauracaoGestor_(backup) {
       if (r[11] && (typeof r[11] !== 'string' || r[11].length > 160 || typeof r[12] !== 'string' || !r[12] || !Number.isInteger(Number(r[13])) || Number(r[13]) < 1)) throw new Error('Identidade financeira inválida no backup.');
       if (r[11]) { if (ids.has(String(r[11]))) throw new Error('Identificador financeiro repetido no backup.'); ids.add(String(r[11])); }
     });
-    let formatos = null;
-    if (aba.formatosNumericos) {
-      if (!Array.isArray(aba.formatosNumericos) || aba.formatosNumericos.length !== valores.length || aba.formatosNumericos.some(function (r) { return !Array.isArray(r) || r.length !== cols || r.some(function (f) { return typeof f !== 'string' || f.length > 200; }); })) throw new Error('Formatos numéricos inválidos no backup.');
-      formatos = aba.formatosNumericos;
-    }
-    return { nome: aba.nome, valores: valores, formatos: formatos };
+    // Máscaras vindas do arquivo não participam da transação financeira.
+    return { nome: aba.nome, valores: valores, formatos: null };
   }).filter(Boolean);
   ['Dashboard & Resumo','Formas de Pagamento','Lançamentos'].forEach(function (nome) { if (!vistos.has(nome)) throw new Error('O backup está incompleto: falta ' + nome); });
-  // Backups anteriores à criação de empréstimos/notas representam essas abas vazias.
-  ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome); }).forEach(function (nome) {
-    const sh = obterPlanilhaGestor_().getSheetByName(nome);
-    if (sh && sh.getLastRow()) abas.push({ nome: nome, valores: [sh.getDataRange().getValues()[0]], formatos: null });
-  });
+  // Ausência não significa exclusão: abas que não constam no arquivo ficam intactas.
+  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome); });
+  abas.avisos = abas.preservadas.map(function (nome) { return nome + ': ausente no arquivo; os dados atuais serão preservados.'; });
+  if (backup.abas.some(function (a) { return a.formatosNumericos; })) abas.avisos.push('A formatação do arquivo não será importada. Os dados usam a apresentação padrão do app.');
   return abas;
 }
 
 function previaRestauracaoBackupWeb(param) {
   return executarOperacaoGestor_('previaRestauracaoBackupWeb', param, function () {
     const abas = validarBackupRestauracaoGestor_(param && param.backup), ss = obterPlanilhaGestor_();
-    return { versaoAtual: estadoRestauracaoGestor_(), hashBackup: hashGestor_(param.backup), planilha: ss.getName(), geradoEm: String(param.backup.geradoEm || ''), abas: abas.map(function (aba) {
+    return { versaoAtual: estadoRestauracaoGestor_(), hashBackup: hashGestor_(param.backup), planilha: ss.getName(), avisos: abas.avisos, preservadas: abas.preservadas, geradoEm: String(param.backup.geradoEm || ''), abas: abas.map(function (aba) {
       const atual = ss.getSheetByName(aba.nome), registros = ehAbaRegistrosGestor_(aba.nome);
       const resumir = function (linhas) { const dados = linhas.slice(1).filter(function (r) { return r.some(function (v) { return v !== '' && v != null; }); }); return { registros: dados.length, total: registros ? dados.reduce(function (s, r) { return s + centavosGestor_(r[7] || 0); }, 0) / 100 : null }; };
       return { nome: aba.nome, atual: resumir(atual && atual.getLastRow() ? atual.getDataRange().getValues() : []), backup: resumir(aba.valores) };
