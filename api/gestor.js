@@ -7,6 +7,7 @@ const ACAO_PERMITIDA = new Set([
   'editarAssinaturaWeb', 'cancelarAssinaturaWeb', 'salvarFormaPagamentoWeb',
   'reordenarFormasPagamentoWeb', 'excluirFormaPagamentoWeb', 'salvarCategoriasWeb',
   'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb',
+  'previaRestauracaoBackupWeb', 'restaurarBackupDadosWeb', 'obterBackupAnteriorWeb',
   'exportarBackupDadosWeb', 'obterAtividadeWeb', 'desfazerAtividadeWeb',
   'obterFaturaPagamentoWeb', 'registrarPagamentoFaturaWeb'
 ]);

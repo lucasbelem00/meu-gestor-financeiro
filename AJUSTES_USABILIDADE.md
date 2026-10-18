@@ -17,7 +17,7 @@ Atualize primeiro o Apps Script da cópia de teste e depois publique a interface
 
 ## Escopo adiado
 
-Conforme combinado, otimizações de velocidade e restauração completa de backup ficam para outra etapa. Esta atualização não faz migração de infraestrutura nem restaura dados.
+A etapa de velocidade e restauração com prévia foi retomada a pedido do usuário. Consulte VELOCIDADE_E_RESTAURACAO.md para o funcionamento e a publicação.
 
 ## Pix e horizonte
 

@@ -1847,6 +1847,7 @@ function getDadosCompletos() {
       assinaturas: Object.values(listaAssinaturas),
       anotacoes: listaNotas,
       notasRevision: estadoNotas.revision,
+      epocaRestauracao: epocaRestauracaoGestor_(),
       emprestimos: {
         kpis: {
           aReceberMes: formatBRL(empKpiAReceberMes),
@@ -1926,7 +1927,7 @@ function exportarBackupDadosWeb() {
       geradoEm: Utilities.formatDate(new Date(), fuso, 'yyyy-MM-dd HH:mm:ss'),
       fusoHorario: fuso,
       planilha: ss.getName(),
-      observacao: 'Cópia de segurança dos dados das abas. Não inclui o código do app nem restauração automática.',
+      observacao: 'Cópia de segurança dos dados das abas. Não inclui código, tokens, permissões nem preferências locais. Pode ser restaurada com prévia no app.',
       abas: abas
     };
   } finally {
@@ -1945,6 +1946,9 @@ function executarAcaoApiInterna_(action, param) {
     case 'desfazerAtividadeWeb': return desfazerAtividadeWeb(param);
     case 'obterFaturaPagamentoWeb': return obterFaturaPagamentoWeb(param);
     case 'registrarPagamentoFaturaWeb': return registrarPagamentoFaturaWeb(param);
+    case 'previaRestauracaoBackupWeb': return previaRestauracaoBackupWeb(param);
+    case 'restaurarBackupDadosWeb': return restaurarBackupDadosWeb(param);
+    case 'obterBackupAnteriorWeb': return obterBackupAnteriorWeb();
     case 'exportarBackupDadosWeb': return exportarBackupDadosWeb();
     case 'salvarLancamentoWeb': return salvarLancamentoWeb(param);
     case 'sincronizarLoteWeb': return sincronizarLoteWeb(param);
@@ -3059,7 +3063,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 }
 
 function executarAcaoApi_(action, param) {
-  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','obterAtividadeWeb','obterFaturaPagamentoWeb'];
+  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb'];
   if (leituras.indexOf(action) >= 0) return executarOperacaoGestor_(action, param, function () { return executarAcaoApiInterna_(action, param); }, true);
   return executarAcaoApiInterna_(action, param);
 }
@@ -3297,10 +3301,10 @@ function finalizarPlanoGestor_(ctx) {
     }
     const linhas = aba.getLastRow(), colunas = Math.max(1, aba.colunas);
     const depois = Array.from({ length: linhas }, function (_, r) { return Array.from({ length: colunas }, function (_, c) { return (aba.valores[r] || [])[c] === undefined ? '' : aba.valores[r][c]; }); });
-    if (hashEstadoGestor_(aba.antes) !== hashEstadoGestor_(depois)) {
+    if (hashEstadoGestor_(aba.antes) !== hashEstadoGestor_(depois) || aba.formatosRestauracao) {
       const alteracoes = [];
       for (let i = 0; i < Math.max(aba.antes.length, depois.length); i++) if (hashEstadoGestor_([aba.antes[i] || []]) !== hashEstadoGestor_([depois[i] || []])) alteracoes.push([i, depois[i] || []]);
-      mudancas.push({ nome: nome, antes: hashEstadoGestor_(aba.antes), depois: hashEstadoGestor_(depois), linhas: depois.length, colunas: colunas, alteracoes: alteracoes });
+      mudancas.push({ formatosRestauracao: aba.formatosRestauracao || null, nome: nome, antes: hashEstadoGestor_(aba.antes), depois: hashEstadoGestor_(depois), linhas: depois.length, colunas: colunas, alteracoes: alteracoes });
     }
   });
   return mudancas;
@@ -3320,7 +3324,7 @@ function aplicarPlanoGestor_(ss, plano) {
   (plano.mudancas || []).forEach(function (m) {
     let sh = ss.getSheetByName(m.nome);
     const atual = lerEstadoAbaGestor_(sh), hash = hashEstadoGestor_(atual);
-    if (hash === m.depois) return;
+    if (hash === m.depois) { if (m.formatosRestauracao && sh) sh.getRange(1,1,m.formatosRestauracao.length,m.formatosRestauracao[0].length).setNumberFormats(m.formatosRestauracao); return; }
     if (hash !== m.antes) throw new Error('A aba ' + m.nome + ' mudou durante uma gravação interrompida. A operação foi preservada para conferência, sem sobrescrever suas alterações.');
     if (!sh) sh = ss.insertSheet(m.nome);
     const cols = Math.max(1, m.colunas), rows = Math.max(1, m.linhas, atual.length);
@@ -3330,6 +3334,8 @@ function aplicarPlanoGestor_(ss, plano) {
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
     sh.getRange(1, 1, rows, cols).setValues(valores);
     if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 18, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
+    if (m.formatosRestauracao) sh.getRange(1,1,m.formatosRestauracao.length,m.formatosRestauracao[0].length).setNumberFormats(m.formatosRestauracao);
+    if (m.nome === ABA_RESTAURACOES_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     SpreadsheetApp.flush();
   });
@@ -3355,6 +3361,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     const requestId = !leitura && param && !Array.isArray(param) ? String(param.requestId || '') : '';
     if (!leitura && (!/^[A-Za-z0-9_.:-]{8,160}$/.test(requestId))) throw new Error('Atualize o app antes de gravar: falta o identificador seguro da operação.');
     const id = acao + ':' + (requestId || gerarIdGestor_()), fingerprint = hashGestor_(param || null);
+    if (!leitura && acao !== 'restaurarBackupDadosWeb') {
+      const epoca = epocaRestauracaoGestor_();
+      if (epoca && (!param || param.baseRestauracao !== epoca)) throw new Error('A planilha foi restaurada desde a preparação deste envio. Atualize o app e confira esta pendência antes de tentar novamente.');
+    }
     const anterior = linhas.findIndex(function (r) { return r[0] === id && r[2] === 'CONFIRMADO'; });
     if (anterior >= 0) { if (linhas[anterior][1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.'); return lerPlanoDiarioGestor_(linhas, anterior).resultado; }
     const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real };
@@ -3365,6 +3375,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       if (!leitura) registrarAtividadeGestor_(ctx);
     } finally { CONTEXTO_GESTOR_ = null; }
     const mudancas = finalizarPlanoGestor_(ctx);
+    if (acao === 'restaurarBackupDadosWeb') mudancas.sort(function (a,b) { return (a.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0) - (b.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0); });
     if (leitura && mudancas.length === 0) return resultado;
     const plano = { mudancas: mudancas, resultado: resultado }, texto = JSON.stringify(serializarGestor_(plano));
     // Cada parte é uma string JSON, com aspas no começo: mesmo se um corte cair
@@ -3462,6 +3473,7 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada',
   salvarFormaPagamentoWeb: 'Forma de pagamento atualizada', excluirFormaPagamentoWeb: 'Forma de pagamento excluída',
   reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas',
+  restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
 const ACOES_DESFAZER_GESTOR_ = ['excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
@@ -3562,4 +3574,128 @@ function desfazerAtividadeWeb(param) {
     });
     return { sucesso: true, quantidade: evento.alteracoes.length };
   }, false);
+}
+
+// Restauração com prévia, controle de concorrência e cópia anterior recuperável.
+const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
+const ABA_RESTAURACOES_GESTOR_ = '_Gestor_Restauracoes';
+
+function estadoRestauracaoGestor_() {
+  const ss = obterPlanilhaGestor_();
+  return hashGestor_(ABAS_BACKUP_RESTAURAVEL_.map(function (nome) { return [nome, lerEstadoAbaGestor_(ss.getSheetByName(nome))]; }));
+}
+
+function validarBackupRestauracaoGestor_(backup) {
+  if (!backup || backup.formato !== 'gestor-financeiro-backup-v1' || !Array.isArray(backup.abas)) throw new Error('Selecione uma cópia JSON exportada pelo Gestor. CSV não permite restauração completa.');
+  if (Utilities.newBlob(JSON.stringify(backup)).getBytes().length > 900000) throw new Error('Este backup excede o limite de restauração pelo app (900 KB de dados compactados). Preserve o arquivo para recuperação assistida.');
+  const vistos = new Set(), ids = new Set(); let celulas = 0;
+  const permitidas = ABAS_BACKUP_RESTAURAVEL_.concat(['_Gestor_Atividade']);
+  const abas = backup.abas.map(function (aba) {
+    if (!aba || !permitidas.includes(aba.nome) || vistos.has(aba.nome)) throw new Error('O backup contém abas desconhecidas ou repetidas.');
+    vistos.add(aba.nome);
+    if (!Array.isArray(aba.valores) || !aba.valores.length || aba.valores.length > 20000) throw new Error('Aba vazia ou com dimensões inválidas: ' + aba.nome);
+    const cols = aba.valores[0].length;
+    if (!cols || cols > 100 || aba.valores.some(function (r) { return !Array.isArray(r) || r.length !== cols; })) throw new Error('Linhas incompatíveis na aba ' + aba.nome);
+    celulas += cols * aba.valores.length;
+    if (celulas > 100000) throw new Error('Este backup tem células demais para restauração pelo app.');
+    if (aba.nome === '_Gestor_Atividade') return null; // Histórico atual permanece; o histórico antigo fica no arquivo.
+    const registros = ehAbaRegistrosGestor_(aba.nome);
+    const atual = obterPlanilhaGestor_().getSheetByName(aba.nome);
+    const cabecalho = atual && atual.getLastRow() ? atual.getDataRange().getValues()[0] : null;
+    if (registros && (cols < 11 || cols > COLUNAS_GESTOR_)) throw new Error('Estrutura financeira incompatível: ' + aba.nome);
+    if (cabecalho && cabecalho.some(function (v, i) { return i < (registros ? 11 : Math.min(cols, cabecalho.length)) && String(v || '').trim() !== String(aba.valores[0][i] || '').trim(); })) throw new Error('Os cabeçalhos de ' + aba.nome + ' não correspondem à planilha atual.');
+    const formulas = aba.formulas || [];
+    const valores = aba.valores.map(function (r, i) { return r.map(function (v, j) {
+      const formula = formulas[i] && formulas[i][j];
+      if (formula) {
+        if (typeof formula !== 'string' || formula[0] !== '=' || formula.length > 10000 || registros) throw new Error('Fórmula incompatível na aba ' + aba.nome + '. Preserve o arquivo para recuperação assistida.');
+        const funcoes = formula.replace(/"(?:[^"]|"")*"/g, '""').match(/[A-Z_][A-Z0-9_.]*(?=\s*\()/gi) || [];
+        const seguras = 'SUM SUMIF SUMIFS IF IFERROR COUNT COUNTIF COUNTIFS COUNTA AVERAGE MIN MAX ROUND ROUNDUP ROUNDDOWN TODAY DATE YEAR MONTH DAY TEXT VALUE FILTER SORT UNIQUE VLOOKUP HLOOKUP INDEX MATCH ARRAYFORMULA SUMPRODUCT AND OR NOT ISBLANK LEN LEFT RIGHT MID TRIM SUBSTITUTE LOWER UPPER CONCATENATE';
+        if (funcoes.some(function (f) { return !seguras.split(' ').includes(f.toUpperCase()); })) throw new Error('Fórmula não suportada para restauração automática: ' + aba.nome);
+        return formula;
+      }
+      if (v && typeof v === 'object') {
+        if (v.tipo !== 'data' || !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d$/.test(v.valor || '')) throw new Error('Valor de célula inválido no backup.');
+        return Utilities.parseDate(v.valor, backup.fusoHorario || getTimezone(), "yyyy-MM-dd'T'HH:mm:ss");
+      }
+      if (v !== null && !['string','number','boolean'].includes(typeof v)) throw new Error('Tipo de célula inválido.');
+      if (typeof v === 'number' && !Number.isFinite(v)) throw new Error('Número inválido no backup.');
+      if (typeof v === 'string' && v.length > 49000) throw new Error('Texto longo demais no backup.');
+      return typeof v === 'string' ? textoLiteralGestor_(v) : (v === null ? '' : v);
+    }); });
+    if (registros) valores.slice(1).forEach(function (r) {
+      if (!r.some(function (v) { return v !== ''; })) return;
+      if (centavosGestor_(r[7]) < 0 || centavosGestor_(r[17] || 0) < 0 || centavosGestor_(r[17] || 0) > centavosGestor_(r[7])) throw new Error('Valor financeiro inconsistente no backup.');
+      validarDataCalendarioWeb_(limparApostrofo(r[0]), 'Data no backup'); validarMesFaturaWeb_(limparApostrofo(r[8]));
+      if (r[11] && (typeof r[11] !== 'string' || r[11].length > 160 || typeof r[12] !== 'string' || !r[12] || !Number.isInteger(Number(r[13])) || Number(r[13]) < 1)) throw new Error('Identidade financeira inválida no backup.');
+      if (r[11]) { if (ids.has(String(r[11]))) throw new Error('Identificador financeiro repetido no backup.'); ids.add(String(r[11])); }
+    });
+    let formatos = null;
+    if (aba.formatosNumericos) {
+      if (!Array.isArray(aba.formatosNumericos) || aba.formatosNumericos.length !== valores.length || aba.formatosNumericos.some(function (r) { return !Array.isArray(r) || r.length !== cols || r.some(function (f) { return typeof f !== 'string' || f.length > 200; }); })) throw new Error('Formatos numéricos inválidos no backup.');
+      formatos = aba.formatosNumericos;
+    }
+    return { nome: aba.nome, valores: valores, formatos: formatos };
+  }).filter(Boolean);
+  ['Dashboard & Resumo','Formas de Pagamento','Lançamentos'].forEach(function (nome) { if (!vistos.has(nome)) throw new Error('O backup está incompleto: falta ' + nome); });
+  // Backups anteriores à criação de empréstimos/notas representam essas abas vazias.
+  ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome); }).forEach(function (nome) {
+    const sh = obterPlanilhaGestor_().getSheetByName(nome);
+    if (sh && sh.getLastRow()) abas.push({ nome: nome, valores: [sh.getDataRange().getValues()[0]], formatos: null });
+  });
+  return abas;
+}
+
+function previaRestauracaoBackupWeb(param) {
+  return executarOperacaoGestor_('previaRestauracaoBackupWeb', param, function () {
+    const abas = validarBackupRestauracaoGestor_(param && param.backup), ss = obterPlanilhaGestor_();
+    return { versaoAtual: estadoRestauracaoGestor_(), hashBackup: hashGestor_(param.backup), planilha: ss.getName(), geradoEm: String(param.backup.geradoEm || ''), abas: abas.map(function (aba) {
+      const atual = ss.getSheetByName(aba.nome), registros = ehAbaRegistrosGestor_(aba.nome);
+      const resumir = function (linhas) { const dados = linhas.slice(1).filter(function (r) { return r.some(function (v) { return v !== '' && v != null; }); }); return { registros: dados.length, total: registros ? dados.reduce(function (s, r) { return s + centavosGestor_(r[7] || 0); }, 0) / 100 : null }; };
+      return { nome: aba.nome, atual: resumir(atual && atual.getLastRow() ? atual.getDataRange().getValues() : []), backup: resumir(aba.valores) };
+    }) };
+  }, true);
+}
+
+function restaurarBackupDadosWeb(param) {
+  return executarOperacaoGestor_('restaurarBackupDadosWeb', param, function () {
+    if (!param || param.confirmacao !== 'RESTAURAR') throw new Error('Confirme a restauração antes de continuar.');
+    const abas = validarBackupRestauracaoGestor_(param.backup), ss = obterPlanilhaGestor_();
+    if (hashGestor_(param.backup) !== param.hashBackup || estadoRestauracaoGestor_() !== param.versaoAtual) throw new Error('Os dados mudaram desde a prévia. Abra uma nova prévia antes de restaurar.');
+    const originalAnterior = exportarBackupDadosWeb();
+    const copiaAnterior = { ...originalAnterior, abas: originalAnterior.abas.filter(function (a) { return a.nome !== '_Gestor_Atividade'; }).map(function (a) { const dados = Object.assign({}, a); delete dados.exibidos; return dados; }) };
+    if (Utilities.newBlob(JSON.stringify(copiaAnterior)).getBytes().length > 900000) throw new Error('A cópia dos dados atuais excede o limite de recuperação pelo app. Exporte os dados para recuperação assistida antes de continuar.');
+    let arquivo = ss.getSheetByName(ABA_RESTAURACOES_GESTOR_);
+    if (!arquivo) { arquivo = ss.insertSheet(ABA_RESTAURACOES_GESTOR_); arquivo.getRange(1,1,1,4).setValues([['Operação','Data','Parte','Conteúdo']]); }
+    else if (JSON.stringify(arquivo.getRange(1,1,1,4).getValues()[0]) !== JSON.stringify(['Operação','Data','Parte','Conteúdo'])) throw new Error('A aba de segurança já contém dados incompatíveis.');
+    const partes = JSON.stringify(copiaAnterior).match(/[\s\S]{1,12000}/g) || [''];
+    arquivo.getRange(arquivo.getLastRow()+1,1,partes.length,4).setValues(partes.map(function (p,i) { return [param.requestId, copiaAnterior.geradoEm, i+1, JSON.stringify(p)]; }));
+    abas.forEach(function (dados) {
+      const sh = ss.getSheetByName(dados.nome) || ss.insertSheet(dados.nome);
+      // Manipulação do plano em memória: a gravação real fica sob o diário recuperável.
+      sh.valores = copiarGestor_(dados.valores); sh.colunas = Math.max(sh.colunas, dados.valores[0].length);
+      if (ehAbaRegistrosGestor_(dados.nome)) sh.valores.slice(1).forEach(function (r) { if (r[11]) { const antes = CONTEXTO_GESTOR_.registrosIniciais[String(r[11])]; r[13] = Math.max(Number(r[13]) || 1, antes ? Number(antes[13]) || 1 : 1) + 1; } });
+      sh.alterados = Object.create(null); sh.valores.forEach(function (r,i) { r.forEach(function (_,j) { sh.alterados[i+':'+j] = true; }); });
+      if (dados.nome === 'Anotações') { const revisoes = new Map(sh.antes.slice(1).map(function (r) { return [String(r[0]), Number(r[4]) || 1]; })); sh.valores.slice(1).forEach(function (r) { if (r[0]) r[4] = Math.max(Number(r[4]) || 1, revisoes.get(String(r[0])) || 1) + 1; }); }
+      if (dados.formatos) sh.formatosRestauracao = dados.formatos;
+    });
+    return { sucesso: true, copiaAnteriorDisponivel: true, mensagem: 'Dados restaurados. A cópia anterior foi preservada.' };
+  }, false);
+}
+
+function obterBackupAnteriorWeb() {
+  return executarOperacaoGestor_('obterBackupAnteriorWeb', null, function () {
+    const sh = obterPlanilhaGestor_().getSheetByName(ABA_RESTAURACOES_GESTOR_);
+    if (!sh || sh.getLastRow()<2) throw new Error('Ainda não existe uma cópia anterior à restauração.');
+    const linhas = sh.getRange(2,1,sh.getLastRow()-1,4).getValues(), id = linhas[linhas.length-1][0];
+    const partes = linhas.filter(function (r) { return r[0] === id; });
+    if (partes.some(function (r,i) { return Number(r[2]) !== i+1; })) throw new Error('Cópia anterior incompleta. Preserve a planilha para conferência.');
+    return JSON.parse(partes.map(function (r) { return JSON.parse(r[3]); }).join(''));
+  }, true);
+}
+
+function epocaRestauracaoGestor_() {
+  const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
+  const sh = ss.getSheetByName(ABA_RESTAURACOES_GESTOR_);
+  return sh && sh.getLastRow() > 1 ? String(sh.getRange(sh.getLastRow(),1).getValue() || '') : '';
 }

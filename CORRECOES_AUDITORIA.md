@@ -48,7 +48,7 @@ Parcelamentos antigos que não possam ser agrupados com segurança são sinaliza
 
 Execute `node --test` na pasta do projeto para rodar os testes locais com dados fictícios. Eles não acessam contas ou planilhas reais.
 
-Na conferência desta atualização, os **71 testes passaram**. As duas cópias da interface também foram conferidas como idênticas ao `index.html` principal.
+Na rodada anterior às mudanças de velocidade e restauração, os **71 testes passaram**. As duas cópias da interface também foram conferidas como idênticas ao `index.html` principal.
 
 Além desses testes, foram preparados testes em navegador isolado para texto hostil, perda de resposta, reabertura do app, fila e notas offline, paginação e geração de PDFs grandes.
 
@@ -78,4 +78,4 @@ O ensaio em navegador isolado cobriu pagamento parcial, desfazer, recuperação 
 
 ### Adiado conforme combinado
 
-**Restaurar backup com prévia** e os recursos relacionados à restauração completa ficam para outra etapa. Gerar CSS durante a publicação e reduzir funções antigas do HTML também permanecem como manutenção futura.
+**Restaurar backup com prévia** foi implementado na etapa seguinte; consulte VELOCIDADE_E_RESTAURACAO.md. Gerar CSS durante a publicação e reduzir funções antigas do HTML também permanecem como manutenção futura.
