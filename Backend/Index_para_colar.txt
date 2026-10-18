@@ -29,6 +29,14 @@
     .tab-btn-global { transition: all 0.2s ease; user-select: none; }
     .tab-btn-global.active { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); }
 
+    /* Clique/toque não deixa contorno; teclado mantém foco visível. */
+    :is(#btnMesPrev, #btnMesNext) { -webkit-tap-highlight-color: transparent; }
+    :is(#btnMesPrev, #btnMesNext):focus:not(:focus-visible) { outline: none; }
+    :is(#btnMesPrev, #btnMesNext):focus-visible { outline: 2px solid #93c5fd; outline-offset: 3px; }
+    @media (hover: none) {
+      :is(#btnMesPrev, #btnMesNext):hover { background-color: #1e293b; }
+    }
+
     /* Barras de Rolagem Invisíveis/Elegantes */
     .hide-scrollbar::-webkit-scrollbar { display: none; }
     .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
