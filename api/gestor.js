@@ -1,4 +1,5 @@
 const ACAO_PERMITIDA = new Set([
+  'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb',
   'getDadosCompletos', 'salvarLancamentoWeb', 'sincronizarLoteWeb',
   'editarLancamentoLinhaWeb', 'excluirLancamentoWeb', 'adiantarParcelasWeb',
   'quitarFaturaWeb', 'salvarNotasWeb', 'salvarEmprestimoWeb',
@@ -45,6 +46,7 @@ module.exports = async function gestor(req, res) {
   } catch (_) {
     return res.status(400).json({ sucesso: false, erro: 'Solicitação inválida.' });
   }
+  const inicio = Date.now();
   try {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload) || !ACAO_PERMITIDA.has(payload.action)) {
       return res.status(400).json({ sucesso: false, erro: 'Solicitação inválida.' });
@@ -58,12 +60,15 @@ module.exports = async function gestor(req, res) {
       signal: AbortSignal.timeout(55000)
     });
     const texto = await resposta.text();
+    res.setHeader('Server-Timing', 'upstream;dur=' + Math.max(0,Date.now()-inicio));
     let dados;
     try { dados = JSON.parse(texto); } catch (_) {
-      return res.status(502).json({ sucesso: false, erro: 'Resposta inválida do serviço de dados.' });
+      return res.status(502).json({ sucesso: false, codigo: 'RESPOSTA_INVALIDA', erro: 'Resposta inválida do serviço de dados.' });
     }
     return res.status(resposta.ok ? 200 : 502).json(dados);
-  } catch (_) {
-    return res.status(502).json({ sucesso: false, erro: 'Não foi possível conectar ao serviço de dados.' });
+  } catch (erro) {
+    res.setHeader('Server-Timing', 'upstream;dur=' + Math.max(0,Date.now()-inicio));
+    if (erro && (erro.name === 'TimeoutError' || erro.name === 'AbortError')) return res.status(504).json({ sucesso: false, codigo: 'TIMEOUT_PROXY', erro: 'O serviço de dados demorou demais para responder.' });
+    return res.status(502).json({ sucesso: false, codigo: 'FALHA_CONEXAO', erro: 'Não foi possível conectar ao serviço de dados.' });
   }
 };

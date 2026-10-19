@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v20';
+const CACHE_NAME = 'gestor-gastos-v24';
 
 async function ehPaginaDoGestor(resposta) {
   if (!resposta.ok || resposta.redirected || !(resposta.headers.get('content-type') || '').includes('text/html')) return false;
@@ -6,6 +6,19 @@ async function ehPaginaDoGestor(resposta) {
     const html = await resposta.clone().text();
     return html.includes('id="formLancamento"') && html.includes('id="view-dashboard"');
   } catch (_) { return false; }
+}
+
+async function prepararPaginaInicialGestor(cache) {
+  const controlador = new AbortController();
+  const prazo = setTimeout(() => controlador.abort(), 8000);
+  try {
+    const pedido = new Request(new URL('/', self.location.origin).href, { credentials: 'same-origin', cache: 'reload' });
+    const resposta = await fetch(pedido, { signal: controlador.signal });
+    const mesmaOrigem = !resposta.url || new URL(resposta.url).origin === self.location.origin;
+    if (mesmaOrigem && await ehPaginaDoGestor(resposta)) await cache.put(pedido, resposta);
+  } catch (_) {
+    // Uma falha de rede não apaga a versão offline anterior nem impede a ativação.
+  } finally { clearTimeout(prazo); }
 }
 
 // Instalação do Service Worker
@@ -33,6 +46,9 @@ self.addEventListener('activate', event => {
         await caches.delete(nome);
       } catch (erro) { /* Mantém a cache anterior se a transferência não puder ser concluída. */ }
     }
+    // A primeira navegação aconteceu antes do registro do worker. Preparar o HTML
+    // aqui permite reabrir offline sem exigir uma segunda visita com internet.
+    await prepararPaginaInicialGestor(atual);
     await self.clients.claim();
   })());
 });
@@ -65,7 +81,7 @@ self.addEventListener('fetch', event => {
           catch (erro) { /* Falha de armazenamento não impede a abertura pela rede. */ }
           return response;
         })
-        .catch(async () => (await caches.match(event.request)) || new Response('Abra o app com internet uma vez para disponibilizá-lo offline.', { status: 503, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }))
+        .catch(async () => (await caches.match(event.request)) || new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.', { status: 503, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }))
     );
     return;
   }
