@@ -29,7 +29,7 @@ test('recuperação parcial recusa valor divergente e alteração em linha anter
     db.failure={name:'Lançamentos',stage:'after'};assert.throws(()=>ctx.salvarLancamentoWeb(dados),/FALHA/);
     const sh=db.sheets['Lançamentos'];[9,11,12,13,14,16,17].forEach(c=>sh.rows.at(-1)[c]='');
     sh.rows[alterarAnterior?1:2][7]=999;
-    assert.throws(()=>ctx.salvarLancamentoWeb(dados),/mudou durante/);assert.equal(sh.rows[alterarAnterior?1:2][7],999);
+    assert.throws(()=>ctx.salvarLancamentoWeb(dados),/não corresponde|mudou durante/);assert.equal(sh.rows[alterarAnterior?1:2][7],999);
   }
 });
 

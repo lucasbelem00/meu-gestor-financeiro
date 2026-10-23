@@ -5,6 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 const raiz = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(raiz, 'index.html'), 'utf8');
+const {boot,fixture}=require('./fixtures/gestor-mocks.cjs');
 const fonteBackend = fs.readFileSync(path.join(raiz, 'Backend/Code.gs'), 'utf8');
 
 test('as cópias da interface estão sincronizadas com o arquivo principal', () => {
@@ -18,7 +19,7 @@ test('todos os scripts locais têm sintaxe válida', () => {
 });
 
 function contextoRelatorio() {
-  const ctx = vm.createContext({ console }); vm.runInContext(fonteBackend, ctx);
+  const {ctx}=boot(fixture());
   function lancamento(ano, valor) {
     const r = ['01/10/' + ano, 'Mercado', 'Cartão Azul', 'Alimentação', valor, 1, '1/1', valor, '10/' + ano, 'Pago', ''];
     return { idx: ano, d: r, r, desc: r[1], forma: r[2], cat: r[3], catRes: r[3], parc: '1/1', infoParc: { total: 1, atual: 1 }, valor, mes: r[8], infoMes: { a: ano, m: 10, time: new Date(ano, 9, 1).getTime() }, status: 'Pago', tags: '', data: r[0], chave: String(ano) };

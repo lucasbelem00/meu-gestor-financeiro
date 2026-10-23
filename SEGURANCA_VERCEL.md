@@ -1,6 +1,20 @@
 # Segurança gratuita do Gestor Financeiro no Vercel
 
-Este roteiro mantém GitHub, Vercel, Apps Script e a instalação como PWA. A proteção gratuita do Vercel cobre endereços de Preview; no plano Hobby o domínio de produção continua público. Por isso, o app instalado deve usar o endereço de Preview protegido. A API do domínio de produção será bloqueada pelo código.
+Este roteiro mantém GitHub, Vercel, Apps Script e a instalação como PWA. O app instalado deve usar o endereço de Preview protegido. A API do ambiente de produção é bloqueada pelo código, independentemente da proteção de acesso configurada na plataforma.
+
+## Conferência em 23/10/2026
+
+O conector da Vercel retornou autenticação habilitada com o escopo `all_except_custom_domains` para este projeto. Também foram feitas requisições sem login, sem cookies e sem consultar dados financeiros:
+
+| Endereço verificado | Resposta de `/api/gestor` sem login |
+| --- | --- |
+| Implantação Preview `meu-gestor-financeiro-ke32lhgr5-lucasbelem00.vercel.app` | 302 para `https://vercel.com` |
+| Branch `meu-gestor-financeiro-git-new-lucasbelem00.vercel.app` | 302 para `https://vercel.com` |
+| `meu-gestor-financeiro-lucasbelem00.vercel.app` | 302 para `https://vercel.com` |
+| Branch `meu-gestor-financeiro-git-main-lucasbelem00.vercel.app` | 302 para `https://vercel.com` |
+| `meu-gestor-financeiro-rho.vercel.app` | 404 |
+
+Os resultados confirmam o bloqueio nesses endereços na data da conferência. Nenhuma configuração da Vercel foi alterada. Domínios personalizados futuros precisam de conferência própria, pois o escopo informado os exclui. A [documentação de autenticação da Vercel](https://vercel.com/docs/deployment-protection/methods-to-protect-deployments/vercel-authentication) descreve os escopos disponíveis.
 
 ## Antes de começar
 

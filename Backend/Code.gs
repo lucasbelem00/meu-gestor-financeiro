@@ -114,9 +114,8 @@ function validarLancamentoWeb_(dados, indice) {
   const valor = extractNum(dados.valorTotal);
   if (!Number.isFinite(valor) || valor <= 0) throw new Error(contexto + 'o valor deve ser maior que zero.');
 
-  const isPix = ehPixGestor_(dados.formaPagto);
   const isAssinatura = Boolean(dados.isAssinatura);
-  const parcelas = (isAssinatura || (isPix && dados.pixParcelado !== true)) ? 1 : Number(dados.numParcelas || 1);
+  const parcelas = (isAssinatura || !permiteParcelamentoFormaGestor_(dados.formaPagto,dados.pixParcelado)) ? 1 : Number(dados.numParcelas || 1);
   const parcelaInicial = (parcelas <= 1) ? 1 : Number(dados.parcelaInicial || 1);
   if (!Number.isInteger(parcelas) || parcelas < 1 || parcelas > 600) throw new Error(contexto + 'o número de parcelas deve ser um inteiro positivo.');
   if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > parcelas) {
@@ -194,9 +193,8 @@ function onOpen() {
     .addItem('💾 Gravar Lançamento', 'gravarLancamentoDoFormulario')
     .addItem('🧹 Limpar Formulário', 'limparFormulario')
     .addSeparator()
-    .addItem('🔄 Atualizar Faturas Pagas', 'atualizarStatusAutomatico')
+    .addItem('🔄 Atualizar despesas fixas e organização', 'atualizarStatusAutomatico')
     .addToUi();
-  atualizarStatusAutomatico();
 }
 
 // CORRIGIDO: o app fica no Vercel; esta página só confirma que a API está no ar
@@ -232,11 +230,16 @@ function atualizarStatusAutomaticoInterno_() {
 function serieRecorrenteGestor_(linha) {
   const texto = String((linha || [])[15] || ''), prefixo = 'gestor-serie-v1:';
   if (texto.indexOf(prefixo) !== 0) return { legado: texto };
-  try { const info = JSON.parse(texto.substring(prefixo.length)); return info && typeof info === 'object' && !Array.isArray(info) ? info : { legado: texto }; }
-  catch (_) { throw new Error('O controle desta despesa fixa está inválido. Preserve o registro para conferência.'); }
+  try {
+    const info = JSON.parse(texto.substring(prefixo.length));
+    if (!info || typeof info !== 'object' || Array.isArray(info) || (info.diaReferencia !== undefined && (!Number.isInteger(info.diaReferencia) || info.diaReferencia < 1 || info.diaReferencia > 31)) || (info.encerrada !== undefined && typeof info.encerrada !== 'boolean')) throw new Error('Controle inválido');
+    if (info.encerramentoMes !== undefined) validarMesFaturaWeb_(info.encerramentoMes);
+    return info;
+  } catch (_) { return { invalida: true }; }
 }
 
 function definirSerieRecorrenteGestor_(linha, alteracoes) {
+  if (serieRecorrenteGestor_(linha).invalida) throw new Error('O controle desta despesa fixa precisa de conferência. O conteúdo original foi preservado.');
   const info = Object.assign({}, serieRecorrenteGestor_(linha), alteracoes);
   if (!info.legado) delete info.legado;
   linha[15] = 'gestor-serie-v1:' + JSON.stringify(info);
@@ -244,6 +247,7 @@ function definirSerieRecorrenteGestor_(linha, alteracoes) {
 }
 
 function diaReferenciaSerieGestor_(linhas) {
+  if (linhas.some(function (r) { return serieRecorrenteGestor_(r).invalida; })) throw new Error('Esta série de despesa fixa precisa de conferência antes de gerar ou alterar parcelas.');
   const comReferencia = linhas.map(serieRecorrenteGestor_).find(function (s) { return Number.isInteger(s.diaReferencia) && s.diaReferencia >= 1 && s.diaReferencia <= 31; });
   if (comReferencia) return comReferencia.diaReferencia;
   const datas = linhas.map(function (r) { return parseDataBR(r[0]); }).filter(Boolean).sort(function (a, b) { return a.getTime() - b.getTime(); });
@@ -271,11 +275,12 @@ function processarAssinaturasAutomaticas(lancSheet) {
   const data = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getValues();
   const displayData = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getDisplayValues();
 
-  const assinaturas = Object.create(null), linhasPorSerie = Object.create(null), encerradas = new Set();
+  const assinaturas = Object.create(null), linhasPorSerie = Object.create(null), encerradas = new Set(), invalidas = new Set();
   data.forEach(function (r, i) {
     if (limparApostrofo(displayData[i][6]) !== '∞/∞') return;
     const chave = String(r[12] || (normalizarTexto(displayData[i][1]) + '_' + normalizarTexto(displayData[i][2])));
     (linhasPorSerie[chave] || (linhasPorSerie[chave] = [])).push(r);
+    if (serieRecorrenteGestor_(r).invalida) invalidas.add(chave);
     if (serieRecorrenteGestor_(r).encerrada || isStatusCancelado(displayData[i][9]) || displayData[i][9] === 'Pago (Cancelada)') encerradas.add(chave);
   });
 
@@ -289,7 +294,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
     if (parcela === '∞/∞' && status !== 'Assinatura Cancelada' && status !== 'Pago (Cancelada)') {
       const forma = String(displayData[idx][2] || '').trim();
       const chave = String(r[12] || `${normalizarTexto(descStr)}_${normalizarTexto(forma)}`);
-      if (encerradas.has(chave)) return;
+      if (encerradas.has(chave) || invalidas.has(chave)) return;
       const dtCompraStr = String(displayData[idx][0] || '').trim();
       const mesFat = String(displayData[idx][8] || '').trim();
       const infoFat = parseMesFat(mesFat);
@@ -1138,7 +1143,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
       const isAssinatura = Boolean(dados.isAssinatura);
 
       let numParcelas = 1, parcelaInicial = 1;
-      if (!isAssinatura && (!isPix || dados.pixParcelado === true)) {
+      if (!isAssinatura && permiteParcelamentoFormaGestor_(formaAtual,dados.pixParcelado)) {
         numParcelas = Math.max(1, parseInt(dados.numParcelas, 10) || 1);
         parcelaInicial = Math.max(1, parseInt(dados.parcelaInicial, 10) || 1);
         if (parcelaInicial > numParcelas) parcelaInicial = 1;
@@ -1158,8 +1163,8 @@ function sincronizarLoteWebInterno_(loteOffline) {
       const dtCompraStr = String(dados.dataCompra || '').replace(/^'/, '').trim();
       let statusPadrao = 'Em Aberto';
       if (isAssinatura) {
-        statusPadrao = isPix && dtCompra && dtCompra.getTime() <= hoje.getTime() ? 'Assinatura Paga' : 'Assinatura Ativa';
-      } else if (isPix) {
+        statusPadrao = ehPagamentoImediatoGestor_(formaAtual) && dtCompra && dtCompra.getTime() <= hoje.getTime() ? 'Assinatura Paga' : 'Assinatura Ativa';
+      } else if (ehPagamentoImediatoGestor_(formaAtual)) {
         statusPadrao = (dtCompra && dtCompra.getTime() > hoje.getTime()) ? 'Agendado' : 'Pago';
       }
 
@@ -1375,6 +1380,7 @@ function getDadosCompletos() {
       const uL_Lanc = lancSheet.getLastRow();
       const lancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getValues();
       const dispLancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getDisplayValues();
+      const seriesInvalidas = new Set(lancData.filter(function(r) { return limparApostrofo(r[6])==='∞/∞' && serieRecorrenteGestor_(r).invalida; }).map(function(r) { return String(r[12] || (normalizarTexto(r[1])+'_'+normalizarTexto(r[2]))); }));
 
       lancData.forEach((r, idx) => {
         const dVals = dispLancData[idx];
@@ -1385,7 +1391,7 @@ function getDadosCompletos() {
         const forma = String(dVals[2] || '').trim();
         const formaLower = forma.toLowerCase();
         const chaveForma = mapLowerToOriginal[chaveFormaGestor_(forma)] || forma;
-        const isPix = ehPixGestor_(forma);
+        const isPix = ehPagamentoImediatoGestor_(forma);
         const isTotal = tipoFormaGestor_(forma) === 'resumo';
 
         const catStr = String(dVals[3] || '').trim();
@@ -1491,6 +1497,7 @@ function getDadosCompletos() {
               valor: valorFmt,
               valorRaw: valor,
               status: statusRaw,
+              controleInvalido: seriesInvalidas.has(chaveAss),
               encerrada: serieRecorrenteGestor_(r).encerrada === true,
               mesEncerramento: serieRecorrenteGestor_(r).encerramentoMes || '',
               mesUltimaFat: mesFat,
@@ -1707,7 +1714,7 @@ function getDadosCompletos() {
 
     Object.values(listaAssinaturas).forEach(ass => {
       const stLower = String(ass.status || '').toLowerCase();
-      const isAtiva = !ass.encerrada && (stLower === 'assinatura ativa' || stLower === 'assinatura paga');
+      const isAtiva = !ass.controleInvalido && !ass.encerrada && (stLower === 'assinatura ativa' || stLower === 'assinatura paga');
       if (isAtiva && ass.valorRaw > 0) {
         mesesContinuos.forEach(mHoriz => {
           const infoH = parseMesFat(mHoriz);
@@ -1884,7 +1891,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor: 4,
+      protocoloGestor: 5,
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
         totalAberto: formatBRL(calcAberto),
@@ -2007,6 +2014,7 @@ function propriedade_(nome) {
 
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
+    case 'cancelarOperacaoWeb': return cancelarOperacaoWeb(param);
     case 'consultarOperacaoWeb': return consultarOperacaoWeb(param);
     case 'diagnosticarPendenciasWeb': return diagnosticarPendenciasWeb();
     case 'previaAntecipacaoWeb': return previaAntecipacaoWeb(param);
@@ -2014,6 +2022,7 @@ function executarAcaoApiInterna_(action, param) {
     case 'obterAtividadeWeb': return obterAtividadeWeb(param);
     case 'desfazerAtividadeWeb': return desfazerAtividadeWeb(param);
     case 'obterFaturaPagamentoWeb': return obterFaturaPagamentoWeb(param);
+    case 'previaPagamentoFaturaWeb': return previaPagamentoFaturaWeb(param);
     case 'registrarPagamentoFaturaWeb': return registrarPagamentoFaturaWeb(param);
     case 'previaRestauracaoBackupWeb': return previaRestauracaoBackupWeb(param);
     case 'restaurarBackupDadosWeb': return restaurarBackupDadosWeb(param);
@@ -2481,9 +2490,8 @@ function salvarEmprestimoWebInterno_(dados) {
     validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
     if (!String(dados.formaPagto || '').trim()) throw new Error('Selecione como o empréstimo foi pago.');
     const formaPagto = validarFormaAtualGestor_(dados.formaPagto, { novaCompra: true });
-    const isPix = ehPixGestor_(formaPagto);
     let mesPrimeiraFatura = limparApostrofo(dados.mesPrimeiraFatura);
-    if (isPix) {
+    if (ehPagamentoImediatoGestor_(formaPagto)) {
       if (mesPrimeiraFatura) {
         mesPrimeiraFatura = validarMesFaturaWeb_(mesPrimeiraFatura);
       } else {
@@ -2499,8 +2507,8 @@ function salvarEmprestimoWebInterno_(dados) {
 
     const valorTotal = centavosGestor_(dados.valorTotal) / 100;
     if (!Number.isFinite(valorTotal) || valorTotal <= 0) throw new Error('Informe um valor maior que zero.');
-    const numParcelas = (isPix && dados.pixParcelado !== true) ? 1 : Number(dados.numParcelas || 1);
-    const parcelaInicial = (isPix && dados.pixParcelado !== true) ? 1 : Number(dados.parcelaInicial || 1);
+    const numParcelas = permiteParcelamentoFormaGestor_(formaPagto,dados.pixParcelado) ? Number(dados.numParcelas || 1) : 1;
+    const parcelaInicial = permiteParcelamentoFormaGestor_(formaPagto,dados.pixParcelado) ? Number(dados.parcelaInicial || 1) : 1;
     if (!Number.isInteger(numParcelas) || numParcelas < 1 || numParcelas > 600) throw new Error('O número de parcelas deve ser um inteiro positivo.');
     if (!Number.isInteger(parcelaInicial) || parcelaInicial < 1 || parcelaInicial > numParcelas) {
       throw new Error('A parcela inicial deve estar entre 1 e o total de parcelas.');
@@ -3240,9 +3248,10 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 }
 
 function executarAcaoApi_(action, param) {
+  if (action === 'cancelarOperacaoWeb') return cancelarOperacaoWeb(param);
   if (action === 'consultarOperacaoWeb') return consultarOperacaoWeb(param);
   if (action === 'diagnosticarPendenciasWeb') return diagnosticarPendenciasWeb();
-  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaAntecipacaoWeb'];
+  const leituras = ['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaAntecipacaoWeb','previaPagamentoFaturaWeb'];
   if (leituras.indexOf(action) >= 0) return executarOperacaoGestor_(action, param, function () { return executarAcaoApiInterna_(action, param); }, true);
   return executarAcaoApiInterna_(action, param);
 }
@@ -3467,12 +3476,37 @@ function atualizarVersoesGestor_(aba, ctx) {
   });
 }
 
+function pendenciasSeriesGestor_(ctx) {
+  const mapa = new Map();
+  Object.keys(ctx.registrosIniciais).forEach(function (id) {
+    const r=ctx.registrosIniciais[id];
+    if (limparApostrofo(r[6]) === '∞/∞' && serieRecorrenteGestor_(r).invalida) {
+      const chave=String(r[12] || id);
+      if(!mapa.has(chave)) mapa.set(chave,{compraId:chave,registroId:id,descricao:String(r[1] || ''),codigo:'SERIE_FIXA_INVALIDA'});
+    }
+  });
+  return Array.from(mapa.values());
+}
+function validarAlteracoesSeriesGestor_(aba,ctx) {
+  const series=new Set(pendenciasSeriesGestor_(ctx).map(function(p){return p.compraId;}));
+  if(!series.size) return;
+  const atuais=new Map(aba.valores.slice(1).map(function(r){return [String(r[11]),r];}));
+  Object.keys(ctx.registrosIniciais).forEach(function(id){
+    const antes=ctx.registrosIniciais[id];
+    if(series.has(String(antes[12] || id)) && (!atuais.has(id) || hashRegistroGestor_(antes)!==hashRegistroGestor_(atuais.get(id)))) throw new Error('Esta operação altera uma despesa fixa com controle inválido. Confira a série em Atividade; os demais lançamentos continuam disponíveis.');
+  });
+  aba.valores.slice(1).forEach(function(r){
+    if(series.has(String(r[12] || r[11])) && !ctx.registrosIniciais[String(r[11])]) throw new Error('Não é possível gerar ocorrências desta despesa fixa até conferir seu controle.');
+  });
+}
+
 function finalizarPlanoGestor_(ctx) {
   const mudancas = [];
   Object.keys(ctx.ss.abas).forEach(function (nome) {
     const aba = ctx.ss.abas[nome];
     if (ehAbaRegistrosGestor_(nome)) {
       migrarIdentidadesGestor_(aba, ctx);
+      if (nome === 'Lançamentos' && ctx.action !== 'restaurarBackupDadosWeb') validarAlteracoesSeriesGestor_(aba,ctx);
       aba.valores.slice(1).forEach(function (r) {
         if (!r[11]) return;
         if (nome === 'Lançamentos') r[14] = isStatusPago(r[9]) ? 'Pago' : 'Em Aberto';
@@ -3699,6 +3733,30 @@ function diagnosticarPendenciasWeb() {
     })};
   } finally {lock.releaseLock();}
 }
+function cancelarOperacaoWeb(param) {
+  const p = param || {}, acao = String(p.action || ''), pedido = String(p.requestId || '');
+  if (!Object.prototype.hasOwnProperty.call(ROTULOS_ATIVIDADE_GESTOR_, acao) || ['salvarNotasWeb','restaurarBackupDadosWeb'].includes(acao) || !/^[A-Za-z0-9_.:-]{8,160}$/.test(pedido)) throw new Error('Este envio não pode ser cancelado por esta opção.');
+  const id = acao + ':' + pedido, lock = LockService.getScriptLock(); lock.waitLock(30000);
+  let gravando = false;
+  try {
+    const diario = abrirDiarioGestor_(obterPlanilhaGestor_());
+    const entradas = localizarCabecalhosOperacaoGestor_(diario,id).map(function (linha) { return {linha:linha,cabecalho:diario.getRange(linha,1,1,6).getValues()[0]}; });
+    const confirmada = entradas.find(function (e) { return e.cabecalho[2] === 'CONFIRMADO'; });
+    if (confirmada) return {estado:'confirmado',operacaoId:id};
+    // PRONTO pode ter sido parcialmente aplicado. Nem mesmo um erro de rede
+    // autoriza apagar o plano ou tratar essa gravação como inexistente.
+    if (entradas.some(function (e) { return e.cabecalho[2] === 'PRONTO'; })) return {estado:'conferencia',operacaoId:id};
+    if (entradas.some(function (e) { return e.cabecalho[2] === 'CANCELADO'; })) return {estado:'cancelado',operacaoId:id};
+    // PREPARANDO ainda não escreveu nas abas financeiras. Preservamos suas
+    // partes e acrescentamos uma proibição durável, sob a mesma trava do envio.
+    gravando = true;
+    diario.getRange(diario.getLastRow()+1,1,1,6).setValues([[id,hashGestor_({cancelado:id}),'CANCELADO',0,'',new Date()]]);
+    SpreadsheetApp.flush();
+    return {estado:'cancelado',operacaoId:id};
+  } catch (e) { if (gravando) e.resultadoIncerto = true; throw e; }
+  finally { lock.releaseLock(); }
+}
+
 function consultarOperacaoWeb(param) {
   const p=param || {}, acao=String(p.action || ''), pedido=String(p.requestId || '');
   if(!/^[A-Za-z][A-Za-z0-9_]{2,80}$/.test(acao)||!/^[A-Za-z0-9_.:-]{8,160}$/.test(pedido)) throw new Error('Identificação da operação inválida.');
@@ -3709,6 +3767,7 @@ function consultarOperacaoWeb(param) {
     const entradas=localizarCabecalhosOperacaoGestor_(diario,operacaoId);
     if(!entradas.length) return {estado:'nao_localizado',operacaoId:operacaoId};
     const linha=entradas[entradas.length-1], cabecalho=diario.getRange(linha,1,1,6).getValues()[0];
+    if(cabecalho[2]==='CANCELADO') return {estado:'cancelado',operacaoId:operacaoId};
     if(cabecalho[2]==='CONFIRMADO') return {estado:'confirmado',operacaoId:operacaoId,resultado:lerOperacaoTecnicaGestor_(diario,linha).plano.resultado};
     if(cabecalho[2]!=='PRONTO') return {estado:'preparando',operacaoId:operacaoId};
     // Recuperar na ordem do diário. Nunca contornar uma operação anterior ou
@@ -3756,6 +3815,7 @@ function localizarLinhasTecnicasGestor_(sh, coluna, texto) {
 function lerOperacaoTecnicaGestor_(sh, linha) {
   const cabecalho = sh.getRange(linha,1,1,6).getValues()[0], qtd = Number(cabecalho[3]);
   validarCabecalhoOperacaoGestor_(cabecalho);
+  if (cabecalho[2] === 'CANCELADO') return {cabecalho:cabecalho,plano:{mudancas:[],resultado:{estado:'cancelado',operacaoId:cabecalho[0]}}};
   if (linha+qtd>sh.getLastRow()) throw erroDiarioGestor_('DIARIO_INCOMPLETO');
   return {cabecalho:cabecalho, plano:lerPlanoDiarioGestor_(sh.getRange(linha,1,qtd+1,6).getValues(),0)};
 }
@@ -3765,9 +3825,9 @@ function validarCabecalhoOperacaoGestor_(cabecalho) {
   // pode guardar identificações técnicas antigas; elas não viram parâmetros
   // de reenvio e não devem impedir a retomada de um plano estruturalmente válido.
   if (!cabecalho || typeof cabecalho[0]!=='string' || !cabecalho[0].trim() || cabecalho[0].length>500 || /[\u0000-\u001f\u007f]/.test(cabecalho[0]) ||
-      !['PREPARANDO','PRONTO','CONFIRMADO'].includes(cabecalho[2]) ||
+      !['PREPARANDO','PRONTO','CONFIRMADO','CANCELADO'].includes(cabecalho[2]) ||
       !/^[a-f0-9]{64}$/.test(String(cabecalho[1] || '')) ||
-      !Number.isInteger(Number(cabecalho[3])) || Number(cabecalho[3])<1) throw erroDiarioGestor_('DIARIO_CABECALHO_INVALIDO');
+      !Number.isInteger(Number(cabecalho[3])) || (cabecalho[2]==='CANCELADO' ? Number(cabecalho[3])!==0 : Number(cabecalho[3])<1)) throw erroDiarioGestor_('DIARIO_CABECALHO_INVALIDO');
 }
 
 function localizarCabecalhosOperacaoGestor_(sh, operacaoId) {
@@ -3804,6 +3864,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   let resultadoIncerto = false;
   try {
     const real = obterPlanilhaGestor_(), diario = abrirDiarioGestor_(real);
+    if (!leitura && param && param.requestId) {
+      const cancelada = localizarCabecalhosOperacaoGestor_(diario,acao+':'+param.requestId).some(function (linha) { return diario.getRange(linha,3).getValue()==='CANCELADO'; });
+      if (cancelada) { const erro=new Error('Este envio foi cancelado com segurança. Confira os campos antes de criar um novo lançamento.'); erro.codigo='OPERACAO_CANCELADA'; throw erro; }
+    }
     const pendentes = localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO');
     resultadoIncerto = pendentes.length > 0;
     const pendenciasIntegridade=[];
@@ -3840,7 +3904,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       resultado = executar();
       if (!leitura) registrarAtividadeGestor_(ctx);
     } finally { CONTEXTO_GESTOR_ = null; }
-    if(resultado && typeof resultado==='object' && !Array.isArray(resultado)) resultado.integridade={bloqueada:ctx.somenteLeitura,pendencias:pendenciasIntegridade};
+    if(resultado && typeof resultado==='object' && !Array.isArray(resultado)) {
+      resultado.integridade={bloqueada:ctx.somenteLeitura,pendencias:pendenciasIntegridade};
+      if(ctx.ss.abas['Lançamentos']) resultado.integridade.series=pendenciasSeriesGestor_(ctx);
+    }
     if(ctx.somenteLeitura) return resultado;
     const mudancas = finalizarPlanoGestor_(ctx);
     if (acao === 'restaurarBackupDadosWeb') mudancas.sort(function (a,b) { return (a.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0) - (b.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0); });
@@ -3891,6 +3958,27 @@ function valorPagoBancoGestor_(r, emprestimo) {
   return Math.min(total, Math.max(0, centavosGestor_(r[17] || 0))) / 100;
 }
 
+const REGRA_PAGAMENTO_FATURA_GESTOR_ = 'data-parcela-id-v1';
+function compararItensPagamentoGestor_(a,b) {
+  const dataA=parseDataBR(a.resumo.data),dataB=parseDataBR(b.resumo.data);
+  return (dataA ? dataA.getTime() : 0)-(dataB ? dataB.getTime() : 0) || parseNumParcela(a.resumo.parcela).atual-parseNumParcela(b.resumo.parcela).atual || String(a.registroId).localeCompare(String(b.registroId));
+}
+function distribuirPagamentoFaturaGestor_(fatura,valor) {
+  let restante=centavosGestor_(valor);
+  if (restante <= 0 || restante > centavosGestor_(fatura.restante)) throw new Error('Informe um pagamento maior que zero e até o saldo em aberto.');
+  const aplicacoes=[];
+  fatura.itens.slice().sort(compararItensPagamentoGestor_).forEach(function(item){
+    const falta=centavosGestor_(item.valor)-centavosGestor_(item.pago), aplicar=Math.min(falta,restante);
+    if(aplicar<=0) return;
+    aplicacoes.push(Object.assign({},item,{aplicar:aplicar/100,restante:(falta-aplicar)/100})); restante-=aplicar;
+  });
+  if(restante!==0) throw new Error('O saldo dos itens mudou. Confira a fatura novamente.');
+  return aplicacoes;
+}
+function previaPagamentoFaturaWeb(param) {
+  const fatura=obterFaturaPagamentoWeb(param);
+  return {forma:fatura.forma,mesFatura:fatura.mesFatura,versaoFatura:fatura.versaoFatura,regra:fatura.regra,valor:centavosGestor_(param.valor)/100,aplicacoes:distribuirPagamentoFaturaGestor_(fatura,param.valor)};
+}
 function obterFaturaPagamentoWeb(param) {
   const mes = validarMesFaturaWeb_(param && param.mesFatura), forma = String(param && param.forma || '').trim();
   if (!forma || !formaEmprestimoConsomeLimite_(forma)) throw new Error('Selecione um cartão para conferir a fatura.');
@@ -3905,27 +3993,28 @@ function obterFaturaPagamentoWeb(param) {
       itens.push({ aba: nome, linha: i + 2, registroId: r[11], versao: Number(r[13]), valor: valor / 100, pago: recebidoBanco / 100, resumo: resumirRegistroAtividade_(r, nome), hash: hashRegistroGestor_(r) });
     });
   });
-  const versao = hashGestor_(itens.map(function (i) { return [i.registroId, i.versao, i.hash]; }).sort(function (a, b) { return a[0].localeCompare(b[0]); }));
-  return { forma: forma, mesFatura: mes, total: total / 100, pago: pago / 100, restante: (total - pago) / 100, versaoFatura: versao, itens: itens };
+  itens.sort(compararItensPagamentoGestor_);
+  const versao = hashGestor_({regra:REGRA_PAGAMENTO_FATURA_GESTOR_,itens:itens.map(function (i) { return [i.registroId, i.versao, i.hash]; })});
+  return { forma: forma, mesFatura: mes, total: total / 100, pago: pago / 100, restante: (total - pago) / 100, versaoFatura: versao, regra:REGRA_PAGAMENTO_FATURA_GESTOR_, itens: itens };
 }
 
 function registrarPagamentoFaturaWeb(param) {
   return executarOperacaoGestor_('registrarPagamentoFaturaWeb', param, function () {
     const fatura = obterFaturaPagamentoWeb(param);
+    if(param.regra!==REGRA_PAGAMENTO_FATURA_GESTOR_) throw new Error('Confira a prévia atualizada da distribuição antes de pagar a fatura.');
     if (param.versaoFatura !== fatura.versaoFatura) throw new Error('A fatura mudou. Atualize os valores antes de confirmar o pagamento.');
     const valor = centavosGestor_(param.valor), saldo = centavosGestor_(fatura.restante);
     if (valor <= 0 || valor > saldo) throw new Error('Informe um pagamento maior que zero e até o saldo em aberto.');
-    let restante = valor; const ss = obterPlanilhaGestor_();
-    fatura.itens.sort(function (a, b) { return a.aba.localeCompare(b.aba) || a.registroId.localeCompare(b.registroId); }).forEach(function (item) {
-      if (!restante) return;
-      const falta = centavosGestor_(item.valor) - centavosGestor_(item.pago), aplicar = Math.min(falta, restante); if (!aplicar) return;
+    const ss = obterPlanilhaGestor_();
+    distribuirPagamentoFaturaGestor_(fatura,param.valor).forEach(function (item) {
+      const aplicar=centavosGestor_(item.aplicar);
       const sh = ss.getSheetByName(item.aba), r = sh.getRange(item.linha, 1, 1, COLUNAS_GESTOR_).getValues()[0];
       r[17] = (centavosGestor_(item.pago) + aplicar) / 100;
       if (centavosGestor_(r[17]) === centavosGestor_(r[7])) {
         if (item.aba === 'Empréstimos') r[14] = 'Pago';
         else r[9] = String(r[6]) === '∞/∞' ? 'Assinatura Paga' : 'Pago';
       }
-      sh.getRange(item.linha, 1, 1, COLUNAS_GESTOR_).setValues([r]); restante -= aplicar;
+      sh.getRange(item.linha, 1, 1, COLUNAS_GESTOR_).setValues([r]);
     });
     return { sucesso: true, pago: valor / 100, restante: (saldo - valor) / 100 };
   }, false);
@@ -3953,7 +4042,7 @@ const ACOES_DESFAZER_GESTOR_ = ['excluirLancamentoWeb', 'excluirEmprestimoWeb', 
 function resumirRegistroAtividade_(r, aba) {
   if (!r) return null;
   const emp = aba === 'Empréstimos';
-  return { pessoa: emp ? limparApostrofo(r[1]) : '', descricao: limparApostrofo(r[emp ? 2 : 1]), forma: limparApostrofo(r[emp ? 3 : 2]), data: limparApostrofo(r[0]), mes: limparApostrofo(r[8]), parcela: limparApostrofo(r[6]), valor: extractNum(r[7]), situacao: String(r[9] || ''), estadoBanco: r[14] || '', pagoBanco: valorPagoBancoGestor_(r, emp) };
+  return { pessoa: emp ? limparApostrofo(r[1]) : '', descricao: limparApostrofo(r[emp ? 2 : 1]), forma: limparApostrofo(r[emp ? 3 : 2]), data: r[0] instanceof Date ? Utilities.formatDate(r[0],getTimezone(),'dd/MM/yyyy') : limparApostrofo(r[0]), mes: limparApostrofo(r[8]), parcela: limparApostrofo(r[6]), valor: extractNum(r[7]), situacao: String(r[9] || ''), estadoBanco: r[14] || '', pagoBanco: valorPagoBancoGestor_(r, emp) };
 }
 
 function registrarAtividadeGestor_(ctx) {
@@ -4356,6 +4445,8 @@ function nomeFormaLeituraGestor_(forma, ss) {
 }
 
 function ehPixGestor_(forma, ss) { return tipoFormaGestor_(forma, ss) === 'pix'; }
+function ehPagamentoImediatoGestor_(forma) { return ['pix','avista'].includes(tipoFormaGestor_(forma)); }
+function permiteParcelamentoFormaGestor_(forma, pixParcelado) { const tipo=tipoFormaGestor_(forma); return tipo==='cartao' || (tipo==='pix' && pixParcelado===true); }
 
 function formaReferidaNoHistoricoGestor_(nome) {
   const alvo = chaveFormaGestor_(nome);

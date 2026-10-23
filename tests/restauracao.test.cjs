@@ -37,7 +37,7 @@ test('reenvio da restauração é idempotente e não duplica cópia anterior',()
 test('restauração interrompida recupera pelo diário com a cópia anterior já gravada',()=>{
   const {ctx,db}=boot(fixture([personal()]));ler(ctx);const b=backup(ctx);
   ctx.salvarLancamentoWeb({...launch,requestId:'altera-antes-falha-001'});const p=previa(ctx,b);
-  db.failure={name:'Lançamentos',stage:'after',row:1,col:1};
+  db.failure={name:'Lançamentos',stage:'after',col:1};
   assert.throws(()=>restaurar(ctx,b,p),/FALHA SIMULADA/);
   assert(db.sheets['_Gestor_Restauracoes'].rows.length>1);
   restaurar(ctx,b,p);assert.equal(rows(db,'Lançamentos').length,1);

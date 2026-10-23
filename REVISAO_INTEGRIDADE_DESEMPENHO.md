@@ -20,7 +20,7 @@ Não há exclusão automática dos registros técnicos. Apagar o diário poderia
 
 ## Dependências
 
-A versão de `postcss-selector-parser` foi fixada em 7.1.6 para corrigir o alerta conhecido. Permanece o alerta de desenvolvimento [GHSA-vfj7-8cjw-p6xm em braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), sem versão corrigida publicada na data da revisão. É uma dependência da compilação, não enviada ao navegador nem usada pela API. O compilador aceita apenas HTML local confiável, sem padrões glob ou conteúdo de usuários, e limita tamanho e aninhamento da fonte. Essas restrições não equivalem a uma correção da biblioteca; acompanhar a atualização upstream.
+A versão de `postcss-selector-parser` foi fixada em 7.1.6 para corrigir o alerta conhecido. Na análise de 18/10 havia também o aviso de desenvolvimento [GHSA-vfj7-8cjw-p6xm em braces](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), sem versão corrigida publicada naquele momento. **Conferência em 23/10/2026:** o GitHub retirou esse aviso nessa data, informando que ele não representa uma vulnerabilidade explorável na prática. O projeto continua com `braces` 3.0.3 no lockfile; não houve uma atualização dessa biblioteca para encerrar o aviso. Ela participa apenas da compilação e não é enviada ao navegador nem usada pela API. O compilador continua aceitando somente HTML local confiável, sem padrões glob ou conteúdo de usuários, com limites de tamanho e aninhamento da fonte.
 
 ## Verificação e limites
 

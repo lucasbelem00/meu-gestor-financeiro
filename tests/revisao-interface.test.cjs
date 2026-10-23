@@ -23,7 +23,7 @@ test('mutação de configuração usa a versão capturada no início da edição
  assert.equal(ctx.prepararMutacaoGestor('excluirFormaPagamentoWeb',{versaoConfiguracao:'confirmacao-antiga'}).versaoConfiguracao,'confirmacao-antiga');
 });
 function contextoCompartilhamento(api,local=armazenamento()){
- const ctx=vm.createContext({localStorage:local,leiturasAtividadeGestor:new Set(['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual']),limparCachesAposRestauracaoGestor(){},apiCall:api});ctx.window=ctx;
+ const ctx=vm.createContext({localStorage:local,leiturasAtividadeGestor:new Set(['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual']),limparCachesAposRestauracaoGestor(){},integridadeServidorGestor:{bloqueada:false},atualizarIntegridadeServidorGestor(){},conferirPendenciasGestor:async()=>({confirmadas:0}),apiCall:api});ctx.window=ctx;
  vm.runInContext(helpers+trecho('const apiAntesDesempenhoGestor = window.apiCall;',"document.addEventListener('DOMContentLoaded', () => {"),ctx);return ctx;
 }
 test('consultas mensais iguais compartilham envio sem reutilizar outro mês ou leitura anterior à gravação',async()=>{

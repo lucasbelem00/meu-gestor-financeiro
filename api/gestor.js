@@ -1,4 +1,5 @@
 const ACAO_PERMITIDA = new Set([
+  'cancelarOperacaoWeb', 'previaPagamentoFaturaWeb',
   'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb',
   'getDadosCompletos', 'salvarLancamentoWeb', 'sincronizarLoteWeb',
   'editarLancamentoLinhaWeb', 'excluirLancamentoWeb', 'adiantarParcelasWeb',

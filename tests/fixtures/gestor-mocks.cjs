@@ -38,8 +38,8 @@ function boot(data={}){
 }
 const ledgerHeader=['Data','Descrição','Forma','Categoria','Total','Qtd','Parcela','Valor','Mês','Situação','Tags'];
 const empHeader=['Data','Pessoa','Descrição','Forma','Total','Qtd','Parcela','Valor','Mês','Situação','Obs'];
-const payment=[...Array.from({length:6},()=>[]),['','Cartao','Banco',1000,5,10,'',0]];
-const fixture=(lanc=[],emp=[])=>clone({'Lançamentos':[ledgerHeader,...lanc],'Empréstimos':[empHeader,...emp],'Formas de Pagamento':payment,'Dashboard & Resumo':Array.from({length:42},()=>Array(4).fill(''))});
+const payment=[...Array.from({length:6},()=>[]),['','Cartao','Banco',1000,5,10,'',0],['','Pix','Conta',0,'','','',0]];
+const fixture=(lanc=[],emp=[])=>clone({'Lançamentos':[ledgerHeader,...lanc],'Empréstimos':[empHeader,...emp],'Formas de Pagamento':payment,'Dashboard & Resumo':Array.from({length:42},(_,i)=>i===16?['','Teste','',0]:Array(4).fill(''))});
 const personal=(desc='Compra',val=50,part='1/1',mes='10/2026',status='Em Aberto',forma='Cartao',date='01/10/2026')=>[date,desc,forma,'Teste',val,1,part,val,mes,status,''];
 const loan=(person='Ana',status='A Receber',val=120,forma='Pix')=>['01/10/2026',person,'Ajuda',forma,val,1,'1/1',val,'10/2026',status,''];
 const launch={dataCompra:'16/10/2026',descricao:'Teste',formaPagto:'Cartao',categoria:'Teste',valorTotal:100,numParcelas:3,parcelaInicial:1,mesPrimeiraFatura:'10/2026'};
