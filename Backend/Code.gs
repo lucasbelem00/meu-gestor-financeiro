@@ -1891,7 +1891,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor: 5,
+      protocoloGestor: 6,
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
         totalAberto: formatBRL(calcAberto),
@@ -2014,6 +2014,8 @@ function propriedade_(nome) {
 
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
+    case 'previaRachadinhaWeb': return previaRachadinhaWeb(param);
+    case 'registrarRachadinhaWeb': return registrarRachadinhaWeb(param);
     case 'cancelarOperacaoWeb': return cancelarOperacaoWeb(param);
     case 'consultarOperacaoWeb': return consultarOperacaoWeb(param);
     case 'diagnosticarPendenciasWeb': return diagnosticarPendenciasWeb();
@@ -2536,7 +2538,7 @@ function salvarEmprestimoWebInterno_(dados) {
         "'" + dtStr, pessoa, desc, formaPagto, valorTotal, numParcelas,
         "'" + p + '/' + numParcelas, valorParcela,
         "'" + pad2(dRef.getMonth() + 1) + '/' + dRef.getFullYear(),
-        'A Receber', dados.observacoes || ''
+        dados.recebidoInicial === true ? 'Recebido' : 'A Receber', dados.observacoes || ''
       ]);
     }
 
@@ -2959,7 +2961,8 @@ function calcularResumoParcelas(linhas) {
 function itemLancamento(l, resumo, modo) {
   const base = [l.data, l.d[1], l.d[2], l.d[3], l.d[4], l.d[5], l.parc, formatBRL(l.valor), l.mes, l.d[9]];
   const res = resumo[l.chave] || null;
-  return (modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res])).concat([l.r[11], l.r[12], Number(l.r[13] || 1), l.r[14]]);
+  const item=(modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res])).concat([l.r[11], l.r[12], Number(l.r[13] || 1), l.r[14]]);
+  return modo==='relatorio'?item.concat([valorPagoBancoGestor_(l.r,false),arred2(l.valor-valorPagoBancoGestor_(l.r,false))]):item;
 }
 
 function lerMetasCategorias() {
@@ -3248,6 +3251,9 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 }
 
 function executarAcaoApi_(action, param) {
+  if (action === 'previaRachadinhaWeb') return executarOperacaoGestor_(action,param,function(){return previaRachadinhaWeb(param);},true);
+  if (action === 'previaRecuperacaoOperacaoWeb') return previaRecuperacaoOperacaoWeb(param);
+  if (action === 'concluirRecuperacaoOperacaoWeb') return concluirRecuperacaoOperacaoWeb(param);
   if (action === 'cancelarOperacaoWeb') return cancelarOperacaoWeb(param);
   if (action === 'consultarOperacaoWeb') return consultarOperacaoWeb(param);
   if (action === 'diagnosticarPendenciasWeb') return diagnosticarPendenciasWeb();
@@ -3641,6 +3647,11 @@ function aplicarPlanoGestor_(ss, plano) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     let sh = ss.getSheetByName(m.nome);
     const atual = lerEstadoAbaGestor_(sh), hash = hashEstadoGestor_(atual);
+    // Aprovação explícita só reconhece linhas já aplicadas. Nunca reescreve
+    // outras linhas para fazê-las coincidir com uma fotografia antiga.
+    const aprovado=plano.conferenciaAprovada;
+    if(aprovado && aprovado.versao===1 && aprovado.hashPlano===hashPlanoConferenciaGestor_(plano) &&
+       aprovado.abas && aprovado.abas[m.nome]===hash && linhasPrevistasJaAplicadasGestor_(atual,m)) return;
     if (hash === m.depois) { atualizarValidacaoStatusLancamentosGestor_(sh, m.linhas); aplicarFormatosRestauracaoGestor_(sh, m); return; }
     if (hash !== m.antes && !estadoRecuperacaoBlocosGestor_(atual, m) && !inclusaoIncompletaRecuperavelGestor_(atual, m) && !controlesIncompletosRecuperaveisGestor_(atual, m)) {
       const erro = new Error('A aba ' + m.nome + ' não corresponde à gravação interrompida. A operação foi preservada para conferência, sem sobrescrever dados.');
@@ -3711,12 +3722,15 @@ function diagnosticoPlanoGestor_(ss, plano) {
     const blocos=estadoRecuperacaoBlocosGestor_(atual,m);
     return {aba:m.nome,estado:hash===m.depois?'aplicado':hash===m.antes?'antes':blocos?'blocos_parciais':
       (inclusaoIncompletaRecuperavelGestor_(atual,m)||controlesIncompletosRecuperaveisGestor_(atual,m))?'controles_incompletos':'divergente',
-      linhasAtuais:atual.length,linhasEsperadas:m.linhas,blocos:blocos || undefined,divergencias:divergencias};
+      linhasAtuais:atual.length,linhasEsperadas:m.linhas,blocos:blocos || undefined,divergencias:divergencias,
+      escopoDivergencia:divergencias.length?'linhas_da_operacao':hash!==m.depois&&hash!==m.antes?'fora_das_linhas_da_operacao':'nenhum',
+      linhasDaOperacaoConferem:linhasPrevistasJaAplicadasGestor_(atual,m)};
   });
 }
 function resumirPendenciaDiarioGestor_(ss, entrada) {
   const operacaoId=String(entrada.cabecalho[0]), identificacao=identificacaoOperacaoDiarioGestor_(operacaoId);
-  return Object.assign({operacaoId:operacaoId,codigo:'RECUPERACAO_PENDENTE',abas:diagnosticoPlanoGestor_(ss,entrada.plano)},identificacao || {});
+  try{return Object.assign({operacaoId:operacaoId,codigo:'RECUPERACAO_PENDENTE',abas:diagnosticoPlanoGestor_(ss,entrada.plano)},identificacao || {});}
+  catch(e){return Object.assign({operacaoId:operacaoId,codigo:e.codigo || 'DIARIO_PLANO_INCOMPATIVEL',abas:[]},identificacao || {});}
 }
 function identificacaoOperacaoDiarioGestor_(operacaoId) {
   const corte=String(operacaoId).indexOf(':'), action=String(operacaoId).slice(0,corte), requestId=String(operacaoId).slice(corte+1);
@@ -3729,7 +3743,8 @@ function diagnosticarPendenciasWeb() {
     const ss=obterPlanilhaGestor_(), diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
     if(!diario) return {pendencias:[]};
     return {pendencias:localizarLinhasTecnicasGestor_(diario,3,'PRONTO').map(function(linha) {
-      return resumirPendenciaDiarioGestor_(ss,lerOperacaoTecnicaGestor_(diario,linha));
+      try { return resumirPendenciaDiarioGestor_(ss,lerOperacaoTecnicaGestor_(diario,linha)); }
+      catch(e) { return pendenciaDiarioInvalidoGestor_(diario,linha,e); }
     })};
   } finally {lock.releaseLock();}
 }
@@ -3755,6 +3770,68 @@ function cancelarOperacaoWeb(param) {
     return {estado:'cancelado',operacaoId:id};
   } catch (e) { if (gravando) e.resultadoIncerto = true; throw e; }
   finally { lock.releaseLock(); }
+}
+
+function pendenciaDiarioInvalidoGestor_(diario,linha,erro) {
+  const id=String(diario.getRange(linha,1).getValue() || '');
+  return Object.assign({operacaoId:id,codigo:erro.codigo || 'DIARIO_INCOMPATIVEL',abas:[],orientacao:'O diário não pôde ser lido. Preserve as abas técnicas e copie o diagnóstico para revisão.'},identificacaoOperacaoDiarioGestor_(id) || {});
+}
+function hashPlanoConferenciaGestor_(plano) {
+  const base=Object.assign({},plano);delete base.conferenciaAprovada;return hashGestor_(base);
+}
+function linhasPrevistasJaAplicadasGestor_(atual,m) {
+  const ids=atual.slice(1).map(r=>r[11]).filter(Boolean);
+  return ehAbaRegistrosGestor_(m.nome) && !m.formatosRestauracao && atual.length===m.linhas &&
+    new Set(ids).size===ids.length &&
+    Array.isArray(m.alteracoes) && m.alteracoes.length>0 && m.alteracoes.every(function(a){
+      return Number.isInteger(a[0]) && a[0]>0 && a[1] && a[1][11] && hashEstadoGestor_([atual[a[0]] || []])===hashEstadoGestor_([a[1] || []]);
+    });
+}
+function prepararConferenciaRecuperacaoGestor_(ss,diario,p) {
+  const id=String(p.action || '')+':'+String(p.requestId || '');
+  if(!identificacaoOperacaoDiarioGestor_(id)) throw new Error('Identificação da operação inválida.');
+  const pendentes=localizarLinhasTecnicasGestor_(diario,3,'PRONTO');
+  if(!pendentes.length) return {estado:'sem_pendencia',operacaoId:id};
+  const linha=pendentes[0],entrada=lerOperacaoTecnicaGestor_(diario,linha);
+  if(entrada.cabecalho[0]!==id) throw new Error('Confira primeiro a operação anterior exibida em Atividade.');
+  if(!['salvarLancamentoWeb','salvarEmprestimoWeb','registrarRachadinhaWeb'].includes(String(p.action))) throw new Error('Esta operação precisa de revisão técnica. A confirmação simplificada atende apenas inclusões já gravadas.');
+  const abas=Object.create(null),resumo=[];
+  entrada.plano.mudancas.forEach(function(m){
+    const sh=ss.getSheetByName(m.nome);
+    if(m.modo==='anexar') {
+      const fim=m.inicio+m.valores.length-1,aplicado=sh&&sh.getLastRow()>=fim&&hashEstadoGestor_(sh.getRange(m.inicio,1,m.valores.length,6).getValues())===hashEstadoGestor_(m.valores);
+      if(!aplicado && (sh?sh.getLastRow():0)!==m.inicio-1) throw new Error('O histórico também apresenta uma diferença. Preserve o diário e copie o diagnóstico para revisão.');
+      resumo.push({aba:m.nome,estado:aplicado?'já registrado':'registro técnico será concluído'});return;
+    }
+    const atual=lerEstadoAbaGestor_(sh);
+    if(!linhasPrevistasJaAplicadasGestor_(atual,m)) throw new Error('As linhas desta operação ainda não conferem integralmente. A confirmação permanece bloqueada; copie o diagnóstico para revisão.');
+    abas[m.nome]=hashEstadoGestor_(atual);resumo.push({aba:m.nome,linhasConferidas:m.alteracoes.length,estado:'linhas da operação já gravadas; demais linhas preservadas'});
+  });
+  if(!Object.keys(abas).length) throw new Error('Esta operação precisa de revisão técnica.');
+  const hashPlano=hashPlanoConferenciaGestor_(entrada.plano),assinatura=hashGestor_({operacaoId:id,hashPlano:hashPlano,abas:abas});
+  return {estado:'conferir',operacaoId:id,assinatura:assinatura,hashPlano:hashPlano,abas:abas,resumo:resumo,linha:linha};
+}
+function previaRecuperacaoOperacaoWeb(param) {
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{const ss=obterPlanilhaGestor_(),diario=abrirDiarioGestor_(ss);const p=prepararConferenciaRecuperacaoGestor_(ss,diario,param || {});delete p.linha;return p;}
+  finally{lock.releaseLock();}
+}
+function concluirRecuperacaoOperacaoWeb(param) {
+  const lock=LockService.getScriptLock();lock.waitLock(30000);let gravando=false;
+  try{
+    const ss=obterPlanilhaGestor_(),diario=abrirDiarioGestor_(ss),id=String(param.action)+':'+String(param.requestId);
+    const existentes=localizarCabecalhosOperacaoGestor_(diario,id);
+    if(existentes.some(l=>diario.getRange(l,3).getValue()==='CONFIRMADO')) return {estado:'confirmado',operacaoId:id};
+    const previa=prepararConferenciaRecuperacaoGestor_(ss,diario,param || {});
+    if(previa.estado!=='conferir'||!param.assinatura||param.assinatura!==previa.assinatura) throw new Error('Os dados mudaram desde a prévia. Confira a recuperação novamente.');
+    const aprovacao={versao:1,hashPlano:previa.hashPlano,abas:previa.abas,assinatura:previa.assinatura,aprovadaEm:new Date().toISOString()};
+    // Aprovação durável no cabeçalho. As partes originais permanecem intactas;
+    // uma queda após esta escrita pode retomar a mesma conferência.
+    gravando=true;diario.getRange(previa.linha,5).setValue(JSON.stringify(aprovacao));SpreadsheetApp.flush();
+    const entrada=lerOperacaoTecnicaGestor_(diario,previa.linha);aplicarPlanoGestor_(ss,entrada.plano);
+    diario.getRange(previa.linha,3).setValue('CONFIRMADO');SpreadsheetApp.flush();
+    return {estado:'confirmado',operacaoId:id};
+  }catch(e){if(gravando)e.resultadoIncerto=true;throw e;}finally{lock.releaseLock();}
 }
 
 function consultarOperacaoWeb(param) {
@@ -3817,7 +3894,13 @@ function lerOperacaoTecnicaGestor_(sh, linha) {
   validarCabecalhoOperacaoGestor_(cabecalho);
   if (cabecalho[2] === 'CANCELADO') return {cabecalho:cabecalho,plano:{mudancas:[],resultado:{estado:'cancelado',operacaoId:cabecalho[0]}}};
   if (linha+qtd>sh.getLastRow()) throw erroDiarioGestor_('DIARIO_INCOMPLETO');
-  return {cabecalho:cabecalho, plano:lerPlanoDiarioGestor_(sh.getRange(linha,1,qtd+1,6).getValues(),0)};
+  const plano=lerPlanoDiarioGestor_(sh.getRange(linha,1,qtd+1,6).getValues(),0);
+  if(cabecalho[4]) {
+    let conferencia;try{conferencia=JSON.parse(String(cabecalho[4]));}catch(_){throw erroDiarioGestor_('CONFERENCIA_INVALIDA');}
+    if(conferencia.versao!==1 || conferencia.hashPlano!==hashPlanoConferenciaGestor_(plano)) throw erroDiarioGestor_('CONFERENCIA_INVALIDA');
+    plano.conferenciaAprovada=conferencia;
+  }
+  return {cabecalho:cabecalho, plano:plano};
 }
 
 function validarCabecalhoOperacaoGestor_(cabecalho) {
@@ -3872,14 +3955,15 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     resultadoIncerto = pendentes.length > 0;
     const pendenciasIntegridade=[];
     for(const linha of pendentes) {
-      const entrada=lerOperacaoTecnicaGestor_(diario,linha);
+      let entrada;
       try {
+        entrada=lerOperacaoTecnicaGestor_(diario,linha);
         aplicarPlanoGestor_(real,entrada.plano);
         diario.getRange(linha,3).setValue('CONFIRMADO'); SpreadsheetApp.flush();
       } catch(e) {
         const permitidas=['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','obterAtividadeWeb','obterFaturaPagamentoWeb'];
         if(!leitura || !permitidas.includes(acao)) throw e;
-        pendenciasIntegridade.push(resumirPendenciaDiarioGestor_(real,entrada)); break;
+        pendenciasIntegridade.push(entrada?resumirPendenciaDiarioGestor_(real,entrada):pendenciaDiarioInvalidoGestor_(diario,linha,e)); break;
       }
     }
     resultadoIncerto = false;
@@ -4024,6 +4108,7 @@ function registrarPagamentoFaturaWeb(param) {
 // com conferência de identidade, conteúdo e versão; nunca restaura uma aba inteira.
 const ABA_ATIVIDADE_GESTOR_ = '_Gestor_Atividade';
 const ROTULOS_ATIVIDADE_GESTOR_ = {
+  registrarRachadinhaWeb: 'Divisão registrada',
   salvarLancamentoWeb: 'Lançamento criado', salvarEmprestimoWeb: 'Empréstimo criado',
   editarLancamentoLinhaWeb: 'Lançamento editado', editarEmprestimoLinhaWeb: 'Empréstimo editado',
   excluirLancamentoWeb: 'Lançamento excluído', excluirEmprestimoWeb: 'Empréstimo excluído',
@@ -4037,7 +4122,7 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
-const ACOES_DESFAZER_GESTOR_ = ['excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
+const ACOES_DESFAZER_GESTOR_ = ['registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
 
 function resumirRegistroAtividade_(r, aba) {
   if (!r) return null;
@@ -4492,4 +4577,89 @@ function validarIdentidadesEstadoRestauradoGestor_(abas) {
 
 function normalizarTagsGestor_(texto) {
   return Array.from(new Set(String(texto || '').split(',').map(function(t) { return t.trim().toLowerCase().replace(/^#+/,''); }).filter(Boolean))).map(function(t) { return '#'+t; }).join(', ');
+}
+
+// INICIO MOTOR RACHADINHA GERADO
+// Fonte única do cálculo, incorporada no navegador e no Apps Script pelo build.
+function calcularDivisaoContaGestor(dados) {
+  const d=dados || {}, pessoas=d.pessoas || [], itens=d.itens || [];
+  const inteiro=(v,rotulo)=>{if(!Number.isSafeInteger(v)||v<0||v>100000000000) throw new Error(rotulo+' inválido.');return v;};
+  if(!Array.isArray(pessoas)||!pessoas.length||pessoas.length>100||!Array.isArray(itens)||!itens.length||itens.length>500) throw new Error('Informe de 1 a 100 pessoas e de 1 a 500 itens.');
+  const ids=new Set(), nomes=new Set();
+  const partes=pessoas.map(p=>{
+    const id=String(p.id || ''), nome=String(p.nome || '').trim(), peso=Number(p.peso==null?1:p.peso);
+    const chave=nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(!id||id.length>160||!nome||nome.length>80||ids.has(id)||nomes.has(chave)||!Number.isFinite(peso)||peso<0.01||peso>100) throw new Error('Confira nomes distintos e cotas entre 0,01 e 100.');
+    ids.add(id);nomes.add(chave);
+    return {id:id,nome:nome,peso:peso,pagoCentavos:inteiro(p.pagoCentavos==null?0:p.pagoCentavos,'Pagamento'),baseCentavos:0,itens:[]};
+  });
+  function repartir(total,pesos) {
+    const soma=pesos.reduce((s,p)=>s+p,0);
+    if(!soma) {if(total) throw new Error('Não há pessoas para dividir o valor.');return pesos.map(()=>0);}
+    const cotas=pesos.map((peso,i)=>{const c=total*peso/soma;return {i:i,valor:Math.floor(c),resto:c-Math.floor(c)};});
+    let sobra=total-cotas.reduce((s,c)=>s+c.valor,0);
+    cotas.slice().sort((a,b)=>b.resto-a.resto||a.i-b.i).forEach(c=>{if(sobra>0){cotas[c.i].valor++;sobra--;}});
+    if(sobra) throw new Error('Não foi possível distribuir os centavos.');
+    return cotas.map(c=>c.valor);
+  }
+  const idsItens=new Set();let base=0;
+  itens.forEach(it=>{
+    const valor=inteiro(it.valorCentavos,'Valor do item'), id=String(it.id || '');
+    if(!id||idsItens.has(id)||!valor||!Array.isArray(it.consumidores)||!it.consumidores.length||new Set(it.consumidores).size!==it.consumidores.length||it.consumidores.some(c=>!ids.has(c))) throw new Error('Confira o valor e os consumidores de cada item.');
+    idsItens.add(id);base+=valor;inteiro(base,'Total da conta');
+    const consumidores=partes.filter(p=>it.consumidores.includes(p.id));
+    const valores=repartir(valor,consumidores.map(p=>p.peso));
+    consumidores.forEach((p,i)=>{p.baseCentavos+=valores[i];p.itens.push(String(it.descricao || 'Item'));});
+  });
+  const desconto=inteiro(d.descontoCentavos==null?0:d.descontoCentavos,'Desconto'), acrescimo=inteiro(d.acrescimoCentavos==null?0:d.acrescimoCentavos,'Acréscimo'), percentual=Number(d.servicoPercentual==null?0:d.servicoPercentual);
+  if(desconto>base||!Number.isFinite(percentual)||percentual<0||percentual>100) throw new Error('Confira o desconto e a taxa de serviço (0 a 100%).');
+  const descontos=repartir(desconto,partes.map(p=>p.baseCentavos));
+  const bases=partes.map((p,i)=>p.baseCentavos-descontos[i]);
+  const taxa=Math.round((base-desconto)*percentual/100);
+  const taxas=repartir(taxa,bases), extras=repartir(acrescimo,partes.map(p=>p.baseCentavos));
+  partes.forEach((p,i)=>{p.descontoCentavos=descontos[i];p.taxaCentavos=taxas[i];p.acrescimoCentavos=extras[i];p.finalCentavos=bases[i]+taxas[i]+extras[i];p.saldoCentavos=p.finalCentavos-p.pagoCentavos;});
+  const total=inteiro(base-desconto+taxa+acrescimo,'Total final'), pago=partes.reduce((s,p)=>s+p.pagoCentavos,0);
+  if(pago>total) throw new Error('Os pagamentos ao estabelecimento ultrapassam o total da conta.');
+  const devedores=partes.filter(p=>p.saldoCentavos>0).map(p=>({id:p.id,valor:p.saldoCentavos}));
+  const credores=partes.filter(p=>p.saldoCentavos<0).map(p=>({id:p.id,valor:-p.saldoCentavos}));
+  const transferencias=[];
+  credores.forEach(c=>{devedores.forEach(p=>{const valor=Math.min(c.valor,p.valor);if(valor>0){transferencias.push({de:p.id,para:c.id,valorCentavos:valor});c.valor-=valor;p.valor-=valor;}});});
+  return {pessoas:partes,baseCentavos:base,descontoCentavos:desconto,taxaCentavos:taxa,acrescimoCentavos:acrescimo,totalCentavos:total,pagoCentavos:pago,pendenteEstabelecimentoCentavos:total-pago,transferencias:transferencias};
+}
+// FIM MOTOR RACHADINHA GERADO
+
+function previaRachadinhaWeb(param) {
+  const p=param || {}, divisao=calcularDivisaoContaGestor(p.conta);
+  const eu=divisao.pessoas.find(x=>x.id===p.euId);
+  if(!eu) throw new Error('Selecione quem é você na divisão.');
+  if(divisao.pendenteEstabelecimentoCentavos) throw new Error('Informe quem pagou a conta ao estabelecimento antes de registrar os adiantamentos.');
+  if(eu.pagoCentavos<eu.finalCentavos) throw new Error('Sua parte foi coberta por outra pessoa. Esta opção registra somente valores que você adiantou.');
+  const forma=validarFormaAtualGestor_(p.formaPagto,{novaCompra:true});
+  validarDataCalendarioWeb_(p.dataCompra,'Data do pagamento');validarMesFaturaWeb_(p.mesPrimeiraFatura);
+  const parcelas=permiteParcelamentoFormaGestor_(forma,p.pixParcelado)?Number(p.numParcelas || 1):1;
+  if(!Number.isInteger(parcelas)||parcelas<1||parcelas>600) throw new Error('Confira a quantidade de parcelas.');
+  const incluirMinhaParte=p.incluirMinhaParte===true;
+  if(incluirMinhaParte) validarCategoriaAtualGestor_(p.categoria);
+  const recebidos=Array.isArray(p.recebidos)?p.recebidos:[];
+  if(new Set(recebidos).size!==recebidos.length || recebidos.some(id=>!divisao.pessoas.some(x=>x.id===id))) throw new Error('Confira as pessoas que já devolveram o dinheiro.');
+  const emprestimos=divisao.transferencias.filter(t=>t.para===eu.id).map(t=>({pessoa:divisao.pessoas.find(x=>x.id===t.de).nome,pessoaId:t.de,valorCentavos:t.valorCentavos,recebido:recebidos.includes(t.de)}));
+  const minhaParte=incluirMinhaParte?eu.finalCentavos:0;
+  if(!minhaParte&&!emprestimos.length) throw new Error('Não há valores para registrar nesta divisão.');
+  if((minhaParte>0&&minhaParte<parcelas)||emprestimos.some(e=>e.valorCentavos<parcelas)) throw new Error('Cada parcela precisa ter pelo menos um centavo. Reduza as parcelas.');
+  const total=minhaParte+emprestimos.reduce((s,e)=>s+e.valorCentavos,0);
+  const base={conta:p.conta,euId:p.euId,formaPagto:forma,dataCompra:p.dataCompra,mesPrimeiraFatura:p.mesPrimeiraFatura,numParcelas:parcelas,pixParcelado:p.pixParcelado===true,categoria:incluirMinhaParte?p.categoria:'',incluirMinhaParte:incluirMinhaParte,recebidos:recebidos,descricao:String(p.descricao || 'Divisão de conta').trim()};
+  if(!base.descricao||base.descricao.length>300) throw new Error('Confira a descrição da conta.');
+  const ss=obterPlanilhaGestor_();
+  const assinatura=hashGestor_({dados:base,formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:incluirMinhaParte?versaoConfiguracaoGestor_(ss,'categorias'):''});
+  return {assinatura:assinatura,minhaParteCentavos:minhaParte,emprestimos:emprestimos,totalCentavos:total,dados:base};
+}
+function registrarRachadinhaWeb(param) {
+  return executarOperacaoGestor_('registrarRachadinhaWeb',param,function(){
+    const previa=previaRachadinhaWeb(param);
+    if(!param.assinatura||previa.assinatura!==param.assinatura) throw new Error('Confira novamente a prévia: a divisão ou os cadastros mudaram.');
+    const d=previa.dados,base={dataCompra:d.dataCompra,formaPagto:d.formaPagto,mesPrimeiraFatura:d.mesPrimeiraFatura,numParcelas:d.numParcelas,parcelaInicial:1,pixParcelado:d.pixParcelado,descricao:d.descricao};
+    if(previa.minhaParteCentavos) sincronizarLoteWebInterno_([Object.assign({},base,{categoria:d.categoria,valorTotal:previa.minhaParteCentavos/100,tags:'#dividido',isAssinatura:false})]);
+    previa.emprestimos.forEach(e=>salvarEmprestimoWebInterno_(Object.assign({},base,{pessoa:e.pessoa,valorTotal:e.valorCentavos/100,recebidoInicial:e.recebido,observacoes:'Divisão de conta; recebimento independente da fatura.'})));
+    return {sucesso:true,minhaParteCentavos:previa.minhaParteCentavos,emprestimos:previa.emprestimos.length,totalCentavos:previa.totalCentavos};
+  },false);
 }

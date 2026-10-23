@@ -6,6 +6,7 @@ const cssnano = require('cssnano');
 const raiz = path.resolve(__dirname, '..');
 
 async function gerarCSS() {
+  require('./sincronizar-rachadinha.cjs').sincronizarMotor();
   const arquivo = path.join(raiz, 'index.html');
   const html = fs.readFileSync(arquivo, 'utf8');
   const marcador = /<style id="gestor-css-compilado">[\s\S]*?<\/style>/;

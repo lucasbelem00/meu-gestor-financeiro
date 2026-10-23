@@ -1,5 +1,7 @@
 # Checklist do pacote de robustez
 
+O pacote posterior de filtros, sincronização e rachadinha está documentado em [PACOTE_FILTROS_RACHADINHA_20261023.md](PACOTE_FILTROS_RACHADINHA_20261023.md), com checklist e roteiro de testes próprios.
+
 Concluído localmente em 23/10/2026. Este arquivo acompanha o pacote autorizado após a revisão das duas análises. As marcações abaixo indicam implementação local; a publicação é uma etapa separada. O resumo final e as instruções estão em [PACOTE_ROBUSTEZ_20261023.md](PACOTE_ROBUSTEZ_20261023.md).
 
 ## Já implementado na retomada
