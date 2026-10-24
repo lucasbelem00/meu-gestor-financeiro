@@ -139,7 +139,7 @@ test('falha no rascunho da sessão mantém versão anterior e mostra aviso',()=>
   assert.equal(sessao.getItem('rascunhoLancamento'),'antes');assert.equal(avisos,1);
 });
 test('calculadora usa operações limitadas e recusa código e resultados não finitos',()=>{
-  const ctx=vm.createContext({});vm.runInContext(trecho('    function avaliarExpressaoCalc(','    function atualizarVisorCalc('),ctx);
+  const ctx=vm.createContext({document:{addEventListener(){}}});vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../interface/usabilidade.js'),'utf8'),ctx);
   for(const [expr,valor] of [['2+3*4',14],['(2+3)*4',20],['-2*-3',6],['200*10%',20],['1,5+0,5',2],['(10+10)%',0.2]]) assert.equal(ctx.avaliarExpressaoCalc(expr),valor);
   for(const expr of ['globalThis.x=1','1/0','1;2','2**3','('.repeat(50)+'1'+')'.repeat(50),'9'.repeat(300)]) assert.equal(ctx.avaliarExpressaoCalc(expr),null);
   assert(!html.includes('new Function('));

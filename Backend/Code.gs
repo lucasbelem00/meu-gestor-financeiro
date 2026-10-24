@@ -725,17 +725,19 @@ function alternarStatusEmprestimoWebInterno_(dados) {
       const mesAlvo = String(dados.mesFatura || '').replace(/^'/, '').trim();
       const itens=dados.itensConferidos;
       if(!pessoaAlvo || !Array.isArray(itens) || !itens.length || itens.length>6000) throw new Error('Confira os itens e o total antes de receber em lote.');
-      const ids=new Set(), alvos=[]; let total=0;
+      const ids=new Set(), alvos=[],indicesPorId=new Map(dispAll.map(function(r,i){return [String(r[11]),i];})); let total=0;
       itens.forEach(function(item) {
         const id=String(item.id || '');
         if(!id || ids.has(id)) throw new Error('Conjunto de parcelas inválido. Atualize a lista.');
         ids.add(id);
-        const i=dispAll.findIndex(function(r) { return String(r[11])===id; });
-        if(i<0 || Number(dispAll[i][13])!==Number(item.versao) || !Number.isInteger(Number(item.versao)) || normalizarTexto(dispAll[i][1])!==pessoaAlvo || (mesAlvo && limparApostrofo(dispAll[i][8])!==mesAlvo) || dispAll[i][9]!=='A Receber') throw new Error('Uma parcela mudou depois da conferência. Atualize a lista antes de receber.');
+        const i=indicesPorId.get(id);
+        if(!Number.isInteger(i) || Number(dispAll[i][13])!==Number(item.versao) || !Number.isInteger(Number(item.versao)) || normalizarTexto(dispAll[i][1])!==pessoaAlvo || (mesAlvo && limparApostrofo(dispAll[i][8])!==mesAlvo) || dispAll[i][9]!=='A Receber') throw new Error('Uma parcela mudou depois da conferência. Atualize a lista antes de receber.');
         total+=centavosGestor_(dispAll[i][7]); alvos.push(i);
       });
       if(total<=0 || total!==centavosGestor_(dados.totalConferido)) throw new Error('O total das parcelas mudou. Confira novamente antes de receber.');
-      alvos.forEach(function(i) { empSheet.getRange(i+2,10).setValue('Recebido'); });
+      const estados=empSheet.getRange(2,10,uL-1,1).getValues();
+      alvos.forEach(function(i) { estados[i][0]='Recebido'; });
+      empSheet.getRange(2,10,uL-1,1).setValues(estados);
       return { sucesso: true, qtd: alvos.length, totalRecebido:total/100 };
     }
 
@@ -1345,6 +1347,8 @@ function getDadosCompletos() {
     let ultimosLancamentos = [];
     let mesesUnicos = [];
     let pivotFaturas = Object.create(null);
+    const horizonte = {totalPessoal:Object.create(null),pagoPessoal:Object.create(null),saldoPessoal:Object.create(null),totalBanco:Object.create(null),pagoBanco:Object.create(null),saldoBanco:Object.create(null),totalTerceiros:Object.create(null),recebidoTerceiros:Object.create(null),previstoPessoal:Object.create(null)};
+    function somarHorizonte(mapa,forma,mes,valor) { if(!mapa[forma]) mapa[forma]=Object.create(null); mapa[forma][mes]=arred2((mapa[forma][mes]||0)+valor); }
     let gastoMesPorForma = Object.create(null);
     let abertoMesPorForma = Object.create(null);
     const vencidoPorForma = Object.create(null);
@@ -1528,6 +1532,11 @@ function getDadosCompletos() {
 
           if (infoFat.time > 0) {
             mesesUnicos.push(mesFat);
+            setMeses.add(mesFat);
+            somarHorizonte(horizonte.totalPessoal,chaveForma,mesFat,valor);
+            somarHorizonte(horizonte.pagoPessoal,chaveForma,mesFat,pagoBanco);
+            somarHorizonte(horizonte.saldoPessoal,chaveForma,mesFat,saldoBanco);
+            if(!isPix&&!isTotal){somarHorizonte(horizonte.totalBanco,chaveForma,mesFat,valor);somarHorizonte(horizonte.pagoBanco,chaveForma,mesFat,pagoBanco);somarHorizonte(horizonte.saldoBanco,chaveForma,mesFat,saldoBanco);}
             const isFuturo = (infoFat.a > anoAt) || (infoFat.a === anoAt && infoFat.m > mesAt);
 
             if (!isFuturo && mesFat !== mesAtualStr && !pago && !isPix) vencidoPorForma[chaveForma] = (vencidoPorForma[chaveForma] || 0) + saldoBanco;
@@ -1635,6 +1644,9 @@ function getDadosCompletos() {
           if (infoFat.time > 0) {
             mesesUnicos.push(mesFat);
             setMeses.add(mesFat);
+            somarHorizonte(horizonte.totalTerceiros,chaveForma,mesFat,valParc);
+            if(recebido)somarHorizonte(horizonte.recebidoTerceiros,chaveForma,mesFat,valParc);
+            if(consomeLimiteCartao){somarHorizonte(horizonte.totalBanco,chaveForma,mesFat,valParc);somarHorizonte(horizonte.pagoBanco,chaveForma,mesFat,arred2(valParc-saldoBancoEmp));somarHorizonte(horizonte.saldoBanco,chaveForma,mesFat,saldoBancoEmp);}
           }
 
           if (mesFat === mesAtualStr) {
@@ -1707,7 +1719,8 @@ function getDadosCompletos() {
       const somaTerceirosCartao = Object.keys(terceirosCartaoPorFormaMes).reduce(function (acc, forma) {
         return acc + ((terceirosCartaoPorFormaMes[forma] || {})[m] || 0);
       }, 0);
-      return somaMes > 0 || somaTerceirosAReceber > 0 || somaTerceirosCartao > 0;
+      const totalRegistrado = Object.keys(horizonte.totalPessoal).reduce(function(s,f){return s+(horizonte.totalPessoal[f][m]||0);},0)+Object.keys(horizonte.totalTerceiros).reduce(function(s,f){return s+(horizonte.totalTerceiros[f][m]||0);},0);
+      return totalRegistrado > 0 || somaMes > 0 || somaTerceirosAReceber > 0 || somaTerceirosCartao > 0;
     }).sort((a, b) => parseMesFat(a).time - parseMesFat(b).time);
 
     let mesesContinuos = mesesComGasto.length > 0 ? mesesComGasto : [mesAtualStr];
@@ -1721,6 +1734,7 @@ function getDadosCompletos() {
           if (infoH.time > ass.timeRef) {
             if (!pivotFaturas[ass.forma]) pivotFaturas[ass.forma] = Object.create(null);
             pivotFaturas[ass.forma][mHoriz] = (pivotFaturas[ass.forma][mHoriz] || 0) + ass.valorRaw;
+            somarHorizonte(horizonte.previstoPessoal,ass.forma,mHoriz,ass.valorRaw);
           }
         });
       }
@@ -1891,7 +1905,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor: 6,
+      protocoloGestor: 7,
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
         totalAberto: formatBRL(calcAberto),
@@ -1899,7 +1913,7 @@ function getDadosCompletos() {
         comprometimentoMes: formatBRL(calcCompromisso),
         totalGeral: formatBRL(calcGeral)
       },
-      faturas: { mesesGlobais: mesesContinuos, pivot: pivotFaturas, mesAtual: mesAtualStr, chaveResumo: chaveTotalCarteira },
+      faturas: { mesesGlobais: mesesContinuos, pivot: pivotFaturas, mesAtual: mesAtualStr, chaveResumo: chaveTotalCarteira, horizonte: horizonte },
       categorias: categorias,
       configCategorias: configCategorias,
       consumoCategoriasPorMes: consumoCatPorMes,
@@ -3469,9 +3483,25 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
   return { abas: abas, getSheetByName: function (n) { return abrir(n, false); }, insertSheet: function (n) { return abrir(n, true); }, getName: function () { return ss.getName(); }, getSpreadsheetTimeZone: function () { return ss.getSpreadsheetTimeZone(); }, toast: function () {} };
 }
 
+function preservarPagamentoNaEdicaoGestor_(r, anterior, emprestimo, acao) {
+  if(!anterior || !['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)) return;
+  const totalAnterior=centavosGestor_(anterior[7]),totalNovo=centavosGestor_(r[7]);
+  const pago=centavosGestor_(valorPagoBancoGestor_(anterior,emprestimo));
+  if(pago>0 && limparApostrofo(anterior[8])!==limparApostrofo(r[8])) throw new Error('Esta parcela tem pagamento registrado na fatura original. Confira ou desfaça o pagamento antes de mudar o mês.');
+  if(totalNovo===totalAnterior) return;
+  if(emprestimo && anterior[9]==='Recebido') throw new Error('Este valor já foi recebido da pessoa. Desfaça o recebimento antes de corrigir o valor ou registre a diferença separadamente.');
+  if(totalNovo<pago) throw new Error('O valor da parcela não pode ficar abaixo do pagamento já registrado ao banco. Confira ou desfaça o pagamento antes de reduzir o valor.');
+  if(!pago) return;
+  r[17]=pago/100;
+  const quitado=totalNovo===pago;
+  if(emprestimo) r[14]=quitado?'Pago':'Em Aberto';
+  else if(!isStatusCancelado(r[9])) r[9]=limparApostrofo(r[6])==='∞/∞'?(quitado?'Assinatura Paga':'Assinatura Ativa'):(quitado?'Pago':'Em Aberto');
+}
+
 function atualizarVersoesGestor_(aba, ctx) {
   aba.valores.slice(1).forEach(function (r) {
     if (!r[11]) return;
+    preservarPagamentoNaEdicaoGestor_(r,ctx.registrosIniciais[String(r[11])],aba.nome==='Empréstimos',ctx.action);
     const integral = aba.nome === 'Lançamentos' ? isStatusPago(r[9]) : r[14] === 'Pago';
     if (!integral && r[17] && (centavosGestor_(r[17]) < 0 || centavosGestor_(r[17]) > centavosGestor_(r[7]))) throw new Error('O valor da parcela não pode ficar abaixo do pagamento já registrado ao banco. Desfaça o pagamento antes de reduzir o valor.');
     if (aba.nome === 'Lançamentos') r[14] = isStatusPago(r[9]) ? 'Pago' : 'Em Aberto';

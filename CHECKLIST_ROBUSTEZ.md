@@ -40,3 +40,12 @@ Concluído localmente em 23/10/2026. Este arquivo acompanha o pacote autorizado 
 - [ ] Conferir o uso na implantação real antes de levar para a planilha definitiva.
 
 Não há limpeza automática do diário técnico. Um arquivamento futuro precisa preservar permanentemente as identificações confirmadas e canceladas. A ampliação da restauração de backups e a reorganização maior de desempenho permanecem fora deste pacote, conforme combinado. As travas atuais continuam necessárias enquanto as consultas também fazem manutenção e recuperação.
+
+
+## Auditoria de 24/10/2026
+
+Pacote aprovado implementado: pagamentos preservados em edições, avanço mensal com consulta recente, notas e rascunhos protegidos, recebimentos em lote e detalhe dos previstos. Checklist, validação e publicação em [CORRECOES_AUDITORIA_20261024.md](CORRECOES_AUDITORIA_20261024.md).
+
+## Rachadinha e cores — 24/10/2026
+
+Eu fixo, explicação de cotas, guia por itens, mensagens sem ajustes zerados, descrição da própria parte e proteção dos rascunhos e prévias. Vistoria e exemplos em [RACHADINHA_USABILIDADE_20261024.md](RACHADINHA_USABILIDADE_20261024.md). Suíte ampliada para 225 testes aprovados.
