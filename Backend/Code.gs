@@ -4101,7 +4101,7 @@ function obterFaturaPagamentoWeb(param) {
     const sh = ss.getSheetByName(nome); if (!sh || sh.getLastRow() < 2) return;
     const emp = nome === 'Empréstimos';
     sh.getRange(2, 1, sh.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) {
-      if (!r[11] || isStatusCancelado(r[9]) || chaveFormaGestor_(r[emp ? 3 : 2]) !== chaveFormaGestor_(forma) || limparApostrofo(r[8]) !== mes) return;
+      if (!r[11] || isStatusCancelado(r[9]) || chaveFormaGestor_(r[emp ? 3 : 2]) !== chaveFormaGestor_(forma) || formatarCelulaRegistroGestor_(r[8], 'MM/yyyy') !== mes) return;
       const valor = Math.max(0, centavosGestor_(r[7])), recebidoBanco = centavosGestor_(valorPagoBancoGestor_(r, emp));
       total += valor; pago += recebidoBanco;
       itens.push({ aba: nome, linha: i + 2, registroId: r[11], versao: Number(r[13]), valor: valor / 100, pago: recebidoBanco / 100, resumo: resumirRegistroAtividade_(r, nome), hash: hashRegistroGestor_(r) });
@@ -4154,10 +4154,17 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
 };
 const ACOES_DESFAZER_GESTOR_ = ['registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
 
+function formatarCelulaRegistroGestor_(valor, formato) {
+  if (!(valor instanceof Date)) return limparApostrofo(valor);
+  if (!Number.isFinite(valor.getTime())) throw new Error('Há uma data inválida no registro. Confira a planilha antes de registrar o pagamento.');
+  // Formata somente a leitura; o conteúdo original permanece no hash e no diário.
+  return Utilities.formatDate(valor, getTimezone(), formato);
+}
+
 function resumirRegistroAtividade_(r, aba) {
   if (!r) return null;
   const emp = aba === 'Empréstimos';
-  return { pessoa: emp ? limparApostrofo(r[1]) : '', descricao: limparApostrofo(r[emp ? 2 : 1]), forma: limparApostrofo(r[emp ? 3 : 2]), data: r[0] instanceof Date ? Utilities.formatDate(r[0],getTimezone(),'dd/MM/yyyy') : limparApostrofo(r[0]), mes: limparApostrofo(r[8]), parcela: limparApostrofo(r[6]), valor: extractNum(r[7]), situacao: String(r[9] || ''), estadoBanco: r[14] || '', pagoBanco: valorPagoBancoGestor_(r, emp) };
+  return { pessoa: emp ? limparApostrofo(r[1]) : '', descricao: limparApostrofo(r[emp ? 2 : 1]), forma: limparApostrofo(r[emp ? 3 : 2]), data: formatarCelulaRegistroGestor_(r[0], 'dd/MM/yyyy'), mes: formatarCelulaRegistroGestor_(r[8], 'MM/yyyy'), parcela: formatarCelulaRegistroGestor_(r[6], 'd/M'), valor: extractNum(r[7]), situacao: String(r[9] || ''), estadoBanco: r[14] || '', pagoBanco: valorPagoBancoGestor_(r, emp) };
 }
 
 function registrarAtividadeGestor_(ctx) {

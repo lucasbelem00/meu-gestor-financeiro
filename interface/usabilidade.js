@@ -29,10 +29,18 @@ function escolherModoHorizonteGestor(modo) {
   salvarCacheLeituraGestor('gestorHorizonteModoV1', modoHorizonteGestor);
   renderTabelaEvolucao();
 }
+function janelaHorizonteGestor() {
+  const qtdCols = window.innerWidth < 640 && !compararHorizonteCompleto ? 2 : 4;
+  const ultimoInicio = Math.max(0, evolucaoMeses.length - qtdCols);
+  const indice = Number(evolucaoIdx);
+  const inicio = Math.max(0, Math.min(Number.isFinite(indice) ? Math.trunc(indice) : 0, ultimoInicio));
+  return {qtdCols, inicio, ultimoInicio};
+}
 function renderTabelaEvolucao() {
   const h = horizonteDetalhadoGestor;
-  const compacto = window.innerWidth < 640 && !compararHorizonteCompleto;
-  const qtdCols = compacto ? 2 : 4;
+  const {qtdCols, inicio, ultimoInicio} = janelaHorizonteGestor();
+  const compacto = qtdCols === 2;
+  evolucaoIdx = inicio;
   const meses = evolucaoMeses.slice(evolucaoIdx, evolucaoIdx + qtdCols);
   const moeda = n => compacto ? Number(n).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}) : formatBRL(n);
   const total = modoHorizonteGestor === 'total';
@@ -76,8 +84,11 @@ function renderTabelaEvolucao() {
     [evolucaoChaveResumoGestor,'__BANCO_TOTAL__','__TERCEIROS_A_RECEBER__'].forEach((f,i)=>{if(i===0||meses.some(m=>(evolucaoPivot[f]?.[m] || 0)>0))linha(['Total Carteira','Fatura Real','Terceiros'][i],meses.map(m=>({valor:evolucaoPivot[f]?.[m] || 0})),i===2?'text-amber-300':'text-purple-300');});
   }
   document.getElementById('faturas-body').innerHTML = html || '<tr><td colspan="6" class="py-4 text-slate-300 text-center">Nenhum valor neste período.</td></tr>';
-  document.getElementById('btnEvolPrev').disabled = evolucaoIdx === 0;
-  document.getElementById('btnEvolNext').disabled = evolucaoIdx+qtdCols >= evolucaoMeses.length;
+  const anterior = document.getElementById('btnEvolPrev'), proximo = document.getElementById('btnEvolNext');
+  anterior.disabled = inicio === 0;
+  proximo.disabled = inicio === ultimoInicio;
+  anterior.title = anterior.disabled ? 'Não há meses anteriores' : 'Mostrar mês anterior';
+  proximo.title = proximo.disabled ? 'Não há meses seguintes' : 'Mostrar mês seguinte';
 }
 function abrirDetalheHorizonteGestor(forma, mes, v, cartao) {
   const titulo = forma + ' · ' + mes;
@@ -85,8 +96,10 @@ function abrirDetalheHorizonteGestor(forma, mes, v, cartao) {
   mostrarConfirmacao(titulo,texto,()=>cartao&&v.registrado>0?abrirConferenciaFaturaGestor(forma,mes):irParaFaturaMensal(mes),false,'Conferir registros','neutral');
 }
 function mudarMesEvolucao(step) {
-  const qtd=window.innerWidth<640&&!compararHorizonteCompleto?2:4;
-  evolucaoIdx=Math.max(0,Math.min(evolucaoIdx+step,Math.max(0,evolucaoMeses.length-qtd)));
+  const direcao = Number(step);
+  if (direcao !== -1 && direcao !== 1) return;
+  const {inicio, ultimoInicio} = janelaHorizonteGestor();
+  evolucaoIdx = Math.max(0, Math.min(inicio + direcao, ultimoInicio));
   renderTabelaEvolucao();
 }
 

@@ -49,3 +49,17 @@ Pacote aprovado implementado: pagamentos preservados em edições, avanço mensa
 ## Rachadinha e cores — 24/10/2026
 
 Eu fixo, explicação de cotas, guia por itens, mensagens sem ajustes zerados, descrição da própria parte e proteção dos rascunhos e prévias. Vistoria e exemplos em [RACHADINHA_USABILIDADE_20261024.md](RACHADINHA_USABILIDADE_20261024.md). Suíte ampliada para 225 testes aprovados.
+
+## Horizonte e alinhamento — 24/10/2026
+
+Setas desativadas com aparência apagada, limites corrigidos na troca de largura e campos da rachadinha padronizados. Cinco testes novos; suíte com 230 aprovados. Vistoria, risco de rascunhos em duas abas e limite da conferência visual em [AJUSTES_HORIZONTE_PESSOAS_20261024.md](AJUSTES_HORIZONTE_PESSOAS_20261024.md).
+
+## Conferência de recebimentos e filtros — 24/10/2026
+
+Recebimento do PicPay confirmado por leitura da cópia de teste; pagamento ao banco permanece separado. Duas novas fragilidades reproduzidas: retorno de sucesso em recarga descartada e datas extensas no resumo de Atividade. Diagnóstico, exemplos dos filtros e recomendações ainda não aplicadas em [VISTORIA_RECEBIMENTOS_FILTROS_20261024.md](VISTORIA_RECEBIMENTOS_FILTROS_20261024.md).
+
+## Fatura com mês armazenado como data — 24/10/2026
+
+Consulta de pagamento corrigida para reconhecer meses em células Date, evitando faturas falsamente zeradas. Formatação dos novos resumos e da ordem das parcelas na prévia corrigida. Oito regressões novas; detalhes e atualização essencial do Apps Script em [CORRECAO_FATURA_DATAS_20261024.md](CORRECAO_FATURA_DATAS_20261024.md).
+
+Consumo por forma passou a filtrar pela área inteira, com Conferir pagamento independente. Um teste adicional cobre o isolamento das duas ações. Suíte completa: 239 testes aprovados; arquivos de publicação sincronizados.

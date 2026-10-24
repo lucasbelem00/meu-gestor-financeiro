@@ -28,7 +28,7 @@ class DB {
   getName(){return 'Teste isolado';}getSpreadsheetTimeZone(){return 'America/Sao_Paulo';}toast(){}
   maybeFail(name,stage,row,col){if(this.failure&&this.failure.name===name&&this.failure.stage===stage&&(!this.failure.row||this.failure.row===row)&&(!this.failure.col||this.failure.col===col)){this.failure=null;throw Error('FALHA SIMULADA '+stage+' '+name);}}
 }
-function formatDate(d,t,f){const p=n=>String(n).padStart(2,'0');if(f==='yyyy-MM-dd')return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;if(f==='dd/MM/yyyy')return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;return d.toISOString();}
+function formatDate(d,t,f){const p=n=>String(n).padStart(2,'0');if(f==='yyyy-MM-dd')return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`;if(f==='dd/MM/yyyy')return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()}`;if(f==='MM/yyyy')return `${p(d.getMonth()+1)}/${d.getFullYear()}`;if(f==='d/M')return `${d.getDate()}/${d.getMonth()+1}`;return d.toISOString();}
 function boot(data={}){
  const db=new DB(data), props=new Map([['GESTOR_PLANILHA_ID','fixture'],['GESTOR_API_BRIDGE_ENABLED','true'],['GESTOR_API_TOKEN','fake-token']]);
  const lock={has:false,waitLock(){if(this.has)throw Error('NESTED REAL LOCK');this.has=true;},tryLock(){if(this.has)return false;this.has=true;return true;},releaseLock(){if(!this.has)throw Error('UNOWNED LOCK');this.has=false;}};

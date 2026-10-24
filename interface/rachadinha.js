@@ -131,7 +131,18 @@ function renderizarPessoasRachaDet(){
   const selecionados=new Set(antigos.filter(e=>e.checked).map(e=>e.dataset.rachaConsumidor || rachaDetPessoas[Number(e.value)]));
   const novosCompartilham=antigos.length>0&&antigos.every(e=>e.checked)&&!rachaItemEmEdicao&&!document.getElementById('inpItemDescRacha').value.trim()&&!lerValorMoeda('inpItemValRacha');
   const pessoas=rachaDetPessoas.map((nome,i)=>({nome,i})).sort((a,b)=>Number(b.nome===rachaEu)-Number(a.nome===rachaEu));
-  lista.innerHTML=pessoas.map(({nome,i})=>{const a=rachaDetAjustes[nome] || {},eu=nome===rachaEu;return '<div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-950/60 p-3 rounded-xl border '+(eu?'border-emerald-500/40':'border-slate-700')+'"><div class="space-y-2"><span data-racha-rotulo="'+i+'" class="text-xs font-bold text-white">'+(eu?'Eu (você)':escaparHTML(nome))+'</span><input type="text" data-racha-nome="'+i+'" aria-label="'+(eu?'Você, participante fixo':'Nome da pessoa '+(i+1))+'" maxlength="80" value="'+escaparHTML(eu?'Eu':nome)+'" '+(eu?'readonly aria-readonly="true"':'')+' class="w-full text-xs bg-slate-900 border border-slate-600 p-2 rounded-lg text-white"></div><label class="text-xs text-slate-300">Cota (peso)<input aria-label="Cota de '+escaparHTML(eu?'Eu':nome)+'" aria-describedby="ajudaCotasRacha" data-racha-peso="'+i+'" type="text" inputmode="decimal" maxlength="6" value="'+escaparHTML(a.pesoTexto ?? a.peso ?? 1)+'" class="w-full rounded-lg bg-slate-900 border border-slate-600 p-2 text-white mt-1"></label><label class="col-span-2 sm:col-span-1 text-xs text-slate-300">Pago ao estabelecimento<input data-racha-pago="'+i+'" inputmode="numeric" value="'+escaparHTML(a.pagoCentavos?formatBRL(a.pagoCentavos/100):'')+'" placeholder="R$ 0,00" class="w-full rounded-lg bg-slate-900 border border-slate-600 p-2 text-white mt-1"></label>'+(eu?'<p class="col-span-2 sm:col-span-1 text-[11px] text-emerald-300 self-center">Participante fixo · sempre você</p>':'<button type="button" '+acaoHTML('removerPessoaRachaDet',[i])+' class="col-span-2 sm:col-span-1 text-xs text-rose-200 px-3 py-2 rounded-lg border border-slate-600 self-end">Remover pessoa</button>')+'</div>';}).join('');
+  const campoClasse='min-w-0 flex flex-col gap-1 text-xs text-slate-300';
+  const rotuloClasse='min-h-8 flex items-end leading-4';
+  const entradaClasse='w-full min-w-0 h-10 text-xs bg-slate-900 border border-slate-600 p-2 rounded-lg text-white';
+  lista.innerHTML=pessoas.map(({nome,i})=>{
+    const a=rachaDetAjustes[nome] || {},eu=nome===rachaEu;
+    return `<div class="w-full grid grid-cols-2 sm:grid-cols-4 items-end gap-2 bg-slate-950/60 p-3 rounded-xl border ${eu?'border-emerald-500/40':'border-slate-700'}">
+      <label class="${campoClasse}"><span class="${rotuloClasse} font-bold text-white"><span data-racha-rotulo="${i}" class="truncate" title="${escaparHTML(nome)}">${eu?'Eu (você)':escaparHTML(nome)}</span></span><input type="text" data-racha-nome="${i}" aria-label="${eu?'Você, participante fixo':'Nome da pessoa '+(i+1)}" maxlength="80" value="${escaparHTML(eu?'Eu':nome)}" ${eu?'readonly aria-readonly="true"':''} class="${entradaClasse}"></label>
+      <label class="${campoClasse}"><span class="${rotuloClasse}">Cota (peso)</span><input aria-label="Cota de ${escaparHTML(eu?'Eu':nome)}" aria-describedby="ajudaCotasRacha" data-racha-peso="${i}" type="text" inputmode="decimal" maxlength="6" value="${escaparHTML(a.pesoTexto ?? a.peso ?? 1)}" class="${entradaClasse}"></label>
+      <label class="col-span-2 sm:col-span-1 ${campoClasse}"><span class="${rotuloClasse}">Pago ao estabelecimento</span><input aria-label="Pago ao estabelecimento por ${escaparHTML(eu?'Eu':nome)}" data-racha-pago="${i}" inputmode="numeric" value="${escaparHTML(a.pagoCentavos?formatBRL(a.pagoCentavos/100):'')}" placeholder="R$ 0,00" class="${entradaClasse}"></label>
+      ${eu?'<p class="col-span-2 sm:col-span-1 min-h-10 flex items-center text-[11px] text-emerald-300">Participante fixo · sempre você</p>':'<button type="button" data-racha-remover="'+i+'" '+acaoHTML('removerPessoaRachaDet',[i])+' class="col-span-2 sm:col-span-1 min-h-10 text-xs text-rose-200 px-3 py-2 rounded-lg border border-slate-600" aria-label="Remover '+escaparHTML(nome)+' da divisão">Remover pessoa</button>'}
+    </div>`;
+  }).join('');
   checks.innerHTML=rachaDetPessoas.map((nome,i)=>'<label class="p-2 rounded-lg border border-slate-600 bg-slate-900 text-xs text-slate-200 flex items-center gap-2"><input type="checkbox" class="chk-pessoa-item-racha" data-racha-consumidor="'+escaparHTML(nome)+'" value="'+i+'" '+(!antigos.length||selecionados.has(nome)||novosCompartilham?'checked':'')+'>'+escaparHTML(nome===rachaEu?'Eu':nome)+'</label>').join('');
   atualizarBloqueioRachaGestor();
 }
@@ -153,6 +164,9 @@ function renomearPessoaRachaGestor(indice,texto){
   rachaDetPessoas[indice]=nome;rachaDetItens.forEach(it=>it.consumidores=it.consumidores.map(p=>p===antigo?nome:p));rachaDetAjustes[nome]=rachaDetAjustes[antigo] || {};delete rachaDetAjustes[antigo];
   const titulo=document.querySelector('[data-racha-rotulo="'+indice+'"]');if(titulo)titulo.textContent=nome;
   document.querySelector('[data-racha-peso="'+indice+'"]')?.setAttribute('aria-label','Cota de '+nome);
+  document.querySelector('[data-racha-pago="'+indice+'"]')?.setAttribute('aria-label','Pago ao estabelecimento por '+nome);
+  document.querySelector('[data-racha-remover="'+indice+'"]')?.setAttribute('aria-label','Remover '+nome+' da divisão');
+  titulo?.setAttribute('title',nome);
   const check=Array.from(document.querySelectorAll('.chk-pessoa-item-racha')).find(e=>Number(e.value)===indice);if(check){check.dataset.rachaConsumidor=nome;if(check.parentElement.lastChild?.nodeType===3)check.parentElement.lastChild.textContent=nome;}
   calcularRachadinhaDetalhada();
 }
