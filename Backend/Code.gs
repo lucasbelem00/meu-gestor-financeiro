@@ -138,7 +138,7 @@ function isStatusPago(statusStr) {
 }
 
 function isStatusCancelado(statusStr) {
-  return String(statusStr || '').trim().toLowerCase() === 'assinatura cancelada';
+  return ['assinatura cancelada','ocorrência pulada'].includes(String(statusStr || '').trim().toLowerCase());
 }
 
 const DICIONARIO_ACENTOS_PT = {
@@ -250,7 +250,7 @@ function diaReferenciaSerieGestor_(linhas) {
   if (linhas.some(function (r) { return serieRecorrenteGestor_(r).invalida; })) throw new Error('Esta série de despesa fixa precisa de conferência antes de gerar ou alterar parcelas.');
   const comReferencia = linhas.map(serieRecorrenteGestor_).find(function (s) { return Number.isInteger(s.diaReferencia) && s.diaReferencia >= 1 && s.diaReferencia <= 31; });
   if (comReferencia) return comReferencia.diaReferencia;
-  const datas = linhas.map(function (r) { return parseDataBR(r[0]); }).filter(Boolean).sort(function (a, b) { return a.getTime() - b.getTime(); });
+  const datas = linhas.map(function (r) { return r[0] instanceof Date ? new Date(r[0].getTime()) : parseDataBR(limparApostrofo(r[0])); }).filter(function(d){return d && Number.isFinite(d.getTime());}).sort(function (a, b) { return a.getTime() - b.getTime(); });
   // Não adivinhar que um registro legado no dia 28 começou no dia 31.
   return datas.length ? datas[0].getDate() : 1;
 }
@@ -269,6 +269,18 @@ function atualizarTotalCompraEmprestimoGestor_(sheet, compraId) {
   grupo.forEach(function (item) { sheet.getRange(item.i + 2, 5).setValue(total); });
 }
 
+function dataCombinadaEmprestimoGestor_(r){
+  const texto=String((r || [])[15] || ''),prefixo='gestor-devolucao-v1:';
+  if(!texto.startsWith(prefixo))return '';
+  try{return JSON.parse(texto.slice(prefixo.length)).data || '';}catch(_){return '';}
+}
+function definirDataCombinadaGestor_(r,data){
+  if(data)validarDataCalendarioWeb_(data,'Data combinada');
+  const texto=String(r[15] || ''),prefixo='gestor-devolucao-v1:';let anterior={legado:texto};
+  if(texto.startsWith(prefixo)){try{anterior=JSON.parse(texto.slice(prefixo.length));}catch(_){throw new Error('O controle da devolução precisa de conferência. O conteúdo foi preservado.');}}
+  r[15]=prefixo+JSON.stringify({legado:anterior.legado || '',data:data || ''});return r;
+}
+
 function processarAssinaturasAutomaticas(lancSheet) {
   if (!lancSheet || lancSheet.getLastRow() < 2) return;
   const ultimaLinha = lancSheet.getLastRow();
@@ -281,7 +293,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
     const chave = String(r[12] || (normalizarTexto(displayData[i][1]) + '_' + normalizarTexto(displayData[i][2])));
     (linhasPorSerie[chave] || (linhasPorSerie[chave] = [])).push(r);
     if (serieRecorrenteGestor_(r).invalida) invalidas.add(chave);
-    if (serieRecorrenteGestor_(r).encerrada || isStatusCancelado(displayData[i][9]) || displayData[i][9] === 'Pago (Cancelada)') encerradas.add(chave);
+    if (serieRecorrenteGestor_(r).encerrada || displayData[i][9] === 'Assinatura Cancelada' || displayData[i][9] === 'Pago (Cancelada)') encerradas.add(chave);
   });
 
   data.forEach((r, idx) => {
@@ -837,6 +849,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
     rawAll[idxAlvo][8] = novoMesFatFmt;
     rawAll[idxAlvo][9] = dados.status;
     rawAll[idxAlvo][10] = dados.observacoes || '';
+    if(dados.dataCombinada!==undefined)definirDataCombinadaGestor_(rawAll[idxAlvo],dados.dataCombinada);
 
     if (totalParcelas > 1) {
       indicesMesmaCompra(dispAll, idxAlvo); // Bloqueia grupos legados ambíguos.
@@ -1153,7 +1166,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
 
       const valoresParcelas = parcelasCentavosGestor_(valorTotal, numParcelas);
       if (valoresParcelas.some(function (v) { return v <= 0; })) throw new Error('Cada parcela deve ter pelo menos um centavo.');
-      if (isAssinatura) { const existentes = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_).disp; if (existentes.some(function (r) { return limparApostrofo(r[6]) === '∞/∞' && !serieRecorrenteGestor_(r).encerrada && !isStatusCancelado(r[9]) && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descFormatada) && chaveFormaGestor_(r[2]) === chaveFormaGestor_(formaAtual); })) throw new Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento. Edite a assinatura existente.'); }
+      if (isAssinatura) { const existentes = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_).disp; if (existentes.some(function (r) { return limparApostrofo(r[6]) === '∞/∞' && !serieRecorrenteGestor_(r).encerrada && r[9] !== 'Assinatura Cancelada' && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descFormatada) && chaveFormaGestor_(r[2]) === chaveFormaGestor_(formaAtual); })) throw new Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento. Edite a assinatura existente.'); }
       let mesFat = hoje.getMonth() + 1, anoFat = hoje.getFullYear();
       if (dados.mesPrimeiraFatura && dados.mesPrimeiraFatura.includes('/')) {
         const p = String(dados.mesPrimeiraFatura).replace(/^'/, '').split('/');
@@ -1500,7 +1513,8 @@ function getDadosCompletos() {
               categoria: catStr,
               valor: valorFmt,
               valorRaw: valor,
-              status: statusRaw,
+              status: statusRaw==='Ocorrência Pulada'?'Assinatura Ativa':statusRaw,
+              pulada: statusRaw==='Ocorrência Pulada',
               controleInvalido: seriesInvalidas.has(chaveAss),
               encerrada: serieRecorrenteGestor_(r).encerrada === true,
               mesEncerramento: serieRecorrenteGestor_(r).encerramentoMes || '',
@@ -1686,6 +1700,7 @@ function getDadosCompletos() {
         }
 
         listaEmprestimos.push({
+          dataCombinada:dataCombinadaEmprestimoGestor_(r),
           linha: idx + 2,
           registroId: r[11], compraId: r[12], versao: Number(r[13] || 1), estadoBanco: r[14] || 'Em Aberto',
           data: dtLimpa,
@@ -1817,7 +1832,7 @@ function getDadosCompletos() {
     const itensAvisoFatura = lancamentosValidos.slice();
     if (empSheet && empSheet.getLastRow() > 1) empSheet.getRange(2, 1, empSheet.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r) {
       if (!r[11] || isStatusCancelado(r[9])) return;
-      const raw = r.slice(); raw[2] = r[3]; raw[9] = r[14] === 'Pago' ? 'Pago' : 'Em Aberto';
+      const raw = r.slice(); raw[2] = r[3]; raw[8]=formatarCelulaRegistroGestor_(r[8],'MM/yyyy'); raw[9] = r[14] === 'Pago' ? 'Pago' : 'Em Aberto';
       itensAvisoFatura.push({ raw: raw, disp: raw.map(function (v) { return String(v == null ? '' : v); }) });
     });
     const diasAteVencimento = calcularAlertasVencimento_(listaFormasPagto, itensAvisoFatura, getHojeSeguro());
@@ -1905,7 +1920,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor: 7,
+      protocoloGestor: 8,
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
         totalAberto: formatBRL(calcAberto),
@@ -1946,7 +1961,7 @@ function getDadosCompletos() {
           atrasadosFmt: formatBRL(empKpiAtrasados)
         },
         pessoasFrequentes: pessoasFrequentes,
-        itens: listaEmprestimos.reverse()
+        itens: listaEmprestimos.sort(function(a,b){return parseMesFat(a.mesFatura).time-parseMesFat(b.mesFatura).time || String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR') || String(a.compraId).localeCompare(String(b.compraId)) || parseNumParcela(a.parcela).atual-parseNumParcela(b.parcela).atual || String(a.registroId).localeCompare(String(b.registroId));})
       }
     };
   } catch (e) {
@@ -2239,6 +2254,15 @@ function excluirLancamentoWebInterno_(dados) {
     const idx = localizarIndiceSeguro(disp, dados.linha, dados.descricao, dados.mesFatura, dados.parcela);
     if (idx < 0) throw new Error('Lançamento não encontrado. Atualize a página.');
 
+    if (limparApostrofo(disp[idx][6]) === '∞/∞') {
+      const r = lido.raw[idx].slice();
+      if (centavosGestor_(valorPagoBancoGestor_(r,false)) > 0) throw new Error('Esta ocorrência tem pagamento registrado. Confira ou desfaça o pagamento antes de pular o período.');
+      r[9] = 'Ocorrência Pulada'; r[14] = 'Em Aberto'; r[17] = 0;
+      escreverLinhaPlanilha(lancSheet,idx+2,r);
+      organizarEAtualizarPlanilha(lancSheet,pagtoSheet);
+      return {sucesso:true,qtd:1,pulada:true};
+    }
+
     let alvos = [idx];
     if (dados.excluirTodasParcelas) {
       alvos = indicesMesmaCompra(disp, idx).filter(function (i) {
@@ -2280,6 +2304,7 @@ function previaAntecipacaoWeb(dados) {
     const valor=centavosGestor_(raw[i][7]), abatimento=pos===alvos.length-1?desconto:Math.min(valor,Math.floor(desconto*valor/soma));
     desconto-=abatimento; soma-=valor;
     const pago=centavosGestor_(valorPagoBancoGestor_(raw[i],false));
+    if (pago>0) throw new Error('A parcela '+limparApostrofo(disp[i][6])+' já possui pagamento de '+formatBRL(pago/100)+' na fatura '+limparApostrofo(disp[i][8])+'. Antecipe somente parcelas sem pagamento registrado. Confira ou desfaça o pagamento original antes de alterar esse período.');
     if(valor-abatimento<pago) throw new Error('O desconto deixaria uma parcela abaixo do pagamento já registrado. Confira o pagamento antes de antecipar.');
     return {id:raw[i][11],versao:Number(raw[i][13]),parcela:limparApostrofo(disp[i][6]),mesOrigem:limparApostrofo(disp[i][8]),valorAntes:valor/100,valorDepois:(valor-abatimento)/100,pagoBanco:pago/100};
   });
@@ -2409,15 +2434,19 @@ function editarAssinaturaWebInterno_(dados) {
   const valorNovo = centavosGestor_(dados.novaValor) / 100;
   if (!descNova || !formaNova || !catNova || valorNovo <= 0) throw new Error('Informe descrição, forma de pagamento, categoria e valor válido.');
   if (grupo.some(function (i) { return serieRecorrenteGestor_(raw[i]).encerrada; })) throw new Error('Esta recorrência já foi encerrada. Crie uma nova despesa fixa para recomeçar.');
-  validarTrocaFormaComPagamentoGestor_(grupo.map(function (i) { return raw[i]; }), formaNova, false);
-  if (disp.some(function (r) { return r[12] !== disp[idx][12] && limparApostrofo(r[6]) === '∞/∞' && !serieRecorrenteGestor_(r).encerrada && !isStatusCancelado(r[9]) && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descNova) && chaveFormaGestor_(r[2]) === chaveFormaGestor_(formaNova); })) throw new Error('Já existe outra assinatura ativa com esta descrição e forma de pagamento.');
+  const hojeInicio=getHojeSeguro(), mesHoje=pad2(hojeInicio.getMonth()+1)+'/'+hojeInicio.getFullYear();
+  const inicio=validarMesFaturaWeb_(dados.aPartirMes || mesHoje), tempoInicio=parseMesFat(inicio).time;
+  if (tempoInicio<parseMesFat(mesHoje).time) throw new Error('As novas condições devem começar no mês atual ou em um mês futuro. Edite um registro histórico separadamente.');
+  const afetadas=grupo.filter(function(i){return parseMesFat(disp[i][8]).time>=tempoInicio && !isStatusPago(disp[i][9]) && !isStatusCancelado(disp[i][9]);});
+  validarTrocaFormaComPagamentoGestor_(afetadas.map(function (i) { return raw[i]; }), formaNova, false);
+  if (disp.some(function (r) { return r[12] !== disp[idx][12] && limparApostrofo(r[6]) === '∞/∞' && !serieRecorrenteGestor_(r).encerrada && r[9] !== 'Assinatura Cancelada' && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descNova) && chaveFormaGestor_(r[2]) === chaveFormaGestor_(formaNova); })) throw new Error('Já existe outra assinatura ativa com esta descrição e forma de pagamento.');
   const diaReferencia = diaReferenciaSerieGestor_(grupo.map(function (i) { return raw[i]; }));
   const hoje = getHojeSeguro(), mesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1).getTime();
   let qtd = 0;
   grupo.forEach(function (i) {
     const st = String(disp[i][9]);
     if (isStatusCancelado(st) || st === 'Pago (Cancelada)') return;
-    if (parseMesFat(disp[i][8]).time >= mesAtual && !isStatusPago(st)) {
+    if (parseMesFat(disp[i][8]).time >= tempoInicio && !isStatusPago(st)) {
       const nova = montarLinhaLanc(disp[i], raw[i], { desc: descNova, forma: formaNova, cat: catNova, valor: valorNovo });
       definirSerieRecorrenteGestor_(nova, { diaReferencia: diaReferencia, encerrada: false });
       escreverLinhaPlanilha(lancSheet, i + 2, nova); qtd++;
@@ -2427,6 +2456,7 @@ function editarAssinaturaWebInterno_(dados) {
   if (!qtd) {
     const ultimaReferencia = Math.max(mesAtual, ...grupo.map(function (i) { return parseMesFat(disp[i][8]).time; }));
     const ref = new Date(ultimaReferencia); ref.setMonth(ref.getMonth() + 1);
+    if(ref.getTime()<tempoInicio) ref.setTime(tempoInicio);
     const mes = pad2(ref.getMonth() + 1) + '/' + ref.getFullYear();
     const nova = montarLinhaLanc(disp[idx], raw[idx], { desc: descNova, forma: formaNova, cat: catNova, valor: valorNovo, mes: mes, status: 'Assinatura Ativa' });
     const dia = Math.min(diaReferencia, new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate());
@@ -2543,6 +2573,7 @@ function salvarEmprestimoWebInterno_(dados) {
     const desc = formatarTituloInteligente(dados.descricao);
     if (!pessoa || !desc) throw new Error('Informe a pessoa e a descrição.');
     const dtStr = limparApostrofo(dados.dataCompra);
+    if(dados.dataCombinada)validarDataCalendarioWeb_(dados.dataCombinada,'Data combinada');
 
     const linhas = [];
     for (let p = parcelaInicial; p <= numParcelas; p++) {
@@ -2558,6 +2589,7 @@ function salvarEmprestimoWebInterno_(dados) {
 
     const prox = Math.max(2, empSheet.getLastRow() + 1);
     empSheet.getRange(prox, 1, linhas.length, 11).setValues(linhas);
+    if(dados.dataCombinada){const base=parseDataBR(dados.dataCombinada);const controles=linhas.map(function(_,i){const dt=new Date(base.getFullYear(),base.getMonth()+i,1);dt.setDate(Math.min(base.getDate(),new Date(dt.getFullYear(),dt.getMonth()+1,0).getDate()));const r=[];definirDataCombinadaGestor_(r,Utilities.formatDate(dt,getTimezone(),'dd/MM/yyyy'));return [r[15]];});empSheet.getRange(prox,16,controles.length,1).setValues(controles);}
     empSheet.getRange(prox, 5, linhas.length, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
     empSheet.getRange(prox, 8, linhas.length, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
     organizarAbaEmprestimos(empSheet);
@@ -2663,6 +2695,7 @@ function salvarFormaPagamentoWebInterno_(dados) {
 
     // O tipo acompanha o cadastro, não o texto escolhido para seu nome.
     const tipo = orig ? tipoFormaGestor_(orig, ss) : (dados.tipo || tipoLegadoFormaGestor_(nome));
+    if(orig===nome && dados.reativar===true){sh.getRange(linha,7).setValue('');return {sucesso:true,reativado:true};}
     if (!['cartao', 'pix', 'avista'].includes(tipo)) throw new Error('Esta linha de resumo não pode ser alterada como forma de pagamento.');
     if (orig && dados.tipo && dados.tipo !== tipo) throw new Error('Alterar o nome não altera o tipo da forma. Uma troca de tipo exige conferir os pagamentos vinculados.');
     const colunaTipo = garantirTiposFormasGestor_(sh);
@@ -2782,6 +2815,12 @@ function salvarCategoriasWebInterno_(param) {
       vistos.add(chave);
       return {nome:nome, meta:numeroConfiguracaoGestor_(c.meta,'Meta')};
     });
+    const temOutros=cats.some(function(c){return chaveCategoria(c.nome)==='outros';});
+    if (!temOutros && listarNomesCategoriasConfig(dash).some(function(n){return chaveCategoria(n)==='outros';})) throw new Error('Outros é uma categoria reservada e não pode ser removida. Você pode ajustar sua meta.');
+    if(!temOutros) { if(cats.length>=25) throw new Error('Reserve um dos 25 espaços para Outros. Nenhuma categoria foi descartada.');cats.push({nome:'Outros 📦',meta:0});vistos.add('outros'); }
+    if(renomeacoes.some(function(r){return r && chaveCategoria(r.de)==='outros' && chaveCategoria(r.para)!=='outros';})) throw new Error('O nome da categoria Outros é fixo.');
+    cats.forEach(function(c){if(chaveCategoria(c.nome)==='outros')c.nome='Outros 📦';});
+    cats.sort(function(a,b){return chaveCategoria(a.nome)==='outros'?1:chaveCategoria(b.nome)==='outros'?-1:a.nome.localeCompare(b.nome,'pt-BR');});
     renomeacoes.forEach(function(r){ if (!r || typeof r.de !== 'string' || !chaveCategoria(r.de) || typeof r.para !== 'string' || !vistos.has(chaveCategoria(r.para))) throw new Error('Confira os nomes das categorias renomeadas.'); });
     const nomes = [], metas = [];
     for (let i = 0; i < 25; i++) {
@@ -3667,7 +3706,7 @@ function inclusaoIncompletaRecuperavelGestor_(atual, m) {
 function atualizarValidacaoStatusLancamentosGestor_(sh, linhas) {
   if (!sh || sh.getName() !== 'Lançamentos' || linhas < 2) return;
   const regra = SpreadsheetApp.newDataValidation()
-    .requireValueInList(['Pago', 'Em Aberto', 'Agendado', 'Assinatura Ativa', 'Assinatura Paga', 'Assinatura Cancelada', 'Pago (Cancelada)'], true)
+    .requireValueInList(['Pago', 'Em Aberto', 'Agendado', 'Assinatura Ativa', 'Assinatura Paga', 'Assinatura Cancelada', 'Pago (Cancelada)', 'Ocorrência Pulada'], true)
     .setAllowInvalid(false).build();
   sh.getRange(2, 10, linhas - 1, 1).setDataValidation(regra);
 }
@@ -4234,6 +4273,10 @@ function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
     if (!a.depois) { if (atual) return 'O registro já foi recuperado ou movido. Atualize a lista.'; }
     else if (!atual || atual.aba !== a.aba || Number(atual.registro[13]) !== Number(a.depois[13]) || hashRegistroGestor_(atual.registro) !== hashRegistroGestor_(a.depois)) return 'O registro mudou depois desta ação. Confira a versão mais recente.';
     if (a.antes) {
+      if (!atual && a.aba==='Lançamentos' && limparApostrofo(a.antes[6])==='∞/∞') {
+        const duplicada=Array.from(mapa.values()).some(function(item){return item.aba===a.aba && String(item.registro[12])===String(a.antes[12]) && formatarCelulaRegistroGestor_(item.registro[8],'MM/yyyy')===formatarCelulaRegistroGestor_(a.antes[8],'MM/yyyy');});
+        if(duplicada) return 'Já existe uma ocorrência desta despesa fixa neste mês. Confira a versão atual antes de restaurar o registro antigo.';
+      }
       const dependencia = motivoDependenciaDesfazerGestor_(a.antes, a.aba);
       if (dependencia) return dependencia;
     }
@@ -4248,7 +4291,9 @@ function obterAtividadeWeb(param) {
   const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
   return { total: filtrados.length, temMais: offset + limite < filtrados.length, itens: filtrados.slice(offset, offset + limite).map(function (e) {
     const motivo = motivoBloqueioDesfazerGestor_(e, mapa, revertidos);
-    return { id: e.id, titulo: e.titulo, acao: e.acao, data: e.data, resumo: e.resumo, quantidade: e.quantidade, podeDesfazer: !motivo, motivo: motivo, desfeita: revertidos.has(e.id),
+    const principal=e.alteracoes.find(function(a){return a.depois || a.antes;});
+    const resumoExibido=principal?resumirRegistroAtividade_(principal.depois || principal.antes,principal.aba):copiarGestor_(e.resumo);
+    return { id: e.id, titulo: e.titulo, acao: e.acao, data: e.data, resumo: resumoExibido, quantidade: e.quantidade, podeDesfazer: !motivo, motivo: motivo, desfeita: revertidos.has(e.id),
       detalhes: e.alteracoes.slice(0, 200).map(function (a) { return { antes: resumirRegistroAtividade_(a.antes, a.aba), depois: resumirRegistroAtividade_(a.depois, a.aba) }; }), detalhesTotal: e.alteracoes.length };
   }) };
 }
@@ -4340,7 +4385,6 @@ function validarBackupRestauracaoGestor_(backup) {
     if (!Array.isArray(aba.valores) || !aba.valores.length || aba.valores.length > 20000) throw new Error('Aba vazia ou com dimensões inválidas: ' + aba.nome);
     const cols = aba.valores[0].length;
     if (!cols || cols > 100 || aba.valores.some(function (r) { return !Array.isArray(r) || r.length !== cols; })) throw new Error('Linhas incompatíveis na aba ' + aba.nome);
-    validarConteudoAbaBackupGestor_(aba);
     celulas += cols * aba.valores.length;
     if (celulas > 100000) throw new Error('Este backup tem células demais para restauração pelo app.');
     if (aba.nome === '_Gestor_Atividade') return null; // Histórico atual permanece; o histórico antigo fica no arquivo.
@@ -4376,11 +4420,13 @@ function validarBackupRestauracaoGestor_(backup) {
     }); });
     if (registros) valores.slice(1).forEach(function (r) {
       if (!r.some(function (v) { return v !== ''; })) return;
+      [0,6,8].forEach(function(c){if(r[c] instanceof Date) r[c]=formatarCelulaRegistroGestor_(r[c],c===0?'dd/MM/yyyy':c===6?'d/M':'MM/yyyy');});
       if (centavosGestor_(r[7]) < 0 || centavosGestor_(r[17] || 0) < 0 || centavosGestor_(r[17] || 0) > centavosGestor_(r[7])) throw new Error('Valor financeiro inconsistente no backup.');
       validarDataCalendarioWeb_(limparApostrofo(r[0]), 'Data no backup'); validarMesFaturaWeb_(limparApostrofo(r[8]));
       if (r[11] && (typeof r[11] !== 'string' || r[11].length > 160 || typeof r[12] !== 'string' || !r[12] || !Number.isInteger(Number(r[13])) || Number(r[13]) < 1)) throw new Error('Identidade financeira inválida no backup.');
       if (r[11]) { if (ids.has(String(r[11]))) throw new Error('Identificador financeiro repetido no backup.'); ids.add(String(r[11])); }
     });
+    validarConteudoAbaBackupGestor_({nome:aba.nome,valores:valores});
     // Máscaras vindas do arquivo não participam da transação financeira.
     return { nome: aba.nome, valores: valores, formatos: null };
   }).filter(Boolean);

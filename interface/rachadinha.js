@@ -38,6 +38,7 @@ function descricaoMinhaParteRachaGestor(){
 function guardarRascunhoRachaGestor(obrigatorio=false) {
   if(rachaRestaurando){if(obrigatorio)throw Error('Confira o rascunho guardado antes de registrar esta divisão.');return false;}
   atualizarBloqueioRachaGestor();
+  const gravarArmazenamentoGestor=(chave,texto)=>guardarRascunhoRotinaGestor('racha',JSON.parse(texto),obrigatorio);
   try{
     if(!rachaRegistroId&&rachaDetItens.length)rachaRegistroId='racha-'+String(rachaDetItens[0].id);
     const campos=Object.fromEntries(CAMPOS_RASCUNHO_RACHA.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?e.checked:e?.value || ''];}));
@@ -303,7 +304,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('rachaRegistroMes').addEventListener('input',e=>mascaraMesFaturaAPI(e.target));
   rachaRestaurando=true;let consumidoresRestaurados=null,nomesRestaurados=null;
   try{
-    const texto=localStorage.getItem('gestorRachadinhaRascunhoV1');
+    const texto=lerRascunhoRotinaGestor('racha');
     if(texto){const r=JSON.parse(texto);if(r.versao!==1||!Array.isArray(r.pessoas)||!r.pessoas.length||r.pessoas.length>100||!Array.isArray(r.itens)||r.itens.length>500)throw Error('Rascunho incompatível');
       rachaDetPessoas=r.pessoas;rachaDetItens=r.itens;rachaDetAjustes=Object.assign(Object.create(null),r.ajustes || {});rachaEu=r.eu || r.pessoas[0];rachaItemEmEdicao=r.editando || null;rachaEnvioGuardado=r.envio || null;rachaRegistroId=r.registroId || null;rachaPartePreparadaGestor=r.partePreparada&&Number.isSafeInteger(r.partePreparada.valorCentavos)?r.partePreparada:null;consumidoresRestaurados=r.consumidoresEdicao || null;nomesRestaurados=r.nomesEmEdicao || null;
       CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e&&r.campos?.[id]!==undefined){if(e.type==='checkbox')e.checked=Boolean(r.campos[id]);else e.value=r.campos[id];}});

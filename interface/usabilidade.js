@@ -53,6 +53,7 @@ function renderTabelaEvolucao() {
   meses.forEach(m => cabecalho += `<th class="py-2 text-center"><button type="button" ${acaoHTML('irParaFaturaMensal',[m])} class="px-1 py-2 text-sky-300 underline font-bold" aria-label="Abrir mês ${escaparHTML(m)}">${escaparHTML(m.slice(0,3)+m.slice(5))} ↗</button></th>`);
   cabecalho += `<th class="text-right pr-2 ${compacto?'hidden':''}">Total exibido</th>`;
   document.getElementById('faturas-header').innerHTML = cabecalho;
+  const intervalo=document.getElementById('intervaloHorizonteRotina');if(intervalo)intervalo.textContent=meses.length?meses[0]+' a '+meses[meses.length-1]:'';
   let html = '';
   function linha(rotulo, valores, classe, abrir = false) {
     const soma = valores.reduce((s,v) => s + centavosInterfaceGestor(v.valor),0)/100;

@@ -1,5 +1,11 @@
 # Checklist do pacote de robustez
 
+**Pacote consolidado concluído localmente em 24/10/2026:** os 38 itens estão assinalados em [VISTORIA_CONSOLIDADA_MOBILE_20261024.md](VISTORIA_CONSOLIDADA_MOBILE_20261024.md). Mudanças, regras adotadas e validação com 270 testes estão em [PACOTE_ROTINA_INTEGRIDADE_20261024.md](PACOTE_ROTINA_INTEGRIDADE_20261024.md). A publicação na cópia de teste permanece pendente. Os relatos de auditoria abaixo preservam o contexto anterior às correções.
+
+Continuação da auditoria: [datas, edição e recebimentos](VISTORIA_PROFUNDA_EDICOES_DATAS_20261024.md). Foram acumulados os novos casos de data digitada divergente do envio, botões bloqueados após sucesso, fechamento por resposta antiga, prévia inexata de centavos e abandono de edições. O falso positivo anterior sobre ponto decimal na colagem foi retirado após conferir a função final ativa.
+
+Nova rodada: [configurações, vencimentos e mensagens](VISTORIA_CONFIGURACOES_ALERTAS_PIX_20261024.md). Categoria em edição após remover outra, reserva de Outros, avisos com meses Date, clareza do arquivamento e inclusão de Pix após editar a mensagem foram corrigidos no pacote consolidado.
+
 O pacote posterior de filtros, sincronização e rachadinha está documentado em [PACOTE_FILTROS_RACHADINHA_20261023.md](PACOTE_FILTROS_RACHADINHA_20261023.md), com checklist e roteiro de testes próprios.
 
 Concluído localmente em 23/10/2026. Este arquivo acompanha o pacote autorizado após a revisão das duas análises. As marcações abaixo indicam implementação local; a publicação é uma etapa separada. O resumo final e as instruções estão em [PACOTE_ROBUSTEZ_20261023.md](PACOTE_ROBUSTEZ_20261023.md).
@@ -63,3 +69,11 @@ Recebimento do PicPay confirmado por leitura da cópia de teste; pagamento ao ba
 Consulta de pagamento corrigida para reconhecer meses em células Date, evitando faturas falsamente zeradas. Formatação dos novos resumos e da ordem das parcelas na prévia corrigida. Oito regressões novas; detalhes e atualização essencial do Apps Script em [CORRECAO_FATURA_DATAS_20261024.md](CORRECAO_FATURA_DATAS_20261024.md).
 
 Consumo por forma passou a filtrar pela área inteira, com Conferir pagamento independente. Um teste adicional cobre o isolamento das duas ações. Suíte completa: 239 testes aprovados; arquivos de publicação sincronizados.
+
+## Vistoria de uso diário — 24/10/2026
+
+Revisão sem mudanças funcionais: incompatibilidade de backups com células Date reproduzida; valor de pagamento preservado ao trocar mês; resumo de Recebidos com rótulo/ação inadequados; seletores do Mensal sem nome acessível. Evidências, propostas de simplificação e prioridades em [VISTORIA_USABILIDADE_E_RECUPERACAO_20261024.md](VISTORIA_USABILIDADE_E_RECUPERACAO_20261024.md).
+
+## Nova vistoria de rotina financeira — 24/10/2026
+
+Sete cenários em memória: exclusão de ocorrência fixa seguida de recarga e desfazer duplica o valor; fixo antigo com Date pode gerar dia 1; troca futura de cartão fica bloqueada por pagamentos anteriores; antecipação parcial redistribui o pago entre meses e precisa de regra explícita. Controles positivos, propostas e prioridades acumuladas em [VISTORIA_ROTINA_FIXOS_ANTECIPACAO_20261024.md](VISTORIA_ROTINA_FIXOS_ANTECIPACAO_20261024.md). Correções ainda não aplicadas.
