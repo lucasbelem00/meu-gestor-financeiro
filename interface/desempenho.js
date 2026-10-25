@@ -114,6 +114,7 @@ const leiturasDesempenhoGestor = typeof leiturasAtividadeGestor !== 'undefined'
   : new Set(['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb']);
 // Estas ações podem mudar o estado financeiro mesmo quando o controle de
 // sincronização permite executá-las durante uma recuperação.
+['ativarProtecaoAutomaticaWeb','executarBackupProtegidoWeb','executarManutencaoProtegidaWeb'].forEach(a=>leiturasDesempenhoGestor.delete(a));
 leiturasDesempenhoGestor.delete('cancelarOperacaoWeb');
 leiturasDesempenhoGestor.delete('concluirRecuperacaoOperacaoWeb');
 const apiAntesCoordenacaoDesempenhoGestor = window.apiCall;

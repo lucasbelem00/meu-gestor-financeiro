@@ -42,8 +42,9 @@ async function hashTextoRestauracaoGestor(texto) {
 }
 
 function compactarBackupRestauracaoGestor(original) {
-  if (!original || original.formato!=='gestor-financeiro-backup-v1' || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
-  return {formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
+  if (!original || !['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2'].includes(original.formato) || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
+  const resultado={formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
+  if(original.formato==='gestor-financeiro-backup-v2'){resultado.arquivosAnuais=original.arquivosAnuais;resultado.hashFinanceiro=original.hashFinanceiro;}return resultado;
 }
 
 function mensagemErroRestauracaoGestor(erro) {return erro?.message || 'Não foi possível conferir a restauração. Preserve o arquivo e tente a conferência novamente.';}
@@ -203,6 +204,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(ultimaPrevia===estado.resumo)return;ultimaPrevia=estado.resumo;previa.replaceChildren();confirmar.value='';executar.disabled=true;
     if(!estado.resumo)return;
     const r=estado.resumo;previa.append(elemento('p','Destino: '+r.planilha+' · Backup: '+dataLegivelBackupGestor(r.geradoEm)+' · '+estado.nome,'text-xs font-bold text-white'));
+    if(r.arquivosAtuais||r.arquivosAnuais?.length){
+      previa.append(elemento('p','Arquivos anuais: '+(r.arquivosAtuais||0)+' atuais → '+(r.arquivosAnuais?.length||0)+' no backup. O catálogo atual será substituído; cópias anteriores do Drive permanecerão guardadas.','text-xs font-bold text-amber-200'));
+      for(const a of r.arquivosAnuais||[])previa.append(elemento('p','Ano '+a.ano+': '+a.resumo.quantidade+' registro(s), '+formatBRL(a.resumo.pessoalCentavos/100)+' pessoais. O conteúdo está dentro deste JSON.','text-xs text-slate-200'));
+    }
     if(r.origem && r.origem!==r.planilha)previa.append(elemento('p','A origem “'+r.origem+'” é diferente do destino. Confira se esta é a planilha que deseja substituir.','text-xs text-amber-200'));
     for(const aviso of r.avisos || [])previa.append(elemento('p',aviso,'text-xs text-amber-200'));
     for(const aba of r.abas || []) {

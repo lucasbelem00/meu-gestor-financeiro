@@ -43,14 +43,14 @@ Revisão em 25/10/2026. Este resumo compara o código local atual com os relató
 
 ## Melhorias possíveis ainda úteis
 
-Estas sugestões não foram implementadas nesta etapa.
+Atualização do pacote de backups: os itens 1 e 4 foram implementados. Veja [Backups automáticos e arquivos anuais](BACKUPS_AUTOMATICOS_E_ARQUIVOS_ANUAIS.md) para ativação e limites.
 
-1. **Voltar aos filtros iniciais em Empréstimos.** Hoje há Limpar filtros no estado vazio. Um atalho também visível com resultados pouparia ajustes em vários seletores. Deveria deixar claro se volta a Todos os meses + A receber ou se inclui também recebidos.
-2. **Reaplicar a memória da descrição por escolha.** Uma ação discreta Usar sugestão permitiria reaplicar a combinação anterior de forma/categoria. Precisaria conferir antes de substituir conteúdo manual. Só vale acrescentar se fizer falta na rotina.
+1. **Voltar aos filtros iniciais em Empréstimos — entregue.** O atalho Voltar ao padrão também aparece com resultados e retorna a Todos os meses + A Receber, todas as pessoas e formas e busca vazia.
+2. **Reaplicar a memória da descrição por escolha — dispensado.** Conforme combinado depois, a memória automática existente foi mantida, sem acrescentar outro botão.
 3. **Vencidos e Próximos 30 dias em Empréstimos.** Continuam em observação, conforme combinado. Precisariam usar a data combinada de devolução, sem confundir com vencimento bancário nem classificar sem data como atraso.
-4. **Planejar o crescimento técnico.** É manutenção, não um botão diário: um arquivamento futuro precisa preservar provas de operações confirmadas/canceladas. Não apagar linhas técnicas manualmente para tentar ganhar velocidade.
+4. **Planejar o crescimento técnico — entregue localmente.** Há compactação segura com provas de operações confirmadas/canceladas, backups mensais no Drive e arquivos anuais consultáveis. A ativação real ainda depende da atualização e autorização do Apps Script. Não apagar linhas técnicas ou arquivos de comprovantes manualmente.
 
-Eu priorizaria o primeiro se os filtros forem muito usados. Os demais dependem de necessidade observada, para não aumentar controles sem retorno prático.
+Vencidos e Próximos 30 dias continuam em observação, conforme combinado.
 
 ## Anexos e privacidade do repositório
 

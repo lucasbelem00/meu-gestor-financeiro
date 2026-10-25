@@ -3151,8 +3151,8 @@ if (bf) bf.className = 'text-[10px] font-bold bg-slate-800 hover:bg-slate-700 te
           </div>
           <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50 ${modoEdicaoLancamentos ? 'flex' : 'hidden'}">
             <button type="button" ${acaoHTML('repetirLancamentoHoje', [l[1], l[2], l[3], l[7], l[11] || ''])} class="flex-1 text-emerald-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">⚡ Repetir</button>
-            <button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[11] || '', l[6] || ''])} class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
-            <button type="button" ${acaoHTML('excluirLancamentoLocal', [referencia, l[1], l[6] || '', l[8]])} class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>
+${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[11] || '', l[6] || ''])} class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">Editar</button>
+            <button type="button" ${acaoHTML('excluirLancamentoLocal', [referencia, l[1], l[6] || '', l[8]])} class="flex-1 text-rose-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-rose-900/20 hover:bg-rose-600 rounded-xl transition active:scale-95 border border-rose-500/20">Excluir</button>`}
           </div>
         </div>`;
       });
@@ -3666,7 +3666,7 @@ function chamarFiltroBackend(append = false) {
         chipsPessoas.classList.toggle('hidden', pFreq.length === 0);
       }
 
-      const todosItens = emprestimosGlobal.itens || [];
+      const todosItens = typeof itensEmprestimosConsultaProtecaoGestor==='function'?itensEmprestimosConsultaProtecaoGestor():(emprestimosGlobal.itens || []);
       const selMes = document.getElementById('selFiltroMesEmp');
       const selPes = document.getElementById('selFiltroPessoaEmp');
       const selSt = document.getElementById('selFiltroStatusEmp');
@@ -3675,7 +3675,7 @@ function chamarFiltroBackend(append = false) {
 
       if (selMes && selPes) {
         const vMes = selMes.value, vPes = selPes.value, vForma = selForma?.value || '';
-        const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).filter(Boolean))].sort((a, b) => {
+        const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).concat(typeof arquivosAnuaisUIProtecaoGestor!=='undefined'?arquivosAnuaisUIProtecaoGestor.flatMap(a=>a.meses||[]):[]).filter(Boolean))].sort((a, b) => {
           const [mA, aA] = String(a).split('/').map(Number), [mB, aB] = String(b).split('/').map(Number);
           return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
         });
@@ -3774,11 +3774,11 @@ function chamarFiltroBackend(append = false) {
                   <span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase ${badge}">${escaparHTML(it.status)}</span>
                 </div>
               </div>
-            <div class="flex gap-2 pt-2 border-t border-slate-700/40">
+            ${it.arquivado?'<p class="pt-2 text-xs text-slate-300">Arquivo anual · somente consulta</p>':`<div class="flex gap-2 pt-2 border-t border-slate-700/40">
                 <button type="button" ${acaoHTML('alternarStatusItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="flex-1 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : 'Registrar recebimento'}</button>
                 <button type="button" ${acaoHTML('abrirModalEdicaoEmp', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.data, it.pessoa || '', it.descricao || '', it.forma, it.valorRaw, it.mesFatura, it.status, it.parcela || '', it.observacoes || ''])} class="bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">Editar</button>
                 <button type="button" ${acaoHTML('excluirItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️</button>
-              </div>
+              </div>`}
             </div>`;
           }).join('');
         }
@@ -3986,7 +3986,7 @@ function chamarFiltroBackend(append = false) {
       const fSt = document.getElementById('selFiltroStatusEmp')?.value || '';
       const fForma = document.getElementById('selFiltroFormaEmp')?.value || '';
       const fBusca = String(document.getElementById('inpBuscaEmp')?.value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
-      const itens = (emprestimosGlobal.itens || []).filter(i => {
+      const itens = (typeof itensEmprestimosConsultaProtecaoGestor==='function'?itensEmprestimosConsultaProtecaoGestor():(emprestimosGlobal.itens || [])).filter(i => {
         if (i.pessoa !== pessoa || (fMes && i.mesFatura !== fMes) || (fSt && i.status !== fSt) || (fForma && i.forma !== fForma)) return false;
         if (!fBusca) return true;
         const texto = [i.pessoa, i.descricao, i.data, i.mesFatura, i.forma, i.parcela, i.observacoes, i.dataCombinada]
@@ -5366,7 +5366,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
         </div></div>
         <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
           <span class="${formaEhImediataGestor(l[2]) && l[6] === '1/1' ? 'hidden' : ''} text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</span>
-          <button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="ml-auto shrink-0 text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button>
+${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="ml-auto shrink-0 text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">Editar</button>`}
         </div>
       </div>`;
     }
@@ -5794,7 +5794,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       document.querySelectorAll('[data-exportar-dados]').forEach(btn => { btn.disabled = true; });
       try {
         const dados = await apiCall('exportarBackupDadosWeb', null, 1);
-        if (dados?.formato !== 'gestor-financeiro-backup-v1' || !Array.isArray(dados.abas)) throw new Error('Atualize a implantação do Código.gs para habilitar a exportação.');
+        if (!['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2'].includes(dados?.formato) || !Array.isArray(dados.abas)) throw new Error('Atualize a implantação do Código.gs para habilitar a exportação.');
         const data = String(dados.geradoEm).slice(0, 19).replace(/[^0-9]/g, '-');
         let conteudo, tipo, nome;
         if (formato === 'json') {
@@ -5803,7 +5803,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
           nome = 'Backup_Gestor_' + data + '.json';
         } else {
           const abaNome = formato === 'emprestimos' ? 'Empréstimos' : 'Lançamentos';
-          const aba = dados.abas.find(a => a.nome === abaNome);
+          const aba = abaCompletaCSVProtecaoGestor(dados,abaNome);
           if (!aba?.exibidos) throw new Error('A aba ' + abaNome + ' ainda não existe na planilha.');
           conteudo = converterAbaCSV(aba.exibidos);
           tipo = 'text/csv;charset=utf-8';
@@ -6409,7 +6409,7 @@ try {
       if (param === undefined) param = null;
       if (action === 'previaAntecipacaoWeb') param = prepararMutacaoGestor(action,param);
       if (tentativas === undefined) tentativas = 3;
-      var LEITURAS = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'previaRestauracaoBackupWeb', 'obterBackupAnteriorWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb', 'previaPagamentoFaturaWeb', 'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb', 'previaRecuperacaoOperacaoWeb', 'previaRachadinhaWeb'];
+      var LEITURAS = ['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'previaRestauracaoBackupWeb', 'obterBackupAnteriorWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb', 'previaPagamentoFaturaWeb', 'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb', 'previaRecuperacaoOperacaoWeb', 'previaRachadinhaWeb'];
       var ehLeitura = LEITURAS.indexOf(action) >= 0;
       tentativas = ehLeitura ? Math.max(1, Math.min(2, Number(tentativas) || 2)) : 1;
       const controleCancelamento = action === 'cancelarOperacaoWeb' || action === 'concluirRecuperacaoOperacaoWeb';
@@ -7329,7 +7329,7 @@ function calcularDivisaoContaGestor(dados) {
 let painelAtividadeGestor = 'pendentes', paginaAtividadeGestor = [], offsetAtividadeGestor = 0;
 let requisicaoAtividadeGestor = 0, carregandoAtividadeGestor = false;
 let faturaConferidaGestor = null, requisicaoPagamentoGestor = 0, pagamentoFaturaEmCursoGestor = false;
-const leiturasAtividadeGestor = new Set(['prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'previaRestauracaoBackupWeb', 'obterBackupAnteriorWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb', 'previaPagamentoFaturaWeb', 'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb', 'previaRecuperacaoOperacaoWeb', 'previaRachadinhaWeb']);
+const leiturasAtividadeGestor = new Set(['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'exportarBackupDadosWeb', 'previaRestauracaoBackupWeb', 'obterBackupAnteriorWeb', 'obterAtividadeWeb', 'obterFaturaPagamentoWeb', 'previaPagamentoFaturaWeb', 'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb', 'previaRecuperacaoOperacaoWeb', 'previaRachadinhaWeb']);
 
 function elementoAtividadeGestor(tag, texto, classe) {
   const el = document.createElement(tag); if (texto != null) el.textContent = String(texto); if (classe) el.className = classe; return el;
@@ -8064,7 +8064,7 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const leituras=['prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<9){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<9)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
+window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<10){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<10)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -8223,6 +8223,7 @@ const leiturasDesempenhoGestor = typeof leiturasAtividadeGestor !== 'undefined'
   : new Set(['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb']);
 // Estas ações podem mudar o estado financeiro mesmo quando o controle de
 // sincronização permite executá-las durante uma recuperação.
+['ativarProtecaoAutomaticaWeb','executarBackupProtegidoWeb','executarManutencaoProtegidaWeb'].forEach(a=>leiturasDesempenhoGestor.delete(a));
 leiturasDesempenhoGestor.delete('cancelarOperacaoWeb');
 leiturasDesempenhoGestor.delete('concluirRecuperacaoOperacaoWeb');
 const apiAntesCoordenacaoDesempenhoGestor = window.apiCall;
@@ -8410,8 +8411,9 @@ async function hashTextoRestauracaoGestor(texto) {
 }
 
 function compactarBackupRestauracaoGestor(original) {
-  if (!original || original.formato!=='gestor-financeiro-backup-v1' || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
-  return {formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
+  if (!original || !['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2'].includes(original.formato) || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
+  const resultado={formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
+  if(original.formato==='gestor-financeiro-backup-v2'){resultado.arquivosAnuais=original.arquivosAnuais;resultado.hashFinanceiro=original.hashFinanceiro;}return resultado;
 }
 
 function mensagemErroRestauracaoGestor(erro) {return erro?.message || 'Não foi possível conferir a restauração. Preserve o arquivo e tente a conferência novamente.';}
@@ -8571,6 +8573,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(ultimaPrevia===estado.resumo)return;ultimaPrevia=estado.resumo;previa.replaceChildren();confirmar.value='';executar.disabled=true;
     if(!estado.resumo)return;
     const r=estado.resumo;previa.append(elemento('p','Destino: '+r.planilha+' · Backup: '+dataLegivelBackupGestor(r.geradoEm)+' · '+estado.nome,'text-xs font-bold text-white'));
+    if(r.arquivosAtuais||r.arquivosAnuais?.length){
+      previa.append(elemento('p','Arquivos anuais: '+(r.arquivosAtuais||0)+' atuais → '+(r.arquivosAnuais?.length||0)+' no backup. O catálogo atual será substituído; cópias anteriores do Drive permanecerão guardadas.','text-xs font-bold text-amber-200'));
+      for(const a of r.arquivosAnuais||[])previa.append(elemento('p','Ano '+a.ano+': '+a.resumo.quantidade+' registro(s), '+formatBRL(a.resumo.pessoalCentavos/100)+' pessoais. O conteúdo está dentro deste JSON.','text-xs text-slate-200'));
+    }
     if(r.origem && r.origem!==r.planilha)previa.append(elemento('p','A origem “'+r.origem+'” é diferente do destino. Confira se esta é a planilha que deseja substituir.','text-xs text-amber-200'));
     for(const aviso of r.avisos || [])previa.append(elemento('p',aviso,'text-xs text-amber-200'));
     for(const aba of r.abas || []) {
@@ -8669,6 +8675,88 @@ document.addEventListener('DOMContentLoaded',()=>{
   atualizarBotaoTopoGestor();
 });
 // FIM INTERFACE NAVEGACAO GERADA
+// INICIO INTERFACE PROTECAO GERADA
+// Interface da proteção de longo prazo; não instala rotinas sem ação explícita.
+let arquivosAnuaisUIProtecaoGestor=[],emprestimosArquivoUIProtecaoGestor=[],chaveEmprestimosArquivoUIProtecaoGestor='',pedidoEmprestimosArquivoUIProtecaoGestor=null,geracaoArquivosUIProtecaoGestor=0;
+function itensEmprestimosConsultaProtecaoGestor(){
+  const ativos=emprestimosGlobal.itens||[],status=document.getElementById('selFiltroStatusEmp')?.value;
+  return status==='A Receber'?ativos:ativos.concat(emprestimosArquivoUIProtecaoGestor);
+}
+function restaurarFiltrosIniciaisEmpGestor(){
+  for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','inpBuscaEmp']){const e=document.getElementById(id);if(e)e.value='';}
+  const status=document.getElementById('selFiltroStatusEmp');if(status)status.value='A Receber';renderizarPainelEmprestimos();
+}
+function filtrosIniciaisEmpGestor(){return ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','inpBuscaEmp'].every(id=>!document.getElementById(id)?.value)&&document.getElementById('selFiltroStatusEmp')?.value==='A Receber';}
+function atualizarAtalhoFiltrosProtecaoGestor(){
+  const box=document.getElementById('listaResumoPessoasEmp');if(!box)return;
+  let b=document.getElementById('btnRestaurarFiltrosEmpGestor');if(!b){b=document.createElement('button');b.id='btnRestaurarFiltrosEmpGestor';b.type='button';b.textContent='Voltar ao padrão';b.className='mb-3 rounded-lg border border-slate-500 px-3 py-2 text-xs font-bold text-slate-200';b.setAttribute('aria-label','Voltar aos filtros iniciais: todos os meses a receber');b.onclick=restaurarFiltrosIniciaisEmpGestor;box.before(b);}b.hidden=filtrosIniciaisEmpGestor();
+}
+function solicitarEmprestimosArquivoProtecaoGestor(){
+  const view=document.getElementById('subview-emprestimos'),status=document.getElementById('selFiltroStatusEmp')?.value;
+  if(!arquivosAnuaisUIProtecaoGestor.length||status==='A Receber'||document.getElementById('painelConsultaEmprestimo')?.hidden||view?.closest('.hidden,[hidden],[aria-hidden="true"]'))return;
+  const mes=document.getElementById('selFiltroMesEmp')?.value,ano=mes?Number(mes.split('/')[1]):null;
+  const chave=JSON.stringify([arquivosAnuaisUIProtecaoGestor,ano]);if(chave===chaveEmprestimosArquivoUIProtecaoGestor||pedidoEmprestimosArquivoUIProtecaoGestor?.chave===chave)return;
+  const pedido={chave,geracao:geracaoArquivosUIProtecaoGestor};pedidoEmprestimosArquivoUIProtecaoGestor=pedido;
+  const box=document.getElementById('listaResumoPessoasEmp');let info=document.getElementById('estadoArquivosEmpGestor');if(!info){info=document.createElement('p');info.id='estadoArquivosEmpGestor';info.className='mb-3 text-xs text-sky-200';info.setAttribute('role','status');box?.before(info);}info.textContent='Consultando empréstimos recebidos nos arquivos anuais…';
+  apiCall('obterEmprestimosArquivadosWeb',{ano},1).then(res=>{
+    if(pedidoEmprestimosArquivoUIProtecaoGestor!==pedido||pedido.geracao!==geracaoArquivosUIProtecaoGestor)return;
+    if(!Array.isArray(res.itens)||res.itens.some(i=>!i.arquivado||i.status!=='Recebido'||!i.registroId))throw Error('A consulta anual não retornou os dados esperados.');
+    emprestimosArquivoUIProtecaoGestor=res.itens;chaveEmprestimosArquivoUIProtecaoGestor=chave;pedidoEmprestimosArquivoUIProtecaoGestor=null;info.textContent='';renderizarPainelEmprestimos();
+  }).catch(e=>{if(pedidoEmprestimosArquivoUIProtecaoGestor===pedido){pedidoEmprestimosArquivoUIProtecaoGestor=null;info.textContent='Os empréstimos antigos não foram carregados: '+e.message;}});
+}
+const renderEmpAntesProtecaoGestor=window.renderizarPainelEmprestimos;
+window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);atualizarAtalhoFiltrosProtecaoGestor();solicitarEmprestimosArquivoProtecaoGestor();return r;};
+const renderDadosAntesProtecaoGestor=window.renderizarDados;
+window.renderizarDados=function(dados){
+  const novo=Array.isArray(dados.arquivosAnuais)?dados.arquivosAnuais:[];
+  if(JSON.stringify(novo)!==JSON.stringify(arquivosAnuaisUIProtecaoGestor)){geracaoArquivosUIProtecaoGestor++;emprestimosArquivoUIProtecaoGestor=[];chaveEmprestimosArquivoUIProtecaoGestor='';pedidoEmprestimosArquivoUIProtecaoGestor=null;}
+  arquivosAnuaisUIProtecaoGestor=novo;return renderDadosAntesProtecaoGestor(dados);
+};
+const setAbaAntesArquivosProtecaoGestor=window.setAba;
+window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length)chamarFiltroBackend(false,false);return r;};
+function linkSeguroProtecaoGestor(url){return /^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(String(url||''))?url:'';}
+function abaCompletaCSVProtecaoGestor(dados,nome){
+  const origem=dados.abas.find(a=>a.nome===nome);if(!origem)return null;
+  const antigas=(dados.arquivosAnuais||[]).flatMap(d=>(d.abas.find(a=>a.nome===nome)?.valores||[]).slice(1));
+  return {...origem,exibidos:(origem.exibidos||origem.valores).concat(antigas.map(r=>r.map((v,i)=>[4,7,17].includes(i)&&typeof v==='number'?formatBRL(v):String(v??''))))};
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const modal=document.getElementById('modalExportarDados');if(!modal?.firstElementChild)return;
+  const criar=(tag,texto='',classe='')=>{const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;};
+  const botao=texto=>{const b=criar('button',texto,'rounded-xl border border-slate-600 px-3 py-3 text-xs font-bold text-slate-200 disabled:opacity-50');b.type='button';return b;};
+  const painel=criar('section','','rounded-xl border border-slate-700 p-3 space-y-3');painel.id='painelProtecaoLongoPrazoGestor';painel.append(criar('h4','Backups automáticos e arquivos anuais','text-sm font-bold text-white'));
+  const status=criar('p','Consulte a situação das cópias no Google Drive.','text-xs text-slate-200');status.setAttribute('role','status');painel.append(status);
+  const acoes=criar('div','','grid grid-cols-1 sm:grid-cols-2 gap-2'),consultar=botao('Atualizar situação'),ativar=botao('Ativar proteção automática'),backup=botao('Fazer backup no Drive agora'),manutencao=botao('Conferir manutenção');acoes.append(consultar,ativar,backup,manutencao);painel.append(acoes);backup.disabled=true;manutencao.disabled=true;
+  const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A rotina roda na sua conta Google, com o app fechado: faz uma cópia por mês e verifica o arquivo anual. Compras com saldo, empréstimos em aberto e fixos ficam na principal. Arquivos anuais são somente consulta. Nenhuma cópia é apagada automaticamente.','mt-2'));
+  ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
+  painel.append(lista,ajuda);modal.firstElementChild.append(painel);
+  let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
+  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<10)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
+  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;}
+  function exibir(s){
+    ultimoStatus=s;lista.replaceChildren();
+    status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
+    const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
+    for(const arquivo of s.arquivos||[]){const link=linkSeguroProtecaoGestor(arquivo.url);if(!link)continue;const a=criar('a','Arquivo '+arquivo.ano+' · '+arquivo.quantidade+' registro(s) · '+arquivo.pessoal+' pessoais','block text-sky-200 underline');a.href=link;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
+    controles();
+  }
+  async function acao(executar){if(ocupado)return;ocupado=true;const g=++geracao;controles();try{disponibilidade();await executar();if(g===geracao)exibir(await apiCall('obterStatusProtecaoWeb',null,1));}catch(e){status.textContent=e.message||'Não foi possível confirmar a operação. Confira a situação antes de repetir.';}finally{if(g===geracao){ocupado=false;controles();}}}
+  consultar.onclick=()=>acao(async()=>{});
+  ativar.onclick=()=>mostrarConfirmacao('Ativar proteção automática?','Será instalada uma rotina na sua conta Google para backups mensais e arquivos anuais. A pasta deve ser particular. Haverá backup e conferência antes de retirar registros encerrados da principal.',()=>acao(async()=>{await apiCall('ativarProtecaoAutomaticaWeb',{},1);}),false,'Ativar rotina','neutral');
+  backup.onclick=()=>acao(async()=>{
+    if(!pedidoBackup)pedidoBackup=novoRequestIdGestor();status.textContent='Gerando e conferindo a cópia no Drive…';
+    await apiCall('executarBackupProtegidoWeb',{requestId:pedidoBackup},1);pedidoBackup='';
+  });
+  manutencao.onclick=async()=>{
+    let p;await acao(async()=>{status.textContent='Conferindo o que pode ser arquivado…';p=await apiCall('previaManutencaoProtegidaWeb',null,1);});if(!p)return;
+    mostrarConfirmacao('Conferir manutenção segura',p.quantidade+' registro(s) encerrados podem ir para arquivos anuais'+(p.anos?.length?' de '+p.anos.join(', '):'')+'. '+p.regra+' Será criada uma cópia antes de alterar a principal.',()=>acao(async()=>{status.textContent='Guardando a cópia e conferindo os arquivos…';await apiCall('executarManutencaoProtegidaWeb',{confirmacao:'ARQUIVAR',assinatura:p.assinatura},1);invalidarLeiturasDesempenhoGestor();await carregarDados();}),false,'Arquivar com segurança','neutral');
+  };
+  // Consulta explícita: desabilitar controles durante focusin pode consumir
+  // o primeiro clique em Ativar ou impedir a navegação pelo teclado.
+  const abrirAntesProtecao=window.abrirExportacaoDados;
+  window.abrirExportacaoDados=function(...args){const r=abrirAntesProtecao(...args);consultar.onclick();return r;};
+});
+// FIM INTERFACE PROTECAO GERADA
 </script>
 </body>
 </html>

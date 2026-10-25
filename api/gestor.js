@@ -1,4 +1,5 @@
 const ACAO_PERMITIDA = new Set([
+  'ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb',
   'previaRecuperacaoOperacaoWeb', 'concluirRecuperacaoOperacaoWeb', 'previaRachadinhaWeb', 'registrarRachadinhaWeb',
   'cancelarOperacaoWeb', 'previaPagamentoFaturaWeb',
   'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb',
