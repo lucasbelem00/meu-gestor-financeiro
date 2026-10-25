@@ -285,7 +285,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
   if (!lancSheet || lancSheet.getLastRow() < 2) return;
   const ultimaLinha = lancSheet.getLastRow();
   const data = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getValues();
-  const displayData = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getDisplayValues();
+  const displayData = lancSheet.getRange(2, 1, ultimaLinha - 1, COLUNAS_GESTOR_).getDisplayValues().map(function(d,i) { return valoresExibidosRegistroGestor_(data[i],d); });
 
   const assinaturas = Object.create(null), linhasPorSerie = Object.create(null), encerradas = new Set(), invalidas = new Set();
   data.forEach(function (r, i) {
@@ -408,7 +408,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
   let linhas = [];
 
   for (let i = 0; i < numRows; i++) {
-    const d = dispVals[i];
+    const d = valoresExibidosRegistroGestor_(rawVals[i], dispVals[i]);
     const r = rawVals[i];
     const desc = String(d[1] || '').trim();
     const vazia = !desc;
@@ -587,7 +587,7 @@ function organizarAbaEmprestimos(empSheet) {
 
   let linhas = [];
   for (let i = 0; i < numRows; i++) {
-    const d = dispVals[i];
+    const d = valoresExibidosRegistroGestor_(rawVals[i], dispVals[i]);
     const r = rawVals[i];
     const pessoa = String(d[1] || '').trim();
     const desc = String(d[2] || '').trim();
@@ -1400,7 +1400,7 @@ function getDadosCompletos() {
       const seriesInvalidas = new Set(lancData.filter(function(r) { return limparApostrofo(r[6])==='∞/∞' && serieRecorrenteGestor_(r).invalida; }).map(function(r) { return String(r[12] || (normalizarTexto(r[1])+'_'+normalizarTexto(r[2]))); }));
 
       lancData.forEach((r, idx) => {
-        const dVals = dispLancData[idx];
+        const dVals = valoresExibidosRegistroGestor_(r, dispLancData[idx]);
         const descStr = String(dVals[1] || '').trim();
         if (!descStr) return;
 
@@ -1554,7 +1554,9 @@ function getDadosCompletos() {
             const isFuturo = (infoFat.a > anoAt) || (infoFat.a === anoAt && infoFat.m > mesAt);
 
             if (!isFuturo && mesFat !== mesAtualStr && !pago && !isPix) vencidoPorForma[chaveForma] = (vencidoPorForma[chaveForma] || 0) + saldoBanco;
-            if (isFuturo && !pago && parcela !== '∞/∞' && !isPix) {
+            // Pix dividido/agendado também tem valores futuros a desembolsar.
+            // Para cartões, a projeção dos fixos continua separada do parcelado.
+            if (isFuturo && !pago && (parcela !== '∞/∞' || isPix)) {
               futuroParcelasPorForma[chaveForma] = (futuroParcelasPorForma[chaveForma] || 0) + saldoBanco;
             }
 
@@ -1632,7 +1634,7 @@ function getDadosCompletos() {
       const dispEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getDisplayValues();
 
       rawEmp.forEach((r, idx) => {
-        const d = dispEmp[idx];
+        const d = valoresExibidosRegistroGestor_(r, dispEmp[idx]);
         const pessoa = String(d[1] || '').trim();
         const desc = String(d[2] || '').trim();
         if (!pessoa && !desc) return;
@@ -1785,11 +1787,14 @@ function getDadosCompletos() {
       f.terceirosMesRaw = tercTotalMes;
       f.terceirosMes = formatBRL(tercTotalMes);
       f.terceirosFuturoRaw = tercFuturo;
+      f.futuroPessoalRaw = arred2(futuroParcPessoal);
       f.totalBancoMes = formatBRL(gastoMesPessoal + tercTotalMes);
 
       if (isPagamentoAVista) {
         f.utilizado = formatBRL(gastoMesPessoal);
-        f.totalFuturo = 'R$ 0,00';
+        // Valores a pagar por Pix são compromissos próprios, sem consumir
+        // limite de crédito nem misturar o reembolso que terceiros devem.
+        f.totalFuturo = formatBRL(futuroParcPessoal);
         f.disponivelRaw = limRaw > 0 ? (limRaw - gastoMesPessoal) : 0;
         if (limRaw > 0) {
           f.pctUso = Math.round((gastoMesPessoal / limRaw) * 100) + '%';
@@ -4414,6 +4419,14 @@ function formatarCelulaRegistroGestor_(valor, formato) {
   if (!Number.isFinite(valor.getTime())) throw new Error('Há uma data inválida no registro. Confira a planilha antes de registrar o pagamento.');
   // Formata somente a leitura; o conteúdo original permanece no hash e no diário.
   return Utilities.formatDate(valor, getTimezone(), formato);
+}
+
+function valoresExibidosRegistroGestor_(raw, exibidos) {
+  const valores = exibidos.slice();
+  [[0,'dd/MM/yyyy'],[6,'d/M'],[8,'MM/yyyy']].forEach(function(campo) {
+    if (raw[campo[0]] instanceof Date) valores[campo[0]] = formatarCelulaRegistroGestor_(raw[campo[0]], campo[1]);
+  });
+  return valores;
 }
 
 function resumirRegistroAtividade_(r, aba) {

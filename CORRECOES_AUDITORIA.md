@@ -1,5 +1,7 @@
 # Correções da auditoria
 
+Registro histórico: CSS compilado, restauração ampliada e outras melhorias abaixo chamadas de futuras foram implementadas em pacotes posteriores. Consulte [o guia atual](GUIA_MELHORIAS_E_PENDENCIAS.md) para o estado local mais recente.
+
 ## O que mudou
 
 - Vencer uma fatura gera pendência; não confirma mais o pagamento automaticamente.

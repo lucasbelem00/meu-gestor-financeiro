@@ -1,5 +1,9 @@
 # Checklist do pacote de robustez
 
+**Guia atual para não perder melhorias antigas:** [GUIA_MELHORIAS_E_PENDENCIAS.md](GUIA_MELHORIAS_E_PENDENCIAS.md) reúne recursos já implementados e sugestões ainda úteis. A etapa mais recente leva a edição de categorias até o formulário e retira os oito anexos do acompanhamento do Git, mantendo os arquivos locais. 356 testes aprovados. Cache v37; histórico antigo do Git preservado.
+
+**Rotina e usabilidade — 25/10/2026:** topo nas telas longas, seleção de forma azul, termômetro só com consumo, Pix futuro, rascunhos, consulta de empréstimos em todos os meses e alinhamentos. [Checklist e auditoria](AJUSTES_ROTINA_USABILIDADE_20261025.md), com 349 testes aprovados. Cache desta etapa: v36; protocolo 9. Implementação local, publicação pendente.
+
 **Polimento posterior concluído localmente:** categorias, escopo dos indicadores, Histórico no topo e seleção de metas. [Resumo e auditoria](AJUSTES_CATEGORIAS_ROLAGEM_METAS.md), com 328 testes aprovados. O cache atual é v35; as versões e contagens dos relatórios anteriores registram suas respectivas etapas.
 
 **Atualização posterior:** a restauração completa e a reorganização maior de desempenho, anteriormente adiadas, foram implementadas localmente. Veja [PACOTE_RESTAURACAO_DESEMPENHO.md](PACOTE_RESTAURACAO_DESEMPENHO.md), com 323 testes aprovados, achados corrigidos e instruções de instalação. As referências a adiamento nos relatórios antigos registram a decisão daquela etapa.

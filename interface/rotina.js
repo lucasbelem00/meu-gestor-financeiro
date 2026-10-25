@@ -20,9 +20,17 @@ function lerRascunhoRotinaGestor(tipo){
   try{const texto=sessionStorage.getItem(tipo==='novo'?'rascunhoLancamento':'rascunhoEmprestimo');return texto && !rascunhoVazioRotinaGestor(tipo,JSON.parse(texto))?texto:null;}catch(_){return null;}
 }
 function rascunhoRachaVazioRotinaGestor(dados){
-  if(!Array.isArray(dados?.itens) || dados.itens.length || dados.envio || dados.registroId)return false;
+  if(!Array.isArray(dados?.itens) || dados.itens.length || dados.envio || dados.registroId || dados.partePreparada || dados.editando)return false;
   const c=dados.campos || {},texto=['rachaLocal','inpNovoNomeRacha','inpItemDescRacha'].some(id=>String(c[id] || '').trim()),valor=['rachaValorTotal','rachaValorBebida','rachaDesconto','rachaAcrescimo','inpItemValRacha'].some(id=>Number(String(c[id] || '').replace(/[^\d]/g,''))>0);
-  return !texto&&!valor&&!c.rachaTaxa10&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&(dados.pessoas || []).length===2&&dados.pessoas.every(n=>/^(eu|amigo\s*2)$/i.test(n))&&!Object.keys(dados.ajustes || {}).length;
+  const pessoas=dados.pessoas || [],nomesPendentes=Array.isArray(dados.nomesEmEdicao)&&dados.nomesEmEdicao.some((nome,i)=>String(nome)!==String(pessoas[i]));
+  // Normalizar a pessoa Eu cria objetos vazios para cada participante. Isso
+  // não é edição; cotas e pagamentos só contam quando saem dos padrões.
+  const ajustesReais=Object.entries(dados.ajustes || {}).some(([nome,a])=>!pessoas.includes(nome)||!a||typeof a!=='object'||Object.entries(a).some(([campo,v])=>{
+    if(campo==='peso'||campo==='pesoTexto')return Number(String(v).replace(',','.'))!==1;
+    if(campo==='pagoCentavos')return Number(v)!==0;
+    return true;
+  }));
+  return !texto&&!valor&&!nomesPendentes&&!ajustesReais&&!c.rachaTaxa10&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&pessoas.length===2&&/^eu$/i.test(pessoas[0])&&/^amigo\s*2$/i.test(pessoas[1]);
 }
 function rascunhoFormularioVazioRotinaGestor(tipo,dados){
   if(!['novo','emp'].includes(tipo))return false;
@@ -61,6 +69,7 @@ restaurarRascunhosCompletosGestor=function(){
 function limparCopiaRascunhoRotinaGestor(emp){
   const tipo=emp?'emp':'novo';try{localStorage.removeItem(chaveRascunhoRotinaGestor(tipo));sessionStorage.removeItem('gestorRascunhoAnterior:'+tipo);sessionStorage.removeItem(emp?'rascunhoEmprestimo':'rascunhoLancamento');}catch(_){}
   for(const e of document.getElementById(emp?'formEmprestimo':'formLancamento')?.elements || [])if(e.dataset){delete e.dataset.escolhaManual;delete e.dataset.valorSugerido;}
+  renderizarRecuperacaoRascunhosGestor();
 }
 for(const [nome,emp]of [['limparFormularioNovoGasto',false],['limparFormularioEmprestimo',true]]){
   const original=window[nome];window[nome]=function(){if(bloqueioFormularioRotinaGestor(emp))return original();original();limparCopiaRascunhoRotinaGestor(emp);};
@@ -72,13 +81,16 @@ function pedirLimpezaFormularioGestor(emp){
   if(!haRascunhoFormularioGestor(emp))return executar();
   mostrarConfirmacao('Limpar o formulário?','Os campos ainda não enviados serão apagados. Seus registros salvos permanecem guardados.',()=>{if(assinaturaFormularioRotinaGestor(form)!==antes){mostrarAviso('Os campos mudaram','Confira o formulário antes de limpar.');return;}executar();renderizarRecuperacaoRascunhosGestor();},false,'Limpar campos','neutral');
 }
+function entradasRecuperaveisRascunhoRotinaGestor(tipo){
+  return lerEntradasLocaisGestor('gestorRascunhoV3:'+tipo+':').filter(e=>e.chave!==chaveRascunhoRotinaGestor(tipo)&&(!e.valor.tipo||e.valor.tipo===tipo)&&!rascunhoVazioRotinaGestor(tipo,e.valor.dados)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm);
+}
 function renderizarRecuperacaoRascunhosGestor(){
   for(const tipo of ['novo','emp','racha']){
     const destino=document.getElementById(tipo==='novo'?'formLancamento':tipo==='emp'?'formEmprestimo':'subview-rachadinha');if(!destino)continue;
     let painel=document.getElementById('recuperarRascunhos-'+tipo);if(!painel){painel=document.createElement('details');painel.id='recuperarRascunhos-'+tipo;painel.className='rounded-xl border border-slate-600 p-3 text-xs text-slate-200 mb-3';destino.prepend(painel);}
-    const entradas=lerEntradasLocaisGestor('gestorRascunhoV3:'+tipo+':').filter(e=>e.chave!==chaveRascunhoRotinaGestor(tipo) && !rascunhoVazioRotinaGestor(tipo,e.valor.dados)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm);
+    const entradas=entradasRecuperaveisRascunhoRotinaGestor(tipo);
     painel.hidden=!entradas.length;painel.replaceChildren();if(!entradas.length)continue;
-    const titulo=document.createElement('summary');titulo.textContent='Rascunhos recuperáveis ('+entradas.length+')';titulo.className='cursor-pointer py-1 font-bold';painel.append(titulo);
+    const titulo=document.createElement('summary');titulo.textContent='Rascunhos de '+({novo:'novo lançamento',emp:'empréstimos',racha:'rachadinha'}[tipo])+' ('+entradas.length+')';titulo.className='cursor-pointer py-1 font-bold';painel.append(titulo);
     entradas.forEach(({chave,valor})=>{const linha=document.createElement('div');linha.className='flex flex-wrap items-center gap-2 mt-2';const texto=document.createElement('span');texto.className='flex-1 min-w-0 break-words';texto.textContent=(valor.dados?.desc||valor.dados?.pessoa||valor.dados?.campos?.rachaLocal||'Rascunho')+' · '+new Date(valor.atualizadoEm).toLocaleString('pt-BR');linha.append(texto);
       const recuperar=document.createElement('button');recuperar.type='button';recuperar.className='rounded-lg border border-sky-400 px-3 py-2 text-sky-200';recuperar.textContent='Recuperar';recuperar.onclick=()=>recuperarRascunhoRotinaGestor(tipo,chave,valor);linha.append(recuperar);
       const descartar=document.createElement('button');descartar.type='button';descartar.className='rounded-lg border border-slate-600 px-3 py-2';descartar.textContent='Descartar';descartar.onclick=()=>mostrarConfirmacao('Descartar esta cópia?','Somente este rascunho será removido. Envios e registros financeiros continuam protegidos.',()=>{if(JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('A cópia mudou','Confira a versão atual antes de descartar.');return;}if(valor.dados?.envio?.estado==='pendente' || valor.dados?.registroId && localStorage.getItem('gestorMutacaoV3:'+valor.dados.registroId)){mostrarAviso('Confira o envio','Consulte Atividade antes de descartar uma divisão com envio.');return;}localStorage.removeItem(chave);renderizarRecuperacaoRascunhosGestor();},false,'Descartar cópia','neutral');linha.append(descartar);painel.append(linha);
@@ -94,7 +106,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
   const form=document.getElementById(emp?'formEmprestimo':'formLancamento'),antes=assinaturaFormularioRotinaGestor(form);
   const aplicar=()=>{if(bloqueioFormularioRotinaGestor(emp)||assinaturaFormularioRotinaGestor(form)!==antes||JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('Os dados mudaram','Confira o formulário e a cópia novamente.');return;}
     if(haRascunhoFormularioGestor(emp)){emp?salvarRascunhoEmp():salvarRascunho();const copia=lerJSONLocalGestor(chaveRascunhoRotinaGestor(tipo),null);if(!copia){mostrarAviso('Rascunho atual não guardado','Libere espaço antes de substituir os campos.');return;}try{gravarArmazenamentoGestor('gestorRascunhoV3:'+tipo+':'+novoRequestIdGestor(),JSON.stringify(copia));}catch(e){mostrarAviso('Rascunho preservado',e.message);return;}}
-    Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo)return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
+    Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
@@ -150,7 +162,7 @@ extrairValorPixAoColar=function(event,idValor,idDesc){
   if(opcoes.length>1)escolherValorColadoRotinaGestor(opcoes,aplicar);else mostrarConfirmacao('Substituir o valor preenchido?','Usar '+formatBRL(opcoes[0].valor)+' em vez de '+formatBRL(lerValorMoeda(idValor))+'?',()=>aplicar(opcoes[0].valor),false,'Usar valor colado','neutral');
 };
 const painelEmpAnteriorRotinaGestor=renderizarPainelEmprestimos;
-renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGestor(...args),box=document.getElementById('listaResumoPessoasEmp');if(!box)return r;for(const [id,texto]of [['selFiltroMesEmp','Todos'],['selFiltroPessoaEmp','Todas'],['selFiltroFormaEmp','Todas']]){const op=Array.from(document.getElementById(id)?.options || []).find(o=>o.value==='');if(op)op.textContent=texto;}const status=document.getElementById('selFiltroStatusEmp').value;
+renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGestor(...args),box=document.getElementById('listaResumoPessoasEmp');if(!box)return r;for(const [id,texto]of [['selFiltroMesEmp','Todos os meses'],['selFiltroPessoaEmp','Todas as pessoas'],['selFiltroFormaEmp','Todas as formas']]){const op=Array.from(document.getElementById(id)?.options || []).find(o=>o.value==='');if(op)op.textContent=texto;}const status=document.getElementById('selFiltroStatusEmp').value;
   if(box.textContent.includes('Nenhum registro')){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor],['Limpar filtros',limparFiltrosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
   let resumo=document.getElementById('resumoFiltrosEmpRotina');if(!resumo){resumo=document.createElement('p');resumo.id='resumoFiltrosEmpRotina';resumo.className='text-xs text-slate-200 break-words';box.before(resumo);}resumo.textContent=['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'].map(id=>document.getElementById(id)?.value || '').filter(Boolean).join(' · ') || 'Todos os empréstimos';return r;};
 const dadosAntesRotinaGestor=renderizarDados;
@@ -163,15 +175,29 @@ function alternarModoEmprestimosGestor(modo,rolar=false){
   for(const [id,ativo]of [['btnConsultarEmprestimos',!novo],['btnNovoEmprestimo',novo]]){const b=document.getElementById(id);if(b){b.setAttribute('aria-pressed',String(ativo));b.classList.toggle('bg-amber-500/20',ativo);b.classList.toggle('border-amber-400',ativo);}}
   if(rolar)(novo?cadastro:consulta)?.scrollIntoView({behavior:'smooth',block:'start'});
 }
+function prepararFiltrosEmpRotinaGestor(){
+  const busca=document.getElementById('inpBuscaEmp'),grade=busca?.closest?.('label')?.parentElement || busca?.parentElement,cabecalho=grade?.parentElement;
+  if(grade){grade.classList.add('items-end','min-w-0');cabecalho?.classList.remove('sm:flex-row','sm:items-center');}
+  for(const [id,texto]of [['selFiltroMesEmp','Mês'],['selFiltroPessoaEmp','Pessoa'],['selFiltroStatusEmp','Situação'],['selFiltroFormaEmp','Forma'],['inpBuscaEmp','Buscar']]){
+    const campo=document.getElementById(id);if(!campo)continue;
+    let l=campo.closest?.('label');if(!l){l=document.createElement('label');l.className='block min-w-0 text-[11px] text-slate-300';l.textContent=texto;campo.before(l);l.append(campo);}
+    campo.classList.add('w-full','mt-1','h-10');
+    if(id==='inpBuscaEmp'){campo.classList.remove('col-span-2','sm:col-span-1');l.classList.add('col-span-2','sm:col-span-3','lg:col-span-1');}
+  }
+}
+function organizarPagamentosPainelRotinaGestor(){
+  const pagamentos=document.querySelector('[aria-label="Pagamentos e recebimentos"]'),horizonte=document.getElementById('faturas-header')?.closest('.card-glass'),grade=horizonte?.parentElement;
+  if(pagamentos&&grade)grade.before(pagamentos);
+}
 document.addEventListener('DOMContentLoaded',()=>{
-  for(const [id,texto]of [['selFiltroMesEmp','Mês'],['selFiltroPessoaEmp','Pessoa'],['selFiltroStatusEmp','Situação'],['selFiltroFormaEmp','Forma']]){const campo=document.getElementById(id);if(!campo)continue;const l=document.createElement('label');l.className='block min-w-0 text-[11px] text-slate-300';l.textContent=texto;campo.before(l);l.append(campo);campo.classList.add('w-full','mt-1');}
+  prepararFiltrosEmpRotinaGestor();
   document.getElementById('selFiltroRelMes')?.setAttribute('aria-label','Mês da fatura');document.getElementById('selFiltroRelAno')?.setAttribute('aria-label','Ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
   document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(e.target.id==='selForma')delete document.getElementById('inpMesFat').dataset.escolhaManual;}},true);
   document.addEventListener('input',e=>{if(e.target.id==='inpMesFat')e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
   const painel=document.getElementById('painelDividirEmpCampos');if(painel){const resumo=document.createElement('p');resumo.id='previaRecebimentoRotina';resumo.className='text-xs text-amber-100 leading-relaxed';resumo.setAttribute('role','status');painel.prepend(resumo);document.getElementById('inpDividirEmpValor').setAttribute('aria-label','Valor recebido agora');}
   const form=document.getElementById('formEmprestimo');if(form){const nav=document.createElement('div');nav.className='flex gap-2 mb-3';nav.setAttribute('role','group');nav.setAttribute('aria-label','Modo de empréstimos');const consultar=document.createElement('button'),novo=document.createElement('button');for(const b of [consultar,novo]){b.type='button';b.className='flex-1 rounded-xl border border-amber-500/40 px-3 py-3 text-sm font-bold text-amber-200';nav.append(b);}consultar.id='btnConsultarEmprestimos';novo.id='btnNovoEmprestimo';consultar.textContent='Consultar empréstimos';novo.textContent='Novo empréstimo';consultar.onclick=()=>alternarModoEmprestimosGestor('consulta');novo.onclick=()=>alternarModoEmprestimosGestor('novo');form.parentElement.before(nav);alternarModoEmprestimosGestor('consulta');}
-  const pagamentos=document.querySelector('[aria-label="Pagamentos e recebimentos"]'),horizonte=document.getElementById('faturas-header')?.closest('.card-glass');if(pagamentos&&horizonte)horizonte.before(pagamentos);
+  organizarPagamentosPainelRotinaGestor();
   const explicacao=document.getElementById('horizonte-explicacao');if(explicacao){const d=document.createElement('details'),s=document.createElement('summary');d.className='text-xs text-slate-300 my-2';s.textContent='Entenda os valores';s.className='cursor-pointer py-2';explicacao.before(d);d.append(s,explicacao);const irma=d.nextElementSibling;if(irma?.tagName==='P')d.append(irma);}
   const detalheKpi=document.createElement('details'),tituloKpi=document.createElement('summary'),regraKpi=document.createElement('p');detalheKpi.className='text-xs text-slate-300 mb-2';tituloKpi.id='escopoKpiRotina';tituloKpi.className='cursor-pointer py-2';regraKpi.textContent='Em aberto e Pago: registros pessoais deste mês. Total do mês: registros pessoais deste período, incluindo os já pagos. Total registrado: todos os meses e anos, incluindo parcelas futuras já gravadas. Exclui empréstimos, cancelamentos e valores apenas previstos.';regraKpi.className='mt-2';detalheKpi.append(tituloKpi,regraKpi);const kpi=document.getElementById('kpi-aberto')?.closest('section');if(kpi)kpi.before(detalheKpi);
   const intervalo=document.createElement('p');intervalo.id='intervaloHorizonteRotina';intervalo.className='text-xs font-bold text-sky-200 mb-2';document.getElementById('faturas-header')?.closest('table')?.before(intervalo);

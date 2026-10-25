@@ -1,5 +1,7 @@
 # Categorias, indicadores, Histórico e filtros mensais
 
+Atualização posterior: o pedido de 25/10/2026 voltou a restringir o termômetro às categorias com gasto. As metas sem consumo permanecem cadastradas e disponíveis nos filtros. O botão de topo foi ampliado para as outras telas longas. Veja AJUSTES_ROTINA_USABILIDADE_20261025.md; as decisões abaixo registram a etapa anterior.
+
 Implementação local, posterior ao pacote de restauração e desempenho. As alterações anteriores foram preservadas. Não houve publicação nem acesso à planilha real.
 
 ## Pedidos concluídos

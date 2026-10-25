@@ -1,5 +1,7 @@
 # Varredura de funcionalidade e fragilidades — 18/10/2026
 
+Registro histórico: a paginação comum da Atividade no backend foi implementada depois desta análise. Consulte [o guia atual](GUIA_MELHORIAS_E_PENDENCIAS.md) para separar pendências reais de recomendações já atendidas.
+
 ## Correções aplicadas
 
 - Restauração valida notas, identidades, parcelas, limites dos cartões e metas antes de gravar. Abas opcionais ausentes no arquivo são preservadas, com aviso na prévia.

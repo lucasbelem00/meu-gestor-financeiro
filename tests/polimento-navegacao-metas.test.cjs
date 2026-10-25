@@ -26,9 +26,32 @@ function navegacao(){
   document:{getElementById:el,addEventListener:(n,f)=>eventos[n]=f},requestAnimationFrame:f=>frames.push(f),matchMedia:()=>({matches:true}),scrollTo:op=>{rolagens.push(op.top);c.scrollY=op.top;},setAba:aba=>{c.abaAtivaAtual=aba;},addEventListener:(n,f)=>eventos[n]=f,pxEl:el,renderTabelaLancamentos(){},temAlgumFiltroAtivo:()=>true,mostrarAviso(){}});c.window=c;vm.runInContext(nav,c);return {c,el,rolagens,frames,flush(){while(frames.length)frames.shift()();}};
 }
 test('trocar abas começa no topo e Voltar ao topo não altera filtros nem pede teclado',()=>{
- const a=navegacao();a.c.setAba('lancamentos');a.flush();assert.equal(a.c.scrollY,0);a.c.scrollY=1200;a.c.atualizarBotaoTopoHistoricoGestor();assert.equal(a.el('btnTopoHistoricoGestor').hidden,false);
- a.c.voltarAoTopoHistoricoGestor();assert.equal(a.c.scrollY,0);assert.equal(a.el('view-lancamentos').focado,true);assert.equal(a.el('inpBusca').focado,undefined);assert.equal(a.c.filtrosAtuais.ano,'2026');
- a.c.scrollY=900;a.c.setAba('dashboard');a.flush();assert.equal(a.el('btnTopoHistoricoGestor').hidden,true);assert.equal(a.c.scrollY,0);
+ const a=navegacao();a.c.setAba('lancamentos');a.flush();assert.equal(a.c.scrollY,0);a.c.scrollY=1200;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,false);
+ a.c.voltarAoTopoGestor();assert.equal(a.c.scrollY,0);assert.equal(a.el('view-lancamentos').focado,true);assert.equal(a.el('inpBusca').focado,undefined);assert.equal(a.c.filtrosAtuais.ano,'2026');
+ a.c.scrollY=900;a.c.setAba('dashboard');a.flush();assert.equal(a.el('btnVoltarTopoGestor').hidden,true);assert.equal(a.c.scrollY,0);
+});
+test('topo disponível nas telas longas e oculto no Novo; não altera ano ou filtros',()=>{
+ const a=navegacao();
+ for(const aba of ['relatorio','anual','ferramentas','dashboard','formas','categorias','assinaturas','atividade']){
+  a.c.setAba(aba);a.flush();a.c.scrollY=900;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,false,aba);
+  assert.equal(a.el('btnVoltarTopoGestor').attrs['aria-controls'],'view-'+aba);a.c.voltarAoTopoGestor();assert.equal(a.c.scrollY,0);assert.equal(a.el('view-'+aba).focado,true);
+ }
+ a.c.setAba('novo');a.flush();a.c.scrollY=900;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,true);assert.equal(a.c.filtrosAtuais.ano,'2026');
+ a.c.setAba('anual');a.flush();a.c.scrollY=525;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,false);a.c.scrollY=200;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,true);
+});
+test('cartão Pix exibe futuro só se há desembolso futuro, com rótulo separado de recebíveis',()=>{
+ const inicio=html.indexOf('    function renderListaFormas()'),fim=html.indexOf('\n    function ',inicio+20),s=html.slice(inicio,fim);let markup='';
+ const pix={nome:'Pix',tipo:'pix',utilizado:'R$ 20,00',totalFuturo:'R$ 90,00',futuroPessoalRaw:90};
+ const c=vm.createContext({formasGlobais:[pix],modoEdicaoFormas:false,tipoFormaPagamentoGestor:p=>p.tipo,escaparHTML:String,document:{getElementById:()=>({set innerHTML(v){markup=v;}})}});c.window=c;vm.runInContext(s,c);c.renderListaFormas();assert(markup.includes('A pagar nos próximos meses'));assert(markup.includes('R$ 90,00'));assert(markup.includes('não inclui valores a receber'));
+ pix.futuroPessoalRaw=0;pix.totalFuturo='R$ 0,00';c.renderListaFormas();assert(!markup.includes('A pagar nos próximos meses'));
+});
+test('atalho do resumo não desloca outra navegação; termômetro só mostra gasto com meta',()=>{
+ const i=html.indexOf('    function abrirResumoEmprestimos()'),fim=html.indexOf('    function selecionarSubFerramenta(',i),a=navegacao();let agendado,rolagens=0;
+ a.el('tituloResumoPessoasEmp').closest=()=>null;a.el('tituloResumoPessoasEmp').scrollIntoView=()=>rolagens++;a.c.setTimeout=fn=>agendado=fn;a.c.abrirFerramenta=()=>a.c.setAba('ferramentas');vm.runInContext(html.slice(i,fim),a.c);
+ a.c.abrirResumoEmprestimos();a.flush();agendado();assert.equal(rolagens,1);
+ a.c.abrirResumoEmprestimos();a.c.setAba('anual');a.flush();agendado();assert.equal(rolagens,1);
+ const c=vm.createContext({});const ini=html.indexOf('    function categoriasTermometroMensalGestor(');vm.runInContext(html.slice(ini,html.indexOf('    function sincronizarEstadoFiltrosMensalGestor(',ini)),c);
+ const res={categorias:[{nome:'Saúde',meta:300,total:50},{nome:'Zero',meta:100,total:0},{nome:'Sem meta',meta:0,total:20}],metasCategorias:[{nome:'Sem consumo',meta:200,total:0}]};assert.deepEqual(Array.from(c.categoriasTermometroMensalGestor(res),x=>x.nome),['Saúde']);
 });
 test('resposta do Histórico preserva posição na mesma visita, mas não após sair e voltar',async()=>{
  for(const navegar of [false,true]){const a=navegacao();a.c.setAba('lancamentos');a.flush();a.c.scrollY=1200;let resolver;a.c.apiCall=()=>new Promise(r=>resolver=r);

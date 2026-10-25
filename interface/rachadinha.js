@@ -13,8 +13,7 @@ function atualizarBloqueioRachaGestor(){
   for(const e of sub?.querySelectorAll?.('input,select') || []){if(bloqueado){if(!e.disabled){e.dataset.rachaBloqueado='sim';e.disabled=true;}}else if(e.dataset.rachaBloqueado){e.disabled=false;delete e.dataset.rachaBloqueado;}}
 }
 function assinaturaEdicaoRachaGestor(){
-  const campos=Object.fromEntries(CAMPOS_RASCUNHO_RACHA.map(id=>{const e=document.getElementById(id);return[id,e?.type==='checkbox'?e.checked:e?.value || ''];}));
-  return JSON.stringify({pessoas:rachaDetPessoas,itens:rachaDetItens,ajustes:rachaDetAjustes,eu:rachaEu,campos});
+  return JSON.stringify(dadosRascunhoRachaGestor());
 }
 function lerCotaRachaGestor(valor){const s=String(valor).trim().replace(',','.');if(!/^\d{1,3}(?:\.\d{1,2})?$/.test(s))return NaN;const n=Number(s);return n>=0.01&&n<=100?n:NaN;}
 function cotaPessoaRachaGestor(nome){const a=rachaDetAjustes[nome] || {};return a.pesoTexto!==undefined?lerCotaRachaGestor(a.pesoTexto):Number(a.peso ?? 1);}
@@ -35,14 +34,24 @@ function descricaoMinhaParteRachaGestor(){
   const descricao=local&&itens?local+' — '+itens:itens||local||'Conta dividida',letras=Array.from(descricao);
   return (letras.length>210?letras.slice(0,209).join('')+'…':descricao)+' (minha parte)';
 }
+function dadosRascunhoRachaGestor(){
+  const campos=Object.fromEntries(CAMPOS_RASCUNHO_RACHA.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?e.checked:e?.value || ''];}));
+  return {versao:1,registroId:rachaRegistroId,nomesEmEdicao:rachaDetPessoas.map((nome,i)=>document.querySelector('[data-racha-nome="'+i+'"]')?.value ?? nome),modo:modoRachadinhaAtual,pessoas:rachaDetPessoas,itens:rachaDetItens,ajustes:rachaDetAjustes,eu:rachaEu,editando:rachaItemEmEdicao,consumidoresEdicao:Array.from(document.querySelectorAll('.chk-pessoa-item-racha:checked')).map(e=>rachaDetPessoas[Number(e.value)]),envio:rachaEnvioGuardado,partePreparada:rachaPartePreparadaGestor,campos};
+}
+function abrirRachadinhaGestor(){
+  // Voltar à ferramenta não deve esconder uma conta em elaboração nem seu envio.
+  // Uma tela sem conteúdo começa pelo caso mais comum: comida e bebida.
+  const vazio=!rachaRestaurando&&rascunhoRachaVazioRotinaGestor(dadosRascunhoRachaGestor());
+  alternarModoRachadinha(vazio?'rapido':modoRachadinhaAtual);
+}
 function guardarRascunhoRachaGestor(obrigatorio=false) {
   if(rachaRestaurando){if(obrigatorio)throw Error('Confira o rascunho guardado antes de registrar esta divisão.');return false;}
   atualizarBloqueioRachaGestor();
   const gravarArmazenamentoGestor=(chave,texto)=>guardarRascunhoRotinaGestor('racha',JSON.parse(texto),obrigatorio);
   try{
     if(!rachaRegistroId&&rachaDetItens.length)rachaRegistroId='racha-'+String(rachaDetItens[0].id);
-    const campos=Object.fromEntries(CAMPOS_RASCUNHO_RACHA.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?e.checked:e?.value || ''];}));
-    gravarArmazenamentoGestor('gestorRachadinhaRascunhoV1',JSON.stringify({versao:1,registroId:rachaRegistroId,nomesEmEdicao:rachaDetPessoas.map((nome,i)=>document.querySelector('[data-racha-nome="'+i+'"]')?.value || nome),modo:modoRachadinhaAtual,pessoas:rachaDetPessoas,itens:rachaDetItens,ajustes:rachaDetAjustes,eu:rachaEu,editando:rachaItemEmEdicao,consumidoresEdicao:Array.from(document.querySelectorAll('.chk-pessoa-item-racha:checked')).map(e=>rachaDetPessoas[Number(e.value)]),envio:rachaEnvioGuardado,partePreparada:rachaPartePreparadaGestor,campos}));return true;
+    const salvo=gravarArmazenamentoGestor('gestorRachadinhaRascunhoV1',JSON.stringify(dadosRascunhoRachaGestor()));
+    if(!salvo&&obrigatorio)throw Error('Não foi possível guardar esta divisão. Libere espaço no aparelho antes de registrar.');return salvo;
   }catch(e){if(obrigatorio)throw e;if(!rachaAvisouArmazenamento){rachaAvisouArmazenamento=true;mostrarAviso('Rascunho não guardado','Mantenha esta página aberta e libere espaço no aparelho antes de registrar a divisão.');}return false;}
 }
 function opcoesContaRachaGestor() {
@@ -266,11 +275,13 @@ async function conferirRegistroRachadinhaGestor(){
 function concluirRegistroRachadinhaLocalGestor(p,cancelado=false){if(rachaEnvioGuardado?.payload?.requestId===p.requestId){rachaEnvioGuardado=cancelado?null:{...rachaEnvioGuardado,estado:'confirmado'};guardarRascunhoRachaGestor();}}
 function limparRachadinhaTudo(){
   if(rachaEnvioGuardado?.estado==='pendente'||(!rachaEnvioGuardado&&divisaoRachaEnviadaGestor())){mostrarAviso('Confirme o envio primeiro','A divisão continua guardada. Abra Atividade para conferir o envio antes de limpar.');return;}
+  const versao=assinaturaEdicaoRachaGestor();
   mostrarConfirmacao('Limpar esta divisão?','Pessoas, itens e pagamentos desta ferramenta serão apagados. Os lançamentos já gravados no Histórico e em Empréstimos serão preservados.',()=>{
-    if(rachaEnvioGuardado?.estado==='pendente'){mostrarAviso('Confira o envio','O envio continua guardado; consulte Atividade antes de limpar.');return;}
+    if(rachaEnvioGuardado?.estado==='pendente'||(!rachaEnvioGuardado&&divisaoRachaEnviadaGestor())){mostrarAviso('Confira o envio','O envio continua guardado; consulte Atividade antes de limpar.');return;}
+    if(assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira os campos novamente antes de limpar. Seu preenchimento foi preservado.');return;}
     rachaRestaurando=true;rachaDetPessoas=['Eu','Amigo 2'];rachaDetItens=[];rachaDetAjustes=Object.create(null);rachaEu='Eu';rachaItemEmEdicao=null;rachaEnvioGuardado=null;rachaRegistroId=null;rachaPartePreparadaGestor=null;
     CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=false;else e.value=id==='rachaQtdPessoas'?2:id==='rachaQtdBebeu'?1:id==='rachaServicoPercentual'?10:'';}});
-    rachaRestaurando=false;renderizarPessoasRachaDet();calcularRachadinha();calcularRachadinhaDetalhada();guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
+    rachaRestaurando=false;alternarModoRachadinha('rapido');guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
   },false,'Limpar divisão','neutral');
 }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -302,7 +313,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   sub.addEventListener('focusout',e=>{if(e.target.dataset.rachaNome!==undefined)renomearPessoaRachaGestor(Number(e.target.dataset.rachaNome),e.target.value);});
   document.getElementById('rachaRegistroData').addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,8);if(v.length>4)v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);else if(v.length>2)v=v.slice(0,2)+'/'+v.slice(2);e.target.value=v;if(v.length===10)atualizarParcelasRegistroRachaGestor();});
   document.getElementById('rachaRegistroMes').addEventListener('input',e=>mascaraMesFaturaAPI(e.target));
-  rachaRestaurando=true;let consumidoresRestaurados=null,nomesRestaurados=null;
+  rachaRestaurando=true;modoRachadinhaAtual='rapido';let consumidoresRestaurados=null,nomesRestaurados=null;
   try{
     const texto=lerRascunhoRotinaGestor('racha');
     if(texto){const r=JSON.parse(texto);if(r.versao!==1||!Array.isArray(r.pessoas)||!r.pessoas.length||r.pessoas.length>100||!Array.isArray(r.itens)||r.itens.length>500)throw Error('Rascunho incompatível');

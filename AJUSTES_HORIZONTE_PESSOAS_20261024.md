@@ -1,5 +1,7 @@
 # Horizonte e Pessoas na mesa — 24/10/2026
 
+Este relatório registra uma etapa anterior. Os rascunhos por página e o intervalo do Horizonte foram implementados depois. Consulte [o guia atual](GUIA_MELHORIAS_E_PENDENCIAS.md) antes de tratar as recomendações abaixo como pendentes.
+
 ## Alterações realizadas
 
 - [x] Setas indisponíveis do Horizonte ficam apagadas, sem sombra nem destaque de hover. O bloqueio nativo impede o clique e informa a indisponibilidade às tecnologias assistivas.
