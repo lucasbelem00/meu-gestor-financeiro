@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v33';
+const CACHE_NAME = 'gestor-gastos-v35';
 
 async function ehPaginaDoGestor(resposta) {
   if (!resposta.ok || resposta.redirected || !(resposta.headers.get('content-type') || '').includes('text/html')) return false;

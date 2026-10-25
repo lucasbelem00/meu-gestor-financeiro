@@ -8,7 +8,7 @@ function sincronizarMotor(){
     fs.writeFileSync(arquivo,fonte.slice(0,fonte.indexOf(inicio))+inicio+'\n'+motor+'\n'+fonte.slice(fonte.indexOf(fim)));
   }
   const arquivo=path.join(raiz,'index.html');let html=fs.readFileSync(arquivo,'utf8');
-  for(const nome of ['rachadinha','sincronizacao','usabilidade','rotina']){
+  for(const nome of ['rachadinha','sincronizacao','usabilidade','rotina','desempenho','restauracao','navegacao']){
     const inicio='// INICIO INTERFACE '+nome.toUpperCase()+' GERADA',fim='// FIM INTERFACE '+nome.toUpperCase()+' GERADA';
     if(!html.includes(inicio)||!html.includes(fim))throw Error('Marcador da interface não encontrado: '+nome);
     html=html.slice(0,html.indexOf(inicio))+inicio+'\n'+fs.readFileSync(path.join(raiz,'interface',nome+'.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(fim));

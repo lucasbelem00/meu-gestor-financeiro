@@ -57,3 +57,29 @@ test('parcela guardada como data participa da ordem correta da prévia de pagame
   const previa=ctx.previaPagamentoFaturaWeb({forma:'Cartao',mesFatura:'10/2026',valor:50});
   assert.equal(previa.aplicacoes.length,1);assert.equal(previa.aplicacoes[0].resumo.parcela,'1/12');
 });
+
+test('mensal, anual e histórico reconhecem data nativa sem depender da máscara da planilha',()=>{
+  const {ctx,db}=boot(fixture([personal('Pessoal',100)],[loan('Pessoa fictícia','A Receber',70,'Cartao')]));
+  ctx.executarAcaoApi_('getDadosCompletos',null);
+  for(const nome of ['Lançamentos','Empréstimos']){
+    const r=db.sheets[nome].rows[1];r[0]=new Date(2026,9,17);r[6]=new Date(2026,11,7);r[8]=new Date(2026,9,1);
+  }
+  const antes=JSON.stringify(['Lançamentos','Empréstimos'].map(nome=>db.sheets[nome].rows[1].slice(0,11)));
+  const mes=ctx.executarAcaoApi_('obterRelatorioMes','10/2026');
+  assert.equal(mes.totalRaw,100);assert.equal(mes.terceiros.totalRaw,70);assert.equal(mes.lancamentos[0][0],'17/10/2026');assert.equal(mes.lancamentos[0][6],'7/12');assert.equal(mes.lancamentos[0][8],'10/2026');
+  assert.equal(mes.terceiros.itens[0].mes,'10/2026');assert.equal(mes.terceiros.itens[0].parcela,'7/12');
+  const ano=ctx.executarAcaoApi_('obterRelatorioAnual',2026);
+  assert.equal(ano.totalRaw,100);assert.equal(ano.terceiros.totalRaw,70);assert.equal(ano.graficoMeses[9],100);
+  const historico=ctx.executarAcaoApi_('filtrarLancamentosWeb',{filtros:{ano:'2026',mes:'10/2026'},offset:0,limite:50});
+  assert.equal(historico.itens.length,1);assert.equal(historico.itens[0][6],'7/12');
+  assert.equal(ctx.executarAcaoApi_('obterRelatorioMes','10/2027').totalRaw,0);
+  assert.equal(JSON.stringify(['Lançamentos','Empréstimos'].map(nome=>db.sheets[nome].rows[1].slice(0,11))),antes);
+});
+
+test('data nativa inválida não vira relatório mensal silenciosamente zerado',()=>{
+  for(const nome of ['Lançamentos','Empréstimos']){
+    const {ctx,db}=boot(fixture([personal('Pessoal',100)],[loan('Pessoa fictícia','A Receber',70,'Cartao')]));ctx.executarAcaoApi_('getDadosCompletos',null);
+    db.sheets[nome].rows[1][8]=new Date(NaN);
+    assert.throws(()=>ctx.executarAcaoApi_('obterRelatorioMes','10/2026'),/data inválida|Invalid time value/);
+  }
+});

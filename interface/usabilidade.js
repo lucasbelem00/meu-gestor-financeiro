@@ -170,7 +170,7 @@ function transferirSimulacaoGestor(emp) {
   const antes=assinatura();
   function aplicar(){
     if(bloqueado()||assinatura()!==antes){mostrarAviso('O formulário mudou','Os campos foram preservados. Confira e transfira a simulação novamente.');return;}
-    if(emp){limparFormularioEmprestimo();preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos');document.getElementById('inpEmpPessoa').focus();}
+    if(emp){limparFormularioEmprestimo();preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos','novo');document.getElementById('inpEmpPessoa').focus();}
     else{limparFormularioNovoGasto();preencherDataTripla('novo',s.data);document.getElementById('selForma').value=s.forma;document.getElementById('inpParc').value=s.n;document.getElementById('inpParcIni').value='1';definirValorMoeda('inpValor',s.valor);atualizarRegrasForma();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();}
     mostrarAviso('Simulação preenchida','Confira os campos e complete os dados antes de salvar. Nenhum lançamento foi gravado.');
   }

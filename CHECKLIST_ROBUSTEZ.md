@@ -1,5 +1,9 @@
 # Checklist do pacote de robustez
 
+**Polimento posterior concluído localmente:** categorias, escopo dos indicadores, Histórico no topo e seleção de metas. [Resumo e auditoria](AJUSTES_CATEGORIAS_ROLAGEM_METAS.md), com 328 testes aprovados. O cache atual é v35; as versões e contagens dos relatórios anteriores registram suas respectivas etapas.
+
+**Atualização posterior:** a restauração completa e a reorganização maior de desempenho, anteriormente adiadas, foram implementadas localmente. Veja [PACOTE_RESTAURACAO_DESEMPENHO.md](PACOTE_RESTAURACAO_DESEMPENHO.md), com 323 testes aprovados, achados corrigidos e instruções de instalação. As referências a adiamento nos relatórios antigos registram a decisão daquela etapa.
+
 **Pacote consolidado concluído localmente em 24/10/2026:** os 38 itens estão assinalados em [VISTORIA_CONSOLIDADA_MOBILE_20261024.md](VISTORIA_CONSOLIDADA_MOBILE_20261024.md). Mudanças, regras adotadas e validação com 270 testes estão em [PACOTE_ROTINA_INTEGRIDADE_20261024.md](PACOTE_ROTINA_INTEGRIDADE_20261024.md). A publicação na cópia de teste permanece pendente. Os relatos de auditoria abaixo preservam o contexto anterior às correções.
 
 Continuação da auditoria: [datas, edição e recebimentos](VISTORIA_PROFUNDA_EDICOES_DATAS_20261024.md). Foram acumulados os novos casos de data digitada divergente do envio, botões bloqueados após sucesso, fechamento por resposta antiga, prévia inexata de centavos e abandono de edições. O falso positivo anterior sobre ponto decimal na colagem foi retirado após conferir a função final ativa.

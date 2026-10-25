@@ -1,0 +1,19 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
+const fonte=fs.readFileSync(path.join(__dirname,'../interface/rotina.js'),'utf8');
+function contexto(){const local=new Map(),sessao=new Map();const c=vm.createContext({Date,Map,Set,JSON,novoRequestIdGestor:()=> 'pagina-teste',localStorage:{getItem:k=>local.get(k)??null,removeItem:k=>local.delete(k)},sessionStorage:{getItem:k=>sessao.get(k)??null,removeItem:k=>sessao.delete(k)},lerJSONLocalGestor:(k,p)=>local.has(k)?JSON.parse(local.get(k)):p,gravarArmazenamentoGestor:(k,v,o)=>{(o?.sessao?sessao:local).set(k,v);return true;},lerCacheLeituraGestor:()=>null,mostrarAviso(){}});vm.runInContext(fonte.slice(fonte.indexOf('const paginaRascunhoGestor='),fonte.indexOf('const guardarRascunhoAnteriorRotinaGestor=')),c);return {c,local,sessao};}
+test('datas automáticas, mês calculado e uma parcela não criam cópias recuperáveis',()=>{
+ const a=contexto();for(const tipo of ['novo','emp']){const campos=tipo==='novo'?{inpDataDia:'24',inpDataMes:'10',inpDataAno:'2026',inpMesFat:'11/2026',inpParc:'1',inpParcIni:'1',inpValor:'R$ 0,00'}:{inpEmpDataDia:'24',inpEmpDataMes:'10',inpEmpDataAno:'2026',inpEmpMesFat:'11/2026',inpEmpParc:'1',inpEmpParcIni:'1',inpEmpValor:'R$ 0,00'};a.c.guardarRascunhoRotinaGestor(tipo,{campos});assert.equal(a.local.size,0);assert.equal(a.c.rascunhoVazioRotinaGestor(tipo,{campos}),true);}
+});
+test('conteúdo do usuário e envios protegidos continuam guardados',()=>{
+ const a=contexto();for(const [tipo,dados]of [['novo',{desc:'Mercado'}],['emp',{pessoa:'Mãe'}],['novo',{campos:{selCat:'Teste'}}],['emp',{campos:{inpEmpObs:'Combinar depois'}}],['novo',{campos:{inpParc:'3'}}],['emp',{requestId:'envio-pendente-001',campos:{}}]]){assert.equal(a.c.rascunhoVazioRotinaGestor(tipo,dados),false);a.c.guardarRascunhoRotinaGestor(tipo,dados);assert(a.local.get(a.c.chaveRascunhoRotinaGestor(tipo)));}
+});
+test('abrir formulário vazio preserva cópia útil de outra página e ignora cópia antiga vazia',()=>{
+ const a=contexto(),chave='gestorRascunhoV3:emp:outra';a.local.set(chave,JSON.stringify({dados:{pessoa:'Ana'}}));a.sessao.set('gestorRascunhoAnterior:emp',chave);a.c.guardarRascunhoRotinaGestor('emp',{campos:{inpEmpParc:'1'}});assert.equal(a.sessao.get('gestorRascunhoAnterior:emp'),chave);assert.equal(JSON.parse(a.c.lerRascunhoRotinaGestor('emp')).pessoa,'Ana');
+ a.local.set(chave,JSON.stringify({dados:{campos:{inpEmpDataDia:'16',inpEmpParc:'1'}}}));assert.equal(a.c.lerRascunhoRotinaGestor('emp'),null);
+});
+test('Novo e Consultar mostram só a área escolhida e preservam os campos e filtros',()=>{
+ const elementos=new Map();for(const id of ['painelNovoEmprestimo','painelConsultaEmprestimo','btnConsultarEmprestimos','btnNovoEmprestimo','inpEmpPessoa','selFiltroPessoaEmp'])elementos.set(id,{hidden:false,inert:false,value:id==='inpEmpPessoa'?'Rascunho Ana':'Filtro Bruno',attrs:{},classes:new Set(),setAttribute(k,v){this.attrs[k]=v;},classList:{toggle(){}}});
+ const c=vm.createContext({document:{getElementById:id=>elementos.get(id)}}),inicio=fonte.indexOf('function alternarModoEmprestimosGestor('),fim=fonte.indexOf("document.addEventListener('DOMContentLoaded'",inicio);vm.runInContext(fonte.slice(inicio,fim),c);
+ c.alternarModoEmprestimosGestor('novo');assert.equal(elementos.get('painelConsultaEmprestimo').hidden,true);assert.equal(elementos.get('painelNovoEmprestimo').hidden,false);assert.equal(elementos.get('btnNovoEmprestimo').attrs['aria-pressed'],'true');
+ c.alternarModoEmprestimosGestor('consulta');assert.equal(elementos.get('painelNovoEmprestimo').inert,true);assert.equal(elementos.get('painelConsultaEmprestimo').hidden,false);assert.equal(elementos.get('inpEmpPessoa').value,'Rascunho Ana');assert.equal(elementos.get('selFiltroPessoaEmp').value,'Filtro Bruno');
+});

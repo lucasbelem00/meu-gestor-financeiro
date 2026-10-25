@@ -1,44 +1,39 @@
-# Velocidade e restauração de backup
+# Backup, restauração e velocidade
+
+A implementação atual está em [PACOTE_RESTAURACAO_DESEMPENHO.md](PACOTE_RESTAURACAO_DESEMPENHO.md), com mudanças, fragilidades corrigidas, testes e limites. As melhorias anteriormente adiadas foram implementadas localmente; a publicação é uma etapa separada.
+
+## Para guardar uma cópia
+
+Menu → Dados e relatórios → Exportar dados e backup → Baixar cópia de segurança — JSON.
+
+O JSON contém os dados restauráveis do app. A preparação e o download são feitos em partes, com conferência de integridade. CSV serve para consultar no Excel ou Planilhas; não substitui o backup JSON. Sincronize os envios pendentes antes de exportar.
+
+## Para restaurar
+
+1. Sincronize as pendências e feche o app nos outros aparelhos.
+2. No mesmo modal, em Restaurar backup, selecione o JSON do Gestor.
+3. Confira o destino, quantidades, inclusões, alterações, remoções e totais. Abra os detalhes de cada aba para ver banco, terceiros e exemplos dos registros afetados.
+4. Digite RESTAURAR e confirme a substituição.
+5. Aguarde a confirmação. O app guarda a cópia anterior antes de substituir os dados.
+
+Em Cópias anteriores e recuperação, é possível conferir uma cópia preservada para restaurar ou somente baixá-la. Abrir sua prévia não substitui os dados. Cópias legadas são identificadas; cópias incompletas ou com integridade incompatível são bloqueadas.
+
+Se o upload interromper, selecione o mesmo arquivo para retomar as partes. Se a gravação tiver sido enviada e faltar confirmação, use Atividade e sincronização para consultar ou repetir o mesmo envio protegido. Não crie outra restauração com um identificador novo. O botão Conferir restauração interrompida só libera a pendência após confirmar seu estado.
+
+## O que fica preservado
+
+Restaura Lançamentos, Empréstimos, Anotações, categorias/metas e formas de pagamento. Abas opcionais ausentes são preservadas. Pagamento ao banco e recebimento de pessoas continuam independentes.
+
+O diário atual e o histórico de atividade não são apagados ou substituídos. Código, tokens, permissões, implantação, chave Pix local, preferências do aparelho e recursos particulares do Google Planilhas não fazem parte da restauração de dados do app.
+
+Limites: 8 MiB, 20.000 linhas por aba e 500.000 células no conjunto. Arquivos incompatíveis permanecem com você para recuperação assistida. Preparações temporárias duram 24 horas. Uma alteração na planilha após a prévia exige nova conferência.
 
 ## Velocidade
 
-- jsPDF e AutoTable são carregados apenas quando você pede um PDF. Na primeira geração é necessária conexão; depois os recursos podem estar disponíveis na cache do navegador.
-- Chart.js e Sortable carregam sem bloquear a leitura inicial do HTML.
-- Consultas simultâneas de dados completos compartilham a mesma requisição. Iniciar ou concluir uma gravação invalida esse compartilhamento, para não aproveitar uma leitura anterior à gravação.
-- Gráficos existentes são atualizados sem destruir e criar tudo novamente, e sem repetir animações a cada atualização.
-- Não foi trocada a infraestrutura. A rede, o Apps Script e o tamanho da planilha continuam influenciando o tempo de gravação. Não foi medido um percentual de ganho.
-- Tailwind agora é compilado durante a publicação; consulte REVISAO_INTEGRIDADE_DESEMPENHO.md. A separação do HTML em módulos permanece como manutenção futura.
+Há consultas compartilhadas, cache curto dos relatórios, gráficos/listas carregados quando visíveis, manutenção somente quando necessária e processamento em blocos das faturas. A página padrão de Atividade lê apenas os eventos necessários. Nenhum comprovante de operação é apagado para acelerar o app.
 
-## Onde restaurar
+A velocidade real continua dependendo da rede e do serviço de planilhas. Os resultados de teste medem trabalho local com dados fictícios. Para repetir a medição: `node scripts/medir-desempenho.cjs 100 1000`.
 
-Menu → Dados e relatórios → Exportar dados. No fim da janela existe Restaurar uma cópia de segurança.
+## Instalação
 
-1. Sincronize as pendências e feche o app nos outros aparelhos.
-2. Selecione o arquivo JSON exportado pelo Gestor. CSV não é um backup completo.
-3. Confira a planilha de destino, as quantidades e os totais de parcelas atuais e do backup.
-4. Digite RESTAURAR e confirme a substituição.
-5. Aguarde a confirmação. A restauração substitui os dados; não acrescenta os mesmos registros novamente.
-
-## Conteúdo e proteções
-
-- Restaura os dados das abas Dashboard & Resumo, Formas de Pagamento, Lançamentos, Empréstimos e Anotações, incluindo categorias, metas, pagamentos e identidades. Abas opcionais ausentes são preservadas; máscaras numéricas do arquivo não são importadas.
-- Preserva o histórico de atividade atual e registra a restauração. O histórico antigo presente no arquivo não substitui o atual.
-- Guarda a cópia anterior automaticamente na aba oculta _Gestor_Restauracoes, antes de aplicar as mudanças financeiras. O botão Baixar cópia anterior à última restauração permite recuperá-la como JSON.
-- A aplicação usa o diário recuperável existente e um identificador de operação. Se a resposta se perder, confira Atividade e sincronização e repita o mesmo envio protegido. Não inicie outra restauração com outro identificador.
-- Se não houver envio pendente, Conferir restauração interrompida consulta a planilha e libera um bloqueio local deixado antes do envio.
-- Uma alteração na planilha depois da prévia bloqueia a restauração e exige nova conferência.
-- Após restaurar, versões antigas de registros e envios preparados antes da restauração são bloqueados. Notas locais conflitantes permanecem guardadas para escolha explícita da versão.
-- Código, permissões, tokens, implantação e preferências locais, como a chave Pix, não são substituídos.
-- A leitura local aceita arquivos até 8 MB. Após remover informações de exibição e histórico que não são restauradas, o conteúdo enviado deve caber em 900 KB. Há também limites de dimensões e tamanho das células.
-- Fórmulas financeiras manuais e fórmulas fora da lista de funções internas suportadas são recusadas. Fórmulas que buscam dados externos não são executadas na restauração. Arquivos incompatíveis são preservados para recuperação assistida.
-- Este mecanismo restaura os dados do app, não é uma cópia integral de todos os recursos do Google Planilhas, como gráficos, compartilhamentos, cores, filtros ou abas particulares.
-
-## Publicação
-
-Atualize primeiro Backend/Code.gs na implantação da cópia de teste. Depois publique a interface, api/gestor.js e sw.js pela branch protegida no GitHub/Vercel. Não use restauração na planilha original antes de conferir o fluxo na cópia de teste.
-
-## Conferência desta etapa
-
-Na preparação da publicação, passaram 78 testes locais com dados fictícios, incluindo 7 casos específicos de restauração: prévia, substituição, cópia anterior, alteração após a prévia, reenvio, interrupção e bloqueio de arquivos incompatíveis. As três interfaces estão sincronizadas. Ainda falta a conferência na planilha de teste real pelo navegador.
-
-Para conferir na cópia: exporte um JSON, altere um lançamento fictício, abra a prévia e cancele; confira que nada foi substituído. Reabra a prévia e confirme a restauração. Confira totais, parcelas, notas, categorias, PDFs e a cópia anterior. Uma mudança após a prévia deve impedir a aplicação até uma nova prévia.
+Atualize backend, interface e proxy juntos na cópia de teste, seguindo o relatório do pacote. Backend: protocolo 9. Cache do app: versão 35, após os ajustes de [categorias, navegação e metas](AJUSTES_CATEGORIAS_ROLAGEM_METAS.md). Não restaure na planilha definitiva antes de testar o fluxo completo na cópia.

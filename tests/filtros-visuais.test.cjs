@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 test('filtro mensal marca, desmarca e troca seleção sem deixar estado residual',()=>{
   const controles=[['forma','Pix'],['forma','Cartão'],['tag','casal']].map(([tipo,valor])=>({dataset:{filtroMensalTipo:tipo,filtroMensalValor:valor},pressed:'false',setAttribute(nome,valor){assert.equal(nome,'aria-pressed');this.pressed=valor;}}));
-  let renders=0;const ctx=vm.createContext({ultimoRelatorioMensalCache:{},filtroInternoMensalAtivo:{tipo:'todos',valor:''},document:{querySelectorAll:()=>controles},renderizarListaItensFaturaMensal:()=>renders++});
+  let renders=0;const ctx=vm.createContext({normalizarTexto:v=>String(v).toLowerCase(),ultimoRelatorioMensalCache:{},filtroInternoMensalAtivo:{tipo:'todos',valor:''},document:{querySelectorAll:()=>controles},renderizarListaItensFaturaMensal:()=>renders++});
   vm.runInContext(html.slice(html.indexOf('    function filtrosMensaisVaziosGestor('),html.indexOf('    function montarCardFaturaMensalSeguro(')),ctx);
   ctx.aplicarFiltroInternoMensal('forma','Pix');assert.deepEqual(controles.map(c=>c.pressed),['true','false','false']);
   ctx.aplicarFiltroInternoMensal('forma','Pix');assert.deepEqual(controles.map(c=>c.pressed),['false','false','false']);
