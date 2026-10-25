@@ -12,12 +12,13 @@ test('meta e categoria equivalente compartilham seleção, desmarcação e limpe
  c.aplicarFiltroInternoMensal('categoria','Transporte (Antigo)');assert.equal(controles[0]['aria-pressed'],'false');assert.equal(c.filtroInternoMensalAtivo.categoria.length,0);
  c.aplicarFiltroInternoMensal('tag','#casal');assert.equal(controles[3]['aria-pressed'],'true');c.aplicarFiltroInternoMensal('todos','');assert(controles.every(b=>b['aria-pressed']==='false'));
 });
-test('metas sem consumo aparecem como zero e permanecem filtráveis sem poluir o gráfico',()=>{
+test('metas sem consumo são preservadas no cadastro, mas filtros só oferecem categorias com gasto no mês',()=>{
  const dados=fixture([personal('Gasto atual',50)]);dados['Dashboard & Resumo'][16]=['','Teste','',100];dados['Dashboard & Resumo'][17]=['','Educação 📚','',200];dados['Dashboard & Resumo'][18]=['','Outros 📦','',300];
  const {ctx}=boot(dados);ctx.console={log(){}};ctx.executarAcaoApi_('getDadosCompletos',null);const res=ctx.executarAcaoApi_('obterRelatorioMes','10/2026');assert.equal(res.categorias.length,1);assert.equal(res.metasCategorias.length,3);assert.equal(res.metasCategorias.find(c=>c.nome==='Educação 📚').total,0);assert.equal(res.metasCategorias.at(-1).nome,'Outros 📦');
  const vazio=ctx.executarAcaoApi_('obterRelatorioMes','01/2026');assert.equal(vazio.categorias.length,0);assert.equal(vazio.metasCategorias.length,3);assert(vazio.metasCategorias.every(c=>c.total===0));
  const c=vm.createContext({normalizarTexto:norm});vm.runInContext(html.slice(html.indexOf('    function filtrosMensaisVaziosGestor('),html.indexOf('    function aplicarFiltroInternoMensal(')),c);
- const f=c.escolherFiltroAposRecargaMensalGestor({categoria:['Educação 📚']},'10/2026','10/2026',res);assert.equal(f.categoria[0],'Educação 📚');
+ assert.deepEqual(Array.from(c.categoriasFiltroMensalGestor(res),c=>c.nome),['Teste']);assert.equal(c.categoriasFiltroMensalGestor(vazio).length,0);
+ const f=c.escolherFiltroAposRecargaMensalGestor({categoria:['Educação 📚','Teste']},'10/2026','10/2026',res);assert.deepEqual(Array.from(f.categoria),['Teste']);
 });
 function navegacao(){
  const frames=[],eventos={},elementos=new Map(),rolagens=[];let c;

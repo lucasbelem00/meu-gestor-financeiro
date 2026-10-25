@@ -19,7 +19,8 @@ window.exportarBackupDados=async function(formato='json') {
   if(window.exportarBackupDados.emAndamento)return;
   window.exportarBackupDados.emAndamento=true;
   const botoes=Array.from(document.querySelectorAll('[data-exportar-dados]')),estados=botoes.map(b=>b.disabled);botoes.forEach(b=>b.disabled=true);
-  const status=document.getElementById('estadoExportacaoCompletaGestor');let ref;
+  const status=document.getElementById('statusExportacaoDados');let ref;
+  if(status)status.hidden=false;
   try {
     if(!navigator.onLine)throw Error('Conecte-se para preparar um backup atualizado da planilha.');
     if(status)status.textContent='Preparando o arquivo de dados. A planilha não será alterada…';
@@ -177,7 +178,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   const elemento=(tag,texto,classe='')=>{const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;};
   const botao=(texto,classe='')=>{const e=elemento('button',texto,'rounded-xl border border-slate-600 px-3 py-3 text-xs font-bold disabled:opacity-50 '+classe);e.type='button';return e;};
   const painel=elemento('section','','border-t border-slate-700 pt-4 space-y-3');painel.id='painelRestauracaoCompleta';
-  const exportacaoStatus=elemento('p','','text-xs text-slate-300');exportacaoStatus.id='estadoExportacaoCompletaGestor';exportacaoStatus.setAttribute('aria-live','polite');modal.firstElementChild.append(exportacaoStatus);
   const titulo=elemento('h4','Restaurar backup','text-sm font-bold text-white');
   const ajuda=elemento('p','1. Selecione um JSON ou uma cópia anterior. 2. Confira a comparação. 3. Digite RESTAURAR e confirme. A restauração substitui dados; não junta lançamentos. Sincronize as pendências e feche o app nos outros aparelhos.','text-xs text-slate-300');
   const arquivo=document.createElement('input');arquivo.type='file';arquivo.accept='.json,application/json';arquivo.className='block w-full max-w-full text-xs text-slate-200';arquivo.setAttribute('aria-label','Arquivo JSON de backup, até 8 MB');

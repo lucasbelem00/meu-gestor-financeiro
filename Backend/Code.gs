@@ -815,7 +815,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
     if (uL < 2) throw new Error("Aba de empréstimos vazia.");
     const rangeAll = empSheet.getRange(2, 1, uL - 1, COLUNAS_GESTOR_);
     const rawAll = rangeAll.getValues();
-    const dispAll = rangeAll.getDisplayValues();
+    const dispAll = rangeAll.getDisplayValues().map(function(d,i){return valoresExibidosRegistroGestor_(rawAll[i],d);});
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idxAlvo < 0 || idxAlvo >= rawAll.length) throw new Error("Parcela do empréstimo não encontrada.");
@@ -3594,7 +3594,9 @@ function preservarPagamentoNaEdicaoGestor_(r, anterior, emprestimo, acao) {
   if(!anterior || !['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)) return;
   const totalAnterior=centavosGestor_(anterior[7]),totalNovo=centavosGestor_(r[7]);
   const pago=centavosGestor_(valorPagoBancoGestor_(anterior,emprestimo));
-  if(pago>0 && limparApostrofo(anterior[8])!==limparApostrofo(r[8])) throw new Error('Esta parcela tem pagamento registrado na fatura original. Confira ou desfaça o pagamento antes de mudar o mês.');
+  // O Sheets pode guardar MM/AAAA como Date. Comparar a competência, não o
+  // tipo/formato da célula, para permitir editar dados sem mover o pagamento.
+  if(pago>0 && formatarCelulaRegistroGestor_(anterior[8],'MM/yyyy')!==formatarCelulaRegistroGestor_(r[8],'MM/yyyy')) throw new Error('Esta parcela tem pagamento registrado na fatura original. Confira ou desfaça o pagamento antes de mudar o mês.');
   if(totalNovo===totalAnterior) return;
   if(emprestimo && anterior[9]==='Recebido') throw new Error('Este valor já foi recebido da pessoa. Desfaça o recebimento antes de corrigir o valor ou registre a diferença separadamente.');
   if(totalNovo<pago) throw new Error('O valor da parcela não pode ficar abaixo do pagamento já registrado ao banco. Confira ou desfaça o pagamento antes de reduzir o valor.');
