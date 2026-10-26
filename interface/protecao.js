@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();
-    status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
+    status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+dataLegivelBackupGestor(s.ultimoBackup.data)+' · período '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
     const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     for(const arquivo of s.arquivos||[]){const link=linkSeguroProtecaoGestor(arquivo.url);if(!link)continue;const a=criar('a','Arquivo '+arquivo.ano+' · '+arquivo.quantidade+' registro(s) · '+arquivo.pessoal+' pessoais','block text-sky-200 underline');a.href=link;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     controles();

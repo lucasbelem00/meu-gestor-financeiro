@@ -109,6 +109,10 @@ function criarCoordenadorLeiturasGestor(opcoes) {
 }
 
 const graficosPendentesDesempenhoGestor = new Map();
+function limparGraficoDesempenhoGestor(id,anterior){
+  const pendente=graficosPendentesDesempenhoGestor.get(id);graficosPendentesDesempenhoGestor.delete(id);
+  const existentes=new Set([anterior,pendente?.anterior].filter(Boolean));existentes.forEach(g=>g.destroy());return null;
+}
 const leiturasDesempenhoGestor = typeof leiturasAtividadeGestor !== 'undefined'
   ? new Set(leiturasAtividadeGestor)
   : new Set(['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb']);

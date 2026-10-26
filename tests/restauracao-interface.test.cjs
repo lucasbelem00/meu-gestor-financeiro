@@ -26,3 +26,14 @@ test('upload grande interrompido retoma partes e mantém referência pequena no 
  });const b=backup('Grande');b.abas[0].valores.push(['á'.repeat(400000)]);await a.ctrl.selecionarArquivo(arquivo(b));assert.equal(a.ctrl.estado.resumo,null);const id=a.chamadas.find(c=>c.a==='iniciarImportacaoBackupWeb').p.importacaoId;await a.ctrl.selecionarArquivo(arquivo(b));assert.equal(a.chamadas.filter(c=>c.a==='iniciarImportacaoBackupWeb')[1].p.importacaoId,id);const segundoEnvio=a.chamadas.filter(c=>c.a==='enviarPartesBackupWeb')[1];assert(segundoEnvio.p.partes[0].parte>20);
  assert.equal(await a.ctrl.confirmar(a.ctrl.capturarConfirmacao()),true);const pedido=a.chamadas.find(c=>c.a==='restaurarBackupDadosWeb').p;assert.equal(pedido.importacaoId,id);assert.equal(pedido.backup,undefined);assert(JSON.stringify(pedido).length<500);
 });
+test('recuperação anual requer consentimento específico e envia a assinatura da prévia',async()=>{
+ const a=ambiente(acao=>acao==='previaRestauracaoBackupWeb'?{planilha:'Destino',hashBackup:'hash',versaoAtual:'v',recuperacaoAnual:{necessaria:true,assinatura:'anuais-conferidos',indisponiveis:[{ano:2025}]}}:{sucesso:true});
+ await a.ctrl.selecionarArquivo(arquivo(backup('Completo')));assert.equal(a.ctrl.capturarConfirmacao(),null);
+ const s=a.ctrl.capturarConfirmacao(true);assert.equal(s.confirmarRecuperacaoAnual,true);assert.equal(await a.ctrl.confirmar(s),true);
+ const enviado=a.chamadas.find(c=>c.a==='restaurarBackupDadosWeb').p;assert.equal(enviado.confirmarRecuperacaoAnual,true);assert.equal(enviado.assinaturaAnuais,'anuais-conferidos');
+});
+test('consentimento de recuperação não autoriza outro arquivo selecionado depois',async()=>{
+ const a=ambiente(()=>({planilha:'Destino',hashBackup:'hash',versaoAtual:'v',recuperacaoAnual:{necessaria:true,assinatura:'anuais-conferidos'}}));
+ await a.ctrl.selecionarArquivo(arquivo(backup('A')));const s=a.ctrl.capturarConfirmacao(true);await a.ctrl.selecionarArquivo(arquivo(backup('B')));
+ assert.equal(a.ctrl.capturarConfirmacao(),null);await assert.rejects(()=>a.ctrl.confirmar(s),/seleção mudou/);assert(!a.chamadas.some(c=>c.a==='restaurarBackupDadosWeb'));
+});

@@ -12,6 +12,7 @@ let mensalNavegacaoManualGestor = false;
 let mensalConsultaPendenteGestor = false;
 let notaRascunhoChaveGestor = '';
 let notaRascunhoAnteriorGestor = '';
+let notaRascunhoIdentidadeGestor = '';
 const NOTA_RASCUNHO_PREFIXO_GESTOR = 'gestorNotaRascunhoV2:';
 const rascunhosNotasRecuperadosGestor = new Map();
 
@@ -177,10 +178,7 @@ function transferirSimulacaoGestor(emp) {
   if(haRascunhoFormularioGestor(emp))mostrarConfirmacao('Substituir o rascunho?', 'Já existem dados no formulário. Deseja substituí-los pelos valores desta simulação? Pessoa, descrição e parcela inicial antigas serão limpas.',aplicar,false,'Substituir rascunho','neutral');else aplicar();
 }
 function haRascunhoFormularioGestor(emp) {
-  const hoje=new Date(),dia=String(hoje.getDate()).padStart(2,'0'),mes=String(hoje.getMonth()+1).padStart(2,'0'),ano=String(hoje.getFullYear());
-  const defaults=emp?{inpEmpDataDia:dia,inpEmpDataMes:mes,inpEmpDataAno:ano,inpEmpData:dia+'/'+mes+'/'+ano,inpEmpMesFat:'',inpEmpPessoa:'',inpEmpDesc:'',selEmpForma:'',inpEmpParc:'1',inpEmpParcIni:'1',inpEmpObs:'',chkPixRecebimento:false}:{inpDataDia:dia,inpDataMes:mes,inpDataAno:ano,inpData:dia+'/'+mes+'/'+ano,inpMesFat:'',inpDesc:'',selForma:'',selCat:'',inpParc:'1',inpParcIni:'1',inpTags:'',checkAssinatura:false,chkPixParcelado:false};
-  if(lerValorMoeda(emp?'inpEmpValor':'inpValor')>0)return true;
-  return Object.entries(defaults).some(([id,padrao])=>{const e=document.getElementById(id);if(!e)return false;return typeof padrao==='boolean'?Boolean(e.checked)!==padrao:String(e.value||'').trim()!==padrao;});
+  return !rascunhoFormularioVazioRotinaGestor(emp?'emp':'novo',dadosFormularioRascunhoGestor(emp));
 }
 function transformarSimulacaoEmEmprestimo(){transferirSimulacaoGestor(true);}
 function transformarSimulacaoEmLancamento(){transferirSimulacaoGestor(false);}
@@ -216,15 +214,19 @@ function garantirChaveRascunhoNotaGestor() {
   gravarArmazenamentoGestor('gestorNotaAbaV2',id,{sessao:true,opcional:true});
   notaRascunhoChaveGestor=NOTA_RASCUNHO_PREFIXO_GESTOR+id;return notaRascunhoChaveGestor;
 }
-function normalizarRascunhoNotaGestor(r) {
+function normalizarRascunhoNotaGestor(r,chave='') {
   if(!r||typeof r!=='object'||typeof r.texto!=='string')return null;
   let edicao=null;
   if(r.edicao){const n=r.edicao;if(typeof n.id!=='string'||!n.id||typeof n.texto!=='string'||!Number.isSafeInteger(Number(n.revision))||Number(n.revision)<0)return null;edicao={id:n.id,revision:Number(n.revision),texto:n.texto,baseRestauracao:typeof n.baseRestauracao==='string'?n.baseRestauracao:''};}
-  return {versao:2,texto:r.texto,edicao,atualizadoEm:Number.isFinite(r.atualizadoEm)?r.atualizadoEm:0};
+  const id=typeof r.rascunhoId==='string'?r.rascunhoId:(String(chave).startsWith(NOTA_RASCUNHO_PREFIXO_GESTOR)?String(chave).slice(NOTA_RASCUNHO_PREFIXO_GESTOR.length):'');
+  return {versao:2,texto:r.texto,edicao,rascunhoId:/^[A-Za-z0-9_.:-]{8,160}$/.test(id)?id:'',atualizadoEm:Number.isFinite(r.atualizadoEm)?r.atualizadoEm:0};
 }
+function assinaturaConteudoRascunhoNotaGestor(r){return JSON.stringify([r.texto,r.edicao]);}
+function rascunhoNotaConcluidoGestor(r){const salvo=r?.rascunhoId?lerJSONLocalGestor('gestorNotaRascunhoConcluidoV1:'+r.rascunhoId,null):null,assinatura=r?assinaturaConteudoRascunhoNotaGestor(r):'';return Boolean(salvo&&(salvo.assinatura===assinatura||Array.isArray(salvo.assinaturas)&&salvo.assinaturas.includes(assinatura)));}
 function persistirRascunhoNotaGestor() {
   const inp=document.getElementById('inpNovaNotaTexto'),chave=garantirChaveRascunhoNotaGestor();
-  const r={versao:2,texto:inp.value,edicao:notaEmEdicaoGestor,atualizadoEm:Date.now()};
+  if((inp.value||notaEmEdicaoGestor)&&!notaRascunhoIdentidadeGestor)notaRascunhoIdentidadeGestor=novoRequestIdGestor();
+  const r={versao:2,texto:inp.value,edicao:notaEmEdicaoGestor,rascunhoId:notaRascunhoIdentidadeGestor,atualizadoEm:Date.now()};
   try{
     if(!r.texto&&!r.edicao){localStorage.removeItem(chave);sessionStorage.removeItem('gestorNotaTextoRascunhoV1');}
     else{gravarArmazenamentoGestor(chave,JSON.stringify(r));try{sessionStorage.removeItem('gestorNotaTextoRascunhoV1');}catch(e){}}
@@ -232,24 +234,26 @@ function persistirRascunhoNotaGestor() {
   }catch(e){guardarRascunhoGestor('gestorNotaTextoRascunhoV1',JSON.stringify(r));mostrarAviso('Rascunho somente nesta sessão','Não foi possível guardar uma cópia durável. Mantenha a aba aberta ou copie o texto antes de fechar.');return false;}
 }
 function guardarTextoNotaGestor(){revisaoTextoNotaGestor++;persistirRascunhoNotaGestor();}
-function aplicarRascunhoNotaGestor(r){notaEmEdicaoGestor=r.edicao;document.getElementById('inpNovaNotaTexto').value=r.texto;document.getElementById('btnAdicionarNotaGestor').textContent=r.edicao?'Salvar alterações':'Adicionar lembrete';document.getElementById('cancelarEdicaoNotaGestor').hidden=!r.edicao;}
+function aplicarRascunhoNotaGestor(r){notaRascunhoIdentidadeGestor=r.rascunhoId||novoRequestIdGestor();notaEmEdicaoGestor=r.edicao;document.getElementById('inpNovaNotaTexto').value=r.texto;document.getElementById('btnAdicionarNotaGestor').textContent=r.edicao?'Salvar alterações':'Adicionar lembrete';document.getElementById('cancelarEdicaoNotaGestor').hidden=!r.edicao;}
 function restaurarRascunhoNotaGestor(){
-  garantirChaveRascunhoNotaGestor();let salvo=normalizarRascunhoNotaGestor(lerJSONLocalGestor(notaRascunhoAnteriorGestor,null));
-  if(!salvo)try{salvo=normalizarRascunhoNotaGestor(JSON.parse(sessionStorage.getItem('gestorNotaTextoRascunhoV1')||'null'));}catch(e){}
+  garantirChaveRascunhoNotaGestor();let salvo=normalizarRascunhoNotaGestor(lerJSONLocalGestor(notaRascunhoAnteriorGestor,null),notaRascunhoAnteriorGestor);
+  const concluido=rascunhoNotaConcluidoGestor(salvo);if(concluido)salvo=null;
+  if(!salvo&&!concluido)try{salvo=normalizarRascunhoNotaGestor(JSON.parse(sessionStorage.getItem('gestorNotaTextoRascunhoV1')||'null'));if(rascunhoNotaConcluidoGestor(salvo))salvo=null;}catch(e){}
   if(salvo){aplicarRascunhoNotaGestor(salvo);if(persistirRascunhoNotaGestor()&&notaRascunhoAnteriorGestor)rascunhosNotasRecuperadosGestor.set(notaRascunhoAnteriorGestor,JSON.stringify(salvo));}
   renderizarRascunhosNotasGestor();
 }
 function listarRascunhosNotasGestor(){
   const assinatura=r=>JSON.stringify([r.texto,r.edicao]),vistos=new Set();
-  const proprio=normalizarRascunhoNotaGestor(lerJSONLocalGestor(garantirChaveRascunhoNotaGestor(),null));if(proprio)vistos.add(assinatura(proprio));
-  return lerEntradasLocaisGestor(NOTA_RASCUNHO_PREFIXO_GESTOR).filter(e=>e.chave!==notaRascunhoChaveGestor).map(e=>({chave:e.chave,valor:normalizarRascunhoNotaGestor(e.valor)})).filter(e=>e.valor&&e.valor.texto.trim()&&rascunhosNotasRecuperadosGestor.get(e.chave)!==JSON.stringify(e.valor)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm).filter(e=>{const k=assinatura(e.valor);if(vistos.has(k))return false;vistos.add(k);return true;});
+  const proprio=normalizarRascunhoNotaGestor(lerJSONLocalGestor(garantirChaveRascunhoNotaGestor(),null),notaRascunhoChaveGestor);if(proprio)vistos.add(assinatura(proprio));
+  return lerEntradasLocaisGestor(NOTA_RASCUNHO_PREFIXO_GESTOR).filter(e=>e.chave!==notaRascunhoChaveGestor).map(e=>({chave:e.chave,valor:normalizarRascunhoNotaGestor(e.valor,e.chave)})).filter(e=>e.valor&&e.valor.texto.trim()&&!rascunhoNotaConcluidoGestor(e.valor)&&rascunhosNotasRecuperadosGestor.get(e.chave)!==JSON.stringify(e.valor)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm).filter(e=>{const k=assinatura(e.valor);if(vistos.has(k))return false;vistos.add(k);return true;});
 }
 function recuperarRascunhoNotaGestor(chave, descartar=false){
   if(!String(chave).startsWith(NOTA_RASCUNHO_PREFIXO_GESTOR)||chave===garantirChaveRascunhoNotaGestor())return;
-  const r=normalizarRascunhoNotaGestor(lerJSONLocalGestor(chave,null));if(!r)return;
+  const r=normalizarRascunhoNotaGestor(lerJSONLocalGestor(chave,null),chave);if(!r)return;
+  if(!descartar&&rascunhoNotaConcluidoGestor(r)){mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');return;}
   const original=JSON.stringify(r),rev=revisaoTextoNotaGestor;
   const aplicar=()=>{
-    if(JSON.stringify(normalizarRascunhoNotaGestor(lerJSONLocalGestor(chave,null)))!==original){mostrarAviso('O rascunho mudou','Confira a cópia mais recente antes de continuar.');renderizarRascunhosNotasGestor();return;}
+    if(JSON.stringify(normalizarRascunhoNotaGestor(lerJSONLocalGestor(chave,null),chave))!==original){mostrarAviso('O rascunho mudou','Confira a cópia mais recente antes de continuar.');renderizarRascunhosNotasGestor();return;}
     if(descartar){localStorage.removeItem(chave);renderizarRascunhosNotasGestor();return;}
     if(rev!==revisaoTextoNotaGestor){mostrarAviso('O texto atual mudou','Ele foi preservado. Recupere a cópia novamente.');return;}
     aplicarRascunhoNotaGestor(r);revisaoTextoNotaGestor++;
@@ -265,7 +269,7 @@ function renderizarRascunhosNotasGestor(){
   const titulo=document.createElement('summary');titulo.textContent=copias.length+' rascunho(s) guardado(s) neste aparelho';titulo.className='cursor-pointer py-1 font-bold';painel.append(titulo);
   copias.forEach(c=>{const linha=document.createElement('div');linha.className='border-t border-slate-700 pt-2 mt-2';const texto=document.createElement('p');texto.textContent=c.valor.texto.slice(0,100)+(c.valor.texto.length>100?'…':'');texto.className='break-words whitespace-pre-line';linha.append(texto);[['Recuperar',false],['Descartar',true]].forEach(([rotulo,remover])=>{const btn=document.createElement('button');btn.type='button';btn.textContent=rotulo;btn.className='text-sky-300 py-2 mr-3';btn.onclick=()=>recuperarRascunhoNotaGestor(c.chave,remover);linha.append(btn);});painel.append(linha);});
 }
-function configurarEdicaoNotaGestor(nota){notaEmEdicaoGestor=nota?{id:nota.id,revision:Number(nota.revision||0),texto:nota.texto,baseRestauracao:localStorage.getItem('gestorEpocaRestauracaoV1')||''}:null;document.getElementById('inpNovaNotaTexto').value=nota?.texto||'';document.getElementById('btnAdicionarNotaGestor').textContent=nota?'Salvar alterações':'Adicionar lembrete';document.getElementById('cancelarEdicaoNotaGestor').hidden=!nota;guardarTextoNotaGestor();document.getElementById('inpNovaNotaTexto').focus();}
+function configurarEdicaoNotaGestor(nota){notaRascunhoIdentidadeGestor=nota?novoRequestIdGestor():'';notaEmEdicaoGestor=nota?{id:nota.id,revision:Number(nota.revision||0),texto:nota.texto,baseRestauracao:localStorage.getItem('gestorEpocaRestauracaoV1')||''}:null;document.getElementById('inpNovaNotaTexto').value=nota?.texto||'';document.getElementById('btnAdicionarNotaGestor').textContent=nota?'Salvar alterações':'Adicionar lembrete';document.getElementById('cancelarEdicaoNotaGestor').hidden=!nota;guardarTextoNotaGestor();document.getElementById('inpNovaNotaTexto').focus();}
 function reconciliarEdicaoNotaConfirmadaGestor(envio,resultado){
   const base=notaEmEdicaoGestor;if(!base)return;
   if((base.baseRestauracao||'')!==(localStorage.getItem('gestorEpocaRestauracaoV1')||'')||(envio.baseRestauracao||'')!==(base.baseRestauracao||''))return;
@@ -297,10 +301,12 @@ function renderizarNotasUI(){
 }
 function adicionarNotaRapida(){
   const inp=document.getElementById('inpNovaNotaTexto'),txt=inp.value.trim();if(!txt)return;
+  if(rascunhoNotaConcluidoGestor({rascunhoId:notaRascunhoIdentidadeGestor,texto:inp.value,edicao:notaEmEdicaoGestor})){mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');configurarEdicaoNotaGestor(null);return;}
   inicializarNotasLocaisGestor();let nota;
   if(notaEmEdicaoGestor){const atual=notasGlobais.find(n=>String(n.id)===String(notaEmEdicaoGestor.id));if((notaEmEdicaoGestor.baseRestauracao||'')!==(localStorage.getItem('gestorEpocaRestauracaoV1')||'')||!atual||Number(atual.revision||0)!==notaEmEdicaoGestor.revision||atual.texto!==notaEmEdicaoGestor.texto){mostrarAviso('A nota mudou','Seu rascunho permanece no campo. Confira a versão atual antes de editar novamente.');return;}nota={...atual,texto:txt};}
   else nota={id:novoRequestIdGestor(),texto:txt,concluida:false,data:new Date().toLocaleDateString('pt-BR')};
   try{registrarOperacaoNotaGestor('upsert',nota);}catch(e){mostrarAviso('Não foi possível guardar a nota','Copie o texto antes de fechar o app. Ele permanece no campo.');return;}
+  if(notaRascunhoIdentidadeGestor)try{const chave='gestorNotaRascunhoConcluidoV1:'+notaRascunhoIdentidadeGestor,anterior=lerJSONLocalGestor(chave,null),assinatura=assinaturaConteudoRascunhoNotaGestor({texto:inp.value,edicao:notaEmEdicaoGestor}),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(chave,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(e){mostrarAviso('Nota guardada','O comprovante do rascunho não coube neste aparelho. Não recupere a cópia antiga para adicionar esta mesma nota.');}
   configurarEdicaoNotaGestor(null);recomporNotasLocaisGestor();sincronizarNotasNuvem();
 }
 function toggleNotaConcluida(id){inicializarNotasLocaisGestor();const item=notasGlobais.find(n=>String(n.id)===String(id));if(!item)return;try{registrarOperacaoNotaGestor('upsert',{...item,concluida:!item.concluida});recomporNotasLocaisGestor();sincronizarNotasNuvem();}catch(e){mostrarAviso('Nota não alterada','Não foi possível guardar a alteração neste aparelho.');renderizarNotasUI();}}

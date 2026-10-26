@@ -1,6 +1,23 @@
 // Fluxos de uso diário. Não altera identificadores de envios já preparados.
 const paginaRascunhoGestor=novoRequestIdGestor();
 const chavesRascunhoPaginaGestor=Object.create(null);
+const origensRascunhoPaginaGestor=Object.create(null);
+function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
+function dadosFormularioRascunhoGestor(emp){
+  const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','checkAssinatura','chkPixParcelado'];
+  return {campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
+}
+function datasEscolhidasRascunhoGestor(tipo,dados){
+  const c=dados?.campos||{},p=tipo==='emp'?'inpEmp':'inp',data=dados?.dataAutomatica||dataPadraoRascunhoGestor(),partes=data.split('/'),defaults={};
+  defaults[p+'DataDia']=partes[0];defaults[p+'DataMes']=partes[1];defaults[p+'DataAno']=partes[2];defaults[p+'Data']=data;
+  // Cópias antigas não identificavam a data automática. Não transformar esse
+  // preenchimento legado, sozinho, em um rascunho novo apenas por mudar o dia.
+  if(typeof dados?.dataAutomatica==='string'&&Object.keys(defaults).some(id=>String(c[id]||'').trim()&&String(c[id]).trim()!==defaults[id]))return true;
+  return (Array.isArray(dados?.camposManuais)?dados.camposManuais:[]).some(id=>(Object.prototype.hasOwnProperty.call(defaults,id)||id===p+'MesFat')&&String(c[id]||'').trim());
+}
+function chaveConclusaoRascunhoRotinaGestor(chave){return String(chave).replace(/^gestorRascunhoV3:/,'gestorRascunhoConcluidoV1:');}
+function rascunhoConcluidoRotinaGestor(chave,valor){return lerJSONLocalGestor(chaveConclusaoRascunhoRotinaGestor(chave),null)?.assinatura===JSON.stringify(valor);}
 function resumoParcelasExatasGestor(valor,qtd){
   const n=Math.max(1,Number(qtd)||1),c=Math.round(Number(valor)*100),base=Math.floor(c/n),resto=c%n;
   return [resto?resto+'x de '+formatBRL((base+1)/100):'',n-resto?(n-resto)+'x de '+formatBRL(base/100):''].filter(Boolean).join(' + ');
@@ -14,7 +31,10 @@ function chaveRascunhoRotinaGestor(tipo){return chavesRascunhoPaginaGestor[tipo]
 function lerRascunhoRotinaGestor(tipo){
   const anterior=(()=>{try{return sessionStorage.getItem('gestorRascunhoAnterior:'+tipo);}catch(_){return null;}})();
   const r=anterior?lerJSONLocalGestor(anterior,null):null;
-  if(r?.dados && !rascunhoVazioRotinaGestor(tipo,r.dados))return JSON.stringify(r.dados);
+  if(r?.dados && !rascunhoVazioRotinaGestor(tipo,r.dados)){
+    if(rascunhoConcluidoRotinaGestor(anterior,r)){sessionStorage.removeItem(tipo==='novo'?'rascunhoLancamento':'rascunhoEmprestimo');return null;}
+    if(tipo!=='racha')origensRascunhoPaginaGestor[tipo]={chave:anterior,valor:r};return JSON.stringify(r.dados);
+  }
   // A chave legada é somente lida. Cada página passa a gravar em sua própria cópia.
   if(tipo==='racha')return lerCacheLeituraGestor('gestorRachadinhaRascunhoV1');
   try{const texto=sessionStorage.getItem(tipo==='novo'?'rascunhoLancamento':'rascunhoEmprestimo');return texto && !rascunhoVazioRotinaGestor(tipo,JSON.parse(texto))?texto:null;}catch(_){return null;}
@@ -30,16 +50,17 @@ function rascunhoRachaVazioRotinaGestor(dados){
     if(campo==='pagoCentavos')return Number(v)!==0;
     return true;
   }));
-  return !texto&&!valor&&!nomesPendentes&&!ajustesReais&&!c.rachaTaxa10&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&pessoas.length===2&&/^eu$/i.test(pessoas[0])&&/^amigo\s*2$/i.test(pessoas[1]);
+  return !texto&&!valor&&!nomesPendentes&&!ajustesReais&&!c.rachaTaxa10&&(!c.rachaRateioAcrescimos||c.rachaRateioAcrescimos==='consumo')&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&pessoas.length===2&&/^eu$/i.test(pessoas[0])&&/^amigo\s*2$/i.test(pessoas[1]);
 }
 function rascunhoFormularioVazioRotinaGestor(tipo,dados){
   if(!['novo','emp'].includes(tipo))return false;
   if(dados?.requestId || dados?.registroId || dados?.envio || dados?.resultadoIncerto)return false;
   const c=dados?.campos || {},emp=tipo==='emp';
+  if(datasEscolhidasRascunhoGestor(tipo,dados))return false;
   const textos=emp?['inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpObs','inpEmpCombinada']:['inpDesc','selForma','selCat','inpTags'];
   if([dados?.desc,dados?.pessoa,dados?.forma,...textos.map(id=>c[id])].some(v=>String(v || '').trim()))return false;
   if(Number(String(dados?.valor || c[emp?'inpEmpValor':'inpValor'] || '').replace(/[^\d]/g,''))>0)return false;
-  if(Number(c[emp?'inpEmpParc':'inpParc'] || dados?.parc || 1)>1 || Number(c[emp?'inpEmpParcIni':'inpParcIni'] || 1)>1)return false;
+  if(Number(c[emp?'inpEmpParc':'inpParc'] || dados?.parc || 1)!==1 || Number(c[emp?'inpEmpParcIni':'inpParcIni'] || 1)!==1)return false;
   return ![c.checkAssinatura,c.chkPixParcelado,c.chkPixRecebimento].some(v=>v===true);
 }
 function rascunhoVazioRotinaGestor(tipo,dados){return tipo==='racha'?rascunhoRachaVazioRotinaGestor(dados):rascunhoFormularioVazioRotinaGestor(tipo,dados);}
@@ -55,21 +76,46 @@ const guardarRascunhoAnteriorRotinaGestor=guardarRascunhoGestor;
 guardarRascunhoGestor=function(chave,valor){
   const tipo=chave==='rascunhoLancamento'?'novo':chave==='rascunhoEmprestimo'?'emp':null;
   if(!tipo)return guardarRascunhoAnteriorRotinaGestor(chave,valor);
-  const dados=JSON.parse(valor);const salvo=guardarRascunhoRotinaGestor(tipo,dados);
+  const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
   gravarArmazenamentoGestor(chave,valor,{sessao:true,opcional:true});return salvo;
 };
 const restaurarRascunhoAnteriorRotinaGestor=restaurarRascunhosCompletosGestor;
 restaurarRascunhosCompletosGestor=function(){
   const restaurandoAgora=!rascunhosRestauradosGestor;
+  const metadados={};
   if(!rascunhosRestauradosGestor){for(const [tipo,chave]of [['novo','rascunhoLancamento'],['emp','rascunhoEmprestimo']]){const texto=lerRascunhoRotinaGestor(tipo);if(texto)gravarArmazenamentoGestor(chave,texto,{sessao:true,opcional:true});}}
+  if(restaurandoAgora)for(const [tipo,chave]of [['novo','rascunhoLancamento'],['emp','rascunhoEmprestimo']])try{metadados[tipo]=JSON.parse(sessionStorage.getItem(chave)||'null');}catch(_){}
   restaurarRascunhoAnteriorRotinaGestor();
   if(restaurandoAgora)for(const id of ['selForma','selCat','inpMesFat']){const e=document.getElementById(id);if(e?.value)e.dataset.escolhaManual='true';}
+  if(restaurandoAgora)for(const [tipo,dados]of Object.entries(metadados)){
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(dados?.dataAutomatica||''))padroesDatasRascunhoGestor[tipo]=dados.dataAutomatica;
+    for(const id of Array.isArray(dados?.camposManuais)?dados.camposManuais:[])if(Object.prototype.hasOwnProperty.call(dados.campos||{},id)){const e=document.getElementById(id);if(e?.dataset)e.dataset.escolhaManual='true';}
+  }
   renderizarRecuperacaoRascunhosGestor();
 };
 function limparCopiaRascunhoRotinaGestor(emp){
   const tipo=emp?'emp':'novo';try{localStorage.removeItem(chaveRascunhoRotinaGestor(tipo));sessionStorage.removeItem('gestorRascunhoAnterior:'+tipo);sessionStorage.removeItem(emp?'rascunhoEmprestimo':'rascunhoLancamento');}catch(_){}
+  padroesDatasRascunhoGestor[tipo]=dataPadraoRascunhoGestor();
   for(const e of document.getElementById(emp?'formEmprestimo':'formLancamento')?.elements || [])if(e.dataset){delete e.dataset.escolhaManual;delete e.dataset.valorSugerido;}
   renderizarRecuperacaoRascunhosGestor();
+}
+function concluirFormularioEnviadoGestor(emp,snapshot){
+  const acao=emp?'salvarEmprestimoWeb':'salvarLancamentoWeb';
+  if(emp?emprestimoPendenteGestor():sessionStorage.getItem('lancamentoResultadoIncerto')==='true')return false;
+  const atual=capturarFormularioMutacaoGestor(acao),tipo=emp?'emp':'novo',origem=origensRascunhoPaginaGestor[tipo];
+  if(snapshot&&JSON.stringify(snapshot)!==JSON.stringify(atual))return false;
+  const campos=origem?.valor?.dados?.campos,concluirOrigem=campos&&Object.keys(atual||{}).every(id=>campos[id]===atual[id]);
+  // O envio já foi confirmado ou está guardado na fila. A trava ainda pode
+  // estar ativa: conclui explicitamente apenas a cópia deste formulário.
+  window[emp?'limparFormularioEmprestimo':'limparFormularioNovoGasto']();
+  limparCopiaRascunhoRotinaGestor(emp);
+  if(concluirOrigem){
+    // Não remove a chave de outra página: uma edição simultânea continua
+    // recuperável. O comprovante vale somente para o conteúdo exato enviado.
+    const salvo=gravarArmazenamentoGestor(chaveConclusaoRascunhoRotinaGestor(origem.chave),JSON.stringify({assinatura:JSON.stringify(origem.valor),concluidoEm:Date.now()}),{opcional:true});
+    if(!salvo)mostrarAviso('Envio concluído','A cópia de origem do rascunho não pôde ser marcada como enviada. Não a recupere para repetir este lançamento.');
+  }
+  delete origensRascunhoPaginaGestor[tipo];renderizarRecuperacaoRascunhosGestor();return true;
 }
 for(const [nome,emp]of [['limparFormularioNovoGasto',false],['limparFormularioEmprestimo',true]]){
   const original=window[nome];window[nome]=function(){if(bloqueioFormularioRotinaGestor(emp))return original();original();limparCopiaRascunhoRotinaGestor(emp);};
@@ -82,7 +128,7 @@ function pedirLimpezaFormularioGestor(emp){
   mostrarConfirmacao('Limpar o formulário?','Os campos ainda não enviados serão apagados. Seus registros salvos permanecem guardados.',()=>{if(assinaturaFormularioRotinaGestor(form)!==antes){mostrarAviso('Os campos mudaram','Confira o formulário antes de limpar.');return;}executar();renderizarRecuperacaoRascunhosGestor();},false,'Limpar campos','neutral');
 }
 function entradasRecuperaveisRascunhoRotinaGestor(tipo){
-  return lerEntradasLocaisGestor('gestorRascunhoV3:'+tipo+':').filter(e=>e.chave!==chaveRascunhoRotinaGestor(tipo)&&(!e.valor.tipo||e.valor.tipo===tipo)&&!rascunhoVazioRotinaGestor(tipo,e.valor.dados)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm);
+  return lerEntradasLocaisGestor('gestorRascunhoV3:'+tipo+':').filter(e=>e.chave!==chaveRascunhoRotinaGestor(tipo)&&(!e.valor.tipo||e.valor.tipo===tipo)&&!rascunhoVazioRotinaGestor(tipo,e.valor.dados)&&!rascunhoConcluidoRotinaGestor(e.chave,e.valor)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm);
 }
 function renderizarRecuperacaoRascunhosGestor(){
   for(const tipo of ['novo','emp','racha']){
@@ -98,6 +144,7 @@ function renderizarRecuperacaoRascunhosGestor(){
   }
 }
 function recuperarRascunhoRotinaGestor(tipo,chave,valor){
+  if(rascunhoConcluidoRotinaGestor(chave,valor)){mostrarAviso('Rascunho já enviado','Esta cópia já teve um envio concluído. Confira o Histórico ou a fila antes de preparar outro lançamento.');return;}
   if(tipo==='racha'){
     if(divisaoRachaEnviadaGestor()){mostrarAviso('Confira a divisão atual','Conclua a conferência antes de recuperar outra divisão.');return;}
     mostrarConfirmacao('Recuperar esta divisão?','A cópia será aberta após recarregar. A divisão atual continuará disponível em Rascunhos recuperáveis.',()=>{if(JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('A cópia mudou','Abra a lista de rascunhos novamente.');return;}guardarRascunhoRachaGestor(true);gravarArmazenamentoGestor('gestorRascunhoAnterior:racha',chave,{sessao:true});location.reload();},false,'Recuperar divisão','neutral');return;
@@ -106,13 +153,14 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
   const form=document.getElementById(emp?'formEmprestimo':'formLancamento'),antes=assinaturaFormularioRotinaGestor(form);
   const aplicar=()=>{if(bloqueioFormularioRotinaGestor(emp)||assinaturaFormularioRotinaGestor(form)!==antes||JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('Os dados mudaram','Confira o formulário e a cópia novamente.');return;}
     if(haRascunhoFormularioGestor(emp)){emp?salvarRascunhoEmp():salvarRascunho();const copia=lerJSONLocalGestor(chaveRascunhoRotinaGestor(tipo),null);if(!copia){mostrarAviso('Rascunho atual não guardado','Libere espaço antes de substituir os campos.');return;}try{gravarArmazenamentoGestor('gestorRascunhoV3:'+tipo+':'+novoRequestIdGestor(),JSON.stringify(copia));}catch(e){mostrarAviso('Rascunho preservado',e.message);return;}}
+    origensRascunhoPaginaGestor[tipo]={chave,valor};
     Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
 function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','Conferir recebimento'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
 function modoRecebimentoEditorRotinaGestor(modal,ativo){
-  const campos=[...Array.from(modal.querySelectorAll?.('form > .grid') || [modal.querySelector?.('form > .grid')]),document.getElementById('boxPropagarValorEmp'),modal.querySelector?.('[onclick="togglePainelDividirEmp()"]'),modal.querySelector?.('[onclick="togglePainelMoverPessoal()"]'),document.getElementById('inpEdEmpCombinada')?.closest?.('label'),document.getElementById('btnSalvarEdEmp')];
+  const campos=[...Array.from(modal.querySelectorAll?.('form > .grid') || [modal.querySelector?.('form > .grid')]),document.getElementById('boxPropagarValorEmp'),modal.querySelector?.('[onclick="togglePainelDividirEmp()"]'),modal.querySelector?.('[onclick="togglePainelMoverPessoal()"]'),document.getElementById('inpEdEmpCombinada')?.closest?.('label'),document.getElementById('escopoDataCombinadaEmpGestor')?.closest?.('label'),document.getElementById('ajudaEscopoDataEmpGestor'),document.getElementById('btnSalvarEdEmp')];
   campos.filter(Boolean).forEach(e=>{if(ativo){e.dataset.hiddenRecebimento=String(e.hidden);e.dataset.classeRecebimento=String(e.classList.contains('hidden'));e.hidden=true;e.classList.add('hidden');}else if(e.dataset.hiddenRecebimento!==undefined){e.hidden=e.dataset.hiddenRecebimento==='true';e.classList.toggle('hidden',e.dataset.classeRecebimento==='true');delete e.dataset.hiddenRecebimento;delete e.dataset.classeRecebimento;}});
   const titulo=modal.querySelector?.('h3');if(titulo)titulo.textContent=ativo?'Registrar recebimento':'Editar Empréstimo';
 }
@@ -168,7 +216,7 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<10){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<10)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
+window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaEdicaoEmprestimoWeb', 'previaDatasDevolucaoWeb', 'previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<12){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<12)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -193,7 +241,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   prepararFiltrosEmpRotinaGestor();
   document.getElementById('selFiltroRelMes')?.setAttribute('aria-label','Mês da fatura');document.getElementById('selFiltroRelAno')?.setAttribute('aria-label','Ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
-  document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(e.target.id==='selForma')delete document.getElementById('inpMesFat').dataset.escolhaManual;}},true);
+  document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat','selEmpForma'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(['selForma','selEmpForma'].includes(e.target.id))delete document.getElementById(e.target.id==='selForma'?'inpMesFat':'inpEmpMesFat').dataset.escolhaManual;}},true);
   document.addEventListener('input',e=>{if(e.target.id==='inpMesFat')e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
   const painel=document.getElementById('painelDividirEmpCampos');if(painel){const resumo=document.createElement('p');resumo.id='previaRecebimentoRotina';resumo.className='text-xs text-amber-100 leading-relaxed';resumo.setAttribute('role','status');painel.prepend(resumo);document.getElementById('inpDividirEmpValor').setAttribute('aria-label','Valor recebido agora');}
   const form=document.getElementById('formEmprestimo');if(form){const nav=document.createElement('div');nav.className='flex gap-2 mb-3';nav.setAttribute('role','group');nav.setAttribute('aria-label','Modo de empréstimos');const consultar=document.createElement('button'),novo=document.createElement('button');for(const b of [consultar,novo]){b.type='button';b.className='flex-1 rounded-xl border border-amber-500/40 px-3 py-3 text-sm font-bold text-amber-200';nav.append(b);}consultar.id='btnConsultarEmprestimos';novo.id='btnNovoEmprestimo';consultar.textContent='Consultar empréstimos';novo.textContent='Novo empréstimo';consultar.onclick=()=>alternarModoEmprestimosGestor('consulta');novo.onclick=()=>alternarModoEmprestimosGestor('novo');form.parentElement.before(nav);alternarModoEmprestimosGestor('consulta');}
@@ -206,4 +254,15 @@ document.addEventListener('DOMContentLoaded',()=>{
   for(const [formId,id,texto]of [['formEmprestimo','inpEmpCombinada','Data combinada da primeira devolução (opcional; demais parcelas mensais)'],['modalEdicaoEmp','inpEdEmpCombinada','Data combinada de devolução (opcional)']]){const destino=document.getElementById(formId);if(!destino)continue;const l=document.createElement('label');l.className='block text-xs text-slate-300 mt-3';l.textContent=texto;const i=document.createElement('input');i.type='date';i.id=id;i.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';l.append(i);const f=destino.tagName==='FORM'?destino:destino.querySelector('form');const acao=f.querySelector('button[type="submit"]')?.parentElement;if(acao)acao.before(l);else f.append(l);i.onchange=()=>formId==='formEmprestimo'&&salvarRascunhoEmp();}
   const inicio=document.createElement('input');inicio.id='inpAssInicio';inicio.placeholder='MM/AAAA';inicio.maxLength=7;inicio.inputMode='numeric';inicio.className='w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white';inicio.setAttribute('aria-label','Novas condições a partir do mês');const fAss=document.getElementById('modalEdicaoAss')?.querySelector('form');if(fAss){const l=document.createElement('label');l.className='block text-xs text-slate-300';l.textContent='Novas condições a partir de (MM/AAAA)';l.append(inicio);fAss.prepend(l);const hoje=new Date();inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}
   renderizarRecuperacaoRascunhosGestor();
+});
+for(const tipo of ['input','change'])document.addEventListener(tipo,event=>{
+  if(event.isTrusted===false)return;
+  const e=event.target;if(!e?.id||!/^inp(?:Emp)?(?:Data(?:Dia|Mes|Ano)?|MesFat)$/.test(e.id))return;
+  e.dataset.escolhaManual='true';
+},true);
+document.addEventListener('DOMContentLoaded',()=>{
+  const dataEd=document.getElementById('inpEdEmpCombinada')?.closest('label');if(!dataEd)return;
+  const l=document.createElement('label');l.className='block text-xs text-slate-300';l.textContent='Aplicar a data combinada';const s=document.createElement('select');s.id='escopoDataCombinadaEmpGestor';s.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';
+  for(const [v,t]of [['parcela','Somente esta parcela'],['proximas','Próximas parcelas a receber desta compra']]){const o=document.createElement('option');o.value=v;o.textContent=t;s.append(o);}l.append(s);dataEd.after(l);
+  const p=document.createElement('p');p.id='ajudaEscopoDataEmpGestor';p.className='mt-1 text-xs text-slate-300';p.textContent='As próximas repetem o dia nos meses seguintes, ajustando meses curtos. Você verá as datas antes de confirmar. Parcelas recebidas e anteriores ficam como estão.';l.after(p);s.setAttribute('aria-describedby',p.id);
 });

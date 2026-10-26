@@ -1,5 +1,5 @@
 let rachaDetAjustes=Object.create(null),rachaEu='Eu',rachaItemEmEdicao=null,rachaEnvioGuardado=null,rachaRestaurando=false,rachaAvisouArmazenamento=false,rachaRegistroId=null,rachaPartePreparadaGestor=null;
-const CAMPOS_RASCUNHO_RACHA=['rachaLocal','rachaValorTotal','rachaValorBebida','rachaQtdPessoas','rachaQtdBebeu','rachaTaxa10','rachaServicoPercentual','rachaDesconto','rachaAcrescimo','inpNovoNomeRacha','inpItemDescRacha','inpItemValRacha'];
+const CAMPOS_RASCUNHO_RACHA=['rachaLocal','rachaValorTotal','rachaValorBebida','rachaQtdPessoas','rachaQtdBebeu','rachaTaxa10','rachaServicoPercentual','rachaDesconto','rachaAcrescimo','rachaRateioAcrescimos','inpNovoNomeRacha','inpItemDescRacha','inpItemValRacha'];
 function divisaoRachaEnviadaGestor(){
   if(rachaEnvioGuardado)return true;
   try{return Boolean(rachaRegistroId&&localStorage.getItem('gestorMutacaoV3:'+rachaRegistroId));}catch(e){return false;}
@@ -57,7 +57,7 @@ function guardarRascunhoRachaGestor(obrigatorio=false) {
 function opcoesContaRachaGestor() {
   const ativo=Boolean(document.getElementById('rachaTaxa10')?.checked),texto=String(document.getElementById('rachaServicoPercentual')?.value ?? '').trim(),percentual=ativo?Number(texto.replace(',','.')):0;
   if(ativo&&(!texto||!Number.isFinite(percentual)||percentual<0||percentual>100))throw Error('Informe o serviço entre 0 e 100%, ou desative Incluir serviço.');
-  return {servicoPercentual:percentual,descontoCentavos:Math.round(lerValorMoeda('rachaDesconto')*100),acrescimoCentavos:Math.round(lerValorMoeda('rachaAcrescimo')*100)};
+  return {servicoPercentual:percentual,descontoCentavos:Math.round(lerValorMoeda('rachaDesconto')*100),acrescimoCentavos:Math.round(lerValorMoeda('rachaAcrescimo')*100),rateioAcrescimos:document.getElementById('rachaRateioAcrescimos')?.value||'consumo'};
 }
 function dadosContaDetalhadaRachaGestor() {
   return {...opcoesContaRachaGestor(),pessoas:rachaDetPessoas.map(nome=>({id:nome,nome,peso:cotaPessoaRachaGestor(nome),pagoCentavos:Number(rachaDetAjustes[nome]?.pagoCentavos || 0)})),itens:rachaDetItens.map(it=>({id:String(it.id),descricao:it.desc,valorCentavos:it.valorCentavos ?? Math.round(it.valor*100),consumidores:it.consumidores.slice()}))};
@@ -107,7 +107,7 @@ function mensagemDivisaoRachaGestor(d){
   linhas.push('','Consumo: '+formatBRL(d.baseCentavos/100));
   if(d.descontoCentavos>0)linhas.push('Desconto: '+formatBRL(d.descontoCentavos/100));
   if(d.taxaCentavos>0)linhas.push('Serviço: '+formatBRL(d.taxaCentavos/100));
-  if(d.acrescimoCentavos>0)linhas.push('Acréscimos: '+formatBRL(d.acrescimoCentavos/100));
+  if(d.acrescimoCentavos>0)linhas.push('Acréscimos: '+formatBRL(d.acrescimoCentavos/100)+(d.rateioAcrescimos==='igual'?' (iguais por pessoa)':' (proporcionais ao consumo)'));
   linhas.push('*Total: '+formatBRL(d.totalCentavos/100)+'*');
   if(d.transferencias.length){linhas.push('','*Acertos entre pessoas:*');d.transferencias.forEach(t=>linhas.push(nomes.get(t.de)+' → '+nomes.get(t.para)+': '+formatBRL(t.valorCentavos/100)));}
   if(d.pendenteEstabelecimentoCentavos)linhas.push('Ainda falta pagar ao estabelecimento: '+formatBRL(d.pendenteEstabelecimentoCentavos/100));return linhas.join('\n');
@@ -280,7 +280,7 @@ function limparRachadinhaTudo(){
     if(rachaEnvioGuardado?.estado==='pendente'||(!rachaEnvioGuardado&&divisaoRachaEnviadaGestor())){mostrarAviso('Confira o envio','O envio continua guardado; consulte Atividade antes de limpar.');return;}
     if(assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira os campos novamente antes de limpar. Seu preenchimento foi preservado.');return;}
     rachaRestaurando=true;rachaDetPessoas=['Eu','Amigo 2'];rachaDetItens=[];rachaDetAjustes=Object.create(null);rachaEu='Eu';rachaItemEmEdicao=null;rachaEnvioGuardado=null;rachaRegistroId=null;rachaPartePreparadaGestor=null;
-    CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=false;else e.value=id==='rachaQtdPessoas'?2:id==='rachaQtdBebeu'?1:id==='rachaServicoPercentual'?10:'';}});
+    CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=false;else e.value=id==='rachaQtdPessoas'?2:id==='rachaQtdBebeu'?1:id==='rachaServicoPercentual'?10:id==='rachaRateioAcrescimos'?'consumo':'';}});
     rachaRestaurando=false;alternarModoRachadinha('rapido');guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
   },false,'Limpar divisão','neutral');
 }
@@ -289,6 +289,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   const opcoes=document.createElement('details');opcoes.className='rounded-xl border border-slate-600 p-3 text-xs text-slate-200';
   opcoes.innerHTML='<summary class="cursor-pointer font-bold py-1">Mais opções — serviço, desconto e acréscimos</summary><div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3"><label>Serviço (%)<input id="rachaServicoPercentual" type="number" min="0" max="100" step="0.01" value="10" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label><label>Desconto da conta<input id="rachaDesconto" inputmode="numeric" placeholder="R$ 0,00" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label><label>Acréscimos (entrega, couvert…)<input id="rachaAcrescimo" inputmode="numeric" placeholder="R$ 0,00" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label></div><p class="mt-3 leading-relaxed">Ative a opção de serviço para aplicar o percentual escolhido. O desconto é rateado pelo consumo; o serviço incide sobre o consumo após desconto. Acréscimos são rateados pelo consumo, sem nova taxa de serviço.</p>';
   sub.insertBefore(opcoes,document.getElementById('boxRachaModoRapido'));
+  const rateioLabel=document.createElement('label');rateioLabel.className='block mt-3';rateioLabel.textContent='Dividir acréscimos';
+  const rateio=document.createElement('select');rateio.id='rachaRateioAcrescimos';rateio.className='block w-full bg-slate-950 border border-slate-600 rounded-lg p-3 mt-1 text-white';
+  for(const [valor,texto]of [['consumo','Proporcional ao consumo'],['igual','Igual por pessoa da mesa']]){const o=document.createElement('option');o.value=valor;o.textContent=texto;rateio.append(o);}rateioLabel.append(rateio);opcoes.append(rateioLabel);
+  opcoes.querySelector('p').textContent='O desconto é proporcional ao consumo; o serviço incide após o desconto. Os acréscimos seguem sua escolha: pelo consumo ou igualmente entre todas as pessoas da mesa, sem considerar cotas. Não há nova taxa de serviço sobre acréscimos.';
+  rateio.addEventListener('change',()=>{if(modoRachadinhaAtual==='rapido')calcularRachadinha();else calcularRachadinhaDetalhada();});
   const taxa=document.querySelector('label:has(#rachaTaxa10) span');if(taxa)taxa.textContent='Incluir serviço (%)';
   const erro=document.createElement('p');erro.id='estadoCalculoRacha';erro.setAttribute('role','status');erro.className='hidden text-sm text-amber-200 border border-amber-400/40 rounded-xl p-3';opcoes.after(erro);
   const incluir=sub.querySelector('[onclick="adicionarItemRachaDet()"]');incluir.id='btnIncluirItemRacha';
@@ -307,7 +312,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   sub.addEventListener('input',e=>{const t=e.target;
     if(t.dataset.rachaPeso!==undefined){if(!alterarRachaPermitidoGestor())return;const nome=rachaDetPessoas[Number(t.dataset.rachaPeso)],peso=lerCotaRachaGestor(t.value);t.setAttribute('aria-invalid',String(!Number.isFinite(peso)));rachaDetAjustes[nome]={...rachaDetAjustes[nome],pesoTexto:t.value,peso};calcularRachadinhaDetalhada();}
     else if(t.dataset.rachaPago!==undefined){mascaraMoedaTeclado(t);const nome=rachaDetPessoas[Number(t.dataset.rachaPago)];rachaDetAjustes[nome]={...rachaDetAjustes[nome],pagoCentavos:Math.round(lerValorMoeda(t)*100)};calcularRachadinhaDetalhada();}
-    else if(['rachaDesconto','rachaAcrescimo','rachaServicoPercentual'].includes(t.id)){if(t.id!=='rachaServicoPercentual')mascaraMoedaTeclado(t);if(modoRachadinhaAtual==='rapido')calcularRachadinha();else calcularRachadinhaDetalhada();}
+    else if(['rachaDesconto','rachaAcrescimo','rachaServicoPercentual','rachaRateioAcrescimos'].includes(t.id)){if(['rachaDesconto','rachaAcrescimo'].includes(t.id))mascaraMoedaTeclado(t);if(modoRachadinhaAtual==='rapido')calcularRachadinha();else calcularRachadinhaDetalhada();}
     else guardarRascunhoRachaGestor();
   });
   sub.addEventListener('focusout',e=>{if(e.target.dataset.rachaNome!==undefined)renomearPessoaRachaGestor(Number(e.target.dataset.rachaNome),e.target.value);});

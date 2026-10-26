@@ -25,7 +25,7 @@ function abaTecnicaProtecaoGestor_(ss,nome,cab,criar){
   if(!sh&&criar){sh=ss.insertSheet(nome);gravarMatrizProtecaoGestor_(sh,[cab]);if(sh.hideSheet)sh.hideSheet();}
   if(sh&&hashGestor_(sh.getRange(1,1,1,cab.length).getValues()[0])!==hashGestor_(cab))throw Error('Estrutura incompatível em '+nome+'. Preserve a aba para conferência.');return sh;
 }
-function gravarMatrizProtecaoGestor_(sh,linhas){
+function gravarMatrizProtecaoGestor_(sh,linhas,formulas){
   const colunas=Math.max(1,...linhas.map(function(r){return r.length;})),n=Math.max(1,linhas.length),anterior=sh.getLastRow();
   if(sh.getMaxRows&&n>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),n-sh.getMaxRows());
   if(sh.getMaxColumns&&colunas>sh.getMaxColumns())sh.insertColumnsAfter(sh.getMaxColumns(),colunas-sh.getMaxColumns());
@@ -33,7 +33,11 @@ function gravarMatrizProtecaoGestor_(sh,linhas){
   // prefixo parcialmente escrito nem sobrescreve divergências externas.
   const dados=normalizarMatrizProtecaoGestor_(linhas,colunas);
   while(dados.length<anterior)dados.push(Array(colunas).fill(''));
-  if(dados.length)sh.getRange(1,1,dados.length,colunas).setValues(dados.map(function(r){return r.map(function(v){return typeof v==='string'&&/^[=+@]/.test(v)?"'"+v:v;});}));
+  if(dados.length)sh.getRange(1,1,dados.length,colunas).setValues(dados.map(function(r,i){return r.map(function(v,j){
+    const formula=formulas?.[i]?.[j];
+    if(formula){if(typeof formula!=='string'||formula[0]!=='='||formula!==v)throw Error('Fórmula original incompatível com o plano de manutenção.');return formula;}
+    return typeof v==='string'&&/^[=+@]/.test(v)?"'"+v:v;
+  });}));
   SpreadsheetApp.flush();
 }
 function pastaProtecaoGestor_(pastaId,criar){
@@ -74,8 +78,14 @@ function registrarPlanoProtecaoGestor_(ss,pasta,mudancas,tipo){
   sh.getRange(sh.getLastRow()+1,1,1,6).setValues([[id,'PRONTO',ref.id,ref.hash,new Date(),'']]);SpreadsheetApp.flush();
   retomarManutencaoProtecaoGestor_(ss);return {sucesso:true,operacaoId:id,tipo:tipo};
 }
-function mudancaProtecaoGestor_(ss,nome,depois){
-  return {nome:nome,antes:hashEstadoGestor_(lerEstadoAbaGestor_(ss.getSheetByName(nome))),depois:hashEstadoGestor_(depois),valores:depois};
+function assinaturaFormulasProtecaoGestor_(formulas){
+  const celulas=[];(formulas||[]).forEach(function(r,i){r.forEach(function(f,j){if(f)celulas.push([i,j,f]);});});return hashGestor_(celulas);
+}
+function formulasAbaProtecaoGestor_(sh){return sh&&sh.getLastRow()?sh.getDataRange().getFormulas():[];}
+function mudancaProtecaoGestor_(ss,nome,depois,formulas){
+  const sh=ss.getSheetByName(nome);
+  return {nome:nome,antes:hashEstadoGestor_(lerEstadoAbaGestor_(sh)),depois:hashEstadoGestor_(depois),valores:depois,
+    antesFormulas:assinaturaFormulasProtecaoGestor_(formulasAbaProtecaoGestor_(sh)),depoisFormulas:assinaturaFormulasProtecaoGestor_(formulas),formulas:formulas||[]};
 }
 function retomarManutencaoProtecaoGestor_(ss){
   const sh=abaTecnicaProtecaoGestor_(ss,ABA_MANUTENCAO_PROTECAO_GESTOR_,CAB_MANUTENCAO_PROTECAO_GESTOR_,false);if(!sh||sh.getLastRow()<2)return;
@@ -84,9 +94,11 @@ function retomarManutencaoProtecaoGestor_(ss){
     const r=sh.getRange(linha,1,1,6).getValues()[0],plano=lerJsonProtecaoGestor_({id:r[2],hash:r[3]});
     const permitidas=['Lançamentos','Empréstimos',ABA_ARQUIVOS_ANUAIS_GESTOR_,ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_];
     if(plano.versao!==1||plano.id!==r[0]||plano.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!Array.isArray(plano.mudancas)||plano.mudancas.some(function(m){return !permitidas.includes(m.nome)||!Array.isArray(m.valores)||hashEstadoGestor_(m.valores)!==m.depois;}))throw Error('Plano de manutenção incompatível. Nenhuma divergência será sobrescrita.');
-    // Confere todas as abas antes de concluir qualquer uma delas.
-    plano.mudancas.forEach(function(m){const atual=hashEstadoGestor_(lerEstadoAbaGestor_(ss.getSheetByName(m.nome)));if(atual!==m.antes&&atual!==m.depois)throw Error('A manutenção encontrou alteração externa em '+m.nome+'. Preserve os dados para conferência.');});
-    plano.mudancas.forEach(function(m){let alvo=ss.getSheetByName(m.nome);if(hashEstadoGestor_(lerEstadoAbaGestor_(alvo))===m.depois)return;if(!alvo)alvo=ss.insertSheet(m.nome);gravarMatrizProtecaoGestor_(alvo,m.valores);if(hashEstadoGestor_(lerEstadoAbaGestor_(alvo))!==m.depois)throw Error('A manutenção ainda precisa de conferência em '+m.nome+'.');});
+    // A expressão e a natureza da célula fazem parte da conferência. Texto
+    // literal "=..." nunca é promovido a fórmula por semelhança de conteúdo.
+    const coincide=function(m,sh,lado){const f=formulasAbaProtecaoGestor_(sh);return hashEstadoGestor_(lerEstadoAbaGestor_(sh))===m[lado]&&(m[lado+'Formulas']?assinaturaFormulasProtecaoGestor_(f)===m[lado+'Formulas']:!f.some(function(r){return r.some(Boolean);}));};
+    plano.mudancas.forEach(function(m){if(m.depoisFormulas&&assinaturaFormulasProtecaoGestor_(m.formulas)!==m.depoisFormulas)throw Error('Plano de fórmulas incompatível.');const alvo=ss.getSheetByName(m.nome);if(!coincide(m,alvo,'antes')&&!coincide(m,alvo,'depois'))throw Error('A manutenção encontrou alteração externa ou fórmula não conferida em '+m.nome+'. Preserve os dados para conferência.');});
+    plano.mudancas.forEach(function(m){let alvo=ss.getSheetByName(m.nome);if(coincide(m,alvo,'depois'))return;if(!alvo)alvo=ss.insertSheet(m.nome);gravarMatrizProtecaoGestor_(alvo,m.valores,m.formulas);if(!coincide(m,alvo,'depois'))throw Error('A manutenção ainda precisa de conferência em '+m.nome+'.');});
     sh.getRange(linha,2).setValue('CONFIRMADO');SpreadsheetApp.flush();
   });
 }
@@ -96,24 +108,50 @@ function conferirSemPendenciasProtecaoGestor_(ss){
 }
 function ativarProtecaoPeloMenuGestor(){const r=configurarProtecaoAutomaticaGestor();SpreadsheetApp.getUi().alert('Proteção automática ativada',r.mensagem,SpreadsheetApp.getUi().ButtonSet.OK);}
 function backupPeloMenuGestor(){const r=executarBackupProtegidoWeb({requestId:'manual-'+gerarIdGestor_()});SpreadsheetApp.getUi().alert('Backup confirmado no Drive',r.url,SpreadsheetApp.getUi().ButtonSet.OK);}
-function catalogoAnualProtecaoGestor_(ss){
+function catalogoAnualProtecaoGestor_(ss,conferirResumo=true){
   const sh=abaTecnicaProtecaoGestor_(ss||obterPlanilhaGestor_(),ABA_ARQUIVOS_ANUAIS_GESTOR_,CAB_ARQUIVOS_ANUAIS_GESTOR_,false);
   if(!sh||sh.getLastRow()<2)return [];
   const vistos=new Set();return sh.getRange(2,1,sh.getLastRow()-1,6).getValues().map(function(r){
     const ano=Number(r[0]);let resumo;try{resumo=JSON.parse(String(r[3]));}catch(_){throw Error('Resumo do arquivo anual inválido.');}
     if(!Number.isInteger(ano)||ano<2000||ano>2200||vistos.has(ano)||!/^[A-Za-z0-9_-]{8,160}$/.test(String(r[1]))||!/^[a-f0-9]{64}$/.test(String(r[2]))||resumo.versao!==1||!Array.isArray(resumo.meses))throw Error('Catálogo anual incompatível. Preserve os arquivos.');
-    vistos.add(ano);return {ano:ano,id:String(r[1]),hash:String(r[2]),resumo:resumo,data:r[4],lote:String(r[5])};
+    vistos.add(ano);const e={ano:ano,id:String(r[1]),hash:String(r[2]),resumo:resumo,data:r[4],lote:String(r[5])};return conferirResumo?conferirResumoAnualProtecaoGestor_(e):e;
   }).sort(function(a,b){return a.ano-b.ano;});
 }
+function conferirResumoAnualProtecaoGestor_(entrada){
+  // Um comprovante por ano evita reler todos os arquivos a cada abertura.
+  // Só pode ser criado a partir do conteúdo anual conferido, nunca do resumo.
+  const chave='GESTOR_RESUMO_ANUAL_V1:'+entrada.ano,assinatura=function(e){return hashGestor_([e.ano,e.id,e.hash,e.resumo]);};
+  if(propriedade_(chave)===assinatura(entrada))return entrada;
+  const resumo=resumoArquivoAnualProtecaoGestor_(dadosArquivoAnualProtecaoGestor_(entrada)),e=Object.assign({},entrada,{resumo:resumo});
+  PropertiesService.getScriptProperties().setProperty(chave,assinatura(e));return e;
+}
+function catalogoParaRecuperacaoProtecaoGestor_(ss){
+  const sh=ss.getSheetByName(ABA_ARQUIVOS_ANUAIS_GESTOR_),original=lerEstadoAbaGestor_(sh);
+  try{return {catalogo:catalogoAnualProtecaoGestor_(ss,false),original:original,danificado:false,erro:''};}catch(erro){
+    const valores=sh?sh.getDataRange().getValues():[],refs=new Map();
+    valores.forEach(function(r,i){
+      if(!i&&hashGestor_(r.slice(0,6))===hashGestor_(CAB_ARQUIVOS_ANUAIS_GESTOR_))return;
+      if(!r.some(function(v){return v!==''&&v!=null;}))return;
+      if(!i&&!Number.isInteger(Number(r[0])))return; // Cabeçalho danificado, guardado integralmente.
+      const ano=Number(r[0]),id=String(r[1]||''),hash=String(r[2]||'');
+      if(!Number.isInteger(ano)||ano<2000||ano>2200||!/^[A-Za-z0-9_-]{8,160}$/.test(id)||!/^[a-f0-9]{64}$/.test(hash))throw Error('O catálogo contém uma referência anual sem ano, arquivo ou comprovante identificável. Preserve a aba para recuperação assistida; nenhum dado foi substituído.');
+      if(refs.has(ano)&&(refs.get(ano).id!==id||refs.get(ano).hash!==hash))throw Error('Há referências conflitantes para o mesmo ano. Preserve o catálogo para recuperação assistida.');
+      refs.set(ano,{ano:ano,id:id,hash:hash,resumo:null,data:r[4],lote:String(r[5]||'')});
+    });
+    if(!refs.size&&original.length>1)throw Error('O catálogo está danificado e seus anos não puderam ser identificados. Preserve a aba para recuperação assistida.');
+    return {catalogo:Array.from(refs.values()).sort(function(a,b){return a.ano-b.ano;}),original:original,danificado:true,erro:String(erro.message||erro)};
+  }
+}
 function dadosArquivoAnualProtecaoGestor_(entrada){
-  const ctx=CONTEXTO_GESTOR_;if(ctx){ctx.cacheAnualProtecao=ctx.cacheAnualProtecao||new Map();if(ctx.cacheAnualProtecao.has(entrada.id))return ctx.cacheAnualProtecao.get(entrada.id);}
+  const ctx=CONTEXTO_GESTOR_,chave=entrada.ano+':'+entrada.id+':'+entrada.hash;if(ctx){ctx.cacheAnualProtecao=ctx.cacheAnualProtecao||new Map();if(ctx.cacheAnualProtecao.has(chave))return ctx.cacheAnualProtecao.get(chave);}
   const ss=SpreadsheetApp.openById(entrada.id),abas=['Lançamentos','Empréstimos'].map(function(nome){
     const sh=ss.getSheetByName(nome);if(!sh)throw Error('Arquivo anual sem a aba '+nome+'.');
-    const valores=normalizarMatrizProtecaoGestor_(sh.getDataRange().getValues(),COLUNAS_GESTOR_);return {nome:nome,valores:valores};
+    const raw=sh.getDataRange().getValues();if(raw.some(function(r){return r.slice(COLUNAS_GESTOR_).some(function(v){return v!==''&&v!=null;});}))throw Error('O arquivo anual contém colunas adicionais. Preserve a personalização no Drive antes de recuperar seus dados.');
+    const valores=normalizarMatrizProtecaoGestor_(raw,COLUNAS_GESTOR_);return {nome:nome,valores:valores};
   });
   const dados={ano:entrada.ano,abas:abas};
   if(hashGestor_(dados)!==entrada.hash)throw Error('O arquivo anual de '+entrada.ano+' mudou. Seus valores não foram misturados à consulta; confira a cópia no Drive.');
-  if(ctx)ctx.cacheAnualProtecao.set(entrada.id,dados);return dados;
+  if(ctx)ctx.cacheAnualProtecao.set(chave,dados);return dados;
 }
 function resumoArquivoAnualProtecaoGestor_(dados){
   let total=0,qtd=0;const meses=new Set(),categorias=Object.create(null),consumoMes=Object.create(null);
@@ -169,9 +207,13 @@ function planejarArquivoAnualProtecaoGestor_(ss,anoLimite){
     // Mantém a compra inteira se ainda há alguma obrigação ou parcela futura.
     // Séries fixas ficam na principal com seus controles de geração/cancelamento.
     const encerrada=itens.every(function(it){const r=it.r,emp=it.aba.nome==='Empréstimos',mes=r[8] instanceof Date?Utilities.formatDate(r[8],getTimezone(),'MM/yyyy'):r[8],info=parseMesFat(mes);
-      return info.time&&info.a<=anoLimite&&!recentes.has(String(r[11]))&&limparApostrofo(r[6])!=='∞/∞'&&!(it.aba.formulas[it.i]||[]).some(Boolean)&&
+      return info.time&&info.a<=anoLimite&&!recentes.has(String(r[11]))&&limparApostrofo(r[6])!=='∞/∞'&&
         (emp?r[9]==='Recebido'&&centavosGestor_(valorPagoBancoGestor_(r,true))===centavosGestor_(r[7]):isStatusPago(r[9]));
-    });if(encerrada){elegiveis+=itens.length;if(selecionados.size+itens.length<=2000)itens.forEach(function(it){selecionados.add(String(it.r[11]));});}
+    });if(encerrada){
+      itens.forEach(function(it){if(it.r.slice(COLUNAS_GESTOR_).some(function(v){return v!==''&&v!=null;}))throw Error('Há conteúdo em colunas adicionais de '+it.aba.nome+', linha '+(it.i+1)+'. O arquivamento foi bloqueado antes de mover os registros. Preserve essas colunas para recuperação assistida.');});
+      if(itens.some(function(it){return (it.aba.formulas[it.i]||[]).some(Boolean);}))return;
+      elegiveis+=itens.length;if(selecionados.size+itens.length<=2000)itens.forEach(function(it){selecionados.add(String(it.r[11]));});
+    }
   });
   const anos=new Map();registros.forEach(function(aba){aba.raw.slice(1).forEach(function(r){if(!selecionados.has(String(r[11])))return;
     const exibido=valoresExibidosRegistroGestor_(r,r.map(function(v){return v==null?'':String(v);})),n=copiarGestor_(r);[0,6,8].forEach(function(i){n[i]=exibido[i];});n[16]=hashRegistroGestor_(n);
@@ -188,6 +230,10 @@ function idsAlteradosRecentementeProtecaoGestor_(ss){
 }
 function arquivarAnosProtecaoGestor_(ss,pasta){
   const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);if(!plano.selecionados.size)return {sucesso:true,quantidade:0};
+  // Expressões constantes podem ser preservadas exatamente. Referências a
+  // células exigiriam rebasing também nas outras abas: não adivinhar endereços
+  // ao compactar linhas de uma planilha personalizada manualmente.
+  plano.registros.forEach(function(a){a.formulas.forEach(function(r){r.forEach(function(f){const expressao=String(f||'').replace(/"(?:[^"]|"")*"/g,'""');if(/(?:\$?[A-Z]{1,3}\$?\d+)(?![\w(])|\b(?:INDIRECT|OFFSET|ADDRESS)\s*\(/i.test(expressao))throw Error('Há fórmulas personalizadas com referências a células em '+a.nome+'. O arquivamento foi interrompido para não deslocar essas referências. Os dados continuam na principal.');});});});
   const catalogo=catalogoAnualProtecaoGestor_(ss),lote='anual-'+gerarIdGestor_();
   plano.anos.forEach(function(dados){
     const anterior=catalogo.find(function(e){return e.ano===dados.ano;});
@@ -196,7 +242,7 @@ function arquivarAnosProtecaoGestor_(ss,pasta){
   });
   const tabela=[CAB_ARQUIVOS_ANUAIS_GESTOR_].concat(catalogo.sort(function(a,b){return a.ano-b.ano;}).map(function(e){return [e.ano,e.id,e.hash,JSON.stringify(e.resumo),e.data,e.lote];}));
   const mudancas=[mudancaProtecaoGestor_(ss,ABA_ARQUIVOS_ANUAIS_GESTOR_,tabela)];
-  plano.registros.forEach(function(a){mudancas.push(mudancaProtecaoGestor_(ss,a.nome,a.antes.filter(function(r,i){return i===0||!plano.selecionados.has(String(r[11]));})));});
+  plano.registros.forEach(function(a){const manter=function(r,i){return i===0||!plano.selecionados.has(String(a.antes[i][11]));};mudancas.push(mudancaProtecaoGestor_(ss,a.nome,a.antes.filter(manter),a.formulas.filter(manter)));});
   registrarPlanoProtecaoGestor_(ss,pasta,mudancas,'arquivo-anual');return {sucesso:true,quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),temMais:plano.restantes>0};
 }
 function compactarHistoricoProtecaoGestor_(ss,pasta){
@@ -249,10 +295,11 @@ function lerReferenciaTecnicaProtecaoGestor_(texto,tipo,chave){
   if(bundle.versao!==1||bundle.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!Object.prototype.hasOwnProperty.call(bundle[tipo]||{},ref.chave))throw Error('Arquivo técnico não corresponde a esta planilha.');
   return bundle[tipo][ref.chave];
 }
-function backupComArquivosProtecaoGestor_(backup,ss){
-  const catalogo=catalogoAnualProtecaoGestor_(ss);if(!catalogo.length)return backup;
-  const arquivos=catalogo.map(function(e){return dadosArquivoAnualProtecaoGestor_(e);});
+function backupComArquivosProtecaoGestor_(backup,ss,recuperacao){
+  const catalogo=recuperacao?recuperacao.catalogo:catalogoAnualProtecaoGestor_(ss);if(!catalogo.length&&!recuperacao?.catalogoDanificado)return backup;
+  const arquivos=recuperacao?recuperacao.legiveis:catalogo.map(function(e){return dadosArquivoAnualProtecaoGestor_(e);});
   const resultado=Object.assign({},backup,{formato:'gestor-financeiro-backup-v2',arquivosAnuais:arquivos});
+  if(recuperacao?.necessaria)resultado.recuperacaoOrigem={aviso:'Cópia anterior de uma recuperação: preserve também o JSON completo utilizado. Conteúdos não conferidos permanecem separados.',catalogo:copiarGestor_(catalogo),catalogoOriginal:serializarGestor_(recuperacao.catalogoOriginal),erroCatalogo:recuperacao.erroCatalogo,indisponiveis:copiarGestor_(recuperacao.indisponiveis),arquivosNaoConferidos:serializarGestor_(recuperacao.naoConferidos||[])};
   resultado.hashFinanceiro=assinaturaFinanceiraBackupProtecaoGestor_(resultado);
   resultado.observacao+=' Inclui o conteúdo completo dos arquivos anuais, independente dos endereços do Drive.';return resultado;
 }
@@ -351,8 +398,36 @@ function validarParticoesBackupProtecaoGestor_(backup){
   });
   if(celulas>500000)throw Error('O backup completo ultrapassa 500 mil células. Preserve o arquivo para recuperação assistida.');return abas;
 }
+function planejarAnuaisRestauracaoProtecaoGestor_(abas,backup,ss){
+  const leitura=catalogoParaRecuperacaoProtecaoGestor_(ss),catalogo=leitura.catalogo,legiveis=[],indisponiveis=[],naoConferidos=[],recebidos=abas.arquivosAnuais||[];
+  catalogo.forEach(function(e){try{legiveis.push(dadosArquivoAnualProtecaoGestor_(e));}catch(erro){
+    indisponiveis.push({ano:e.ano,id:e.id,motivo:String(erro.message||erro).slice(0,500)});
+    // Se o conteúdo ainda abre, preserva uma imagem sem confiar nela como
+    // histórico financeiro. Nunca importa silenciosamente dados divergentes.
+    try{const origem=SpreadsheetApp.openById(e.id),abasOriginais=['Lançamentos','Empréstimos'].map(function(nome){const sh=origem.getSheetByName(nome);if(!sh)return {nome:nome,ausente:true};const r=sh.getDataRange();return {nome:nome,valores:r.getValues(),formulas:r.getFormulas()};});naoConferidos.push({ano:e.ano,id:e.id,abas:abasOriginais});}catch(_){}
+  }});
+  const nomes=['Lançamentos','Empréstimos'],substituidas=new Set(abas.map(function(a){return a.nome;})),preservadas=nomes.filter(function(n){return !substituidas.has(n);});
+  const necessaria=leitura.danificado||indisponiveis.length>0,exigidos=leitura.danificado?catalogo:indisponiveis;
+  if(necessaria&&(backup.formato!=='gestor-financeiro-backup-v2'||preservadas.length||exigidos.some(function(e){return !recebidos.some(function(d){return d.ano===e.ano;});})))throw Error('Há arquivo ou catálogo anual indisponível. Para recuperar, selecione um JSON completo v2 que contenha Lançamentos, Empréstimos e os anos '+Array.from(new Set(exigidos.map(function(e){return e.ano;}))).join(', ')+'. Nada foi substituído.');
+  const anos=new Set(recebidos.map(function(d){return d.ano;}));if(preservadas.length)legiveis.forEach(function(d){anos.add(d.ano);});
+  const arquivos=Array.from(anos).sort(function(a,b){return a-b;}).map(function(ano){
+    const novo=recebidos.find(function(d){return d.ano===ano;}),antigo=legiveis.find(function(d){return d.ano===ano;});
+    return {ano:ano,abas:nomes.map(function(nome){
+      const fonte=(!substituidas.has(nome)?antigo:novo)?.abas.find(function(a){return a.nome===nome;});
+      const cab=fonte?.valores[0]||antigo?.abas.find(function(a){return a.nome===nome;})?.valores[0]||ss.getSheetByName(nome)?.getDataRange().getValues()[0]||Array(COLUNAS_GESTOR_).fill('');
+      return {nome:nome,valores:copiarGestor_(fonte?fonte.valores:normalizarMatrizProtecaoGestor_([cab],COLUNAS_GESTOR_))};
+    })};
+  }).filter(function(d){return d.abas.some(function(a){return a.valores.length>1;});});
+  const ids=new Set();let celulas=0;
+  nomes.forEach(function(nome){const dados=abas.find(function(a){return a.nome===nome;}),sh=ss.getSheetByName(nome),linhas=dados?dados.valores:sh?.getDataRange().getValues()||[];celulas+=linhas.reduce(function(s,r){return s+r.length;},0);linhas.slice(1).forEach(function(r){if(r[11]){if(ids.has(String(r[11])))throw Error('Identificação repetida nos dados preservados da restauração.');ids.add(String(r[11]));}});});
+  arquivos.forEach(function(d){d.abas.forEach(function(a){celulas+=a.valores.length*COLUNAS_GESTOR_;a.valores.slice(1).forEach(function(r){if(!r[11]||ids.has(String(r[11])))throw Error('Identificação repetida entre dados ativos e anuais preservados.');ids.add(String(r[11]));});});});
+  if(celulas>500000)throw Error('Os dados restaurados e preservados excedem 500 mil células. Use recuperação assistida.');
+  abas.arquivosAnuais=arquivos;
+  abas.catalogoAnualAtual=catalogo;
+  return {catalogo:catalogo,catalogoDanificado:leitura.danificado,catalogoOriginal:leitura.original,erroCatalogo:leitura.erro,necessaria:necessaria,legiveis:legiveis,indisponiveis:indisponiveis,naoConferidos:naoConferidos,preservadas:preservadas,assinatura:hashGestor_({catalogoOriginal:leitura.original,catalogo:catalogo,legiveis:legiveis.map(function(d){return [d.ano,hashGestor_(d)];}),indisponiveis:indisponiveis,naoConferidos:naoConferidos})};
+}
 function prepararArquivosRestauracaoProtecaoGestor_(abas,ss){
-  const arquivos=abas.arquivosAnuais||[],atual=catalogoAnualProtecaoGestor_(ss);
+  const arquivos=abas.arquivosAnuais||[],atual=abas.catalogoAnualAtual||catalogoAnualProtecaoGestor_(ss);
   if(!arquivos.length&&!atual.length)return;
   const pasta=arquivos.length?pastaProtecaoGestor_():null,lote='restauracao-'+String(CONTEXTO_GESTOR_.param.requestId),entradas=arquivos.map(function(d){return criarArquivoAnualProtecaoGestor_(ss,pasta,d,lote);});
   const sh=ss.getSheetByName(ABA_ARQUIVOS_ANUAIS_GESTOR_)||ss.insertSheet(ABA_ARQUIVOS_ANUAIS_GESTOR_);

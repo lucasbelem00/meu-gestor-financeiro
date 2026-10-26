@@ -3,7 +3,8 @@ const raiz=require('node:path').resolve(__dirname,'../..');
 const {boot,fixture,launch,loan}=require(raiz+'/tests/fixtures/gestor-mocks.cjs');
 const html=fs.readFileSync(raiz+'/index.html','utf8');
 function trecho(a,b){const i=html.indexOf(a),f=html.indexOf(b,i+a.length);assert.ok(i>=0&&f>i,a);return html.slice(i,f);}
-function funcao(a,b){return trecho('    function '+a+'(','    function '+b+'(');}
+function declaracao(nome){return html.includes('    async function '+nome+'(')?'    async function '+nome+'(':'    function '+nome+'(';}
+function funcao(a,b){return trecho(declaracao(a),declaracao(b));}
 function adiado(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 const esperar=()=>new Promise(r=>setImmediate(r));
 function ambiente(){
@@ -30,7 +31,7 @@ function ambiente(){
  trecho('  function pxDataTriplaValida(', '  function pxChaveCat('),
  funcao('atualizarFaturaEmprestimo','selecionarPessoaChipEmp'),
  trecho('    window.enviarEmprestimo = function', '    setTimeout(exibirPendenciaEmprestimoGestor'),
- trecho('      function abrirModalEdicaoEmp(', '    function salvarEdicaoEmp('),
+ trecho('      function abrirModalEdicaoEmp(', declaracao('salvarEdicaoEmp')),
  funcao('salvarEdicaoEmp','togglePainelDividirEmp'),
  funcao('executarDividirParcelaEmp','togglePainelMoverPessoal'),
  funcao('executarMoverParaPessoal','copiarCobrancaPessoaWhats'),
@@ -43,6 +44,8 @@ function ambiente(){
  const rotina=fs.readFileSync(raiz+'/interface/rotina.js','utf8');
  vm.runInContext(rotina.slice(rotina.indexOf('const paginaRascunhoGestor='),rotina.indexOf('const guardarRascunhoAnteriorRotinaGestor=')),c);
  vm.runInContext(rotina.slice(rotina.indexOf('function restaurarBotoesEditorEmpGestor('),rotina.indexOf('function protegerEditorRotinaGestor(')),c);
+ vm.runInContext(rotina.slice(rotina.indexOf('function assinaturaFormularioRotinaGestor('),rotina.indexOf('function bloqueioFormularioRotinaGestor(')),c);
+ el('modalEdicaoEmp').querySelector=()=>({elements:[]});
  el('chkPixRecebimento').value='on';el('chkPixRecebimento').type='checkbox';
  return {c,el,avisos,chamadas,confirmacoes,envios,calculos};
 }

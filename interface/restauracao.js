@@ -45,7 +45,7 @@ async function hashTextoRestauracaoGestor(texto) {
 function compactarBackupRestauracaoGestor(original) {
   if (!original || !['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2'].includes(original.formato) || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
   const resultado={formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
-  if(original.formato==='gestor-financeiro-backup-v2'){resultado.arquivosAnuais=original.arquivosAnuais;resultado.hashFinanceiro=original.hashFinanceiro;}return resultado;
+  if(original.formato==='gestor-financeiro-backup-v2'){resultado.arquivosAnuais=original.arquivosAnuais;resultado.hashFinanceiro=original.hashFinanceiro;if(original.recuperacaoOrigem)resultado.recuperacaoOrigem=original.recuperacaoOrigem;}return resultado;
 }
 
 function mensagemErroRestauracaoGestor(erro) {return erro?.message || 'Não foi possível conferir a restauração. Preserve o arquivo e tente a conferência novamente.';}
@@ -145,16 +145,18 @@ function criarControleRestauracaoGestor(opcoes={}) {
       else {await prepararConteudo(copia.conteudo,estado.nome,g);if(atual(g) && copia.legado && estado.resumo) estado.resumo.avisos=['Esta cópia é antiga e não possui o comprovante original de integridade. Confira cuidadosamente os valores antes de restaurar.',...(estado.resumo.avisos || [])];}
     }catch(e){falhou(g,e);}finally{if(atual(g)){estado.ocupado=false;notificar();}}
   }
-  function capturarConfirmacao() {
+  function capturarConfirmacao(confirmarRecuperacaoAnual=false) {
     if(estado.ocupado || estado.aplicando || !estado.resumo || !estado.ref)return null;
-    return {geracao:estado.geracao,resumo:estado.resumo,ref:estado.ref,requestId:idNovo()};
+    if(estado.resumo.recuperacaoAnual?.necessaria&&!confirmarRecuperacaoAnual)return null;
+    return {geracao:estado.geracao,resumo:estado.resumo,ref:estado.ref,requestId:idNovo(),confirmarRecuperacaoAnual};
   }
   async function confirmar(snapshot) {
     if(!snapshot || estado.aplicando || estado.ocupado || snapshot.geracao!==estado.geracao || snapshot.resumo!==estado.resumo || snapshot.ref!==estado.ref)throw new Error('A seleção mudou. Confira a prévia atual antes de confirmar.');
     disponibilidade();estado.aplicando=true;estado.ocupado=true;estado.erro=false;estado.mensagem='Guardando a cópia anterior e restaurando os dados. Aguarde a confirmação…';notificar();
     try {
       if(!guardarBloqueio(snapshot.requestId))throw new Error('Não foi possível guardar a identificação de recuperação. A restauração não foi enviada. Libere espaço antes de continuar.');
-      await api('restaurarBackupDadosWeb',{...snapshot.ref,hashBackup:snapshot.resumo.hashBackup,versaoAtual:snapshot.resumo.versaoAtual,confirmacao:'RESTAURAR',requestId:snapshot.requestId},1);
+      if(snapshot.resumo.recuperacaoAnual?.necessaria&&!snapshot.confirmarRecuperacaoAnual)throw Error('Confirme a recuperação dos arquivos anuais indisponíveis.');
+      await api('restaurarBackupDadosWeb',{...snapshot.ref,hashBackup:snapshot.resumo.hashBackup,versaoAtual:snapshot.resumo.versaoAtual,assinaturaAnuais:snapshot.resumo.recuperacaoAnual?.assinatura,confirmarRecuperacaoAnual:snapshot.confirmarRecuperacaoAnual,confirmacao:'RESTAURAR',requestId:snapshot.requestId},1);
       if(snapshot.ref.hashImportacao){try{await api('descartarImportacaoBackupWeb',snapshot.ref,1);remover('gestorImportacaoBackupV1:'+snapshot.ref.hashImportacao);estado.preparacao=null;}catch(_){/* A restauração já foi confirmada. A preparação pode ser descartada depois. */}}
       estado.ref=null;estado.resumo=null;estado.progresso=null;estado.mensagem='Restauração confirmada. A cópia anterior está no catálogo abaixo.';
       let atualizou=false;
@@ -187,26 +189,29 @@ document.addEventListener('DOMContentLoaded',()=>{
   const label=elemento('label','Para confirmar esta prévia, digite RESTAURAR','block text-xs text-slate-300');
   const confirmar=document.createElement('input');confirmar.type='text';confirmar.autocomplete='off';confirmar.spellcheck=false;confirmar.className='mt-1 block w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-white';confirmar.setAttribute('aria-label','Digite RESTAURAR para confirmar a prévia');label.append(confirmar);label.hidden=true;
   const executar=botao('Restaurar os dados conferidos','w-full border-rose-500/50 bg-rose-800 text-white');executar.disabled=true;executar.hidden=true;
+  const recuperarLabel=elemento('label','','flex items-start gap-2 text-xs text-amber-200'),recuperar=document.createElement('input');recuperar.type='checkbox';recuperar.id='confirmarRecuperacaoAnualGestor';recuperarLabel.append(recuperar,elemento('span','Entendi: há arquivos anuais ou um catálogo danificado. Quero reconstruí-los com este JSON. A cópia anterior guardará os dados legíveis, o catálogo original e o diagnóstico.'));recuperarLabel.hidden=true;
   const historico=elemento('details','','rounded-xl border border-slate-700 p-3');historico.append(elemento('summary','Cópias anteriores e recuperação','cursor-pointer text-xs font-bold text-sky-200'));
   const carregar=botao('Consultar cópias preservadas','w-full mt-3 text-sky-200'),lista=document.createElement('select');lista.className='mt-2 w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-xs text-white';lista.setAttribute('aria-label','Cópia anterior à restauração');lista.hidden=true;
   const acoes=elemento('div','','grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2'),verCopia=botao('Conferir para restaurar','text-sky-200'),baixar=botao('Baixar cópia','text-slate-200');acoes.append(verCopia,baixar);acoes.hidden=true;
   const listaStatus=elemento('p','','mt-2 text-xs text-slate-300'),mais=botao('Ver mais cópias','w-full mt-2 text-slate-200');mais.hidden=true;
   const conferirPendente=botao('Conferir restauração interrompida','w-full mt-3 text-slate-200'),atividade=botao('Abrir Atividade e sincronização','w-full mt-2 text-sky-200');
   historico.append(carregar,lista,acoes,listaStatus,mais,conferirPendente,atividade);
-  painel.append(titulo,ajuda,arquivo,status,progresso,descartar,previa,label,executar,historico);modal.firstElementChild.append(painel);
+  painel.append(titulo,ajuda,arquivo,status,progresso,descartar,previa,recuperarLabel,label,executar,historico);modal.firstElementChild.append(painel);
   let ultimaPrevia=null,escolhas=[],carregandoCatalogo=false;
   function renderizar(estado) {
     status.textContent=estado.mensagem;status.className='text-xs '+(estado.erro?'text-amber-200':'text-slate-200');
     arquivo.disabled=estado.aplicando;lista.disabled=estado.aplicando;verCopia.disabled=estado.ocupado;baixar.disabled=estado.ocupado;
     descartar.hidden=!estado.preparacao || estado.aplicando;descartar.disabled=estado.ocupado;
-    confirmar.disabled=estado.ocupado;label.hidden=!estado.resumo;executar.hidden=!estado.resumo;executar.disabled=estado.ocupado || !estado.resumo || confirmar.value!=='RESTAURAR';
+    confirmar.disabled=recuperar.disabled=estado.ocupado;recuperarLabel.hidden=!estado.resumo?.recuperacaoAnual?.necessaria;label.hidden=!estado.resumo;executar.hidden=!estado.resumo;executar.disabled=estado.ocupado || !estado.resumo || confirmar.value!=='RESTAURAR'||!recuperarLabel.hidden&&!recuperar.checked;
     progresso.hidden=!estado.progresso;if(estado.progresso){progresso.max=estado.progresso.total;progresso.value=estado.progresso.valor;}
-    if(ultimaPrevia===estado.resumo)return;ultimaPrevia=estado.resumo;previa.replaceChildren();confirmar.value='';executar.disabled=true;
+    if(ultimaPrevia===estado.resumo)return;ultimaPrevia=estado.resumo;previa.replaceChildren();confirmar.value='';recuperar.checked=false;executar.disabled=true;
     if(!estado.resumo)return;
     const r=estado.resumo;previa.append(elemento('p','Destino: '+r.planilha+' · Backup: '+dataLegivelBackupGestor(r.geradoEm)+' · '+estado.nome,'text-xs font-bold text-white'));
     if(r.arquivosAtuais||r.arquivosAnuais?.length){
-      previa.append(elemento('p','Arquivos anuais: '+(r.arquivosAtuais||0)+' atuais → '+(r.arquivosAnuais?.length||0)+' no backup. O catálogo atual será substituído; cópias anteriores do Drive permanecerão guardadas.','text-xs font-bold text-amber-200'));
-      for(const a of r.arquivosAnuais||[])previa.append(elemento('p','Ano '+a.ano+': '+a.resumo.quantidade+' registro(s), '+formatBRL(a.resumo.pessoalCentavos/100)+' pessoais. O conteúdo está dentro deste JSON.','text-xs text-slate-200'));
+      previa.append(elemento('p','Arquivos anuais: '+(r.arquivosAtuais||0)+' atuais → '+(r.arquivosAnuais?.length||0)+' após a restauração. Inclui os dados anuais preservados das abas ausentes. Cópias anteriores do Drive permanecerão guardadas.','text-xs font-bold text-amber-200'));
+      for(const a of r.arquivosAnuais||[])previa.append(elemento('p','Ano '+a.ano+': '+a.resumo.quantidade+' registro(s), '+formatBRL(a.resumo.pessoalCentavos/100)+' pessoais.','text-xs text-slate-200'));
+      for(const a of r.recuperacaoAnual?.indisponiveis||[])previa.append(elemento('p','Reconstruir '+a.ano+': '+a.motivo,'text-xs text-amber-200'));
+      if(r.recuperacaoAnual?.catalogoDanificado)previa.append(elemento('p','Reconstruir catálogo: '+r.recuperacaoAnual.erroCatalogo+'. A matriz original será preservada na cópia anterior.','text-xs text-amber-200'));
     }
     if(r.origem && r.origem!==r.planilha)previa.append(elemento('p','A origem “'+r.origem+'” é diferente do destino. Confira se esta é a planilha que deseja substituir.','text-xs text-amber-200'));
     for(const aviso of r.avisos || [])previa.append(elemento('p',aviso,'text-xs text-amber-200'));
@@ -223,11 +228,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   const controle=criarControleRestauracaoGestor({onChange:renderizar});
   descartar.onclick=()=>mostrarConfirmacao('Descartar a preparação do arquivo?','Isso remove somente as partes temporárias deste arquivo. Os lançamentos, o diário financeiro e as cópias anteriores continuam preservados.',async()=>{try{await controle.descartarPreparacao();}catch(e){mostrarAviso('Preparação preservada',mensagemErroRestauracaoGestor(e));}},false,'Descartar preparação','neutral');
   arquivo.addEventListener('change',()=>controle.selecionarArquivo(arquivo.files?.[0]));
-  confirmar.addEventListener('input',()=>{executar.disabled=controle.estado.ocupado || !controle.estado.resumo || confirmar.value!=='RESTAURAR';});
+  const habilitar=()=>{executar.disabled=controle.estado.ocupado || !controle.estado.resumo || confirmar.value!=='RESTAURAR'||!recuperarLabel.hidden&&!recuperar.checked;};confirmar.addEventListener('input',habilitar);recuperar.addEventListener('change',habilitar);
   executar.addEventListener('click',()=>{
-    if(confirmar.value!=='RESTAURAR')return;const snapshot=controle.capturarConfirmacao();if(!snapshot)return;
+    if(confirmar.value!=='RESTAURAR')return;const snapshot=controle.capturarConfirmacao(recuperar.checked);if(!snapshot)return;
     mostrarConfirmacao('Substituir os dados conferidos?','A planilha “'+snapshot.resumo.planilha+'” receberá os dados desta prévia. A cópia anterior será guardada antes da substituição. O pagamento ao banco e o recebimento das pessoas continuam separados.',async()=>{
-      if(confirmar.value!=='RESTAURAR'){mostrarAviso('Confira a confirmação','Digite RESTAURAR na prévia atual.');return;}
+      if(confirmar.value!=='RESTAURAR'||snapshot.confirmarRecuperacaoAnual&&!recuperar.checked){mostrarAviso('Confira a confirmação','Confirme a prévia atual e digite RESTAURAR.');return;}
       try{if(await controle.confirmar(snapshot)){arquivo.value='';mostrarAviso('Restauração confirmada','Os dados foram restaurados e a cópia anterior foi preservada.');}}
       catch(e){mostrarAviso('Confira a prévia atual',mensagemErroRestauracaoGestor(e));}
     },false,'Restaurar dados');

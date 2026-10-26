@@ -34,7 +34,9 @@ function calcularDivisaoContaGestor(dados) {
   const descontos=repartir(desconto,partes.map(p=>p.baseCentavos));
   const bases=partes.map((p,i)=>p.baseCentavos-descontos[i]);
   const taxa=Math.round((base-desconto)*percentual/100);
-  const taxas=repartir(taxa,bases), extras=repartir(acrescimo,partes.map(p=>p.baseCentavos));
+  const rateioAcrescimos=d.rateioAcrescimos||'consumo';
+  if(!['consumo','igual'].includes(rateioAcrescimos))throw new Error('Escolha como dividir os acréscimos: pelo consumo ou igualmente por pessoa.');
+  const taxas=repartir(taxa,bases), extras=repartir(acrescimo,partes.map(p=>rateioAcrescimos==='igual'?1:p.baseCentavos));
   partes.forEach((p,i)=>{p.descontoCentavos=descontos[i];p.taxaCentavos=taxas[i];p.acrescimoCentavos=extras[i];p.finalCentavos=bases[i]+taxas[i]+extras[i];p.saldoCentavos=p.finalCentavos-p.pagoCentavos;});
   const total=inteiro(base-desconto+taxa+acrescimo,'Total final'), pago=partes.reduce((s,p)=>s+p.pagoCentavos,0);
   if(pago>total) throw new Error('Os pagamentos ao estabelecimento ultrapassam o total da conta.');
@@ -42,5 +44,5 @@ function calcularDivisaoContaGestor(dados) {
   const credores=partes.filter(p=>p.saldoCentavos<0).map(p=>({id:p.id,valor:-p.saldoCentavos}));
   const transferencias=[];
   credores.forEach(c=>{devedores.forEach(p=>{const valor=Math.min(c.valor,p.valor);if(valor>0){transferencias.push({de:p.id,para:c.id,valorCentavos:valor});c.valor-=valor;p.valor-=valor;}});});
-  return {pessoas:partes,baseCentavos:base,descontoCentavos:desconto,taxaCentavos:taxa,acrescimoCentavos:acrescimo,totalCentavos:total,pagoCentavos:pago,pendenteEstabelecimentoCentavos:total-pago,transferencias:transferencias};
+  return {pessoas:partes,rateioAcrescimos:rateioAcrescimos,baseCentavos:base,descontoCentavos:desconto,taxaCentavos:taxa,acrescimoCentavos:acrescimo,totalCentavos:total,pagoCentavos:pago,pendenteEstabelecimentoCentavos:total-pago,transferencias:transferencias};
 }
