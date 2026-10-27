@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
   painel.append(lista,ajuda);modal.firstElementChild.append(painel);
   let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
-  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<10)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
+  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<13)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
   function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();

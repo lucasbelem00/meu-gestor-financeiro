@@ -1,9 +1,9 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {ambiente,esperar}=require('./fixtures/rotina-fluxos-ui.cjs');
-test('alterar a data visível do empréstimo sincroniza o payload',()=>{
+test('alterar a data visível do empréstimo sincroniza o payload',async()=>{
  const a=ambiente();a.c.preencherDataTripla('emp','16/10/2026');a.el('inpEmpDataDia').value='07';a.el('inpEmpDataMes').value='09';a.el('inpEmpDataAno').value='2026';
  for(const [id,v]of Object.entries({selEmpForma:'Cartao',inpEmpMesFat:'09/2026',inpEmpPessoa:'Pessoa Teste',inpEmpDesc:'Compra',inpEmpValor:'120',inpEmpParc:'1',inpEmpParcIni:'1'}))a.el(id).value=v;
- a.c.sincronizarDataEmp();a.c.window.enviarEmprestimo({preventDefault(){}});assert.equal(a.envios[0].dataCompra,'07/09/2026');assert.equal(a.calculos.at(-1),'07/09/2026');
+ a.c.sincronizarDataEmp();await a.c.window.enviarEmprestimo({preventDefault(){}});assert.equal(a.envios[0].dataCompra,'07/09/2026');assert.equal(a.calculos.at(-1),'07/09/2026');
 });
 test('data impossível preserva os campos e não prepara empréstimo',()=>{
  const a=ambiente();a.c.preencherDataTripla('emp','31/02/2026');a.c.window.enviarEmprestimo({preventDefault(){}});assert.equal(a.envios.length,0);assert.equal(a.el('inpEmpDataDia').value,'31');assert.equal(a.avisos.at(-1)[0],'Data inválida');
@@ -36,7 +36,7 @@ test('limpar formulário preenchido exige confirmação e mantém alterações p
 });
 test('recarga descartada não retorna sucesso quando a consulta mais recente falha',async()=>{
  const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8'),i=html.indexOf('    function carregarDados() {'),f=html.indexOf('function limparFormularioEmprestimo()',i),pedidos=[];let renders=0;
- const c=vm.createContext({console,requisicaoCarregarDadosAtual:0,dadosCarregadosIniciais:true,notasGlobais:[],inicializarNotasLocaisGestor(){},lerCacheLeituraGestor:()=>null,salvarCacheLeituraGestor(){},renderizarDados(){renders++;},sincronizarNotasNuvem(){},mostrarAviso(){},apiCall:()=>new Promise((resolve,reject)=>pedidos.push({resolve,reject}))});vm.runInContext(html.slice(i,f),c);const a=c.carregarDados(),b=c.carregarDados();pedidos[0].resolve({});assert.equal(await a,false);pedidos[1].reject(Error('Conexão fictícia indisponível'));assert.equal(await b,false);assert.equal(renders,0);
+ const c=vm.createContext({console,requisicaoCarregarDadosAtual:0,dadosCarregadosIniciais:true,notasGlobais:[],inicializarNotasLocaisGestor(){},lerCacheLeituraGestor:()=>null,salvarCacheLeituraGestor(){},renderizarDados(){renders++;},sincronizarNotasNuvem(){},mostrarAviso(){},apiCall:()=>new Promise((resolve,reject)=>pedidos.push({resolve,reject}))});require('./fixtures/aviso-leitura-ui.cjs')(c);vm.runInContext(html.slice(i,f),c);const a=c.carregarDados(),b=c.carregarDados();pedidos[0].resolve({});assert.equal(await a,false);pedidos[1].reject(Error('Conexão fictícia indisponível'));assert.equal(await b,false);assert.equal(renders,0);
 });
 test('recebimento não pode quitar o valor original usando uma edição menor ainda não salva',()=>{
  const a=ambiente(),rotina=fs.readFileSync(path.resolve(__dirname,'../interface/rotina.js'),'utf8'),m=a.el('modalEdicaoEmp'),form=a.el('formTesteRecebimento');form.elements=['inpEdEmpPessoa','inpEdEmpDesc','inpEdEmpValor','inpEdEmpObs','inpDividirEmpValor'].map(a.el);m.querySelector=()=>form;

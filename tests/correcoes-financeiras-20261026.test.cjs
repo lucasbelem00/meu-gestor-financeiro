@@ -42,3 +42,11 @@ test('prévia Pix contempla todas as parcelas abertas afetadas e exclui recebida
  const rows=a.db.sheets['Empréstimos'].rows;rows.find(r=>r[6]==='3/3')[9]='Recebido';ler(a);const p=edicao(rows.find(r=>r[6]==='1/3'),{formaPagto:'Pix'}),pre=api(a,'previaEdicaoEmprestimoWeb',p);assert.equal(pre.pagamentoPix.total,200);assert.equal(pre.pagamentoPix.quantidade,2);
  api(a,'editarEmprestimoLinhaWeb',{...p,confirmarPagamentoPix:true,assinaturaPix:pre.pagamentoPix.assinatura,requestId:'correcao-pix-parcelas-salvar-001'});const itens=ler(a).emprestimos.itens;assert.equal(itens.filter(i=>i.forma==='Pix'&&i.pagoBancoRaw===100&&i.status==='A Receber').length,2);assert.equal(rows.find(r=>r[6]==='3/3')[3],'Cartao');
 });
+
+test('parcela recebida e paga preservada não bloqueia a correção das futuras para Pix',()=>{
+ const a=boot(fixture());a.ctx.console={log(){}};api(a,'salvarEmprestimoWeb',{dataCompra:'01/10/2026',pessoa:'Ana',descricao:'Compra',formaPagto:'Cartao',valorTotal:300,numParcelas:3,parcelaInicial:1,mesPrimeiraFatura:'10/2026',requestId:'regressao-pix-encerrada-compra-001'});
+ let r=a.db.sheets['Empréstimos'].rows.find(r=>r[6]==='1/3');api(a,'alternarStatusEmprestimoWeb',{...ref(r,true),statusDesejado:'Recebido',requestId:'regressao-pix-encerrada-receber-001'});const f=api(a,'previaPagamentoFaturaWeb',{forma:'Cartao',mesFatura:'10/2026',valor:100});api(a,'registrarPagamentoFaturaWeb',{...f,requestId:'regressao-pix-encerrada-banco-001'});
+ const encerrada=a.db.sheets['Empréstimos'].rows.find(r=>r[6]==='1/3').slice();r=a.db.sheets['Empréstimos'].rows.find(r=>r[6]==='2/3');const p=edicao(r,{formaPagto:'Pix'}),pre=api(a,'previaEdicaoEmprestimoWeb',p);assert.equal(pre.pagamentoPix.total,200);assert.equal(pre.pagamentoPix.quantidade,2);
+ api(a,'editarEmprestimoLinhaWeb',{...p,confirmarPagamentoPix:true,assinaturaPix:pre.pagamentoPix.assinatura,requestId:'regressao-pix-encerrada-editar-001'});
+ const rs=a.db.sheets['Empréstimos'].rows,antes=rs.find(r=>r[6]==='1/3');assert.equal(JSON.stringify(antes),JSON.stringify(encerrada));assert.equal(rs.filter(r=>r[3]==='Pix'&&r[9]==='A Receber'&&r[17]===100).length,2);assert.equal(api(a,'obterFaturaPagamentoWeb',{forma:'Cartao',mesFatura:'10/2026'}).pago,100);
+});

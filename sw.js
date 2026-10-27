@@ -1,4 +1,34 @@
-const CACHE_NAME = 'gestor-gastos-v45';
+const CACHE_NAME = 'gestor-gastos-v46';
+
+function ehEnderecoInicialGestor(url){return url.origin===self.location.origin&&['/','/index.html'].includes(url.pathname);}
+async function buscarCopiaPaginaGestor(request){
+  const exata=await caches.match(request);if(exata&&await ehPaginaDoGestor(exata))return exata;
+  if(ehEnderecoInicialGestor(new URL(request.url))){
+    const raiz=await caches.match(new Request(new URL('/',self.location.origin).href));
+    if(raiz&&await ehPaginaDoGestor(raiz))return raiz;
+  }
+  return null;
+}
+async function navegarPaginaGestor(request,event){
+  const controlador=new AbortController();
+  const limiteRede=setTimeout(()=>controlador.abort(),8000);
+  const rede=(async()=>{
+    try{
+      const resposta=await fetch(request,{signal:controlador.signal}),url=new URL(request.url);
+      const mesmaOrigem=!resposta.url||new URL(resposta.url).origin===url.origin;
+      if(mesmaOrigem&&await ehPaginaDoGestor(resposta)){
+        try{const cache=await caches.open(CACHE_NAME);await cache.put(request,resposta.clone());if(ehEnderecoInicialGestor(url)&&url.href!==new URL('/',self.location.origin).href)await cache.put(new Request(new URL('/',self.location.origin).href),resposta.clone());}catch(_){}
+        return resposta;
+      }
+      return (await buscarCopiaPaginaGestor(request))||resposta;
+    }catch(_){return null;}finally{clearTimeout(limiteRede);}
+  })();
+  // A atualização tem seu próprio prazo. A cópia local não precisa aguardar
+  // esse prazo inteiro para abrir, e a API privada continua fora do cache.
+  if(event.waitUntil)event.waitUntil(rede.then(()=>{}));
+  let prazoAbertura;const resposta=await Promise.race([rede,new Promise(resolve=>{prazoAbertura=setTimeout(()=>resolve(null),3500);})]);clearTimeout(prazoAbertura);
+  return resposta||(await buscarCopiaPaginaGestor(request))||new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
+}
 
 async function ehPaginaDoGestor(resposta) {
   if (!resposta.ok || resposta.redirected || !(resposta.headers.get('content-type') || '').includes('text/html')) return false;
@@ -69,20 +99,7 @@ self.addEventListener('fetch', event => {
 
   // Para o HTML / Página principal: Tenta a rede primeiro; se falhar (offline), usa a cache
   if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/') {
-    event.respondWith(
-      fetch(event.request)
-        .then(async response => {
-          // Erros temporários e páginas de login nunca substituem o app salvo.
-          const mesmaOrigem = !response.url || new URL(response.url).origin === url.origin;
-          if (!mesmaOrigem || !(await ehPaginaDoGestor(response))) {
-            return (await caches.match(event.request)) || response;
-          }
-          try { const cache = await caches.open(CACHE_NAME); await cache.put(event.request, response.clone()); }
-          catch (erro) { /* Falha de armazenamento não impede a abertura pela rede. */ }
-          return response;
-        })
-        .catch(async () => (await caches.match(event.request)) || new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.', { status: 503, headers: { 'Content-Type': 'text/plain;charset=utf-8' } }))
-    );
+    event.respondWith(navegarPaginaGestor(event.request,event));
     return;
   }
 

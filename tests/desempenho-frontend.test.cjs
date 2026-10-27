@@ -28,6 +28,7 @@ function ambiente(executar, carregarReal = false, extras = {}) {
     ...extras
   });
   ctx.window = ctx;
+  require('./fixtures/aviso-leitura-ui.cjs')(ctx);
   if (carregarReal) {
     const inicio = html.indexOf('    function carregarDados() {'), fim = html.indexOf('function limparFormularioEmprestimo()', inicio);
     vm.runInContext(html.slice(inicio, fim), ctx);

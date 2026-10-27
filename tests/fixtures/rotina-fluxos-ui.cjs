@@ -11,7 +11,7 @@ function ambiente(){
  const campos=new Map(),avisos=[],chamadas=[],confirmacoes=[],envios=[],calculos=[];
  function el(id){if(!campos.has(id)){const classes=new Set();campos.set(id,{id,value:'',type:'text',checked:false,disabled:false,textContent:'',innerHTML:'',dataset:{},options:[],classList:{add:n=>classes.add(n),remove:n=>classes.delete(n),contains:n=>classes.has(n),toggle(n,b){if(b)classes.add(n);else classes.delete(n);}},focus(){},select(){},add(o){this.options.push(o);},elements:[]});}return campos.get(id);}
  const vazio=()=>{};
- const c=vm.createContext({console,Date,document:{getElementById:el,querySelector:s=>s==='#painelDividirEmpCampos button'?el('botaoParcial'):s==='#painelMoverPessoalCampos button'?el('botaoMover'):null},window:{},pxEl:el,
+ const c=vm.createContext({console,Date,navigator:{onLine:true},document:{getElementById:el,querySelector:s=>s==='#painelDividirEmpCampos button'?el('botaoParcial'):s==='#painelMoverPessoalCampos button'?el('botaoMover'):null},window:{},pxEl:el,
  mostrarAviso:(...v)=>avisos.push(v),mostrarConfirmacao:(...v)=>confirmacoes.push(v),
  formatarTituloInteligente:v=>String(v),formatarTagsAutomaticamente:v=>v,
  formatBRL:n=>'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}),
@@ -30,7 +30,7 @@ function ambiente(){
  trecho('    function formatarZeroData(', '    // ============================================================================\n    // ESTADO GLOBAL'),
  trecho('  function pxDataTriplaValida(', '  function pxChaveCat('),
  funcao('atualizarFaturaEmprestimo','selecionarPessoaChipEmp'),
- trecho('    window.enviarEmprestimo = function', '    setTimeout(exibirPendenciaEmprestimoGestor'),
+ trecho('    window.enviarEmprestimo = async function', '    setTimeout(exibirPendenciaEmprestimoGestor'),
  trecho('      function abrirModalEdicaoEmp(', declaracao('salvarEdicaoEmp')),
  funcao('salvarEdicaoEmp','togglePainelDividirEmp'),
  funcao('executarDividirParcelaEmp','togglePainelMoverPessoal'),
@@ -43,6 +43,9 @@ function ambiente(){
  fontes.forEach(s=>vm.runInContext(s,c));
  const rotina=fs.readFileSync(raiz+'/interface/rotina.js','utf8');
  vm.runInContext(rotina.slice(rotina.indexOf('const paginaRascunhoGestor='),rotina.indexOf('const guardarRascunhoAnteriorRotinaGestor=')),c);
+ // Este fixture isola datas/edição. A identidade entre abas usa o transporte
+ // e o backend reais simulados em envio-rascunho-ui.cjs.
+ c.prepararEnvioRascunhoFinanceiroGestor=async(_tipo,payload)=>({payload});
  vm.runInContext(rotina.slice(rotina.indexOf('function restaurarBotoesEditorEmpGestor('),rotina.indexOf('function protegerEditorRotinaGestor(')),c);
  vm.runInContext(rotina.slice(rotina.indexOf('function assinaturaFormularioRotinaGestor('),rotina.indexOf('function bloqueioFormularioRotinaGestor(')),c);
  el('modalEdicaoEmp').querySelector=()=>({elements:[]});

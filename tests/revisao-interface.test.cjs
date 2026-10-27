@@ -6,13 +6,13 @@ function armazenamento(quota=false){const m=new Map();return {getItem:k=>m.get(k
 test('cache cheio não impede exibir resposta válida nem vira erro de conexão',async()=>{
  let renders=0;const avisos=[];
  const ctx=vm.createContext({localStorage:armazenamento(true),requisicaoCarregarDadosAtual:0,inicializarNotasLocaisGestor(){},dadosCarregadosIniciais:true,notasGlobais:[],apiCall:async()=>({teste:true}),renderizarDados(){renders++;},sincronizarNotasNuvem(){},mostrarAviso:(t)=>avisos.push(t)});
- vm.runInContext(helpers+trecho('    function carregarDados() {','function limparFormularioEmprestimo()'),ctx);
+ require('./fixtures/aviso-leitura-ui.cjs')(ctx);vm.runInContext(helpers+trecho('    function carregarDados() {','function limparFormularioEmprestimo()'),ctx);
  assert.equal(await ctx.carregarDados(),true);assert.equal(renders,1);assert.equal(avisos.length,0);
 });
 test('cache inacessível também permite leitura online',async()=>{
  let renders=0;const local=armazenamento();local.getItem=()=>{throw Error('SecurityError');};
  const ctx=vm.createContext({localStorage:local,requisicaoCarregarDadosAtual:0,inicializarNotasLocaisGestor(){},dadosCarregadosIniciais:true,notasGlobais:[],apiCall:async()=>({}),renderizarDados(){renders++;},sincronizarNotasNuvem(){},mostrarAviso(){}});
- vm.runInContext(helpers+trecho('    function carregarDados() {','function limparFormularioEmprestimo()'),ctx);assert.equal(await ctx.carregarDados(),true);assert.equal(renders,1);
+ require('./fixtures/aviso-leitura-ui.cjs')(ctx);vm.runInContext(helpers+trecho('    function carregarDados() {','function limparFormularioEmprestimo()'),ctx);assert.equal(await ctx.carregarDados(),true);assert.equal(renders,1);
 });
 test('mutação de configuração usa a versão capturada no início da edição',()=>{
  const ctx=vm.createContext({versoesConfigGestor:{formas:'nova',categorias:'nova'},versaoModalFormaGestor:'modal-antiga',versaoCategoriasEdicaoGestor:'categorias-antiga',versaoFormasEdicaoGestor:'ordem-antiga',detalhesReferenciaGestor:()=>null});

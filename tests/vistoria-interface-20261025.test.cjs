@@ -3,28 +3,18 @@ const root=path.resolve(__dirname,'..'),html=fs.readFileSync(root+'/index.html',
 function trecho(s,a,b){const i=s.indexOf(a),f=s.indexOf(b,i+a.length);assert(i>=0&&f>i,a);return s.slice(i,f);}
 function storage(){const m=new Map();return {m,getItem:k=>m.get(k)??null,removeItem:k=>m.delete(k),setItem:(k,v)=>m.set(k,String(v))};}
 async function enviar(online,resultado='ok'){
- const local=storage(),sessao=storage(),campos=new Map(),fila=[];let enviados=0;
- const el=id=>{if(!campos.has(id))campos.set(id,{id,value:'',checked:false,disabled:false,dataset:{},elements:[],classList:{add(){},remove(){},toggle(){}},reset(){el('inpDesc').value='';el('inpValor').value='';}});return campos.get(id);};
- const c=vm.createContext({Date,Map,Set,JSON,localStorage:local,sessionStorage:sessao,origensRascunhoPaginaGestor:{},lerJSONLocalGestor:(k,p)=>{try{return JSON.parse(local.getItem(k))||p;}catch(_){return p;}},gravarArmazenamentoGestor:(k,v)=>{local.setItem(k,v);return true;},navigator:{onLine:online},document:{getElementById:el},salvandoGastoTrava:false,salvandoEmprestimoTrava:false,emprestimoPendenteGestor:()=>null,PX_CHAVE_RESULTADO_INCERTO:'lancamentoResultadoIncerto',
- pxEl:el,formatarZeroData(){},pxDataTriplaValida:()=>true,validarLimitesDataTripla(){},sincronizarDataTripla(){},formatarTituloInteligente:v=>v,lerValorMoeda:id=>Number(el(id).value),formatarTagsAutomaticamente:v=>v,formaEhPixGestor:()=>false,formaEhImediataGestor:()=>false,permiteParcelamentoFormaGestor:()=>true,mostrarAviso(){},atualizarIndicadorOffline(){},carregarDados(){},renderizarRecuperacaoRascunhosGestor(){},pxRestaurarEstadoIncerto(){},pxDefinirEstadoIncerto(){sessao.setItem('lancamentoResultadoIncerto','true');},
- chaveRascunhoRotinaGestor:()=> 'gestorRascunhoV3:novo:pagina-A',capturarFormularioMutacaoGestor:()=>({desc:el('inpDesc').value,valor:el('inpValor').value}),apiCall:async()=>{enviados++;if(resultado==='novo'){el('inpDesc').value='Outro rascunho';local.setItem(c.chaveRascunhoRotinaGestor(),JSON.stringify({dados:{desc:'Outro rascunho'}}));}if(['erro','incerto'].includes(resultado)){const e=Error('Falha fictícia');e.resultadoIncerto=resultado==='incerto';throw e;}return {sucesso:true};},enfileirarGastoOfflineGestor:p=>fila.push({...p,requestId:'identificacao-original-fila-001'})});
- require('./fixtures/rascunho-datas-ui.cjs')(c);c.window=c;c.limparFormularioNovoGasto=()=>el('formLancamento').reset();c.limparFormularioEmprestimo=()=>{};
- vm.runInContext(trecho(rotina,'function bloqueioFormularioRotinaGestor(','function chaveRascunhoRotinaGestor('),c);
- vm.runInContext(trecho(rotina,'function chaveConclusaoRascunhoRotinaGestor(','function resumoParcelasExatasGestor('),c);
- vm.runInContext(trecho(rotina,'function limparCopiaRascunhoRotinaGestor(','function pedirLimpezaFormularioGestor('),c);
- vm.runInContext(trecho(html,'    window.enviarGasto = function','    window.enviarEmprestimo = function'),c);
- for(const [id,v]of Object.entries({inpDesc:'Almoço',inpValor:'25.50',inpParc:'1',inpParcIni:'1',inpData:'25/10/2026',inpMesFat:'10/2026',selForma:'Cartao',selCat:'Teste'}))el(id).value=v;
- local.setItem(c.chaveRascunhoRotinaGestor(),JSON.stringify({dados:{desc:'Almoço'}}));sessao.setItem('gestorRascunhoAnterior:novo',c.chaveRascunhoRotinaGestor());local.setItem('gestorRascunhoV3:novo:outra-pagina','outra cópia');
- if(resultado==='origem'){
-   const chave='gestorRascunhoV3:novo:origem-reaberta',valor={versao:3,atualizadoEm:1,dados:{campos:c.capturarFormularioMutacaoGestor()}};local.setItem(chave,JSON.stringify(valor));c.origensRascunhoPaginaGestor.novo={chave,valor};
- }
- c.enviarGasto({preventDefault(){}});await new Promise(r=>setImmediate(r));await new Promise(r=>setImmediate(r));return {c,el,local,sessao,fila,enviados};
+ const a=require('./fixtures/envio-rascunho-ui.cjs').ambienteEnvio(),p=a.pagina(online),c=p.c,el=p.el,local=a.local,sessao=p.sessao;
+ el('inpDesc').value='Almoço';p.guardar();
+ const original=c.apiCall;c.apiCall=async(acao,pedido)=>{if(['erro','incerto'].includes(resultado)){const e=Error('Falha fictícia');e.resultadoIncerto=resultado==='incerto';throw e;}if(resultado==='novo'){el('inpDesc').value='Outro rascunho';p.guardar();}return original(acao,pedido);};
+ local.setItem('gestorRascunhoV3:novo:outra-pagina','outra cópia');
+ if(resultado==='origem'){const chave='gestorRascunhoV3:novo:origem-reaberta',valor={versao:3,atualizadoEm:1,dados:{campos:c.capturarFormularioMutacaoGestor('salvarLancamentoWeb')}};local.setItem(chave,JSON.stringify(valor));c.adotarOrigemRascunhoFinanceiroGestor('novo',chave,valor);}
+ await p.enviar();return {c,el,local,sessao,fila:a.fila(),enviados:a.envios.length};
 }
 for(const online of [false,true])test('envio '+(online?'confirmado':'guardado offline')+' conclui só seu rascunho e conserva a identificação da fila',async()=>{
- const a=await enviar(online);assert.equal(a.el('inpDesc').value,'');assert.equal(a.local.getItem(a.c.chaveRascunhoRotinaGestor()),null);assert.equal(a.sessao.getItem('gestorRascunhoAnterior:novo'),null);assert.equal(a.local.getItem('gestorRascunhoV3:novo:outra-pagina'),'outra cópia');if(!online)assert.equal(a.fila[0].requestId,'identificacao-original-fila-001');
+ const a=await enviar(online);assert.equal(a.el('inpDesc').value,'');assert.equal(a.local.getItem(a.c.chaveRascunhoRotinaGestor('novo')),null);assert.equal(a.sessao.getItem('gestorRascunhoAnterior:novo'),null);assert.equal(a.local.getItem('gestorRascunhoV3:novo:outra-pagina'),'outra cópia');if(!online)assert.match(a.fila[0].requestId,/^rascunho-[a-f0-9]{64}$/);
 });
-test('resposta de um envio não limpa campos modificados durante a espera',async()=>{const a=await enviar(true,'novo');assert.equal(a.el('inpDesc').value,'Outro rascunho');assert.match(a.local.getItem(a.c.chaveRascunhoRotinaGestor()),/Outro rascunho/);});
-for(const resultado of ['erro','incerto'])test('envio com '+resultado+' conserva campos e rascunho',async()=>{const a=await enviar(true,resultado);assert.equal(a.el('inpDesc').value,'Almoço');assert(a.local.getItem(a.c.chaveRascunhoRotinaGestor()));});
+test('resposta de um envio não limpa campos modificados durante a espera',async()=>{const a=await enviar(true,'novo');assert.equal(a.el('inpDesc').value,'Outro rascunho');assert.match(a.local.getItem(a.c.chaveRascunhoRotinaGestor('novo')),/Outro rascunho/);});
+for(const resultado of ['erro','incerto'])test('envio com '+resultado+' conserva campos e rascunho',async()=>{const a=await enviar(true,resultado);assert.equal(a.el('inpDesc').value,'Almoço');assert(a.local.getItem(a.c.chaveRascunhoRotinaGestor('novo')));});
 test('cópia herdada já enviada deixa de ser recuperável; edição posterior em outra aba continua preservada',async()=>{
  const a=await enviar(true,'origem'),chave='gestorRascunhoV3:novo:origem-reaberta',valor=JSON.parse(a.local.getItem(chave));assert.equal(a.c.rascunhoConcluidoRotinaGestor(chave,valor),true);
  const alterada={...valor,atualizadoEm:2,dados:{campos:{desc:'Outra aba modificou',valor:'50'}}};a.local.setItem(chave,JSON.stringify(alterada));assert.equal(a.c.rascunhoConcluidoRotinaGestor(chave,alterada),false);assert.equal(JSON.parse(a.local.getItem(chave)).dados.campos.desc,'Outra aba modificou');
@@ -33,7 +23,7 @@ test('envio incerto só conclui o rascunho quando a central confirma a mesma ide
  const a=await enviar(true,'incerto'),c=a.c;c.pxGastoPendenteId='envio-em-conferencia-001';c.pxLiberandoLimpezaIncerta=false;c.pxDefinirEstadoIncerto=ativo=>ativo?a.sessao.setItem('lancamentoResultadoIncerto','true'):a.sessao.removeItem('lancamentoResultadoIncerto');
  vm.runInContext(trecho(html,'  window.pxConcluirConfirmacaoGestor=function','  seguro(\'avisoResultadoIncerto\''),c);
  c.pxConcluirConfirmacaoGestor({action:'salvarLancamentoWeb',requestId:'outro-envio'},true);assert.equal(a.el('inpDesc').value,'Almoço');
- c.pxConcluirConfirmacaoGestor({action:'salvarLancamentoWeb',requestId:'envio-em-conferencia-001'},true);assert.equal(a.el('inpDesc').value,'');assert.equal(a.local.getItem(c.chaveRascunhoRotinaGestor()),null);
+ c.pxConcluirConfirmacaoGestor({action:'salvarLancamentoWeb',requestId:'envio-em-conferencia-001'},true);assert.equal(a.el('inpDesc').value,'');assert.equal(a.local.getItem(c.chaveRascunhoRotinaGestor('novo')),null);
 });
 test('gráfico vazio destrói a instância e a configuração adiada; novos dados podem voltar',()=>{
  const canvas={hidden:false,getContext:()=>({})},estado={hidden:true},c=vm.createContext({Map,Set,document:{getElementById:id=>id==='chartCategorias'?canvas:estado},getCategoriaExibicao:v=>v,chartGlobal:null,atualizarGraficoGestor:(_a,_c,config)=>({config,destroy(){this.destruido=true;}})});

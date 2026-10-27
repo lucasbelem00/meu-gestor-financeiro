@@ -2,6 +2,60 @@
 const paginaRascunhoGestor=novoRequestIdGestor();
 const chavesRascunhoPaginaGestor=Object.create(null);
 const origensRascunhoPaginaGestor=Object.create(null);
+const identidadesRascunhoPaginaGestor=Object.create(null);
+function identidadeRascunhoFinanceiroGestor(tipo){
+  if(!identidadesRascunhoPaginaGestor[tipo]){
+    const origem=origensRascunhoPaginaGestor[tipo],proprio=lerJSONLocalGestor(chaveRascunhoRotinaGestor(tipo),null);
+    identidadesRascunhoPaginaGestor[tipo]=origem?.valor?.dados?.rascunhoId||(origem?'legado:'+origem.chave:proprio?.dados?.rascunhoId)||novoRequestIdGestor();
+  }
+  return identidadesRascunhoPaginaGestor[tipo];
+}
+function adotarOrigemRascunhoFinanceiroGestor(tipo,chave,valor){
+  origensRascunhoPaginaGestor[tipo]={chave,valor};
+  identidadesRascunhoPaginaGestor[tipo]=valor?.dados?.rascunhoId||'legado:'+chave;
+}
+function assinaturaPayloadRascunhoGestor(valor){
+  if(Array.isArray(valor))return valor.map(assinaturaPayloadRascunhoGestor);
+  if(valor&&typeof valor==='object')return Object.fromEntries(Object.keys(valor).filter(k=>k!=='requestId').sort().map(k=>[k,assinaturaPayloadRascunhoGestor(valor[k])]));
+  return valor;
+}
+async function prepararEnvioRascunhoFinanceiroGestor(tipo,payload){
+  const emp=tipo==='emp',acao=emp?'salvarEmprestimoWeb':'salvarLancamentoWeb',snapshot=capturarFormularioMutacaoGestor(acao),dados=dadosFormularioRascunhoGestor(emp);
+  if(!guardarRascunhoRotinaGestor(tipo,dados,true))throw Error('Não foi possível proteger o rascunho. Os campos foram preservados.');
+  const baseRestauracao=payload.baseRestauracao??(localStorage.getItem('gestorEpocaRestauracaoV1')||''),pedido={...payload,baseRestauracao};
+  // A identificação é derivada da origem e do conteúdo. Mesmo sem o recibo
+  // local, duas abas não inventam identificadores diferentes para esse envio.
+  const hash=await hashTextoRestauracaoGestor(JSON.stringify({versao:1,tipo,origem:identidadeRascunhoFinanceiroGestor(tipo),pedido:assinaturaPayloadRascunhoGestor(pedido)})),requestId='rascunho-'+hash,chave='gestorRascunhoEnvioV1:'+requestId;
+  const resultado=await comTravaAbasGestor('reservar-rascunho-financeiro',async()=>{
+    if(JSON.stringify(snapshot)!==JSON.stringify(capturarFormularioMutacaoGestor(acao)))throw Error('Os campos mudaram durante a preparação. Confira e envie novamente.');
+    const anterior=lerJSONLocalGestor(chave,null);
+    if(anterior?.estado==='confirmado')return {jaEnviado:true,estado:'confirmado',requestId,chave};
+    if(anterior?.estado==='fila'&&lerFilaOfflineGestor().some(i=>i.requestId===requestId))return {jaEnviado:true,estado:'fila',requestId,chave};
+    if(localStorage.getItem('gestorCancelamentoV1:'+requestId))throw Error('O cancelamento desse envio precisa de conferência em Atividade.');
+    gravarArmazenamentoGestor(chave,JSON.stringify({tipo,requestId,estado:'preparado',criadoEm:anterior?.criadoEm||Date.now()}));
+    return {payload:{...pedido,requestId},requestId,chave};
+  });
+  if(resultado===false)throw Error('Outra aba está preparando esse rascunho. Aguarde e tente novamente.');
+  if(resultado.jaEnviado)exibirRascunhoJaEnviadoGestor(tipo,resultado.estado);
+  return resultado;
+}
+function marcarEnvioRascunhoFinanceiroGestor(preparo,estado){
+  if(!preparo?.chave)return;
+  try{
+    const salvo=lerJSONLocalGestor(preparo.chave,null);if(salvo)gravarArmazenamentoGestor(preparo.chave,JSON.stringify({...salvo,estado,atualizadoEm:Date.now()}),{opcional:true});
+    // Estes recibos são apenas uma facilidade visual. O identificador pode
+    // ser recalculado e o servidor mantém a prova real de idempotência.
+    if(estado==='confirmado')lerEntradasLocaisGestor('gestorRascunhoEnvioV1:').filter(e=>e.valor.estado==='confirmado').sort((a,b)=>(b.valor.atualizadoEm||0)-(a.valor.atualizadoEm||0)).slice(300).forEach(e=>localStorage.removeItem(e.chave));
+  }catch(_){}
+}
+function exibirRascunhoJaEnviadoGestor(tipo,estado){
+  const fila=estado==='fila',form=document.getElementById(tipo==='emp'?'formEmprestimo':'formLancamento');
+  mostrarAviso(fila?'Rascunho já guardado':'Rascunho já enviado',fila?'Este envio já aguarda sincronização. Confira em Atividade.':'Este preenchimento já foi enviado em outra aba. Confira seus registros antes de iniciar outro lançamento.');
+  if(!form?.prepend||!document.createElement)return;
+  let painel=document.getElementById('rascunhoJaEnviado-'+tipo);if(!painel){painel=document.createElement('div');painel.id='rascunhoJaEnviado-'+tipo;painel.className='rounded-xl border border-sky-500/40 bg-sky-500/10 p-3 mb-3 text-xs text-sky-100 space-y-2';painel.setAttribute('role','status');form.prepend(painel);}painel.replaceChildren();
+  const texto=document.createElement('p');texto.textContent=fila?'Já está na fila de sincronização.':'Enviado em outra aba — confira seus registros.';painel.append(texto);
+  for(const [rotulo,acao]of [[fila?'Conferir em Atividade':tipo==='emp'?'Conferir empréstimos':'Conferir no Histórico',()=>fila?setAba('atividade'):tipo==='emp'?abrirFerramenta('emprestimos','consulta'):setAba('lancamentos')],['Limpar e iniciar outro',()=>pedirLimpezaFormularioGestor(tipo==='emp')]]){const b=document.createElement('button');b.type='button';b.className='mr-2 rounded-lg border border-slate-500 px-3 py-2 text-white';b.textContent=rotulo;b.onclick=acao;painel.append(b);}
+}
 function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
@@ -33,7 +87,7 @@ function lerRascunhoRotinaGestor(tipo){
   const r=anterior?lerJSONLocalGestor(anterior,null):null;
   if(r?.dados && !rascunhoVazioRotinaGestor(tipo,r.dados)){
     if(rascunhoConcluidoRotinaGestor(anterior,r)){sessionStorage.removeItem(tipo==='novo'?'rascunhoLancamento':'rascunhoEmprestimo');return null;}
-    if(tipo!=='racha')origensRascunhoPaginaGestor[tipo]={chave:anterior,valor:r};return JSON.stringify(r.dados);
+    if(tipo!=='racha')adotarOrigemRascunhoFinanceiroGestor(tipo,anterior,r);return JSON.stringify(r.dados);
   }
   // A chave legada é somente lida. Cada página passa a gravar em sua própria cópia.
   if(tipo==='racha')return lerCacheLeituraGestor('gestorRachadinhaRascunhoV1');
@@ -67,6 +121,7 @@ function rascunhoVazioRotinaGestor(tipo,dados){return tipo==='racha'?rascunhoRac
 function guardarRascunhoRotinaGestor(tipo,dados,obrigatorio=false){
   const chave=chaveRascunhoRotinaGestor(tipo);
   if(rascunhoVazioRotinaGestor(tipo,dados)){try{localStorage.removeItem(chave);if(sessionStorage.getItem('gestorRascunhoAnterior:'+tipo)===chave)sessionStorage.removeItem('gestorRascunhoAnterior:'+tipo);}catch(_){}return true;}
+  if(tipo!=='racha')dados.rascunhoId=identidadeRascunhoFinanceiroGestor(tipo);
   const salvo=gravarArmazenamentoGestor(chave,JSON.stringify({versao:3,tipo,atualizadoEm:Date.now(),dados}),{opcional:!obrigatorio});
   if(salvo)gravarArmazenamentoGestor('gestorRascunhoAnterior:'+tipo,chave,{sessao:true,opcional:true});
   else mostrarAviso('Rascunho não guardado','Mantenha esta tela aberta e libere espaço. Os campos e os envios pendentes foram preservados.');
@@ -77,7 +132,7 @@ guardarRascunhoGestor=function(chave,valor){
   const tipo=chave==='rascunhoLancamento'?'novo':chave==='rascunhoEmprestimo'?'emp':null;
   if(!tipo)return guardarRascunhoAnteriorRotinaGestor(chave,valor);
   const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
-  gravarArmazenamentoGestor(chave,valor,{sessao:true,opcional:true});return salvo;
+  gravarArmazenamentoGestor(chave,JSON.stringify(dados),{sessao:true,opcional:true});return salvo;
 };
 const restaurarRascunhoAnteriorRotinaGestor=restaurarRascunhosCompletosGestor;
 restaurarRascunhosCompletosGestor=function(){
@@ -95,6 +150,7 @@ restaurarRascunhosCompletosGestor=function(){
 };
 function limparCopiaRascunhoRotinaGestor(emp){
   const tipo=emp?'emp':'novo';try{localStorage.removeItem(chaveRascunhoRotinaGestor(tipo));sessionStorage.removeItem('gestorRascunhoAnterior:'+tipo);sessionStorage.removeItem(emp?'rascunhoEmprestimo':'rascunhoLancamento');}catch(_){}
+  delete identidadesRascunhoPaginaGestor[tipo];delete origensRascunhoPaginaGestor[tipo];document.getElementById('rascunhoJaEnviado-'+tipo)?.remove?.();
   padroesDatasRascunhoGestor[tipo]=dataPadraoRascunhoGestor();
   for(const e of document.getElementById(emp?'formEmprestimo':'formLancamento')?.elements || [])if(e.dataset){delete e.dataset.escolhaManual;delete e.dataset.valorSugerido;}
   renderizarRecuperacaoRascunhosGestor();
@@ -153,12 +209,35 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
   const form=document.getElementById(emp?'formEmprestimo':'formLancamento'),antes=assinaturaFormularioRotinaGestor(form);
   const aplicar=()=>{if(bloqueioFormularioRotinaGestor(emp)||assinaturaFormularioRotinaGestor(form)!==antes||JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('Os dados mudaram','Confira o formulário e a cópia novamente.');return;}
     if(haRascunhoFormularioGestor(emp)){emp?salvarRascunhoEmp():salvarRascunho();const copia=lerJSONLocalGestor(chaveRascunhoRotinaGestor(tipo),null);if(!copia){mostrarAviso('Rascunho atual não guardado','Libere espaço antes de substituir os campos.');return;}try{gravarArmazenamentoGestor('gestorRascunhoV3:'+tipo+':'+novoRequestIdGestor(),JSON.stringify(copia));}catch(e){mostrarAviso('Rascunho preservado',e.message);return;}}
-    origensRascunhoPaginaGestor[tipo]={chave,valor};
+    adotarOrigemRascunhoFinanceiroGestor(tipo,chave,valor);
     Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
 function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','Conferir recebimento'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
+function camposFocaveisEditorGestor(modal){return Array.from(modal.querySelectorAll('button,input:not([type="hidden"]),select,textarea,a[href],[tabindex]')).filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&!e.closest('[hidden],.hidden,[inert]'));}
+function configurarAcessibilidadeEditorGestor(modal){
+  if(!modal?.setAttribute||!modal.querySelectorAll)return;
+  modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+  const titulo=modal.querySelector('h3,h2');if(titulo){if(!titulo.id)titulo.id=modal.id+'Titulo';titulo.tabIndex=-1;modal.setAttribute('aria-labelledby',titulo.id);}
+  for(const campo of modal.querySelectorAll('input:not([type="hidden"]),select,textarea')){
+    if(campo.labels?.length||campo.hasAttribute('aria-label')||campo.hasAttribute('aria-labelledby'))continue;
+    const parte=/(?:Data)(Dia|Mes|Ano)$/.exec(campo.id);
+    if(parte){campo.setAttribute('aria-label',({Dia:'Dia',Mes:'Mês',Ano:'Ano'})[parte[1]]+' da compra');continue;}
+    const label=campo.parentElement?.querySelector('label');if(label&&!label.contains(campo)&&campo.id)label.htmlFor=campo.id;
+  }
+  if(!modal._focoEditorConfigurado){modal._focoEditorConfigurado=true;modal.addEventListener('keydown',e=>{
+    if(e.key!=='Tab')return;const campos=camposFocaveisEditorGestor(modal);if(!campos.length){e.preventDefault();titulo?.focus();return;}
+    const atual=document.activeElement,primeiro=campos[0],ultimo=campos.at(-1);
+    if(e.shiftKey&&(atual===primeiro||!campos.includes(atual))){e.preventDefault();ultimo.focus();}
+    else if(!e.shiftKey&&(atual===ultimo||!campos.includes(atual))){e.preventDefault();primeiro.focus();}
+  });}
+}
+function focarEditorGestor(modal,origem){
+  configurarAcessibilidadeEditorGestor(modal);modal._focoAnteriorEditor=origem;modal.scrollTop=0;
+  modal.querySelector?.('h3,h2')?.focus?.({preventScroll:true});
+}
+function devolverFocoEditorGestor(modal){const anterior=modal._focoAnteriorEditor;if(anterior?.isConnected&&!anterior.disabled&&anterior.getClientRects().length&&!anterior.closest('[hidden],.hidden,[inert]'))anterior.focus({preventScroll:true});delete modal._focoAnteriorEditor;}
 function modoRecebimentoEditorRotinaGestor(modal,ativo){
   const campos=[...Array.from(modal.querySelectorAll?.('form > .grid') || [modal.querySelector?.('form > .grid')]),document.getElementById('boxPropagarValorEmp'),modal.querySelector?.('[onclick="togglePainelDividirEmp()"]'),modal.querySelector?.('[onclick="togglePainelMoverPessoal()"]'),document.getElementById('inpEdEmpCombinada')?.closest?.('label'),document.getElementById('escopoDataCombinadaEmpGestor')?.closest?.('label'),document.getElementById('ajudaEscopoDataEmpGestor'),document.getElementById('btnSalvarEdEmp')];
   campos.filter(Boolean).forEach(e=>{if(ativo){e.dataset.hiddenRecebimento=String(e.hidden);e.dataset.classeRecebimento=String(e.classList.contains('hidden'));e.hidden=true;e.classList.add('hidden');}else if(e.dataset.hiddenRecebimento!==undefined){e.hidden=e.dataset.hiddenRecebimento==='true';e.classList.toggle('hidden',e.dataset.classeRecebimento==='true');delete e.dataset.hiddenRecebimento;delete e.dataset.classeRecebimento;}});
@@ -166,9 +245,9 @@ function modoRecebimentoEditorRotinaGestor(modal,ativo){
 }
 function protegerEditorRotinaGestor(abrir,fechar,id){
   const originalAbrir=window[abrir],originalFechar=window[fechar];
-  window[abrir]=function(...args){const m=document.getElementById(id);if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data.slice(6)+'-'+data.slice(3,5)+'-'+data.slice(0,2):'';m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));return r;};
-  window[fechar]=function(forcar=false){const m=document.getElementById(id),form=m.querySelector('form');if(forcar || m.classList.contains('hidden') || !m._assinaturaInicial || m._assinaturaInicial===assinaturaFormularioRotinaGestor(form)){originalFechar();return;}
-    const sessao=m._sessaoEdicao,atual=assinaturaFormularioRotinaGestor(form);mostrarConfirmacao('Descartar alterações da edição?','As mudanças ainda não enviadas serão descartadas. Uma operação que já foi enviada continua protegida em Atividade.',()=>{if(m._sessaoEdicao!==sessao||assinaturaFormularioRotinaGestor(form)!==atual){mostrarAviso('A edição mudou','Confira os campos antes de fechar.');return;}originalFechar();},false,'Descartar alterações','neutral');};
+  window[abrir]=function(...args){const m=document.getElementById(id),origem=document.activeElement;if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data.slice(6)+'-'+data.slice(3,5)+'-'+data.slice(0,2):'';m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));focarEditorGestor(m,origem);return r;};
+  window[fechar]=function(forcar=false){const m=document.getElementById(id),form=m.querySelector('form'),visivel=!m.classList.contains('hidden');if(forcar || !visivel || !m._assinaturaInicial || m._assinaturaInicial===assinaturaFormularioRotinaGestor(form)){originalFechar();if(visivel)devolverFocoEditorGestor(m);return;}
+    const sessao=m._sessaoEdicao,atual=assinaturaFormularioRotinaGestor(form);mostrarConfirmacao('Descartar alterações da edição?','As mudanças ainda não enviadas serão descartadas. Uma operação que já foi enviada continua protegida em Atividade.',()=>{if(m._sessaoEdicao!==sessao||assinaturaFormularioRotinaGestor(form)!==atual){mostrarAviso('A edição mudou','Confira os campos antes de fechar.');return;}originalFechar();devolverFocoEditorGestor(m);},false,'Descartar alterações','neutral');};
 }
 for(const a of [['abrirModalEdicaoEmp','fecharModalEdicaoEmp','modalEdicaoEmp'],['abrirModalEdicaoLanc','fecharModalEdicaoLanc','modalEdicaoLanc'],['abrirModalForma','fecharModalForma','modalForma'],['abrirModalEdicaoAss','fecharModalEdicaoAss','modalEdicaoAss']])protegerEditorRotinaGestor(...a);
 const statusEmpAnteriorRotinaGestor=alternarStatusItemEmprestimo;
@@ -216,7 +295,7 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaEdicaoEmprestimoWeb', 'previaDatasDevolucaoWeb', 'previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<12){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<12)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
+window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaEdicaoEmprestimoWeb', 'previaDatasDevolucaoWeb', 'previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<13){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<13)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
