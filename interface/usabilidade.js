@@ -299,15 +299,36 @@ function renderizarNotasUI(){
     [[notasFixadasGestor.includes(String(n.id))?'Desafixar':'Fixar',()=>alternarFixacaoNotaGestor(n.id)],['Editar',()=>editarNotaRapidaGestor(n.id)],['Excluir',()=>excluirNotaRapida(n.id)]].forEach(([rotulo,fn])=>{const b=document.createElement('button');b.type='button';b.textContent=rotulo;b.className='text-xs py-2 '+(rotulo==='Excluir'?'text-rose-300':'text-amber-200');b.onclick=fn;actions.append(b);});card.append(actions);box.append(card);
   });
 }
-function adicionarNotaRapida(){
-  const inp=document.getElementById('inpNovaNotaTexto'),txt=inp.value.trim();if(!txt)return;
-  if(rascunhoNotaConcluidoGestor({rascunhoId:notaRascunhoIdentidadeGestor,texto:inp.value,edicao:notaEmEdicaoGestor})){mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');configurarEdicaoNotaGestor(null);return;}
-  inicializarNotasLocaisGestor();let nota;
-  if(notaEmEdicaoGestor){const atual=notasGlobais.find(n=>String(n.id)===String(notaEmEdicaoGestor.id));if((notaEmEdicaoGestor.baseRestauracao||'')!==(localStorage.getItem('gestorEpocaRestauracaoV1')||'')||!atual||Number(atual.revision||0)!==notaEmEdicaoGestor.revision||atual.texto!==notaEmEdicaoGestor.texto){mostrarAviso('A nota mudou','Seu rascunho permanece no campo. Confira a versão atual antes de editar novamente.');return;}nota={...atual,texto:txt};}
-  else nota={id:novoRequestIdGestor(),texto:txt,concluida:false,data:new Date().toLocaleDateString('pt-BR')};
-  try{registrarOperacaoNotaGestor('upsert',nota);}catch(e){mostrarAviso('Não foi possível guardar a nota','Copie o texto antes de fechar o app. Ele permanece no campo.');return;}
-  if(notaRascunhoIdentidadeGestor)try{const chave='gestorNotaRascunhoConcluidoV1:'+notaRascunhoIdentidadeGestor,anterior=lerJSONLocalGestor(chave,null),assinatura=assinaturaConteudoRascunhoNotaGestor({texto:inp.value,edicao:notaEmEdicaoGestor}),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(chave,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(e){mostrarAviso('Nota guardada','O comprovante do rascunho não coube neste aparelho. Não recupere a cópia antiga para adicionar esta mesma nota.');}
-  configurarEdicaoNotaGestor(null);recomporNotasLocaisGestor();sincronizarNotasNuvem();
+async function adicionarNotaRapida(){
+  if(adicionarNotaRapida.emAndamento)return;
+  const inp=document.getElementById('inpNovaNotaTexto'),texto=inp.value;if(!texto.trim())return;
+  if(!notaRascunhoIdentidadeGestor)notaRascunhoIdentidadeGestor=novoRequestIdGestor();
+  const rascunho={rascunhoId:notaRascunhoIdentidadeGestor,texto,edicao:notaEmEdicaoGestor},assinatura=assinaturaConteudoRascunhoNotaGestor(rascunho),epoca=localStorage.getItem('gestorEpocaRestauracaoV1')||'';
+  const corresponde=()=>inp.value===texto&&notaRascunhoIdentidadeGestor===rascunho.rascunhoId&&assinaturaConteudoRascunhoNotaGestor({texto:inp.value,edicao:notaEmEdicaoGestor})===assinatura&&(localStorage.getItem('gestorEpocaRestauracaoV1')||'')===epoca;
+  const botao=document.getElementById('btnAdicionarNotaGestor');adicionarNotaRapida.emAndamento=true;botao.disabled=true;
+  try{
+    const hash=await hashTextoRestauracaoGestor(JSON.stringify([rascunho.rascunhoId,assinatura,epoca])),chave='gestorNotaReservaV1:'+hash;
+    const resultado=await comTravaAbasGestor('adicionar-nota-rascunho',()=>{
+      if(!corresponde())throw Error('O texto mudou durante a preparação. Confira e adicione novamente.');
+      const reserva=lerJSONLocalGestor(chave,null);
+      if(rascunhoNotaConcluidoGestor(rascunho)||reserva?.estado==='guardado')return 'existente';
+      inicializarNotasLocaisGestor();let nota;
+      if(rascunho.edicao){const base=rascunho.edicao,atual=notasGlobais.find(n=>String(n.id)===String(base.id));if((base.baseRestauracao||'')!==epoca||!atual||Number(atual.revision||0)!==base.revision||atual.texto!==base.texto){const e=Error('Seu rascunho permanece no campo; confira a versão atual antes de editar novamente.');e.codigo='NOTA_DESATUALIZADA';throw e;}nota={...atual,texto:texto.trim()};}
+      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:new Date().toLocaleDateString('pt-BR')};
+      const opId='nota-op-'+hash,preparada=reserva?.operacao||{opId,id:nota.id,tipo:'upsert',baseRestauracao:epoca,criadoEm:Date.now(),revision:Number(nota.revision||0),nota};
+      gravarArmazenamentoGestor(chave,JSON.stringify({estado:'preparado',operacao:preparada}));
+      registrarOperacaoNotaGestor('upsert',nota,preparada);
+      // A reserva também comprova a inclusão, mesmo que o recibo legado não caiba.
+      gravarArmazenamentoGestor(chave,JSON.stringify({estado:'guardado',operacao:preparada}));
+      try{const recibo='gestorNotaRascunhoConcluidoV1:'+rascunho.rascunhoId,anterior=lerJSONLocalGestor(recibo,null),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(recibo,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(_){}
+      return 'guardado';
+    });
+    if(resultado===false){mostrarAviso('Nota em preparação','Outra aba está adicionando a nota. Aguarde e confira a lista antes de tentar novamente.');return;}
+    if(resultado==='existente')mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');
+    if(corresponde())configurarEdicaoNotaGestor(null);
+    recomporNotasLocaisGestor();sincronizarNotasNuvem();
+  }catch(e){mostrarAviso(e.codigo==='NOTA_DESATUALIZADA'?'A nota mudou':'Nota preservada',e.message+' O texto continua no campo.');}
+  finally{adicionarNotaRapida.emAndamento=false;botao.disabled=false;}
 }
 function toggleNotaConcluida(id){inicializarNotasLocaisGestor();const item=notasGlobais.find(n=>String(n.id)===String(id));if(!item)return;try{registrarOperacaoNotaGestor('upsert',{...item,concluida:!item.concluida});recomporNotasLocaisGestor();sincronizarNotasNuvem();}catch(e){mostrarAviso('Nota não alterada','Não foi possível guardar a alteração neste aparelho.');renderizarNotasUI();}}
 function excluirNotaRapida(id){

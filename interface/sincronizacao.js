@@ -1,4 +1,5 @@
 function orientacaoPendenciaGestor(p) {
+  if(p.diagnosticoServidor?.codigo==='DESTINO_RESTAURACAO_INVALIDO')return 'O arquivo anual desta restauração não pôde ser conferido. Preserve as cópias e recupere o arquivo de destino antes de retomar. Repetir o envio sem recuperar o arquivo não resolve a pendência.';
   if(p.tipo==='serie') return 'Esta série precisa de revisão. Os outros lançamentos podem continuar sendo usados.';
   if(p.tipo==='servidor'||p.noServidor) return 'A gravação começou na planilha, mas a confirmação não terminou. Consulte a confirmação. Se continuar pendente, veja os detalhes e confira a recuperação segura. Não cadastre o mesmo gasto novamente.';
   if(p.tipo==='notas') return 'Abra Conferir notas. Se houver conflito, compare as versões antes de escolher qual manter.';

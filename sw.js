@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v46';
+const CACHE_NAME = 'gestor-gastos-v47';
 
 function ehEnderecoInicialGestor(url){return url.origin===self.location.origin&&['/','/index.html'].includes(url.pathname);}
 async function buscarCopiaPaginaGestor(request){
@@ -27,7 +27,8 @@ async function navegarPaginaGestor(request,event){
   // esse prazo inteiro para abrir, e a API privada continua fora do cache.
   if(event.waitUntil)event.waitUntil(rede.then(()=>{}));
   let prazoAbertura;const resposta=await Promise.race([rede,new Promise(resolve=>{prazoAbertura=setTimeout(()=>resolve(null),3500);})]);clearTimeout(prazoAbertura);
-  return resposta||(await buscarCopiaPaginaGestor(request))||new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
+  const copia=resposta?null:await buscarCopiaPaginaGestor(request);
+  return resposta||copia||(await rede)||new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
 }
 
 async function ehPaginaDoGestor(resposta) {

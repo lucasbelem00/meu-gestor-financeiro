@@ -1238,8 +1238,8 @@
             <input type="hidden" id="inpEmpEdData">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 mb-1">Mês de Recebimento</label>
-            <input type="text" id="inpEdEmpMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none">
+            <label class="block text-[11px] font-bold text-slate-400 mb-1">Mês da fatura/competência</label>
+            <input type="text" id="inpEdEmpMesFat" aria-describedby="ajudaCompetenciaEmpGestor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none"><p id="ajudaCompetenciaEmpGestor" class="text-[10px] text-slate-300 mt-1">Período da conta. Para combinar a devolução, use a data abaixo.</p>
           </div>
         </div>
 
@@ -2207,7 +2207,7 @@
         });
       }
       if (!dados || typeof dados !== 'object') return;
-      if(action==='previaRestauracaoBackupWeb'&&confirmarProtocolo&&Number(dados.protocoloGestor)>=13)protocoloServidorGestor=Number(dados.protocoloGestor);
+      if(action==='previaRestauracaoBackupWeb'&&confirmarProtocolo&&Number(dados.protocoloGestor)>=14)protocoloServidorGestor=Number(dados.protocoloGestor);
       if (action === 'getDadosCompletos') {
         if (confirmarProtocolo) protocoloServidorGestor = Number(dados.protocoloGestor || 0);
         (dados.lancamentos || []).forEach(item => guardar(item, 'g', false));
@@ -2340,14 +2340,15 @@
       }
     }
 
-    function registrarOperacaoNotaGestor(tipo, notaOuId) {
+    function registrarOperacaoNotaGestor(tipo, notaOuId, preparada) {
       const nota = typeof notaOuId === 'object' ? { ...notaOuId } : null;
-      const opId = novoRequestIdGestor();
+      const opId = preparada?.opId || novoRequestIdGestor();
       const id = String(nota ? nota.id : notaOuId);
       const original = nota || notasGlobais.find(n => String(n.id) === id);
       const anteriores = operacoesNotasPendentesGestor();
       const operacao = { opId, id, tipo, baseRestauracao: localStorage.getItem('gestorEpocaRestauracaoV1') || '', criadoEm: Math.max(Date.now(), ...anteriores.map(op => op.criadoEm + 1)), revision: Number(original?.revision || 0) };
       if (nota) operacao.nota = nota;
+      if(preparada)Object.assign(operacao,preparada);
       gravarArmazenamentoGestor(GESTOR_NOTAS_OP_PREFIXO + opId, JSON.stringify(operacao));
       return operacao;
     }
@@ -3525,7 +3526,7 @@ function chamarFiltroBackend(append = false) {
       const totalParcelas = Number(normalizar(dados.parcelaOriginal).split('/')[1]) || 1;
       const camposCompartilhados = modalId === 'modalEdicaoEmp' ? ['dataCompra','pessoa','descricao','formaPagto','mesFatura'] : ['dataCompra','descricao','formaPagto','categoria','mesFatura','tags'];
       const afetaParcelas = totalParcelas > 1 && (dados.propagarValorParcelas || camposCompartilhados.some(campo => normalizar(dados[campo]) !== normalizar(original[campo])));
-      if (!marcaRecebimento && !desmarcaRecebimento && !mudaValorPago && !afetaParcelas && !dados.previaDatasTexto && !dados.previaPixTexto) { enviar(); return; }
+      if (!marcaRecebimento && !desmarcaRecebimento && !mudaValorPago && !afetaParcelas && !dados.previaDatasTexto && !dados.previaPixTexto && !dados.previaCorrecaoPixTexto) { enviar(); return; }
       const avisos = [];
       if (marcaRecebimento) avisos.push('O registro será marcado como ' + dados.status + '.');
       if (desmarcaRecebimento) avisos.push('O registro deixará de estar quitado ou recebido. Confira o pagamento antes de confirmar.');
@@ -3533,9 +3534,10 @@ function chamarFiltroBackend(append = false) {
       if (afetaParcelas) avisos.push('Esta alteração pode atualizar outras parcelas da mesma compra, conforme as regras do parcelamento.');
       if(dados.previaDatasTexto)avisos.push(dados.previaDatasTexto+' Somente datas combinadas: não altera vencimentos bancários nem registra recebimentos.');
       if(dados.previaPixTexto)avisos.push(dados.previaPixTexto+' Confirme somente se o pagamento via Pix já foi realizado. Isso não registra a devolução da pessoa.');
+      if(dados.previaCorrecaoPixTexto)avisos.push(dados.previaCorrecaoPixTexto+' Confirme somente se o Pix foi cadastrado por engano e não foi realizado. O valor passa a compor a fatura do cartão; o recebimento da pessoa é uma informação separada.');
       mostrarConfirmacao('Confirmar alterações', avisos.join(' ') + ' Deseja salvar?', () => {
-        if (!modal.classList.contains('hidden')) {if(dados.previaPixTexto)dados.confirmarPagamentoPix=true;enviar();}
-      }, false, dados.previaPixTexto?'Confirmar Pix e salvar':'Salvar alterações', 'success');
+        if (!modal.classList.contains('hidden')) {if(dados.previaPixTexto)dados.confirmarPagamentoPix=true;if(dados.previaCorrecaoPixTexto)dados.confirmarCorrecaoPix=true;enviar();}
+      }, false, dados.previaCorrecaoPixTexto?'Corrigir Pix e salvar':dados.previaPixTexto?'Confirmar Pix e salvar':'Salvar alterações', 'success');
     }
 
     function salvarEdicaoLanc(e) {
@@ -3936,7 +3938,8 @@ function chamarFiltroBackend(append = false) {
       const modal=document.getElementById('modalEdicaoEmp'),sessaoEdicao=modal._sessaoEdicao,assinatura=assinaturaFormularioRotinaGestor(modal.querySelector('form'));
       const ref=detalhesReferenciaGestor(dadosEdicao.linha),alvo=(emprestimosGlobal.itens||[]).find(i=>String(i.registroId)===String(ref?.registroId));
       const trocaParaPix=formaEhPixGestor(dadosEdicao.formaPagto)&&((modal._dadosOriginaisEdicao?.formaPagto||'')!==dadosEdicao.formaPagto||(emprestimosGlobal.itens||[]).some(i=>i.compraId===alvo?.compraId&&i.status!=='Recebido'&&i.forma!==dadosEdicao.formaPagto));
-      if(dadosEdicao.escopoDataCombinada==='proximas'||trocaParaPix){
+      const corrigirPix=formaEhCartaoGestor(dadosEdicao.formaPagto)&&(formaEhPixGestor(modal._dadosOriginaisEdicao?.formaPagto)||(emprestimosGlobal.itens||[]).some(i=>i.compraId===alvo?.compraId&&i.status!=='Recebido'&&formaEhPixGestor(i.forma)));
+      if(dadosEdicao.escopoDataCombinada==='proximas'||trocaParaPix||corrigirPix){
         btn.disabled=true;btn.textContent='Conferindo alterações…';
         try{
           if(!ref)throw Error('Atualize a lista para conferir as parcelas.');
@@ -3944,6 +3947,7 @@ function chamarFiltroBackend(append = false) {
           if(modal._sessaoEdicao!==sessaoEdicao||assinatura!==assinaturaFormularioRotinaGestor(modal.querySelector('form'))||modal.classList.contains('hidden'))throw Error('O formulário mudou. Confira novamente as datas.');
           if(previa.datas){dadosEdicao.assinaturaDatas=previa.datas.assinatura;dadosEdicao.previaDatasTexto=previa.datas.itens.length+' data(s) de devolução:\n\n'+previa.datas.itens.map(i=>'Parcela '+i.parcela+' · fatura '+i.mes+'\nDevolução: '+(i.antes||'Sem data')+' → '+(i.depois||'Sem data')).join('\n\n')+'\n\n';}
           if(previa.pagamentoPix){dadosEdicao.assinaturaPix=previa.pagamentoPix.assinatura;dadosEdicao.previaPixTexto='Pagamento realizado via Pix: '+formatBRL(previa.pagamentoPix.total)+' em '+previa.pagamentoPix.quantidade+' registro(s).';}
+          if(previa.correcaoPix){dadosEdicao.assinaturaCorrecaoPix=previa.correcaoPix.assinatura;dadosEdicao.previaCorrecaoPixTexto='Retirar a marcação de Pix de '+formatBRL(previa.correcaoPix.total)+' em '+previa.correcaoPix.quantidade+' registro(s) e corrigir para '+dadosEdicao.formaPagto+'.';}
         }catch(erro){mostrarAviso('Alterações não enviadas',erro.message);return;}
         finally{btn.disabled=false;btn.textContent='Atualizar';}
       }
@@ -4703,15 +4707,36 @@ function renderizarNotasUI(){
     [[notasFixadasGestor.includes(String(n.id))?'Desafixar':'Fixar',()=>alternarFixacaoNotaGestor(n.id)],['Editar',()=>editarNotaRapidaGestor(n.id)],['Excluir',()=>excluirNotaRapida(n.id)]].forEach(([rotulo,fn])=>{const b=document.createElement('button');b.type='button';b.textContent=rotulo;b.className='text-xs py-2 '+(rotulo==='Excluir'?'text-rose-300':'text-amber-200');b.onclick=fn;actions.append(b);});card.append(actions);box.append(card);
   });
 }
-function adicionarNotaRapida(){
-  const inp=document.getElementById('inpNovaNotaTexto'),txt=inp.value.trim();if(!txt)return;
-  if(rascunhoNotaConcluidoGestor({rascunhoId:notaRascunhoIdentidadeGestor,texto:inp.value,edicao:notaEmEdicaoGestor})){mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');configurarEdicaoNotaGestor(null);return;}
-  inicializarNotasLocaisGestor();let nota;
-  if(notaEmEdicaoGestor){const atual=notasGlobais.find(n=>String(n.id)===String(notaEmEdicaoGestor.id));if((notaEmEdicaoGestor.baseRestauracao||'')!==(localStorage.getItem('gestorEpocaRestauracaoV1')||'')||!atual||Number(atual.revision||0)!==notaEmEdicaoGestor.revision||atual.texto!==notaEmEdicaoGestor.texto){mostrarAviso('A nota mudou','Seu rascunho permanece no campo. Confira a versão atual antes de editar novamente.');return;}nota={...atual,texto:txt};}
-  else nota={id:novoRequestIdGestor(),texto:txt,concluida:false,data:new Date().toLocaleDateString('pt-BR')};
-  try{registrarOperacaoNotaGestor('upsert',nota);}catch(e){mostrarAviso('Não foi possível guardar a nota','Copie o texto antes de fechar o app. Ele permanece no campo.');return;}
-  if(notaRascunhoIdentidadeGestor)try{const chave='gestorNotaRascunhoConcluidoV1:'+notaRascunhoIdentidadeGestor,anterior=lerJSONLocalGestor(chave,null),assinatura=assinaturaConteudoRascunhoNotaGestor({texto:inp.value,edicao:notaEmEdicaoGestor}),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(chave,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(e){mostrarAviso('Nota guardada','O comprovante do rascunho não coube neste aparelho. Não recupere a cópia antiga para adicionar esta mesma nota.');}
-  configurarEdicaoNotaGestor(null);recomporNotasLocaisGestor();sincronizarNotasNuvem();
+async function adicionarNotaRapida(){
+  if(adicionarNotaRapida.emAndamento)return;
+  const inp=document.getElementById('inpNovaNotaTexto'),texto=inp.value;if(!texto.trim())return;
+  if(!notaRascunhoIdentidadeGestor)notaRascunhoIdentidadeGestor=novoRequestIdGestor();
+  const rascunho={rascunhoId:notaRascunhoIdentidadeGestor,texto,edicao:notaEmEdicaoGestor},assinatura=assinaturaConteudoRascunhoNotaGestor(rascunho),epoca=localStorage.getItem('gestorEpocaRestauracaoV1')||'';
+  const corresponde=()=>inp.value===texto&&notaRascunhoIdentidadeGestor===rascunho.rascunhoId&&assinaturaConteudoRascunhoNotaGestor({texto:inp.value,edicao:notaEmEdicaoGestor})===assinatura&&(localStorage.getItem('gestorEpocaRestauracaoV1')||'')===epoca;
+  const botao=document.getElementById('btnAdicionarNotaGestor');adicionarNotaRapida.emAndamento=true;botao.disabled=true;
+  try{
+    const hash=await hashTextoRestauracaoGestor(JSON.stringify([rascunho.rascunhoId,assinatura,epoca])),chave='gestorNotaReservaV1:'+hash;
+    const resultado=await comTravaAbasGestor('adicionar-nota-rascunho',()=>{
+      if(!corresponde())throw Error('O texto mudou durante a preparação. Confira e adicione novamente.');
+      const reserva=lerJSONLocalGestor(chave,null);
+      if(rascunhoNotaConcluidoGestor(rascunho)||reserva?.estado==='guardado')return 'existente';
+      inicializarNotasLocaisGestor();let nota;
+      if(rascunho.edicao){const base=rascunho.edicao,atual=notasGlobais.find(n=>String(n.id)===String(base.id));if((base.baseRestauracao||'')!==epoca||!atual||Number(atual.revision||0)!==base.revision||atual.texto!==base.texto){const e=Error('Seu rascunho permanece no campo; confira a versão atual antes de editar novamente.');e.codigo='NOTA_DESATUALIZADA';throw e;}nota={...atual,texto:texto.trim()};}
+      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:new Date().toLocaleDateString('pt-BR')};
+      const opId='nota-op-'+hash,preparada=reserva?.operacao||{opId,id:nota.id,tipo:'upsert',baseRestauracao:epoca,criadoEm:Date.now(),revision:Number(nota.revision||0),nota};
+      gravarArmazenamentoGestor(chave,JSON.stringify({estado:'preparado',operacao:preparada}));
+      registrarOperacaoNotaGestor('upsert',nota,preparada);
+      // A reserva também comprova a inclusão, mesmo que o recibo legado não caiba.
+      gravarArmazenamentoGestor(chave,JSON.stringify({estado:'guardado',operacao:preparada}));
+      try{const recibo='gestorNotaRascunhoConcluidoV1:'+rascunho.rascunhoId,anterior=lerJSONLocalGestor(recibo,null),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(recibo,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(_){}
+      return 'guardado';
+    });
+    if(resultado===false){mostrarAviso('Nota em preparação','Outra aba está adicionando a nota. Aguarde e confira a lista antes de tentar novamente.');return;}
+    if(resultado==='existente')mostrarAviso('Rascunho já adicionado','Confira a nota na lista. Esta cópia já foi convertida em nota.');
+    if(corresponde())configurarEdicaoNotaGestor(null);
+    recomporNotasLocaisGestor();sincronizarNotasNuvem();
+  }catch(e){mostrarAviso(e.codigo==='NOTA_DESATUALIZADA'?'A nota mudou':'Nota preservada',e.message+' O texto continua no campo.');}
+  finally{adicionarNotaRapida.emAndamento=false;botao.disabled=false;}
 }
 function toggleNotaConcluida(id){inicializarNotasLocaisGestor();const item=notasGlobais.find(n=>String(n.id)===String(id));if(!item)return;try{registrarOperacaoNotaGestor('upsert',{...item,concluida:!item.concluida});recomporNotasLocaisGestor();sincronizarNotasNuvem();}catch(e){mostrarAviso('Nota não alterada','Não foi possível guardar a alteração neste aparelho.');renderizarNotasUI();}}
 function excluirNotaRapida(id){
@@ -6098,13 +6123,14 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
             htmlAtivas += `<div class="card-glass p-4 border-amber-400/40"><h3 class="text-white font-bold text-base">${escaparHTML(a.descricao)}</h3><p class="text-sm text-slate-200 mt-1">${escaparHTML(a.forma)} • ${escaparHTML(a.valor)}</p><p class="text-xs text-amber-200 mt-2">Controle da recorrência a conferir. Valores registrados estão preservados; a projeção desta série está suspensa.</p><button type="button" ${acaoHTML('abrirAtividadeGestor', [])} class="mt-3 rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">Conferir em Atividade</button></div>`;
             return;
           }
+          const exibida=a.vigente||a;
           const descSafe = String(a.descricao || '').replace(/'/g, "\\'");
           const formaSafe = String(a.forma || '').replace(/'/g, "\\'");
           const catSafe = String(a.categoria || '').replace(/'/g, "\\'");
-          const catVisor = getCategoriaExibicao(a.categoria);
-          const jaPaga = (a.status === 'Assinatura Paga');
+          const catVisor = getCategoriaExibicao(exibida.categoria);
+          const jaPaga = (exibida.status === 'Assinatura Paga');
           const badgeCor = jaPaga ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
-          htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base">${escaparHTML(a.descricao)}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${escaparHTML(a.forma)} • 🏷 ${escaparHTML(catVisor)}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg">${escaparHTML(a.valor)}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${badgeCor}">${a.pulada ? 'Pulado neste mês' : jaPaga ? 'Paga no Mês' : 'Ativa / A Pagar'}</span></div></div><div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button type="button" ${acaoHTML('abrirModalEdicaoAss', [a.descricao, a.forma, a.categoria, a.valor, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Editar</button><button type="button" ${acaoHTML('cancelarAssinaturaLocal', [a.descricao, a.forma, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Desativar</button></div></div>`;
+          htmlAtivas += `<div class="bg-slate-800/40 border border-indigo-500/20 rounded-2xl p-4 flex flex-col gap-3 shadow-sm"><div class="flex justify-between items-start"><div><h3 class="text-white font-bold text-base">${escaparHTML(exibida.descricao)}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">💳 ${escaparHTML(exibida.forma)} • 🏷 ${escaparHTML(catVisor)}</p></div><div class="text-right"><div class="text-emerald-400 font-bold text-lg">${escaparHTML(exibida.valor)}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${badgeCor}">${!a.vigente&&a.programadas?.length?'Programada':exibida.mes&&exibida.mes!==dados.faturas?.mesAtual?'Condição vigente':exibida.pulada?'Pulado neste mês':jaPaga?'Paga no Mês':'Ativa / A Pagar'}</span></div></div>${(a.programadas||[]).map(p=>'<p class="text-xs text-sky-200">'+escaparHTML(p.valor)+' a partir de '+escaparHTML(p.mes)+' · '+escaparHTML(p.descricao)+' · '+escaparHTML(p.forma)+'</p>').join('')}<div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button type="button" ${acaoHTML('abrirModalEdicaoAss', [exibida.descricao, exibida.forma, exibida.categoria, exibida.valor, { registroId: exibida.registroId, compraId: exibida.compraId, versao: exibida.versao }])} class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Editar</button><button type="button" ${acaoHTML('cancelarAssinaturaLocal', [a.descricao, a.forma, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">Desativar</button></div></div>`;
         });
         inativas.forEach(a => {
           htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center"><div><h3 class="text-slate-300 font-bold text-sm">${escaparHTML(a.descricao)}</h3><p class="text-slate-500 text-[10px] uppercase font-bold mt-0.5">${escaparHTML(a.forma)} • ${escaparHTML(a.valor)}</p></div><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Cancelada</span></div>`;
@@ -7935,6 +7961,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <script>
 // INICIO INTERFACE SINCRONIZACAO GERADA
 function orientacaoPendenciaGestor(p) {
+  if(p.diagnosticoServidor?.codigo==='DESTINO_RESTAURACAO_INVALIDO')return 'O arquivo anual desta restauração não pôde ser conferido. Preserve as cópias e recupere o arquivo de destino antes de retomar. Repetir o envio sem recuperar o arquivo não resolve a pendência.';
   if(p.tipo==='serie') return 'Esta série precisa de revisão. Os outros lançamentos podem continuar sendo usados.';
   if(p.tipo==='servidor'||p.noServidor) return 'A gravação começou na planilha, mas a confirmação não terminou. Consulte a confirmação. Se continuar pendente, veja os detalhes e confira a recuperação segura. Não cadastre o mesmo gasto novamente.';
   if(p.tipo==='notas') return 'Abra Conferir notas. Se houver conflito, compare as versões antes de escolher qual manter.';
@@ -8154,6 +8181,11 @@ function pedirLimpezaFormularioGestor(emp){
 function entradasRecuperaveisRascunhoRotinaGestor(tipo){
   return lerEntradasLocaisGestor('gestorRascunhoV3:'+tipo+':').filter(e=>e.chave!==chaveRascunhoRotinaGestor(tipo)&&(!e.valor.tipo||e.valor.tipo===tipo)&&!rascunhoVazioRotinaGestor(tipo,e.valor.dados)&&!rascunhoConcluidoRotinaGestor(e.chave,e.valor)).sort((a,b)=>b.valor.atualizadoEm-a.valor.atualizadoEm);
 }
+function resumoRascunhoFinanceiroGestor(tipo,dados){
+  if(tipo==='racha')return dados?.campos?.rachaLocal||'Rachadinha';
+  const c=dados?.campos||{},emp=tipo==='emp',valor=String(dados?.valor||c[emp?'inpEmpValor':'inpValor']||'').trim();
+  return [dados?.desc||c[emp?'inpEmpDesc':'inpDesc']||'Sem descrição',emp?(dados?.pessoa||c.inpEmpPessoa):'',valor,dados?.forma||c[emp?'selEmpForma':'selForma']].filter(Boolean).join(' · ');
+}
 function renderizarRecuperacaoRascunhosGestor(){
   for(const tipo of ['novo','emp','racha']){
     const destino=document.getElementById(tipo==='novo'?'formLancamento':tipo==='emp'?'formEmprestimo':'subview-rachadinha');if(!destino)continue;
@@ -8161,7 +8193,7 @@ function renderizarRecuperacaoRascunhosGestor(){
     const entradas=entradasRecuperaveisRascunhoRotinaGestor(tipo);
     painel.hidden=!entradas.length;painel.replaceChildren();if(!entradas.length)continue;
     const titulo=document.createElement('summary');titulo.textContent='Rascunhos de '+({novo:'novo lançamento',emp:'empréstimos',racha:'rachadinha'}[tipo])+' ('+entradas.length+')';titulo.className='cursor-pointer py-1 font-bold';painel.append(titulo);
-    entradas.forEach(({chave,valor})=>{const linha=document.createElement('div');linha.className='flex flex-wrap items-center gap-2 mt-2';const texto=document.createElement('span');texto.className='flex-1 min-w-0 break-words';texto.textContent=(valor.dados?.desc||valor.dados?.pessoa||valor.dados?.campos?.rachaLocal||'Rascunho')+' · '+new Date(valor.atualizadoEm).toLocaleString('pt-BR');linha.append(texto);
+    entradas.forEach(({chave,valor})=>{const linha=document.createElement('div');linha.className='flex flex-wrap items-center gap-2 mt-2';const texto=document.createElement('span');texto.className='flex-1 min-w-0 break-words';texto.textContent=resumoRascunhoFinanceiroGestor(tipo,valor.dados)+' · '+new Date(valor.atualizadoEm).toLocaleString('pt-BR');linha.append(texto);
       const recuperar=document.createElement('button');recuperar.type='button';recuperar.className='rounded-lg border border-sky-400 px-3 py-2 text-sky-200';recuperar.textContent='Recuperar';recuperar.onclick=()=>recuperarRascunhoRotinaGestor(tipo,chave,valor);linha.append(recuperar);
       const descartar=document.createElement('button');descartar.type='button';descartar.className='rounded-lg border border-slate-600 px-3 py-2';descartar.textContent='Descartar';descartar.onclick=()=>mostrarConfirmacao('Descartar esta cópia?','Somente este rascunho será removido. Envios e registros financeiros continuam protegidos.',()=>{if(JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('A cópia mudou','Confira a versão atual antes de descartar.');return;}if(valor.dados?.envio?.estado==='pendente' || valor.dados?.registroId && localStorage.getItem('gestorMutacaoV3:'+valor.dados.registroId)){mostrarAviso('Confira o envio','Consulte Atividade antes de descartar uma divisão com envio.');return;}localStorage.removeItem(chave);renderizarRecuperacaoRascunhosGestor();},false,'Descartar cópia','neutral');linha.append(descartar);painel.append(linha);
     });
@@ -8263,7 +8295,7 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaEdicaoEmprestimoWeb', 'previaDatasDevolucaoWeb', 'previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<13){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<13)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
+window.apiCall=async function(acao,param,...resto){const leituras=['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','getDadosCompletos','obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','exportarBackupDadosWeb','previaRestauracaoBackupWeb','obterBackupAnteriorWeb','obterAtividadeWeb','obterFaturaPagamentoWeb','previaEdicaoEmprestimoWeb', 'previaDatasDevolucaoWeb', 'previaPagamentoFaturaWeb','previaAntecipacaoWeb','consultarOperacaoWeb','diagnosticarPendenciasWeb','previaRecuperacaoOperacaoWeb','previaRachadinhaWeb'];if(!leituras.includes(acao) && protocoloServidorGestor<14){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<14)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -8950,7 +8982,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
   painel.append(lista,ajuda);modal.firstElementChild.append(painel);
   let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
-  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<13)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
+  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<14)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
   function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();

@@ -24,6 +24,7 @@ class Sheet {
 class DB {
   constructor(data={}){this.sheets={};this.failure=null;for(const [name,rows]of Object.entries(data))this.sheets[name]=new Sheet(name,rows,this);}
   getSheetByName(n){return this.sheets[n]??null;}
+  getSheets(){return Object.values(this.sheets);}
   insertSheet(n){if(this.sheets[n])throw Error('Already exists');return this.sheets[n]=new Sheet(n,[],this);}
   getName(){return 'Teste isolado';}getSpreadsheetTimeZone(){return 'America/Sao_Paulo';}toast(){}
   maybeFail(name,stage,row,col){if(this.failure&&this.failure.name===name&&this.failure.stage===stage&&(!this.failure.row||this.failure.row===row)&&(!this.failure.col||this.failure.col===col)){this.failure=null;throw Error('FALHA SIMULADA '+stage+' '+name);}}

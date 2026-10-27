@@ -52,9 +52,13 @@ test('rede presa devolve a cópia local no prazo e uma resposta posterior atuali
  const p=a.carregar();await new Promise(r=>setImmediate(r));const prazo=[...tarefas.values()].find(t=>t.ms===3500);assert(prazo);prazo.fn();assert.equal(await(await p).text(),htmlApp);
  resolver(pagina(htmlApp+'<!-- atualização -->'));await new Promise(r=>setImmediate(r));assert.match(await a.itens.get('https://app.test/').clone().text(),/atualização/);assert.equal(tarefas.size,0);
 });
-test('sem cópia e sem resposta, o prazo da abertura produz mensagem em vez de esperar a rede',async()=>{
- const tarefas=new Map();let n=0;const a=ambiente((_req,{signal})=>new Promise((_r,reject)=>signal.addEventListener('abort',()=>reject(Error('prazo')))),null,{setTimeout:(fn,ms)=>{tarefas.set(++n,{fn,ms});return n;},clearTimeout:id=>tarefas.delete(id)});
- const p=a.carregar();await new Promise(r=>setImmediate(r));[...tarefas.values()].find(t=>t.ms===3500).fn();assert.equal((await p).status,503);[...tarefas.values()].find(t=>t.ms===8000).fn();await new Promise(r=>setImmediate(r));
+test('sem cópia espera o prazo da rede antes de mostrar erro',async()=>{
+ const tarefas=new Map();let n=0,terminou=false;const a=ambiente((_req,{signal})=>new Promise((_r,reject)=>signal.addEventListener('abort',()=>reject(Error('prazo')))),null,{setTimeout:(fn,ms)=>{tarefas.set(++n,{fn,ms});return n;},clearTimeout:id=>tarefas.delete(id)});
+ const p=a.carregar().then(r=>{terminou=true;return r;});await new Promise(r=>setImmediate(r));[...tarefas.values()].find(t=>t.ms===3500).fn();await new Promise(r=>setImmediate(r));assert.equal(terminou,false);[...tarefas.values()].find(t=>t.ms===8000).fn();assert.equal((await p).status,503);
+});
+test('resposta válida lenta abre sem cache e sem repetir a requisição',async()=>{
+ const tarefas=new Map();let n=0,resolver,chamadas=0;const a=ambiente(()=>{chamadas++;return new Promise(r=>resolver=r);},null,{setTimeout:(fn,ms)=>{tarefas.set(++n,{fn,ms});return n;},clearTimeout:id=>tarefas.delete(id)});
+ const p=a.carregar();await new Promise(r=>setImmediate(r));[...tarefas.values()].find(t=>t.ms===3500).fn();await new Promise(r=>setImmediate(r));resolver(pagina());const r=await p;assert.equal(r.status,200);assert.equal(await r.text(),htmlApp);assert.equal(chamadas,1);
 });
 test('uma página inicial com parâmetros atualiza também a cópia canônica',async()=>{
  const novo=htmlApp+'<!-- versão atual -->',a=ambiente(async()=>pagina(novo),pagina());await a.carregar({url:'https://app.test/?origem=atalho'});assert.equal(await a.itens.get('https://app.test/').clone().text(),novo);
