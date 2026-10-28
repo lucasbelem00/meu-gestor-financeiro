@@ -1,4 +1,7 @@
 // Interface da proteção de longo prazo; não instala rotinas sem ação explícita.
+function situacaoProtecaoLegivelGestor(s){
+  return {protecao:'Proteção automática: '+(!s.ativo?'desativada':s.rotinaInstalada===true?'ativada':s.rotinaInstalada===false?'precisa reativar o agendamento':'agendamento não verificado'),anual:'Organização anual: '+(s.organizacaoAnual===true?'ativada':'desativada'),pdf:'PDFs automáticos: '+(s.pdfAutomatico===true?'ativados':'desativados')};
+}
 function detalheFechamentoAnualGestor(estado){
   if(!estado)return '';
   const titulo='Ano '+estado.ano+' · '+(estado.incluidoDepois?'incluído após fechamento':estado.alteradoDepois?'atualizado após fechamento':'retrato preservado');
@@ -54,19 +57,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   const botao=texto=>{const b=criar('button',texto,'rounded-xl border border-slate-600 px-3 py-3 text-xs font-bold text-slate-200 disabled:opacity-50');b.type='button';return b;};
   const painel=criar('section','','rounded-xl border border-slate-700 p-3 space-y-3');painel.id='painelProtecaoLongoPrazoGestor';painel.append(criar('h4','Backups automáticos e arquivos anuais','text-sm font-bold text-white'));
   const status=criar('p','Consulte a situação das cópias no Google Drive.','text-xs text-slate-200');status.setAttribute('role','status');painel.append(status);
+  const estados=criar('div','Situações ainda não consultadas.','space-y-1 text-xs text-slate-200');estados.id='estadosProtecaoGestor';estados.setAttribute('aria-live','polite');painel.append(estados);
   const acoes=criar('div','','grid grid-cols-1 sm:grid-cols-2 gap-2'),consultar=botao('Atualizar situação'),ativar=botao('Ativar proteção automática'),anual=botao('Ativar organização por ano e PDFs'),backup=botao('Fazer backup no Drive agora'),manutencao=botao('Conferir manutenção');acoes.append(consultar,ativar,anual,backup,manutencao);painel.append(acoes);backup.disabled=true;manutencao.disabled=true;anual.disabled=true;
-  const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A rotina roda na sua conta Google, com o app fechado: faz uma cópia por mês e verifica o arquivo anual. Compras com saldo, empréstimos em aberto e fixos ficam na principal. Arquivos anuais são somente consulta. Nenhuma cópia é apagada automaticamente.','mt-2'));
+  const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A proteção automática agenda a rotina diária e o backup de cada mês. Ativar organização por ano e PDFs habilita a separação por competência e os relatórios de períodos completos no Drive. Anos fechados preservam o retrato; baixas posteriores ficam vinculadas no controle. Nenhuma cópia é apagada automaticamente.','mt-2'));
   ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
   painel.append(lista,ajuda);modal.firstElementChild.append(painel);
   let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
   function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<15)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
-  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;anual.disabled=ocupado||!ultimoStatus?.ativo;anual.hidden=ultimoStatus?.organizacaoAnual===true;}
+  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;ativar.textContent=ultimoStatus?.ativo&&ultimoStatus?.rotinaInstalada===true?'Proteção automática ativada':'Ativar proteção automática';backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;const completo=ultimoStatus?.organizacaoAnual===true&&ultimoStatus?.pdfAutomatico===true;anual.disabled=ocupado||!ultimoStatus?.ativo||completo;anual.hidden=false;anual.textContent=completo?'Organização anual e PDFs ativados':'Ativar organização por ano e PDFs';}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();
+    const situacao=situacaoProtecaoLegivelGestor(s);estados.replaceChildren();for(const texto of Object.values(situacao))estados.append(criar('p',texto));
     status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+dataLegivelBackupGestor(s.ultimoBackup.data)+' · período '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
     const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     if(s.planilha)lista.append(criar('p','Base de controle: '+s.planilha,'text-slate-300'));
-    if(s.organizacaoAnual)lista.append(criar('p','Organização anual ativa. Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
+    if(s.organizacaoAnual)lista.append(criar('p','Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
     for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
     if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
     if(s.avisoBackupAssistido)lista.append(criar('p',s.avisoBackupAssistido,'text-amber-300'));

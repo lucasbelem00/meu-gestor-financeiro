@@ -13,9 +13,6 @@ let historicoCalcGestor = [];
 let notaEmEdicaoGestor = null;
 let notasFixadasGestor = [];
 let revisaoTextoNotaGestor = 0;
-let mensalEntradaPendenteGestor = false;
-let mensalNavegacaoManualGestor = false;
-let mensalConsultaPendenteGestor = false;
 let notaRascunhoChaveGestor = '';
 let notaRascunhoAnteriorGestor = '';
 let notaRascunhoIdentidadeGestor = '';
@@ -366,31 +363,17 @@ function excluirNotaRapida(id){
   });
 }
 
-function mesSeguinteGestor(mes){const [m,a]=String(mes).split('/').map(Number),d=new Date(a,m,1);return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
-function proximoMensalDisponivelGestor(res){
-  if(!navigator.onLine||mensalConsultaPendenteGestor||!res?.periodoReferencia||res.integridade?.bloqueada||!Array.isArray(res.formas))return null;
-  const idade=Date.now()-Number(res.recebidoEmGestor||0);
-  if(idade<0||idade>60000||!Number.isFinite(idade)||res.geracaoConsultaGestor!==geracaoLeituraGestor)return null;
-  const mes=res.periodoReferencia;
-  // O saldo vem do relatório recém-consultado, nunca do resumo anterior do Painel.
-  const cartoes=res.formas.filter(f=>f&&f.tipo==='cartao');
-  if(!cartoes.length||cartoes.some(f=>!Number.isFinite(f.totalBanco)||!Number.isFinite(f.pagoBanco)||!Number.isFinite(f.abertoBanco)||f.totalBanco<0||f.pagoBanco<0||f.pagoBanco>f.totalBanco||Math.round(f.abertoBanco*100)!==Math.round((f.totalBanco-f.pagoBanco)*100)||Math.round(f.abertoBanco*100)!==0)||cartoes.reduce((s,f)=>s+f.totalBanco,0)<=0)return null;
-  // Exige o fechamento de todos os cartões ativos, inclusive os sem gasto no mês.
-  const ativos=formasGlobais.filter(f=>formaEhCartaoGestor(f)&&!f.arquivado);
-  const dt=new Date(),hoje=String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
-  const chave=m=>Number(m.slice(3))*12+Number(m.slice(0,2));
-  if(!ativos.length||ativos.some(f=>chave(calcularMesFaturaCartao(f,hoje).mesFat)<=chave(mes)))return null;
-  const prox=mesSeguinteGestor(mes);return (arvoreMesesAno[prox.slice(3)]||[]).includes(prox)?prox:null;
+// A entrada normal sempre usa o calendário. Atalhos com período explícito
+// continuam sendo consultas manuais, sem ativar acompanhamento de faturas.
+function aoEntrarMensalGestor(periodoExplicito=null){
+  const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+  const valido=/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(periodoExplicito||''));
+  const [mes,ano]=valido?periodoExplicito.split('/'):[mesAtual,anoAtual];
+  const anoAnual=document.getElementById('selFiltroAnoSimples')?.value;
+  preencherSeletoresInteligentes(ano,mes,false);
+  if(anoAnual&&Object.prototype.hasOwnProperty.call(arvoreMesesAno,anoAnual))document.getElementById('selFiltroAnoSimples').value=anoAnual;
+  atualizarEstadoSetasAnual();relatorioMensalPendente=true;
 }
-function atualizarSugestaoMensalGestor(res){
-  const box=document.getElementById('sugestaoProximoMesGestor'),prox=proximoMensalDisponivelGestor(res);box.replaceChildren();box.hidden=!prox;
-  const auto=document.getElementById('seguirProximoMesGestor');
-  if(prox){const texto=document.createElement('p');texto.textContent='Faturas dos cartões quitadas e período fechado para novas compras regulares. Pix e valores a receber continuam disponíveis neste mês.';texto.className='text-xs text-slate-200';const b=document.createElement('button');b.type='button';b.className='text-sky-300 text-xs font-bold py-2';b.textContent='Ver '+prox;b.onclick=()=>irParaFaturaMensal(prox);box.append(texto,b);}
-  // Só avança ao entrar novamente no Mensal. Recargas e pagamentos nunca trocam o período.
-  if(mensalEntradaPendenteGestor&&!mensalConsultaPendenteGestor){mensalEntradaPendenteGestor=false;if(prox&&auto.checked&&!mensalNavegacaoManualGestor)requestAnimationFrame(()=>{if(abaAtivaAtual==='relatorio'&&ultimoRelatorioMensalCache===res&&!mensalNavegacaoManualGestor&&proximoMensalDisponivelGestor(res)===prox)irParaFaturaMensal(prox,true);});}
-}
-function aoEntrarMensalGestor(){mensalEntradaPendenteGestor=!mensalNavegacaoManualGestor;document.getElementById('sugestaoProximoMesGestor').hidden=true;if(document.getElementById('seguirProximoMesGestor').checked&&!mensalNavegacaoManualGestor){relatorioMensalPendente=true;mensalConsultaPendenteGestor=true;}}
-function marcarEscolhaMensalGestor(){mensalEntradaPendenteGestor=false;mensalNavegacaoManualGestor=true;}
 function inicializarUsabilidadeGestor(){
   const partes=[
     compactarComprovantesNotasGestor,
@@ -400,8 +383,7 @@ function inicializarUsabilidadeGestor(){
     ()=>{const pins=lerJSONLocalGestor('gestorNotasFixadasV1',[]);notasFixadasGestor=Array.isArray(pins)?pins.filter(p=>typeof p==='string').slice(0,200):[];},
     ()=>document.getElementById('inpNovaNotaTexto').addEventListener('input',guardarTextoNotaGestor),
     restaurarRascunhoNotaGestor,
-    ()=>{const pref=document.getElementById('seguirProximoMesGestor');pref.checked=lerJSONLocalGestor('gestorSeguirMesV1',false)===true;pref.addEventListener('change',()=>{mensalNavegacaoManualGestor=false;salvarCacheLeituraGestor('gestorSeguirMesV1',JSON.stringify(pref.checked));});},
-    ()=>['selFiltroRelAno','selFiltroRelMes'].forEach(id=>document.getElementById(id).addEventListener('change',marcarEscolhaMensalGestor))
+    ()=>localStorage.removeItem('gestorSeguirMesV1')
   ];
   partes.forEach(iniciar=>{try{iniciar();}catch(e){console.warn('Uma preferência local não pôde ser recuperada:',e.message);}});
 }

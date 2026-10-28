@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v48';
+const CACHE_NAME = 'gestor-gastos-v51';
 
 function ehEnderecoInicialGestor(url){return url.origin===self.location.origin&&['/','/index.html'].includes(url.pathname);}
 async function buscarCopiaPaginaGestor(request){

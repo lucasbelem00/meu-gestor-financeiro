@@ -4764,11 +4764,13 @@ function validarConteudoAbaBackupGestor_(aba) {
   }
   if (nome === 'Formas de Pagamento') {
     if (cols < 6) throw new Error('Estrutura de formas de pagamento incompleta.');
-    validarMetadadosTiposFormasGestor_(linhas);
+    const colunaTipoBackup=validarMetadadosTiposFormasGestor_(linhas);
     validarIdentidadesFormasGestor_(linhas);
-    linhas.slice(6).forEach(function (r) {
+    linhas.slice(6).forEach(function (r,i) {
       if (!r[1] && !r.slice(2,6).some(function (v) { return v !== '' && v !== null; })) return;
-      if (!texto(r[1]) || !numero(r[3]) || r[3] < 0 || !['',null].includes(r[4]) && (!Number.isInteger(r[4]) || r[4]<1 || r[4]>31) || !['',null].includes(r[5]) && (!Number.isInteger(r[5]) || r[5]<1 || r[5]>31)) throw new Error('Cartão ou forma de pagamento inválida no backup.');
+      const tipo=colunaTipoBackup&&r[colunaTipoBackup-1]||tipoLegadoFormaGestor_(r[1]);
+      const diaValido=v=>['',null].includes(v)||Number.isInteger(v)&&v>=1&&v<=31||tipo!=='cartao'&&limparApostrofo(v)==='-';
+      if (!texto(r[1]) || !numero(r[3]) || r[3] < 0 || !diaValido(r[4]) || !diaValido(r[5])) throw new Error('Cartão ou forma de pagamento inválida no backup: '+String(r[1]||'sem nome')+' (linha '+(i+7)+'). Confira limite numérico e dias de fechamento/vencimento; cartões aceitam dias de 1 a 31.');
       registrar(normalizarTexto(r[1]));
     });
   }
@@ -6101,7 +6103,7 @@ function gravarPlanoOrganizacaoAnualGestor_(ss){
 }
 function ativarOrganizacaoAnualWeb(){return comLockProtecaoGestor_(function(ss){
   conferirSemPendenciasProtecaoGestor_(ss);const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção e confira a base de destino.');
-  if(c.organizacaoAnual)return {sucesso:true,repetido:true};
+  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}return {sucesso:true,repetido:true};}
   conferirFormulasOutrasAbasProtecaoGestor_(ss);
   const copia=backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),'antes-organizacao-'+hashGestor_(['Lançamentos','Empréstimos'].map(n=>lerEstadoAbaGestor_(ss.getSheetByName(n)))) .slice(0,28));
   if(copia.restauravel!==true)throw Error('A cópia foi preservada, mas há colunas ou fórmulas particulares que exigem conferência. A organização anual não foi ativada nem removeu os dados.');

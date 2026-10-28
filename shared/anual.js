@@ -139,7 +139,7 @@ function gravarPlanoOrganizacaoAnualGestor_(ss){
 }
 function ativarOrganizacaoAnualWeb(){return comLockProtecaoGestor_(function(ss){
   conferirSemPendenciasProtecaoGestor_(ss);const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção e confira a base de destino.');
-  if(c.organizacaoAnual)return {sucesso:true,repetido:true};
+  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}return {sucesso:true,repetido:true};}
   conferirFormulasOutrasAbasProtecaoGestor_(ss);
   const copia=backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),'antes-organizacao-'+hashGestor_(['Lançamentos','Empréstimos'].map(n=>lerEstadoAbaGestor_(ss.getSheetByName(n)))) .slice(0,28));
   if(copia.restauravel!==true)throw Error('A cópia foi preservada, mas há colunas ou fórmulas particulares que exigem conferência. A organização anual não foi ativada nem removeu os dados.');

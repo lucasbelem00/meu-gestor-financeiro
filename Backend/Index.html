@@ -209,7 +209,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           <h3 id="tituloCentralNavegacao" class="text-sm font-bold text-white uppercase tracking-wider">Central de Navegação</h3>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="forcarAtualizacaoApp()" class="text-sky-400 hover:text-white bg-sky-500/15 border border-sky-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95" title="Limpa o cache do aparelho e busca a versão mais recente">🔄 Atualizar App</button>
+          <button onclick="forcarAtualizacaoApp()" class="text-sky-400 hover:text-white bg-sky-500/15 border border-sky-500/30 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition active:scale-95" title="Limpa o cache do aparelho e busca a versão mais recente">↻ Atualizar App</button>
           <button type="button" id="btnFecharCentralNavegacao" aria-label="Fechar central de navegação" onclick="fecharMenuMobile()" class="text-slate-400 hover:text-white bg-slate-800 px-3 py-1.5 rounded-lg text-xs font-bold">✕</button>
         </div>
       </div>
@@ -266,10 +266,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
       <!-- Grupo 2: Relatórios -->
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">📈 Dados e Relatórios</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">🗂️ Dados e Relatórios</span>
         <div class="grid grid-cols-1 gap-2.5">
           <button type="button" onclick="abrirAtividadeGestor()" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
-            <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-lg">↻</div><div><div class="text-sm font-bold text-white">Atividade e sincronização</div><div data-menu-ajuda class="text-[11px] text-slate-400">Pendências, histórico e recuperação de ações</div></div></div><span class="text-slate-300" aria-hidden="true"><svg class="w-4 h-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
+            <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-lg">📡</div><div><div class="text-sm font-bold text-white">Atividade e sincronização</div><div data-menu-ajuda class="text-[11px] text-slate-400">Pendências, histórico e recuperação de ações</div></div></div><span class="text-slate-300" aria-hidden="true"><svg class="w-4 h-4 shrink-0" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></span>
           </button>
           <button onclick="setAba('anual')" id="btn-menu-anual" class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition active:scale-95">
             <div class="flex items-center gap-3">
@@ -673,7 +673,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <p id="resumoFiltroMensal" role="status" class="text-xs text-sky-200 leading-relaxed"></p>
             <p class="text-[10px] text-slate-300">Os indicadores acima são do mês completo. Dentro de cada grupo, as opções se somam; entre grupos, os filtros são combinados.</p>
           </section>
-          <div id="sugestaoProximoMesGestor" hidden class="rounded-xl bg-slate-900 border border-slate-600 p-3 mb-3" role="status"></div><label class="flex items-start gap-2 text-xs text-slate-300 mb-3"><input id="seguirProximoMesGestor" type="checkbox" class="mt-0.5">Abrir o próximo período ao voltar ao Mensal, quando os cartões estiverem quitados e fechados. Escolher um mês manualmente pausa o avanço; desmarque e marque para retomar.</label><div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
+          <div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
         </div>
       </div>
     </div>
@@ -2697,9 +2697,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       if (navMobile) { navMobile.inert = !emTelaPequena; navMobile.setAttribute('aria-hidden', String(!emTelaPequena)); }
     }
 
-    function setAba(aba, salvar = true) {
+    function setAba(aba, salvar = true, periodoMensalExplicito = null) {
       fecharMenuMobile();
-      if (aba === 'relatorio' && abaAtivaAtual !== 'relatorio') aoEntrarMensalGestor();
+      if (aba === 'relatorio' && (salvar || abaAtivaAtual !== 'relatorio')) aoEntrarMensalGestor(periodoMensalExplicito);
       abaAtivaAtual = aba;
       if (salvar) salvarCacheLeituraGestor('abaAtivaGestorV11', aba);
 
@@ -2749,7 +2749,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         relatorioAnualPendente = false;
         carregarRelatorioAnual();
       }
-      if (aba === 'relatorio' && ultimoRelatorioMensalCache) atualizarSugestaoMensalGestor(ultimoRelatorioMensalCache);
     }
 
     function abrirFerramenta(sub,modoEmprestimos='consulta') {
@@ -4543,9 +4542,6 @@ let historicoCalcGestor = [];
 let notaEmEdicaoGestor = null;
 let notasFixadasGestor = [];
 let revisaoTextoNotaGestor = 0;
-let mensalEntradaPendenteGestor = false;
-let mensalNavegacaoManualGestor = false;
-let mensalConsultaPendenteGestor = false;
 let notaRascunhoChaveGestor = '';
 let notaRascunhoAnteriorGestor = '';
 let notaRascunhoIdentidadeGestor = '';
@@ -4896,31 +4892,17 @@ function excluirNotaRapida(id){
   });
 }
 
-function mesSeguinteGestor(mes){const [m,a]=String(mes).split('/').map(Number),d=new Date(a,m,1);return String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
-function proximoMensalDisponivelGestor(res){
-  if(!navigator.onLine||mensalConsultaPendenteGestor||!res?.periodoReferencia||res.integridade?.bloqueada||!Array.isArray(res.formas))return null;
-  const idade=Date.now()-Number(res.recebidoEmGestor||0);
-  if(idade<0||idade>60000||!Number.isFinite(idade)||res.geracaoConsultaGestor!==geracaoLeituraGestor)return null;
-  const mes=res.periodoReferencia;
-  // O saldo vem do relatório recém-consultado, nunca do resumo anterior do Painel.
-  const cartoes=res.formas.filter(f=>f&&f.tipo==='cartao');
-  if(!cartoes.length||cartoes.some(f=>!Number.isFinite(f.totalBanco)||!Number.isFinite(f.pagoBanco)||!Number.isFinite(f.abertoBanco)||f.totalBanco<0||f.pagoBanco<0||f.pagoBanco>f.totalBanco||Math.round(f.abertoBanco*100)!==Math.round((f.totalBanco-f.pagoBanco)*100)||Math.round(f.abertoBanco*100)!==0)||cartoes.reduce((s,f)=>s+f.totalBanco,0)<=0)return null;
-  // Exige o fechamento de todos os cartões ativos, inclusive os sem gasto no mês.
-  const ativos=formasGlobais.filter(f=>formaEhCartaoGestor(f)&&!f.arquivado);
-  const dt=new Date(),hoje=String(dt.getDate()).padStart(2,'0')+'/'+String(dt.getMonth()+1).padStart(2,'0')+'/'+dt.getFullYear();
-  const chave=m=>Number(m.slice(3))*12+Number(m.slice(0,2));
-  if(!ativos.length||ativos.some(f=>chave(calcularMesFaturaCartao(f,hoje).mesFat)<=chave(mes)))return null;
-  const prox=mesSeguinteGestor(mes);return (arvoreMesesAno[prox.slice(3)]||[]).includes(prox)?prox:null;
+// A entrada normal sempre usa o calendário. Atalhos com período explícito
+// continuam sendo consultas manuais, sem ativar acompanhamento de faturas.
+function aoEntrarMensalGestor(periodoExplicito=null){
+  const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+  const valido=/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(periodoExplicito||''));
+  const [mes,ano]=valido?periodoExplicito.split('/'):[mesAtual,anoAtual];
+  const anoAnual=document.getElementById('selFiltroAnoSimples')?.value;
+  preencherSeletoresInteligentes(ano,mes,false);
+  if(anoAnual&&Object.prototype.hasOwnProperty.call(arvoreMesesAno,anoAnual))document.getElementById('selFiltroAnoSimples').value=anoAnual;
+  atualizarEstadoSetasAnual();relatorioMensalPendente=true;
 }
-function atualizarSugestaoMensalGestor(res){
-  const box=document.getElementById('sugestaoProximoMesGestor'),prox=proximoMensalDisponivelGestor(res);box.replaceChildren();box.hidden=!prox;
-  const auto=document.getElementById('seguirProximoMesGestor');
-  if(prox){const texto=document.createElement('p');texto.textContent='Faturas dos cartões quitadas e período fechado para novas compras regulares. Pix e valores a receber continuam disponíveis neste mês.';texto.className='text-xs text-slate-200';const b=document.createElement('button');b.type='button';b.className='text-sky-300 text-xs font-bold py-2';b.textContent='Ver '+prox;b.onclick=()=>irParaFaturaMensal(prox);box.append(texto,b);}
-  // Só avança ao entrar novamente no Mensal. Recargas e pagamentos nunca trocam o período.
-  if(mensalEntradaPendenteGestor&&!mensalConsultaPendenteGestor){mensalEntradaPendenteGestor=false;if(prox&&auto.checked&&!mensalNavegacaoManualGestor)requestAnimationFrame(()=>{if(abaAtivaAtual==='relatorio'&&ultimoRelatorioMensalCache===res&&!mensalNavegacaoManualGestor&&proximoMensalDisponivelGestor(res)===prox)irParaFaturaMensal(prox,true);});}
-}
-function aoEntrarMensalGestor(){mensalEntradaPendenteGestor=!mensalNavegacaoManualGestor;document.getElementById('sugestaoProximoMesGestor').hidden=true;if(document.getElementById('seguirProximoMesGestor').checked&&!mensalNavegacaoManualGestor){relatorioMensalPendente=true;mensalConsultaPendenteGestor=true;}}
-function marcarEscolhaMensalGestor(){mensalEntradaPendenteGestor=false;mensalNavegacaoManualGestor=true;}
 function inicializarUsabilidadeGestor(){
   const partes=[
     compactarComprovantesNotasGestor,
@@ -4930,8 +4912,7 @@ function inicializarUsabilidadeGestor(){
     ()=>{const pins=lerJSONLocalGestor('gestorNotasFixadasV1',[]);notasFixadasGestor=Array.isArray(pins)?pins.filter(p=>typeof p==='string').slice(0,200):[];},
     ()=>document.getElementById('inpNovaNotaTexto').addEventListener('input',guardarTextoNotaGestor),
     restaurarRascunhoNotaGestor,
-    ()=>{const pref=document.getElementById('seguirProximoMesGestor');pref.checked=lerJSONLocalGestor('gestorSeguirMesV1',false)===true;pref.addEventListener('change',()=>{mensalNavegacaoManualGestor=false;salvarCacheLeituraGestor('gestorSeguirMesV1',JSON.stringify(pref.checked));});},
-    ()=>['selFiltroRelAno','selFiltroRelMes'].forEach(id=>document.getElementById(id).addEventListener('change',marcarEscolhaMensalGestor))
+    ()=>localStorage.removeItem('gestorSeguirMesV1')
   ];
   partes.forEach(iniciar=>{try{iniciar();}catch(e){console.warn('Uma preferência local não pôde ser recuperada:',e.message);}});
 }
@@ -5414,14 +5395,9 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       });
     }
 
-    function irParaFaturaMensal(mesAnoStr, automatico = false) {
-      if (!automatico) marcarEscolhaMensalGestor();
-      if (!mesAnoStr || !mesAnoStr.includes('/')) return;
-      const [m, a] = mesAnoStr.split('/');
-      const selAno = document.getElementById('selFiltroRelAno');
-      if (selAno) selAno.value = a;
-      setAba('relatorio');
-      atualizarMesesDisponiveis(m, true);
+    function irParaFaturaMensal(mesAnoStr) {
+      if (!/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(mesAnoStr||''))) return;
+      setAba('relatorio', true, mesAnoStr);
     }
 
     let compararHorizonteCompleto = false;
@@ -5444,6 +5420,10 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     }
 
     function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
+      // O mês vigente é consultável mesmo vazio; isso não cria lançamentos.
+      const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0')+'/'+anoAtual;
+      if(!Array.isArray(arvoreMesesAno[anoAtual]))arvoreMesesAno[anoAtual]=[];
+      if(!arvoreMesesAno[anoAtual].includes(mesAtual))arvoreMesesAno[anoAtual].push(mesAtual);
       const selAno = document.getElementById('selFiltroRelAno');
       const selAnoSimples = document.getElementById('selFiltroAnoSimples');
       if (selAno && selAnoSimples) {
@@ -5504,7 +5484,6 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     }
 
     function mudarMesRelatorio(step) {
-      marcarEscolhaMensalGestor();
       const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
       if (!selAno || !selMes || ![-1, 1].includes(Number(step))) return;
       const listaGlobalMeses = obterMesesRelatorioEmOrdem();
@@ -5651,8 +5630,6 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
 
     function carregarRelatorioMesUnico(mesFiltro) {
       const geracaoConsulta = geracaoLeituraGestor;
-      mensalConsultaPendenteGestor = true;
-      document.getElementById('sugestaoProximoMesGestor').hidden = true;
       const requisicao = ++requisicaoRelatorioMensal;
       const periodoAnterior = ultimoRelatorioMensalCache?.periodoReferencia;
       const filtroAnterior = {...filtroInternoMensalAtivo};
@@ -5667,9 +5644,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         res.periodoReferencia = mesFiltro;
         res.recebidoEmGestor = res.consultadoEmDesempenho || Date.now();
         res.geracaoConsultaGestor = geracaoConsulta;
-        mensalConsultaPendenteGestor = false;
         ultimoRelatorioMensalCache = res;
-        atualizarSugestaoMensalGestor(res);
         filtroInternoMensalAtivo = escolherFiltroAposRecargaMensalGestor(filtroAnterior, periodoAnterior, mesFiltro, res);
         const posicaoAntesRender = window.scrollY;
         const geracaoAntesRender = window.geracaoNavegacaoGestor || 0;
@@ -5762,8 +5737,6 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       }).catch(err => {
         if (requisicao !== requisicaoRelatorioMensal) return;
         relatorioMensalPendente = true;
-        mensalConsultaPendenteGestor = false; mensalEntradaPendenteGestor = false;
-        document.getElementById('sugestaoProximoMesGestor').hidden = true;
         document.getElementById('lista-relatorio').setAttribute('aria-busy', 'false');
         document.getElementById('lista-relatorio').textContent = 'Não foi possível carregar este mês. Selecione o mês novamente para tentar.';
         document.getElementById('rel-badge-ritmo').textContent = 'Não atualizado';
@@ -7564,7 +7537,7 @@ async function confirmarPagamentoFaturaGestor() {
   }, false, 'Sim, paguei ao banco', 'success');
 }
 
-abasConfig.push({ id: 'atividade', icone: '↻', titulo: 'Atividade', tituloD: 'Atividade e sincronização', cor: 'text-slate-300', principal: false });
+abasConfig.push({ id: 'atividade', icone: '📡', titulo: 'Atividade', tituloD: 'Atividade e sincronização', cor: 'text-slate-300', principal: false });
 const apiOriginalAtividadeGestor = window.apiCall;
 const indicadorOfflineOriginalAtividadeGestor = window.atualizarIndicadorOffline;
 window.atualizarIndicadorOffline = function () { indicadorOfflineOriginalAtividadeGestor(); atualizarBadgeAtividadeGestor(); };
@@ -8802,6 +8775,9 @@ document.addEventListener('DOMContentLoaded',()=>{
 // FIM INTERFACE NAVEGACAO GERADA
 // INICIO INTERFACE PROTECAO GERADA
 // Interface da proteção de longo prazo; não instala rotinas sem ação explícita.
+function situacaoProtecaoLegivelGestor(s){
+  return {protecao:'Proteção automática: '+(!s.ativo?'desativada':s.rotinaInstalada===true?'ativada':s.rotinaInstalada===false?'precisa reativar o agendamento':'agendamento não verificado'),anual:'Organização anual: '+(s.organizacaoAnual===true?'ativada':'desativada'),pdf:'PDFs automáticos: '+(s.pdfAutomatico===true?'ativados':'desativados')};
+}
 function detalheFechamentoAnualGestor(estado){
   if(!estado)return '';
   const titulo='Ano '+estado.ano+' · '+(estado.incluidoDepois?'incluído após fechamento':estado.alteradoDepois?'atualizado após fechamento':'retrato preservado');
@@ -8857,19 +8833,21 @@ document.addEventListener('DOMContentLoaded',()=>{
   const botao=texto=>{const b=criar('button',texto,'rounded-xl border border-slate-600 px-3 py-3 text-xs font-bold text-slate-200 disabled:opacity-50');b.type='button';return b;};
   const painel=criar('section','','rounded-xl border border-slate-700 p-3 space-y-3');painel.id='painelProtecaoLongoPrazoGestor';painel.append(criar('h4','Backups automáticos e arquivos anuais','text-sm font-bold text-white'));
   const status=criar('p','Consulte a situação das cópias no Google Drive.','text-xs text-slate-200');status.setAttribute('role','status');painel.append(status);
+  const estados=criar('div','Situações ainda não consultadas.','space-y-1 text-xs text-slate-200');estados.id='estadosProtecaoGestor';estados.setAttribute('aria-live','polite');painel.append(estados);
   const acoes=criar('div','','grid grid-cols-1 sm:grid-cols-2 gap-2'),consultar=botao('Atualizar situação'),ativar=botao('Ativar proteção automática'),anual=botao('Ativar organização por ano e PDFs'),backup=botao('Fazer backup no Drive agora'),manutencao=botao('Conferir manutenção');acoes.append(consultar,ativar,anual,backup,manutencao);painel.append(acoes);backup.disabled=true;manutencao.disabled=true;anual.disabled=true;
-  const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A rotina roda na sua conta Google, com o app fechado: faz uma cópia por mês e verifica o arquivo anual. Compras com saldo, empréstimos em aberto e fixos ficam na principal. Arquivos anuais são somente consulta. Nenhuma cópia é apagada automaticamente.','mt-2'));
+  const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A proteção automática agenda a rotina diária e o backup de cada mês. Ativar organização por ano e PDFs habilita a separação por competência e os relatórios de períodos completos no Drive. Anos fechados preservam o retrato; baixas posteriores ficam vinculadas no controle. Nenhuma cópia é apagada automaticamente.','mt-2'));
   ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
   painel.append(lista,ajuda);modal.firstElementChild.append(painel);
   let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
   function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<15)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
-  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;anual.disabled=ocupado||!ultimoStatus?.ativo;anual.hidden=ultimoStatus?.organizacaoAnual===true;}
+  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;ativar.textContent=ultimoStatus?.ativo&&ultimoStatus?.rotinaInstalada===true?'Proteção automática ativada':'Ativar proteção automática';backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;const completo=ultimoStatus?.organizacaoAnual===true&&ultimoStatus?.pdfAutomatico===true;anual.disabled=ocupado||!ultimoStatus?.ativo||completo;anual.hidden=false;anual.textContent=completo?'Organização anual e PDFs ativados':'Ativar organização por ano e PDFs';}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();
+    const situacao=situacaoProtecaoLegivelGestor(s);estados.replaceChildren();for(const texto of Object.values(situacao))estados.append(criar('p',texto));
     status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+dataLegivelBackupGestor(s.ultimoBackup.data)+' · período '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
     const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     if(s.planilha)lista.append(criar('p','Base de controle: '+s.planilha,'text-slate-300'));
-    if(s.organizacaoAnual)lista.append(criar('p','Organização anual ativa. Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
+    if(s.organizacaoAnual)lista.append(criar('p','Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
     for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
     if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
     if(s.avisoBackupAssistido)lista.append(criar('p',s.avisoBackupAssistido,'text-amber-300'));
