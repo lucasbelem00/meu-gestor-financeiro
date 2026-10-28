@@ -1,4 +1,10 @@
 // Fonte da interface: Horizonte, simulador, calculadora e notas.
+function atualizarAvisoNotasServidorGestor(erro){
+  const lista=document.getElementById('listaNotasUI');if(!lista)return;
+  let aviso=document.getElementById('avisoEstruturaNotasGestor');
+  if(!aviso){aviso=document.createElement('p');aviso.id='avisoEstruturaNotasGestor';aviso.className='rounded-xl border border-amber-500 p-3 text-sm text-amber-200';aviso.setAttribute('role','status');lista.before(aviso);}
+  aviso.hidden=!erro;aviso.textContent=erro?'As notas da planilha precisam de conferência. Seus rascunhos e cópias locais continuam guardados. Não altere E/F nem exclua linhas para tentar corrigir. Detalhe: '+erro:'';
+}
 let horizonteDetalhadoGestor = null;
 let modoHorizonteGestor = 'total';
 let simuladorExpandidoGestor = false;
@@ -222,7 +228,27 @@ function normalizarRascunhoNotaGestor(r,chave='') {
   return {versao:2,texto:r.texto,edicao,rascunhoId:/^[A-Za-z0-9_.:-]{8,160}$/.test(id)?id:'',atualizadoEm:Number.isFinite(r.atualizadoEm)?r.atualizadoEm:0};
 }
 function assinaturaConteudoRascunhoNotaGestor(r){return JSON.stringify([r.texto,r.edicao]);}
-function rascunhoNotaConcluidoGestor(r){const salvo=r?.rascunhoId?lerJSONLocalGestor('gestorNotaRascunhoConcluidoV1:'+r.rascunhoId,null):null,assinatura=r?assinaturaConteudoRascunhoNotaGestor(r):'';return Boolean(salvo&&(salvo.assinatura===assinatura||Array.isArray(salvo.assinaturas)&&salvo.assinaturas.includes(assinatura)));}
+// SHA-256 síncrono para reconhecer rascunhos durante a renderização, sem
+// conservar uma segunda cópia integral do texto no recibo. As chaves antigas
+// da operação continuam usando o mesmo hash assíncrono e não são recalculadas.
+function hashAssinaturaRascunhoNotaGestor(texto){
+  const bytes=[];
+  for(const caractere of String(texto)){let n=caractere.codePointAt(0);if(n>=0xd800&&n<=0xdfff)n=0xfffd;if(n<128)bytes.push(n);else if(n<2048)bytes.push(192|(n>>>6),128|(n&63));else if(n<65536)bytes.push(224|(n>>>12),128|((n>>>6)&63),128|(n&63));else bytes.push(240|(n>>>18),128|((n>>>12)&63),128|((n>>>6)&63),128|(n&63));}
+  const tamanho=bytes.length*8;bytes.push(128);while(bytes.length%64!==56)bytes.push(0);for(let i=7;i>=0;i--)bytes.push(Math.floor(tamanho/2**(i*8))&255);
+  const h=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19],k=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const girar=(n,b)=>(n>>>b)|(n<<(32-b));
+  for(let offset=0;offset<bytes.length;offset+=64){const w=[];for(let i=0;i<16;i++)w[i]=(bytes[offset+i*4]<<24)|(bytes[offset+i*4+1]<<16)|(bytes[offset+i*4+2]<<8)|bytes[offset+i*4+3];for(let i=16;i<64;i++){const x=w[i-15],y=w[i-2];w[i]=((girar(x,7)^girar(x,18)^(x>>>3))+w[i-16]+(girar(y,17)^girar(y,19)^(y>>>10))+w[i-7])|0;}let [a,b,c,d,e,f,g,j]=h;for(let i=0;i<64;i++){const t1=(j+(girar(e,6)^girar(e,11)^girar(e,25))+((e&f)^(~e&g))+k[i]+w[i])|0,t2=((girar(a,2)^girar(a,13)^girar(a,22))+((a&b)^(a&c)^(b&c)))|0;j=g;g=f;f=e;e=(d+t1)|0;d=c;c=b;b=a;a=(t1+t2)|0;}[a,b,c,d,e,f,g,j].forEach((v,i)=>h[i]=(h[i]+v)|0);}
+  return h.map(n=>(n>>>0).toString(16).padStart(8,'0')).join('');
+}
+function hashesReciboNotaGestor(recibo){return Array.from(new Set([...(Array.isArray(recibo?.hashes)?recibo.hashes:[]),...(Array.isArray(recibo?.assinaturas)?recibo.assinaturas:[]).map(hashAssinaturaRascunhoNotaGestor),...(typeof recibo?.assinatura==='string'?[hashAssinaturaRascunhoNotaGestor(recibo.assinatura)]:[])].filter(h=>typeof h==='string'&&/^[a-f0-9]{64}$/.test(h))));}
+function rascunhoNotaConcluidoGestor(r){const salvo=r?.rascunhoId?lerJSONLocalGestor('gestorNotaRascunhoConcluidoV1:'+r.rascunhoId,null):null;return Boolean(salvo&&r&&hashesReciboNotaGestor(salvo).includes(hashAssinaturaRascunhoNotaGestor(assinaturaConteudoRascunhoNotaGestor(r))));}
+function compactarComprovantesNotasGestor(envio){
+  const confirmadas=new Set((envio?.opIds||(envio?.operacoes||[]).map(o=>o.opId)).filter(Boolean)),pendentes=new Set(typeof operacoesNotasPendentesGestor==='function'?operacoesNotasPendentesGestor().map(o=>o.opId):[]),emEnvio=lerJSONLocalGestor('gestorNotasEnvioV2',null),incertas=new Set((emEnvio?.operacoes||[]).map(o=>o.opId));
+  for(const entrada of lerEntradasLocaisGestor('gestorNotaRascunhoConcluidoV1:')){const hashes=hashesReciboNotaGestor(entrada.valor);if(hashes.length)try{gravarArmazenamentoGestor(entrada.chave,JSON.stringify({versao:2,hashes,notaId:entrada.valor.notaId}));}catch(_){} }
+  // Conserva estado=guardado para que uma aba ainda na versão anterior também
+  // reconheça a reserva e não tente reconstruir o envio já concluído.
+  for(const entrada of lerEntradasLocaisGestor('gestorNotaReservaV1:')){const reserva=entrada.valor,op=reserva?.operacao;if(!op||!['guardado','confirmado'].includes(reserva.estado))continue;if(!confirmadas.has(op.opId)&&(pendentes.has(op.opId)||incertas.has(op.opId)))continue;try{gravarArmazenamentoGestor(entrada.chave,JSON.stringify({versao:2,estado:'guardado',confirmada:confirmadas.has(op.opId)||reserva.estado==='confirmado',opId:op.opId,notaId:op.id,baseRestauracao:op.baseRestauracao||''}));}catch(_){} }
+}
 function persistirRascunhoNotaGestor() {
   const inp=document.getElementById('inpNovaNotaTexto'),chave=garantirChaveRascunhoNotaGestor();
   if((inp.value||notaEmEdicaoGestor)&&!notaRascunhoIdentidadeGestor)notaRascunhoIdentidadeGestor=novoRequestIdGestor();
@@ -271,6 +297,7 @@ function renderizarRascunhosNotasGestor(){
 }
 function configurarEdicaoNotaGestor(nota){notaRascunhoIdentidadeGestor=nota?novoRequestIdGestor():'';notaEmEdicaoGestor=nota?{id:nota.id,revision:Number(nota.revision||0),texto:nota.texto,baseRestauracao:localStorage.getItem('gestorEpocaRestauracaoV1')||''}:null;document.getElementById('inpNovaNotaTexto').value=nota?.texto||'';document.getElementById('btnAdicionarNotaGestor').textContent=nota?'Salvar alterações':'Adicionar lembrete';document.getElementById('cancelarEdicaoNotaGestor').hidden=!nota;guardarTextoNotaGestor();document.getElementById('inpNovaNotaTexto').focus();}
 function reconciliarEdicaoNotaConfirmadaGestor(envio,resultado){
+  compactarComprovantesNotasGestor(envio);
   const base=notaEmEdicaoGestor;if(!base)return;
   if((base.baseRestauracao||'')!==(localStorage.getItem('gestorEpocaRestauracaoV1')||'')||(envio.baseRestauracao||'')!==(base.baseRestauracao||''))return;
   const enviada=(envio.operacoes||[]).find(op=>String(op.id)===String(base.id)&&op.tipo==='upsert');
@@ -311,7 +338,7 @@ async function adicionarNotaRapida(){
     const resultado=await comTravaAbasGestor('adicionar-nota-rascunho',()=>{
       if(!corresponde())throw Error('O texto mudou durante a preparação. Confira e adicione novamente.');
       const reserva=lerJSONLocalGestor(chave,null);
-      if(rascunhoNotaConcluidoGestor(rascunho)||reserva?.estado==='guardado')return 'existente';
+      if(rascunhoNotaConcluidoGestor(rascunho)||['guardado','confirmado'].includes(reserva?.estado))return 'existente';
       inicializarNotasLocaisGestor();let nota;
       if(rascunho.edicao){const base=rascunho.edicao,atual=notasGlobais.find(n=>String(n.id)===String(base.id));if((base.baseRestauracao||'')!==epoca||!atual||Number(atual.revision||0)!==base.revision||atual.texto!==base.texto){const e=Error('Seu rascunho permanece no campo; confira a versão atual antes de editar novamente.');e.codigo='NOTA_DESATUALIZADA';throw e;}nota={...atual,texto:texto.trim()};}
       else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:new Date().toLocaleDateString('pt-BR')};
@@ -320,7 +347,7 @@ async function adicionarNotaRapida(){
       registrarOperacaoNotaGestor('upsert',nota,preparada);
       // A reserva também comprova a inclusão, mesmo que o recibo legado não caiba.
       gravarArmazenamentoGestor(chave,JSON.stringify({estado:'guardado',operacao:preparada}));
-      try{const recibo='gestorNotaRascunhoConcluidoV1:'+rascunho.rascunhoId,anterior=lerJSONLocalGestor(recibo,null),assinaturas=Array.from(new Set([...(Array.isArray(anterior?.assinaturas)?anterior.assinaturas:[]),anterior?.assinatura,assinatura].filter(Boolean)));gravarArmazenamentoGestor(recibo,JSON.stringify({assinatura,assinaturas,notaId:nota.id}));}catch(_){}
+      try{const recibo='gestorNotaRascunhoConcluidoV1:'+rascunho.rascunhoId,hashes=Array.from(new Set([...hashesReciboNotaGestor(lerJSONLocalGestor(recibo,null)),hashAssinaturaRascunhoNotaGestor(assinatura)]));gravarArmazenamentoGestor(recibo,JSON.stringify({versao:2,hashes,notaId:nota.id}));}catch(_){}
       return 'guardado';
     });
     if(resultado===false){mostrarAviso('Nota em preparação','Outra aba está adicionando a nota. Aguarde e confira a lista antes de tentar novamente.');return;}
@@ -366,6 +393,7 @@ function aoEntrarMensalGestor(){mensalEntradaPendenteGestor=!mensalNavegacaoManu
 function marcarEscolhaMensalGestor(){mensalEntradaPendenteGestor=false;mensalNavegacaoManualGestor=true;}
 function inicializarUsabilidadeGestor(){
   const partes=[
+    compactarComprovantesNotasGestor,
     ()=>{modoHorizonteGestor=localStorage.getItem('gestorHorizonteModoV1')==='saldo'?'saldo':'total';},
     ()=>{const hoje=new Date();document.getElementById('simData').value=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');},
     ()=>{const hist=lerJSONLocalGestor('gestorCalculadoraHistoricoV1',[]);historicoCalcGestor=Array.isArray(hist)?hist.filter(h=>h&&typeof h==='object'&&typeof h.expressao==='string'&&h.expressao.length<=256&&Number.isFinite(h.resultado)).slice(0,20):[];renderizarHistoricoCalcGestor();},

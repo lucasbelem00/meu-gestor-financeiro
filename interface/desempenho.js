@@ -6,7 +6,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const limiteEntradas = opcoes.limiteEntradas ?? 8;
   const limiteBytes = opcoes.limiteBytes ?? 1000000;
   const leituras = opcoes.leituras || new Set();
-  const cacheaveis = new Set(['obterRelatorioMes', 'obterRelatorioAnual']);
+  const cacheaveis = new Set(opcoes.cacheaveis || []);
   const cache = new Map(), consultas = new Map();
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
   let geracao = 0, bytes = 0;
@@ -113,18 +113,12 @@ function limparGraficoDesempenhoGestor(id,anterior){
   const pendente=graficosPendentesDesempenhoGestor.get(id);graficosPendentesDesempenhoGestor.delete(id);
   const existentes=new Set([anterior,pendente?.anterior].filter(Boolean));existentes.forEach(g=>g.destroy());return null;
 }
-const leiturasDesempenhoGestor = typeof leiturasAtividadeGestor !== 'undefined'
-  ? new Set(leiturasAtividadeGestor)
-  : new Set(['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb']);
-// Estas ações podem mudar o estado financeiro mesmo quando o controle de
-// sincronização permite executá-las durante uma recuperação.
-['ativarProtecaoAutomaticaWeb','executarBackupProtegidoWeb','executarManutencaoProtegidaWeb'].forEach(a=>leiturasDesempenhoGestor.delete(a));
-leiturasDesempenhoGestor.delete('cancelarOperacaoWeb');
-leiturasDesempenhoGestor.delete('concluirRecuperacaoOperacaoWeb');
+const leiturasDesempenhoGestor = new Set(acoesDoTipoGestor('leitura'));
 const apiAntesCoordenacaoDesempenhoGestor = window.apiCall;
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
   executar: (...args) => apiAntesCoordenacaoDesempenhoGestor(...args),
   leituras: leiturasDesempenhoGestor,
+  cacheaveis: Object.keys(CATALOGO_ACOES_GESTOR).filter(acao => CATALOGO_ACOES_GESTOR[acao].cacheavel),
   aoInvalidar: () => { if (typeof geracaoLeituraGestor !== 'undefined') geracaoLeituraGestor++; }
 });
 window.apiCall = function(acao, param, ...extras) {

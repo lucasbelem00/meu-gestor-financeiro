@@ -1,5 +1,6 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+function carregarCatalogo(ctx){vm.runInContext(fs.readFileSync(path.join(__dirname,'../shared/acoes.js'),'utf8'),ctx);}
 function trecho(a,b){return html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a)));}
 const helpers=trecho('    function lerCacheLeituraGestor(','    function lerJSONLocalGestor(');
 function armazenamento(quota=false){const m=new Map();return {getItem:k=>m.get(k)??null,setItem(k,v){if(quota)throw Error('QuotaExceededError');m.set(k,v);},removeItem:k=>m.delete(k)};}
@@ -24,7 +25,7 @@ test('mutação de configuração usa a versão capturada no início da edição
 });
 function contextoCompartilhamento(api,local=armazenamento()){
  const ctx=vm.createContext({localStorage:local,leiturasAtividadeGestor:new Set(['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual']),limparCachesAposRestauracaoGestor(){},integridadeServidorGestor:{bloqueada:false},atualizarIntegridadeServidorGestor(){},conferirPendenciasGestor:async()=>({confirmadas:0}),apiCall:api});ctx.window=ctx;
- vm.runInContext(helpers+trecho('const apiAntesDesempenhoGestor = window.apiCall;','// A restauração é gerada a partir de interface/restauracao.js.'),ctx);return ctx;
+ carregarCatalogo(ctx);vm.runInContext(helpers+trecho('const apiAntesDesempenhoGestor = window.apiCall;','// A restauração é gerada a partir de interface/restauracao.js.'),ctx);return ctx;
 }
 test('consultas mensais iguais compartilham envio sem reutilizar outro mês ou leitura anterior à gravação',async()=>{
  const chamadas=[];const ctx=contextoCompartilhamento((a,p)=>new Promise(resolve=>chamadas.push({a,p,resolve})));
@@ -41,7 +42,7 @@ test('falha ao persistir versão da restauração permite consulta e bloqueia gr
 test('timeout de leitura não dispara outra consulta automática e espera mais que o proxy',async()=>{
  let chamadas=0,limite;
  const ctx=vm.createContext({AbortController,protocoloServidorGestor:2,seguro:(n,f)=>f(),setTimeout(fn,ms){limite=ms;return setImmediate(fn);},clearTimeout(id){clearImmediate(id);},estaNoAppsScript:()=>false,API_URL:'/fake',fetch:async(url,op)=>{chamadas++;return new Promise((resolve,reject)=>op.signal.addEventListener('abort',()=>{const e=Error('abort');e.name='AbortError';reject(e);}));},registrarIdentidadesGestor(){}});ctx.window=ctx;
- vm.runInContext(trecho("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),ctx);
+ carregarCatalogo(ctx);vm.runInContext(trecho("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),ctx);
  await assert.rejects(ctx.apiCall('obterRelatorioMes','10/2026'),/demorou/);assert.equal(chamadas,1);assert.equal(limite,60000);
 });
 
@@ -49,6 +50,6 @@ test('timeout de leitura não dispara outra consulta automática e espera mais q
 test('timeout informado pelo proxy também não dispara uma segunda espera',async()=>{
  let chamadas=0;
  const ctx=vm.createContext({AbortController,protocoloServidorGestor:2,seguro:(n,f)=>f(),setTimeout,clearTimeout,estaNoAppsScript:()=>false,API_URL:'/fake',fetch:async()=>{chamadas++;return {ok:false,status:504};},registrarIdentidadesGestor(){}});ctx.window=ctx;
- vm.runInContext(trecho("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),ctx);
+ carregarCatalogo(ctx);vm.runInContext(trecho("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),ctx);
  await assert.rejects(ctx.apiCall('obterRelatorioMes','10/2026'),/504/);assert.equal(chamadas,1);
 });

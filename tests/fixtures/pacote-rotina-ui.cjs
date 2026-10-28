@@ -26,6 +26,7 @@ function ambiente(b=servidor()){
  copiarTextoAreaTransferencia:(...v)=>copias.push(v),
  apiCall:(a,p)=>{envios.push({a,p});try{return Promise.resolve(b.ctx[a]({...p,versaoConfiguracao:p.versaoConfiguracao||b.ctx.versaoConfiguracaoGestor_(b.db,a==='salvarCategoriasWeb'?'categorias':'formas'),requestId:'auditoria-config-'+(++n)}));}catch(e){return Promise.reject(e);}}
  });c.window=c;
+ require('./integracao-interface-ui.cjs')(c,'adicionarCategoriaUi','salvarCategorias');
  const fontes=[funcao('renderizarListaCategorias','salvarCategorias'),
  trecho('  var pxRenomeacoesCat = Object.create(null);','  /* ----------------------------------------------------------------- 13 */'),
  funcao('excluirFormaLocal','renderizarListaCategorias'),

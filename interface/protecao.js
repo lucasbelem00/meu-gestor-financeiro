@@ -1,4 +1,10 @@
 // Interface da proteção de longo prazo; não instala rotinas sem ação explícita.
+function detalheFechamentoAnualGestor(estado){
+  if(!estado)return '';
+  const titulo='Ano '+estado.ano+' · '+(estado.incluidoDepois?'incluído após fechamento':estado.alteradoDepois?'atualizado após fechamento':'retrato preservado');
+  const texto=estado.incluidoDepois?'Este registro foi incluído depois do fechamento. A planilha fechada permanece preservada.':'No fechamento: '+formatBRL(estado.pagoBancoNoFechamento||0)+' pagos ao banco'+(estado.recebidoNoFechamento===null?'':estado.recebidoNoFechamento?' · recebido da pessoa':' · ainda a receber da pessoa')+'. Os valores e a situação atuais aparecem neste cartão. Movimentos posteriores ficam vinculados no controle.';
+  return '<details class="text-xs text-slate-300 mt-2"><summary class="cursor-pointer py-1">'+escaparHTML(titulo)+'</summary><p class="pt-1">'+escaparHTML(texto)+'</p></details>';
+}
 let arquivosAnuaisUIProtecaoGestor=[],emprestimosArquivoUIProtecaoGestor=[],chaveEmprestimosArquivoUIProtecaoGestor='',pedidoEmprestimosArquivoUIProtecaoGestor=null,geracaoArquivosUIProtecaoGestor=0;
 function itensEmprestimosConsultaProtecaoGestor(){
   const ativos=emprestimosGlobal.itens||[],status=document.getElementById('selFiltroStatusEmp')?.value;
@@ -48,23 +54,30 @@ document.addEventListener('DOMContentLoaded',()=>{
   const botao=texto=>{const b=criar('button',texto,'rounded-xl border border-slate-600 px-3 py-3 text-xs font-bold text-slate-200 disabled:opacity-50');b.type='button';return b;};
   const painel=criar('section','','rounded-xl border border-slate-700 p-3 space-y-3');painel.id='painelProtecaoLongoPrazoGestor';painel.append(criar('h4','Backups automáticos e arquivos anuais','text-sm font-bold text-white'));
   const status=criar('p','Consulte a situação das cópias no Google Drive.','text-xs text-slate-200');status.setAttribute('role','status');painel.append(status);
-  const acoes=criar('div','','grid grid-cols-1 sm:grid-cols-2 gap-2'),consultar=botao('Atualizar situação'),ativar=botao('Ativar proteção automática'),backup=botao('Fazer backup no Drive agora'),manutencao=botao('Conferir manutenção');acoes.append(consultar,ativar,backup,manutencao);painel.append(acoes);backup.disabled=true;manutencao.disabled=true;
+  const acoes=criar('div','','grid grid-cols-1 sm:grid-cols-2 gap-2'),consultar=botao('Atualizar situação'),ativar=botao('Ativar proteção automática'),anual=botao('Ativar organização por ano e PDFs'),backup=botao('Fazer backup no Drive agora'),manutencao=botao('Conferir manutenção');acoes.append(consultar,ativar,anual,backup,manutencao);painel.append(acoes);backup.disabled=true;manutencao.disabled=true;anual.disabled=true;
   const lista=criar('div','','space-y-2 text-xs'),ajuda=criar('details','','text-xs text-slate-300');ajuda.append(criar('summary','Como funciona e ativação inicial','cursor-pointer py-2'),criar('p','A rotina roda na sua conta Google, com o app fechado: faz uma cópia por mês e verifica o arquivo anual. Compras com saldo, empréstimos em aberto e fixos ficam na principal. Arquivos anuais são somente consulta. Nenhuma cópia é apagada automaticamente.','mt-2'));
   ajuda.append(criar('p','Na primeira ativação, o Google pode exigir autorização. Nesse caso, na planilha abra Extensões → Apps Script, execute configurarProtecaoAutomaticaGestor e autorize a sua própria conta. Depois volte aqui e atualize a situação.','mt-2'));
   painel.append(lista,ajuda);modal.firstElementChild.append(painel);
   let ocupado=false,geracao=0,ultimoStatus=null,pedidoBackup='';
-  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<14)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
-  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;}
+  function disponibilidade(){if(!navigator.onLine)throw Error('Conecte-se para consultar ou gerar cópias atualizadas.');if(protocoloServidorGestor<15)throw Error('Atualize o Apps Script e o app para esta versão antes de usar os arquivos anuais.');}
+  function controles(){consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;backup.disabled=ocupado||!ultimoStatus?.ativo;manutencao.disabled=ocupado||!ultimoStatus?.ativo;anual.disabled=ocupado||!ultimoStatus?.ativo;anual.hidden=ultimoStatus?.organizacaoAnual===true;}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();
     status.textContent=(s.ativo?(s.rotinaInstalada===false?'A rotina automática precisa ser reativada. ':'Proteção automática configurada. '):'Proteção automática ainda não ativada. ')+(s.ultimoBackup?'Último backup confirmado: '+dataLegivelBackupGestor(s.ultimoBackup.data)+' · período '+s.ultimoBackup.periodo+'.':'Nenhum backup automático confirmado.')+(s.ultimoErro?' Última tentativa: '+s.ultimoErro:'');
     const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
+    if(s.planilha)lista.append(criar('p','Base de controle: '+s.planilha,'text-slate-300'));
+    if(s.organizacaoAnual)lista.append(criar('p','Organização anual ativa. Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
+    for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
+    if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
+    if(s.avisoBackupAssistido)lista.append(criar('p',s.avisoBackupAssistido,'text-amber-300'));
+    if(s.ultimaCopiaPreservada)lista.append(criar('p','Última cópia preservada para recuperação assistida: '+dataLegivelBackupGestor(s.ultimaCopiaPreservada.data)+'. Ela não substitui a confirmação de um backup restaurável.','text-slate-300'));
     for(const arquivo of s.arquivos||[]){const link=linkSeguroProtecaoGestor(arquivo.url);if(!link)continue;const a=criar('a','Arquivo '+arquivo.ano+' · '+arquivo.quantidade+' registro(s) · '+arquivo.pessoal+' pessoais','block text-sky-200 underline');a.href=link;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     controles();
   }
   async function acao(executar){if(ocupado)return;ocupado=true;const g=++geracao;controles();try{disponibilidade();await executar();if(g===geracao)exibir(await apiCall('obterStatusProtecaoWeb',null,1));}catch(e){status.textContent=e.message||'Não foi possível confirmar a operação. Confira a situação antes de repetir.';}finally{if(g===geracao){ocupado=false;controles();}}}
   consultar.onclick=()=>acao(async()=>{});
   ativar.onclick=()=>mostrarConfirmacao('Ativar proteção automática?','Será instalada uma rotina na sua conta Google para backups mensais e arquivos anuais. A pasta deve ser particular. Haverá backup e conferência antes de retirar registros encerrados da principal.',()=>acao(async()=>{await apiCall('ativarProtecaoAutomaticaWeb',{},1);}),false,'Ativar rotina','neutral');
+  anual.onclick=()=>mostrarConfirmacao('Organizar os anos desta base?','Destino: '+(ultimoStatus?.planilha||'base configurada')+'. Será conferido um backup antes de organizar os registros por competência. Cadastros, notas e provas das operações ficam no controle permanente. O mesmo webapp consultará todos os anos. A rotina passará a gerar resumos PDF no Drive, sem apagar cópias anteriores.',()=>acao(async()=>{status.textContent='Conferindo a cópia e preparando os anos…';await apiCall('ativarOrganizacaoAnualWeb',{},1);invalidarLeiturasDesempenhoGestor();await carregarDados();}),false,'Ativar nesta base','neutral');
   backup.onclick=()=>acao(async()=>{
     if(!pedidoBackup)pedidoBackup=novoRequestIdGestor();status.textContent='Gerando e conferindo a cópia no Drive…';
     await apiCall('executarBackupProtegidoWeb',{requestId:pedidoBackup},1);pedidoBackup='';

@@ -56,7 +56,7 @@ test('atalho do resumo não desloca outra navegação; termômetro só mostra ga
 });
 test('resposta do Histórico preserva posição na mesma visita, mas não após sair e voltar',async()=>{
  for(const navegar of [false,true]){const a=navegacao();a.c.setAba('lancamentos');a.flush();a.c.scrollY=1200;let resolver;a.c.apiCall=()=>new Promise(r=>resolver=r);
-  const i=html.indexOf('    window.chamarFiltroBackend = function (append, preservarLista)'),fim=html.indexOf('    window.limparFiltros',i);vm.runInContext(html.slice(i,fim),a.c);
+  require('./fixtures/integracao-interface-ui.cjs')(a.c,'chamarFiltroBackend');
   const pedido=a.c.chamarFiltroBackend(false,true);if(navegar){a.c.setAba('dashboard');a.c.setAba('lancamentos');a.flush();}
   resolver({itens:[],temMais:false,versaoConsulta:'v2',qtdTotal:0});await pedido;a.flush();assert.equal(a.c.scrollY,navegar?0:1200);assert.equal(a.c.filtrosAtuais.forma,'Cartao');
  }

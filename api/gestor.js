@@ -1,23 +1,5 @@
-const ACAO_PERMITIDA = new Set([
-  'ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb','obterEmprestimosArquivadosWeb',
-  'previaRecuperacaoOperacaoWeb', 'concluirRecuperacaoOperacaoWeb', 'previaRachadinhaWeb', 'registrarRachadinhaWeb',
-  'cancelarOperacaoWeb', 'previaPagamentoFaturaWeb', 'previaDatasDevolucaoWeb', 'previaEdicaoEmprestimoWeb',
-  'previaAntecipacaoWeb', 'consultarOperacaoWeb', 'diagnosticarPendenciasWeb',
-  'getDadosCompletos', 'salvarLancamentoWeb', 'sincronizarLoteWeb',
-  'editarLancamentoLinhaWeb', 'excluirLancamentoWeb', 'adiantarParcelasWeb',
-  'quitarFaturaWeb', 'salvarNotasWeb', 'salvarEmprestimoWeb',
-  'alternarStatusEmprestimoWeb', 'excluirEmprestimoWeb', 'editarEmprestimoLinhaWeb',
-  'dividirParcelaEmprestimoWeb', 'moverParaEmprestimosWeb', 'moverParaGastosPessoaisWeb',
-  'editarAssinaturaWeb', 'cancelarAssinaturaWeb', 'salvarFormaPagamentoWeb',
-  'reordenarFormasPagamentoWeb', 'excluirFormaPagamentoWeb', 'salvarCategoriasWeb',
-  'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb',
-  'previaRestauracaoBackupWeb', 'restaurarBackupDadosWeb', 'obterBackupAnteriorWeb',
-  'listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb','iniciarImportacaoBackupWeb',
-  'enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb',
-  'prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb',
-  'exportarBackupDadosWeb', 'obterAtividadeWeb', 'desfazerAtividadeWeb',
-  'obterFaturaPagamentoWeb', 'registrarPagamentoFaturaWeb'
-]);
+const { CATALOGO_ACOES_GESTOR } = require('../shared/acoes.js');
+const ACAO_PERMITIDA = new Set(Object.keys(CATALOGO_ACOES_GESTOR));
 
 module.exports = async function gestor(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');

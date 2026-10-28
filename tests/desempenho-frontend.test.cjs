@@ -33,13 +33,14 @@ function ambiente(executar, carregarReal = false, extras = {}) {
     const inicio = html.indexOf('    function carregarDados() {'), fim = html.indexOf('function limparFormularioEmprestimo()', inicio);
     vm.runInContext(html.slice(inicio, fim), ctx);
   }
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../shared/acoes.js'),'utf8'),ctx);
   vm.runInContext(fonte, ctx);
   function canvas(id,aba) { const c = {id,aba,isConnected:true,visivel:false,closest(){return this.visivel ? null : {};}}; telas.set(id,c); return {canvas:c}; }
   return {ctx,eventos,graficos,canvas,renderizados,avisos};
 }
 function coordenador(opcoes = {}) {
   const {ctx} = ambiente(async () => ({}));
-  return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),...opcoes});
+  return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
 test('consultas simultâneas compartilham envio e retornam objetos independentes', async () => {
