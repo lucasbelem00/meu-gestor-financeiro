@@ -1,5 +1,6 @@
 {
   "framework": null,
   "buildCommand": "node scripts/gerar-css.cjs && node scripts/publicar-estatico.cjs",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "functions": { "api/gestor.js": { "maxDuration": 60 } }
 }

@@ -17,7 +17,7 @@ function sincronizarMotor(){
   }
   fs.writeFileSync(arquivo,html);
   const backend=path.join(raiz,'Backend/Code.gs');let codigo=fs.readFileSync(backend,'utf8');
-  for(const nome of ['notas-backup','anual','relatorios']){
+  for(const nome of ['notas-backup','anual','relatorios','ativacao']){
     const fonteLocal=path.join(raiz,'shared',nome+'.js');if(!fs.existsSync(fonteLocal))continue;
     const ini='// INICIO MODULO '+nome.toUpperCase()+' GERADO',fimLocal='// FIM MODULO '+nome.toUpperCase()+' GERADO',conteudo=fs.readFileSync(fonteLocal,'utf8').trim();
     codigo=codigo.includes(ini)?codigo.slice(0,codigo.indexOf(ini))+ini+'\n'+conteudo+'\n'+codigo.slice(codigo.indexOf(fimLocal)):codigo+'\n'+ini+'\n'+conteudo+'\n'+fimLocal+'\n';

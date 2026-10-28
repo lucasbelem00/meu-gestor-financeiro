@@ -16,7 +16,7 @@ test('comprovante de resumo anual evita reler arquivos em aberturas sucessivas',
 
 for(const cabecalho of [false,true])test('JSON completo recupera catálogo '+(cabecalho?'com cabeçalho danificado':'com resumo ilegível')+' somente após prévia e confirmação',()=>{
  const a=anual(),backup=api(a,'exportarBackupDadosWeb',{restauravel:true}),cat=a.db.sheets['_Gestor_ArquivosAnuais'];cat.rows[1][3]='{invalido';if(cabecalho)cat.rows[0][0]='Cabeçalho alterado';const original=JSON.stringify(cat.rows),originalSerializado=JSON.stringify(a.ctx.serializarGestor_(cat.rows));
- const pre=api(a,'previaRestauracaoBackupWeb',{backup});assert.equal(pre.protocoloGestor,15);assert.equal(pre.recuperacaoAnual.catalogoDanificado,true);assert.equal(pre.recuperacaoAnual.necessaria,true);assert(pre.recuperacaoAnual.erroCatalogo);
+ const pre=api(a,'previaRestauracaoBackupWeb',{backup});assert.equal(pre.protocoloGestor,16);assert.equal(pre.recuperacaoAnual.catalogoDanificado,true);assert.equal(pre.recuperacaoAnual.necessaria,true);assert(pre.recuperacaoAnual.erroCatalogo);
  const p=pedido(backup,pre,'correcao-catalogo-'+cabecalho+'-001');assert.throws(()=>api(a,'restaurarBackupDadosWeb',{...p,confirmarRecuperacaoAnual:false}),/Confirme especificamente/);assert.equal(JSON.stringify(cat.rows),original);
  api(a,'restaurarBackupDadosWeb',p);assert.equal(a.carregar().kpis.totalGeral,'R$ 130,00');assert.equal(api(a,'obterRelatorioAnual','2025').total,'R$ 100,00');
  const partes=a.ctx.obterParteCopiaRestauracaoWeb({copiaId:p.requestId,parte:1,quantidade:20}),copia=JSON.parse(partes.chunks.map(p=>p.chunk).join(''));assert.equal(JSON.stringify(copia.recuperacaoOrigem.catalogoOriginal),originalSerializado);assert(copia.recuperacaoOrigem.erroCatalogo);

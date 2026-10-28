@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Conferido em 28/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 15. A publicação e a ativação na conta Google são etapas separadas.
+Conferido em 28/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 16. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -33,6 +33,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `shared/acoes.js` | Contrato único das ações, usado por interface, cache e proxy | `CATALOGO_ACOES_GESTOR`, `metadadosAcaoGestor` |
 | `shared/notas-backup.js` | Compatibilidade do esquema antigo de Notas | `normalizarAbaNotasBackupGestor_`, `garantirCabecalhoNotasGestor_` |
 | `shared/anual.js` | Bases por competência, fechamento, ajustes e restauração v3 | `matrizFinanceiraAnualGestor_`, `desdobrarPlanoAnualGestor_`, `conferirDestinosAnuaisPlanoGestor_` |
+| `shared/ativacao.js` | Agendamento e acompanhamento da ativação anual sem espera HTTP | `solicitarAtivacaoAnualGestor_`, `retomarAtivacaoAnualGestor`, `statusAtivacaoAnualGestor_` |
 | `shared/relatorios.js` | Resumo nativo e PDFs mensais/anuais derivados | `atualizarResumoNativoGestor_`, `gerarRelatoriosPDFProgramadosGestor_` |
 | `Backend/Code.gs` | API e regras de dados no Apps Script; inclui blocos gerados | Ver tabela seguinte |
 | `api/gestor.js` | Validação e encaminhamento ao Apps Script, com token mantido no servidor | `ACAO_PERMITIDA` e função exportada `gestor` |
@@ -44,6 +45,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | Necessidade | Funções em `Backend/Code.gs` |
 | --- | --- |
 | Escolher a base configurada | `obterPlanilhaGestor_` |
+| Ler mês como texto ou data e exportar datas no JSON | `parseMesFat`, `valoresCelulasBackupGestor_` |
 | Receber pedidos do app | `doPost` |
 | Preparar leitura inicial | `getDadosCompletos` |
 | Gravar e reconhecer reenvios | `executarOperacaoGestor_`, `consultarOperacaoWeb` |

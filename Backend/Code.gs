@@ -65,11 +65,17 @@ function parseDataBR(str) {
 }
 
 function parseMesFat(str) {
+  // O Planilhas pode devolver MM/AAAA como Date, mesmo exibindo só mês e ano.
+  // Converte apenas para leitura, no fuso do projeto; não altera a célula nem o hash.
+  if (str instanceof Date) {
+    if (!Number.isFinite(str.getTime())) return { m: 0, a: 0, time: 0 };
+    str = Utilities.formatDate(str, getTimezone(), 'MM/yyyy');
+  }
   const limpa = String(str || '').replace(/^'/, '').trim();
   const p = limpa.split('/');
   if (p.length === 2) {
     const m = parseInt(p[0], 10), a = parseInt(p[1], 10);
-    if (!isNaN(m) && !isNaN(a)) return { m, a, time: new Date(a, m - 1, 1).getTime() };
+    if (m >= 1 && m <= 12 && !isNaN(a)) return { m, a, time: new Date(a, m - 1, 1).getTime() };
   }
   return { m: 0, a: 0, time: 0 };
 }
@@ -2004,7 +2010,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor:15,
+      protocoloGestor:16,
       arquivosAnuais:arquivosAnuais.map(function(e){return {ano:e.ano,assinatura:e.hash,quantidade:e.resumo.quantidade,meses:e.resumo.meses};}),
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
@@ -2098,6 +2104,12 @@ function exportarBackupDadosWeb(param) {
     return montarBackupDadosGestor_(ss,param);
   } finally { lock.releaseLock(); }
 }
+function valoresCelulasBackupGestor_(linhas, fuso) {
+  return linhas.map(function(linha) { return linha.map(function(valor) {
+    if (valor instanceof Date) return { tipo: 'data', valor: Utilities.formatDate(valor, fuso, "yyyy-MM-dd'T'HH:mm:ss") };
+    return valor;
+  }); });
+}
 function montarBackupDadosGestor_(ss,param,recuperacao) {
     const restauravel=Boolean(param && param.restauravel);
     const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'].concat(restauravel?[]:['_Gestor_Atividade']);
@@ -2106,12 +2118,7 @@ function montarBackupDadosGestor_(ss,param,recuperacao) {
       const sh = folhaLeituraAnualGestor_(ss,nome);
       if (!sh) return null;
       const range = sh.getDataRange();
-      const valores = range.getValues().map(function (linha) {
-        return linha.map(function (valor) {
-          if (valor instanceof Date) return { tipo: 'data', valor: Utilities.formatDate(valor, fuso, "yyyy-MM-dd'T'HH:mm:ss") };
-          return valor;
-        });
-      });
+      const valores = valoresCelulasBackupGestor_(range.getValues(), fuso);
       if(restauravel)return normalizarAbaNotasBackupGestor_({nome:nome,valores:valores,formulas:range.getFormulas()});
       return normalizarAbaNotasBackupGestor_({ nome: nome, valores: valores, exibidos: range.getDisplayValues(), formulas: range.getFormulas(), formatosNumericos: range.getNumberFormats() });
     }).filter(function (aba) { return !!aba; });
@@ -2132,7 +2139,7 @@ function propriedade_(nome) {
 
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
-    case 'ativarOrganizacaoAnualWeb': return ativarOrganizacaoAnualWeb();
+    case 'ativarOrganizacaoAnualWeb': return solicitarAtivacaoAnualGestor_();
     case 'ativarProtecaoAutomaticaWeb': return configurarProtecaoAutomaticaGestor(param&&param.pastaUrl);
     case 'obterStatusProtecaoWeb': return obterStatusProtecaoWeb();
     case 'executarBackupProtegidoWeb': return executarBackupProtegidoWeb(param);
@@ -3437,7 +3444,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 }
 
 function executarAcaoApi_(action, param) {
-  if(action==='ativarOrganizacaoAnualWeb')return ativarOrganizacaoAnualWeb();
+  if(action==='ativarOrganizacaoAnualWeb')return solicitarAtivacaoAnualGestor_();
   if(['ativarProtecaoAutomaticaWeb','obterStatusProtecaoWeb','executarBackupProtegidoWeb','previaManutencaoProtegidaWeb','executarManutencaoProtegidaWeb'].includes(action))return executarAcaoApiInterna_(action,param);
   if (['iniciarImportacaoBackupWeb','enviarPartesBackupWeb','concluirImportacaoBackupWeb','descartarImportacaoBackupWeb','prepararExportacaoBackupWeb','obterPartesImportacaoBackupWeb'].includes(action)) return executarAcaoApiInterna_(action,param);
   if (action === 'previaRachadinhaWeb') return executarOperacaoGestor_(action,param,function(){return previaRachadinhaWeb(param);},true);
@@ -4961,7 +4968,7 @@ function previaRestauracaoBackupWeb(param) {
     if(anuais.preservadas.length&&anuais.legiveis.length)avisos.push('Os registros anuais de '+anuais.preservadas.join(', ')+' também serão preservados.');
     if(anuais.necessaria)avisos.push('Recuperação de arquivos ou catálogo anual: a cópia anterior guardará o conteúdo legível, a matriz original do catálogo e o diagnóstico. O JSON selecionado reconstruirá os anos conferidos.');
     if(backup.recuperacaoOrigem)avisos.push('Esta cópia anterior foi gerada durante uma recuperação: pode não conter todos os anos originais. Consulte o diagnóstico preservado no arquivo antes de prosseguir.');
-    return { protocoloGestor:15, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
+    return { protocoloGestor:16, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
       const sh=ss.getSheetByName(aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
       return {nome:aba.nome,atual:resumirAbaRestauracaoGestor_(aba.nome,atual),backup:resumirAbaRestauracaoGestor_(aba.nome,aba.valores),diferencas:diferencasAbaRestauracaoGestor_(aba.nome,atual,aba.valores)};
     }) };
@@ -5830,7 +5837,7 @@ function configurarProtecaoAutomaticaGestor(pastaUrl){
 function obterStatusProtecaoWeb(){
   const c=configProtecaoGestor_(),ss=realProtecaoGestor_();
   const instalada=c.ativo===true&&c.planilhaId===propriedade_(CHAVE_ID_PLANILHA_GESTOR)&&ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor';});
-  return {avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
+  return {ativacaoAnual:statusAtivacaoAnualGestor_(),avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
 }
 function executarBackupProtegidoWeb(param){return comLockProtecaoGestor_(function(ss){const c=configProtecaoGestor_();if(!c.ativo)throw Error('Ative a proteção no Apps Script antes de gerar cópias no Drive.');return backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),param&&param.requestId);});}
 function previaManutencaoProtegidaWeb(){return comLockProtecaoGestor_(function(ss){conferirSemPendenciasProtecaoGestor_(ss);if(ativoAnualGestor_(ss))return {assinatura:assinaturaManutencaoAnualGestor_(ss),quantidade:0,anos:catalogoAnosGestor_(ss).filter(e=>e.estado==='ABERTO'&&e.ano<getHojeSeguro().getFullYear()).map(e=>e.ano),regra:'Organização por competência: prepara o ano atual, confere os destinos e fecha anos passados. Saldos antigos continuam vinculados por ajustes sem alterar o retrato fechado.'};const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);return {assinatura:hashGestor_(['Lançamentos','Empréstimos',ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_,ABA_ARQUIVOS_ANUAIS_GESTOR_].map(function(n){return [n,lerEstadoAbaGestor_(ss.getSheetByName(n))];})),quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),regra:'Somente compras integralmente encerradas de anos anteriores. Fixos, pendências e compras com parcelas futuras permanecem na principal. Histórico técnico confirmado há mais de 180 dias pode ser compactado; nenhum comprovante de identificação é apagado.'};});}
@@ -6056,9 +6063,9 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     const aba=ctx.ss.abas[nome];if(!aba)continue;
     const fechados=new Map(),porAno=new Map();
     for(const e of catalogo)if(e.estado==='FECHADO')for(const r of dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
-    const vistos=new Set();for(const r0 of aba.valores.slice(1)){
+    const vistos=new Set();for(const [indice,r0] of aba.valores.slice(1).entries()){
       if(!r0.some(v=>v!==''&&v!=null))continue;const r=copiarGestor_(r0),id=String(r[11]);if(!id||vistos.has(id))throw Error('Identificação anual repetida.');vistos.add(id);
-      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<2000||ano>2200)throw Error('Competência anual inválida.');
+      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<2000||ano>2200)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
       const original=fechados.get(id),e=catalogo.find(e=>e.ano===ano);
       if(original||e?.estado==='FECHADO'){
         if(!original||hashGestor_(r)!==hashGestor_(original.r))ajustes.push([nome,id,original?.ano||ano,original?hashGestor_(original.r):'NOVO','ATUALIZADO',JSON.stringify(serializarGestor_(r))]);
@@ -6102,12 +6109,15 @@ function gravarPlanoOrganizacaoAnualGestor_(ss){
   diario.getRange(inicio,1,1,6).setValues([[id,hashGestor_(plano),'PREPARANDO',partes.length,'',new Date()]]);diario.getRange(inicio+1,1,partes.length,6).setValues(partes.map((p,i)=>[id,'','PARTE',i+1,JSON.stringify(p),'']));SpreadsheetApp.flush();diario.getRange(inicio,3).setValue('PRONTO');SpreadsheetApp.flush();aplicarPlanoGestor_(ss,plano);diario.getRange(inicio,3).setValue('CONFIRMADO');SpreadsheetApp.flush();
 }
 function ativarOrganizacaoAnualWeb(){return comLockProtecaoGestor_(function(ss){
+  recuperarPlanosAtivacaoAnualGestor_(ss);
   conferirSemPendenciasProtecaoGestor_(ss);const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção e confira a base de destino.');
-  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}return {sucesso:true,repetido:true};}
+  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}if(lerAtivacaoAnualGestor_()?.estado==='EXECUTANDO'){etapaAtivacaoAnualGestor_('Concluindo a organização dos anos');cicloAnualGestor_(ss,pastaProtecaoGestor_());}return {sucesso:true,repetido:true};}
+  etapaAtivacaoAnualGestor_('Conferindo fórmulas e dados');
   conferirFormulasOutrasAbasProtecaoGestor_(ss);
+  etapaAtivacaoAnualGestor_('Guardando e conferindo o backup');
   const copia=backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),'antes-organizacao-'+hashGestor_(['Lançamentos','Empréstimos'].map(n=>lerEstadoAbaGestor_(ss.getSheetByName(n)))) .slice(0,28));
   if(copia.restauravel!==true)throw Error('A cópia foi preservada, mas há colunas ou fórmulas particulares que exigem conferência. A organização anual não foi ativada nem removeu os dados.');
-  const atual=configProtecaoGestor_();atual.organizacaoAnual=true;atual.pdfAutomatico=true;salvarConfigProtecaoGestor_(atual);cicloAnualGestor_(ss,pastaProtecaoGestor_());
+  const atual=configProtecaoGestor_();atual.organizacaoAnual=true;atual.pdfAutomatico=true;salvarConfigProtecaoGestor_(atual);etapaAtivacaoAnualGestor_('Preparando e organizando as planilhas dos anos');cicloAnualGestor_(ss,pastaProtecaoGestor_());
   if(!ss.getSheetByName('Leia-me do Gestor'))gravarMatrizProtecaoGestor_(ss.insertSheet('Leia-me do Gestor'),[['Gestor de Gastos','Controle permanente'],['Onde estão os lançamentos?','As planilhas financeiras por ano estão listadas em Menu → Exportar dados e backup no webapp.'],['Esta base conserva','Cadastros, categorias, notas, provas das operações, catálogo e ajustes posteriores ao fechamento.'],['Anos fechados','São retratos preservados. Recebimentos e pagamentos posteriores aparecem vinculados no app.'],['Notas excluídas','A marca Excluída impede que uma cópia antiga recupere a nota. Não apague essas linhas manualmente.'],['Cópias','JSON restaura os dados. PDF serve para consulta. Nenhuma cópia é apagada automaticamente.']]);
   return {sucesso:true,mensagem:'Organização anual ativada. O endereço do app permanece o mesmo.'};
 });}
@@ -6124,7 +6134,10 @@ function cicloAnualGestor_(ss,pasta){
 function assinaturaManutencaoAnualGestor_(ss){return hashGestor_({catalogo:catalogoAnosGestor_(ss),financeiro:['Lançamentos','Empréstimos'].map(n=>matrizFinanceiraAnualGestor_(ss,n)),ajustes:ajustesAnuaisGestor_(ss)});}
 function backupOrganizacaoAnualGestor_(backup,ss){
   if(!ativoAnualGestor_(ss))return backup;
-  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:dadosAnoGestor_(e)};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=SpreadsheetApp.openById(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:d.getSheetByName(n)?.getDataRange().getValues()||[]}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
+  // O retrato no Drive continua intacto; só a cópia JSON recebe o formato de
+  // datas já aceito pelo restaurador. Date.toJSON() perderia essa informação.
+  const fuso=backup.fusoHorario||getTimezone();
+  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{const d=dadosAnoGestor_(e);return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:{ano:d.ano,abas:d.abas.map(a=>({nome:a.nome,valores:valoresCelulasBackupGestor_(a.valores,fuso)}))}};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=SpreadsheetApp.openById(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:valoresCelulasBackupGestor_(d.getSheetByName(n)?.getDataRange().getValues()||[],fuso)}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
   const resultado=Object.assign({},backup,{formato:'gestor-financeiro-backup-v3',anos:anos});if(indisponiveis.length)resultado.recuperacaoAnos={aviso:'Cópia parcial anterior à recuperação; preserve também o JSON completo utilizado.',catalogo:catalogo,indisponiveis:indisponiveis,ajustes:ajustesAnuaisGestor_(ss)};resultado.hashOrganizacao=assinaturaBackupAnualGestor_(resultado);return resultado;
 }
 function assinaturaBackupAnualGestor_(b){return hashGestor_({abas:b.abas.filter(a=>a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas||[]})),arquivosAnuais:b.arquivosAnuais||[],anos:b.anos});}
@@ -6305,3 +6318,56 @@ function atualizarRelatoriosContinuosGestor_(ss,pasta){
   config.erroRelatorios=resultado.erro||'';config.relatoriosPDF={data:new Date().toISOString(),pendentes:resultado.pendentes||0,gerados:resultado.gerados||[]};salvarConfigProtecaoGestor_(config);return resultado;
 }
 // FIM MODULO RELATORIOS GERADO
+
+// INICIO MODULO ATIVACAO GERADO
+// A requisição do celular só agenda. O Apps Script executa o trabalho demorado
+// sem depender da conexão HTTP, mantendo uma identificação e a etapa duráveis.
+const CHAVE_ATIVACAO_ANUAL_GESTOR_='GESTOR_ATIVACAO_ANUAL_V1';
+const FUNCAO_ATIVACAO_ANUAL_GESTOR_='retomarAtivacaoAnualGestor';
+function lerAtivacaoAnualGestor_(){
+  const texto=propriedade_(CHAVE_ATIVACAO_ANUAL_GESTOR_);if(!texto)return null;let j;
+  try{j=JSON.parse(texto);}catch(_){throw Error('O acompanhamento da ativação está inválido. Preserve as propriedades para conferência.');}
+  if(j.versao!==1||!j.id||!['AGENDADA','EXECUTANDO','CONCLUIDA','ERRO'].includes(j.estado)||j.origem!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('A ativação pertence a outra base ou está incompatível. Confira o destino.');
+  return j;
+}
+function salvarAtivacaoAnualGestor_(j){j.atualizadaEm=new Date().toISOString();PropertiesService.getScriptProperties().setProperty(CHAVE_ATIVACAO_ANUAL_GESTOR_,JSON.stringify(j));return j;}
+function ativacaoEmCursoGestor_(j){return j&&['AGENDADA','EXECUTANDO'].includes(j.estado)&&Date.now()-new Date(j.atualizadaEm).getTime()<10*60*1000;}
+function statusAtivacaoAnualGestor_(){const j=lerAtivacaoAnualGestor_();if(!j)return null;return Object.assign({},j,{interrompida:['AGENDADA','EXECUTANDO'].includes(j.estado)&&!ativacaoEmCursoGestor_(j)});}
+function etapaAtivacaoAnualGestor_(etapa){const j=lerAtivacaoAnualGestor_();if(j?.estado==='EXECUTANDO'){j.etapa=etapa;salvarAtivacaoAnualGestor_(j);}}
+function agendarAtivacaoAnualGestor_(){
+  const iguais=ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===FUNCAO_ATIVACAO_ANUAL_GESTOR_);
+  if(!iguais.length)ScriptApp.newTrigger(FUNCAO_ATIVACAO_ANUAL_GESTOR_).timeBased().after(1000).create();
+}
+function solicitarAtivacaoAnualGestor_(){
+  const lock=LockService.getScriptLock();if(!lock.tryLock(1000))throw Error('Há uma operação em andamento. Use Atualizar situação antes de tentar a ativação novamente.');
+  try{
+    const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção automática e confira a base de controle.');
+    let j=lerAtivacaoAnualGestor_();
+    if(j?.estado==='CONCLUIDA'&&c.organizacaoAnual&&c.pdfAutomatico)return {sucesso:true,repetido:true,ativacaoAnual:j};
+    if(ativacaoEmCursoGestor_(j)){if(j.estado==='AGENDADA')agendarAtivacaoAnualGestor_();return {sucesso:true,repetido:true,ativacaoAnual:j};}
+    j=Object.assign({},j||{versao:1,id:gerarIdGestor_(),origem:propriedade_(CHAVE_ID_PLANILHA_GESTOR),criadaEm:new Date().toISOString()},{estado:'AGENDADA',etapa:'Aguardando execução no Google',erro:'',tentativas:j?.tentativas||0});salvarAtivacaoAnualGestor_(j);
+    try{agendarAtivacaoAnualGestor_();}catch(e){j.estado='ERRO';j.erro='Não foi possível agendar: '+String(e.message||e);salvarAtivacaoAnualGestor_(j);throw e;}
+    return {sucesso:true,ativacaoAnual:j,mensagem:'Ativação agendada no Google. O início pode demorar; acompanhe em Atualizar situação.'};
+  }finally{lock.releaseLock();}
+}
+function retomarAtivacaoAnualGestor(){
+  const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return {ocupado:true};let j;
+  try{
+    j=lerAtivacaoAnualGestor_();if(!j||j.estado==='CONCLUIDA'||j.estado==='EXECUTANDO'&&ativacaoEmCursoGestor_(j)||j.estado==='ERRO')return {semTrabalho:true};
+    for(const t of ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()===FUNCAO_ATIVACAO_ANUAL_GESTOR_))ScriptApp.deleteTrigger(t);
+    j.estado='EXECUTANDO';j.etapa='Conferindo a base';j.tentativas++;salvarAtivacaoAnualGestor_(j);
+  }finally{lock.releaseLock();}
+  try{ativarOrganizacaoAnualWeb();j=lerAtivacaoAnualGestor_();j.estado='CONCLUIDA';j.etapa='Organização anual e PDFs ativados';j.erro='';salvarAtivacaoAnualGestor_(j);return {sucesso:true};}
+  catch(e){j=lerAtivacaoAnualGestor_();j.estado='ERRO';j.erro=String(e.message||e).slice(0,500);salvarAtivacaoAnualGestor_(j);throw e;}
+}
+function recuperarPlanosAtivacaoAnualGestor_(ss){
+  const diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);if(!diario)return;
+  const linhas=[...localizarLinhasTecnicasGestor_(diario,3,'PRONTO'),...localizarLinhasTecnicasGestor_(diario,3,'PREPARANDO')].sort((a,b)=>a-b);
+  for(const linha of linhas){
+    if(!String(diario.getRange(linha,1).getValue()).startsWith('organizarAnos:'))continue;
+    const e=lerOperacaoTecnicaGestor_(diario,linha);
+    if(e.cabecalho[2]==='PREPARANDO'){diario.getRange(linha,3).setValue('PRONTO');SpreadsheetApp.flush();}
+    aplicarPlanoGestor_(ss,e.plano);diario.getRange(linha,3).setValue('CONFIRMADO');SpreadsheetApp.flush();
+  }
+}
+// FIM MODULO ATIVACAO GERADO

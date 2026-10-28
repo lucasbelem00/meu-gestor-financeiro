@@ -92,9 +92,9 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     const aba=ctx.ss.abas[nome];if(!aba)continue;
     const fechados=new Map(),porAno=new Map();
     for(const e of catalogo)if(e.estado==='FECHADO')for(const r of dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
-    const vistos=new Set();for(const r0 of aba.valores.slice(1)){
+    const vistos=new Set();for(const [indice,r0] of aba.valores.slice(1).entries()){
       if(!r0.some(v=>v!==''&&v!=null))continue;const r=copiarGestor_(r0),id=String(r[11]);if(!id||vistos.has(id))throw Error('Identificação anual repetida.');vistos.add(id);
-      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<2000||ano>2200)throw Error('Competência anual inválida.');
+      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<2000||ano>2200)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
       const original=fechados.get(id),e=catalogo.find(e=>e.ano===ano);
       if(original||e?.estado==='FECHADO'){
         if(!original||hashGestor_(r)!==hashGestor_(original.r))ajustes.push([nome,id,original?.ano||ano,original?hashGestor_(original.r):'NOVO','ATUALIZADO',JSON.stringify(serializarGestor_(r))]);
@@ -138,12 +138,15 @@ function gravarPlanoOrganizacaoAnualGestor_(ss){
   diario.getRange(inicio,1,1,6).setValues([[id,hashGestor_(plano),'PREPARANDO',partes.length,'',new Date()]]);diario.getRange(inicio+1,1,partes.length,6).setValues(partes.map((p,i)=>[id,'','PARTE',i+1,JSON.stringify(p),'']));SpreadsheetApp.flush();diario.getRange(inicio,3).setValue('PRONTO');SpreadsheetApp.flush();aplicarPlanoGestor_(ss,plano);diario.getRange(inicio,3).setValue('CONFIRMADO');SpreadsheetApp.flush();
 }
 function ativarOrganizacaoAnualWeb(){return comLockProtecaoGestor_(function(ss){
+  recuperarPlanosAtivacaoAnualGestor_(ss);
   conferirSemPendenciasProtecaoGestor_(ss);const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção e confira a base de destino.');
-  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}return {sucesso:true,repetido:true};}
+  if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}if(lerAtivacaoAnualGestor_()?.estado==='EXECUTANDO'){etapaAtivacaoAnualGestor_('Concluindo a organização dos anos');cicloAnualGestor_(ss,pastaProtecaoGestor_());}return {sucesso:true,repetido:true};}
+  etapaAtivacaoAnualGestor_('Conferindo fórmulas e dados');
   conferirFormulasOutrasAbasProtecaoGestor_(ss);
+  etapaAtivacaoAnualGestor_('Guardando e conferindo o backup');
   const copia=backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),'antes-organizacao-'+hashGestor_(['Lançamentos','Empréstimos'].map(n=>lerEstadoAbaGestor_(ss.getSheetByName(n)))) .slice(0,28));
   if(copia.restauravel!==true)throw Error('A cópia foi preservada, mas há colunas ou fórmulas particulares que exigem conferência. A organização anual não foi ativada nem removeu os dados.');
-  const atual=configProtecaoGestor_();atual.organizacaoAnual=true;atual.pdfAutomatico=true;salvarConfigProtecaoGestor_(atual);cicloAnualGestor_(ss,pastaProtecaoGestor_());
+  const atual=configProtecaoGestor_();atual.organizacaoAnual=true;atual.pdfAutomatico=true;salvarConfigProtecaoGestor_(atual);etapaAtivacaoAnualGestor_('Preparando e organizando as planilhas dos anos');cicloAnualGestor_(ss,pastaProtecaoGestor_());
   if(!ss.getSheetByName('Leia-me do Gestor'))gravarMatrizProtecaoGestor_(ss.insertSheet('Leia-me do Gestor'),[['Gestor de Gastos','Controle permanente'],['Onde estão os lançamentos?','As planilhas financeiras por ano estão listadas em Menu → Exportar dados e backup no webapp.'],['Esta base conserva','Cadastros, categorias, notas, provas das operações, catálogo e ajustes posteriores ao fechamento.'],['Anos fechados','São retratos preservados. Recebimentos e pagamentos posteriores aparecem vinculados no app.'],['Notas excluídas','A marca Excluída impede que uma cópia antiga recupere a nota. Não apague essas linhas manualmente.'],['Cópias','JSON restaura os dados. PDF serve para consulta. Nenhuma cópia é apagada automaticamente.']]);
   return {sucesso:true,mensagem:'Organização anual ativada. O endereço do app permanece o mesmo.'};
 });}
@@ -160,7 +163,10 @@ function cicloAnualGestor_(ss,pasta){
 function assinaturaManutencaoAnualGestor_(ss){return hashGestor_({catalogo:catalogoAnosGestor_(ss),financeiro:['Lançamentos','Empréstimos'].map(n=>matrizFinanceiraAnualGestor_(ss,n)),ajustes:ajustesAnuaisGestor_(ss)});}
 function backupOrganizacaoAnualGestor_(backup,ss){
   if(!ativoAnualGestor_(ss))return backup;
-  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:dadosAnoGestor_(e)};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=SpreadsheetApp.openById(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:d.getSheetByName(n)?.getDataRange().getValues()||[]}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
+  // O retrato no Drive continua intacto; só a cópia JSON recebe o formato de
+  // datas já aceito pelo restaurador. Date.toJSON() perderia essa informação.
+  const fuso=backup.fusoHorario||getTimezone();
+  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{const d=dadosAnoGestor_(e);return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:{ano:d.ano,abas:d.abas.map(a=>({nome:a.nome,valores:valoresCelulasBackupGestor_(a.valores,fuso)}))}};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=SpreadsheetApp.openById(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:valoresCelulasBackupGestor_(d.getSheetByName(n)?.getDataRange().getValues()||[],fuso)}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
   const resultado=Object.assign({},backup,{formato:'gestor-financeiro-backup-v3',anos:anos});if(indisponiveis.length)resultado.recuperacaoAnos={aviso:'Cópia parcial anterior à recuperação; preserve também o JSON completo utilizado.',catalogo:catalogo,indisponiveis:indisponiveis,ajustes:ajustesAnuaisGestor_(ss)};resultado.hashOrganizacao=assinaturaBackupAnualGestor_(resultado);return resultado;
 }
 function assinaturaBackupAnualGestor_(b){return hashGestor_({abas:b.abas.filter(a=>a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas||[]})),arquivosAnuais:b.arquivosAnuais||[],anos:b.anos});}
