@@ -1,5 +1,10 @@
 // Leituras coordenadas e trabalho visual apenas nas telas que estão abertas.
 // O cache é transitório: nunca guarda mutações, prévias financeiras ou backups.
+let buscaEmprestimosPendenteGestor=null;
+function agendarBuscaEmprestimosGestor(){
+  clearTimeout(buscaEmprestimosPendenteGestor);
+  buscaEmprestimosPendenteGestor=setTimeout(()=>{buscaEmprestimosPendenteGestor=null;renderizarPainelEmprestimos();},160);
+}
 function criarCoordenadorLeiturasGestor(opcoes) {
   const agora = opcoes.agora || Date.now;
   const ttl = opcoes.ttlMs ?? 15000;

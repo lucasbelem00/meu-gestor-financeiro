@@ -14,7 +14,7 @@ Estas convenções devem ser mantidas nas novas alterações, títulos, navegaç
 | Despesas fixas / assinaturas | 📌 |
 | Repetir lançamento | 🔁 |
 | Parcelados | ➗ |
-| Pix | Símbolo vetorial no filtro; 💠 em informações compactas |
+| Pix | 💠, inclusive no filtro |
 | Termômetro de metas | 🎯 |
 | Quantidade de lançamentos | 🔢 |
 | Redução de gastos na comparação | 📉 |
@@ -24,7 +24,7 @@ Estas convenções devem ser mantidas nas novas alterações, títulos, navegaç
 
 No celular, a Central mostra o título curto “Navegação”, com “↻ Atualizar” e Fechar na mesma linha. O título pode quebrar com fonte ampliada sem empurrar as ações para baixo. No computador, conserva “Central de Navegação”. A mensagem de atualização usa “↻ Atualizando…”. 📌 acompanha despesas fixas no cadastro, menu, filtro, aba e edição; 🔁 identifica repetir um lançamento.
 
-Todos os 12 atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. O atalho Empréstimo em Novo segue o fundo neutro; seleções de modo em Empréstimos usam azul. Cores de ações, alertas e confirmações continuam indicando seu significado.
+Todos os 12 atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. O atalho Empréstimo em Novo segue o fundo neutro; seleções Consultar/Novo empréstimo usam âmbar, característico da área. Cores de ações, alertas e confirmações continuam indicando seu significado.
 
 O ícone do aplicativo é um desenho vetorial próprio inspirado em 💰, sem fontes ou emojis do sistema. O arquivo mestre `icons/gestor.svg` gera a mesma identidade no cabeçalho (incorporada pelo build), no favicon e nos PNGs locais `icon-192.png`, `icon-512.png` e `apple-touch-icon.png` (180 px). O fundo é opaco e o símbolo permanece na área central segura para os recortes de ícones instalados. `icon-192.svg` conserva o caminho antigo com o novo desenho.
 
@@ -38,8 +38,10 @@ Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco
 
 Contagens mensais e anuais usam 🔢 com o período escrito. A quantidade e a média no cartão A pagar continuam representando todos os lançamentos do mês, mesmo com saldo zerado ou filtros. O ranking anual identifica os maiores gastos com 🥇, 🥈 e 🥉; empates compartilham posição. Medalhas indicam volume de gasto, sem representar uma avaliação positiva.
 
-O símbolo Pix em `icons/pix.svg` foi extraído do Manual de Uso da Marca Pix do Banco Central, versão 1.6, de 14/05/2025 (símbolo na página 13 e cor na página 10). Mantém o tom `#77B6A8` e tamanho de 24 px; para metadados menores usa-se 💠. Fonte: https://www.bcb.gov.br/content/estabilidadefinanceira/pix/Regulamento_Pix/I_manual_uso_marca_pix.pdf. O build incorpora o SVG no filtro, sem depender de download na abertura do app.
+Pix usa 💠 no filtro e nas informações compactas. O vetor de 24 px do pacote anterior foi retirado por ficar desproporcional aos emojis vizinhos. Moeda e cédula ficam para valores/dinheiro em geral, evitando confundi-los com o tipo Pix.
 
-O manifesto versiona a URL dos PNGs para sinalizar a identidade própria aos navegadores. A troca do ícone instalado depende do navegador e do sistema; pode exigir aceitar a atualização da identidade do app.
+Nas subferramentas, a seleção usa azul com `aria-pressed`. Consultar/Novo empréstimo usa âmbar com `aria-pressed`, sem acumular fundos selecionado e neutro. Somente a aba principal Novo conserva verde. Ao trocar de ferramenta, o cabeçalho informa seu nome e a barra rola horizontalmente para mostrar a seleção, sem deslocar a página para trás do cabeçalho. O grupo Ferramentas da Central usa título neutro.
+
+O manifesto versiona a URL dos PNGs para sinalizar a identidade própria aos navegadores. O service worker consulta o manifesto pela rede com revalidação, preservando a última cópia em falhas de conexão; não deve mantê-lo indefinidamente no caminho de cache prioritário dos recursos estáticos. O ícone Apple também tem URL versionada. A troca do ícone instalado e da tela de abertura depende do navegador e do sistema; pode exigir aceitar a atualização da identidade do app.
 
 A entrada normal na aba Mensal seleciona o mês vigente do calendário, inclusive quando ainda não há registros. Não existe caixa de avanço nem mudança de período por quitação ou fechamento dos cartões. É possível consultar outro mês manualmente enquanto permanece na tela; uma atualização de dados preserva essa consulta. Ao tocar novamente na aba Mensal, retorna ao mês vigente. Atalhos explícitos para uma fatura respeitam o período escolhido no clique.

@@ -1,6 +1,28 @@
 // Cada troca de aba tem sua geração. Atualizações da mesma tela podem manter
 // a posição; respostas de uma navegação anterior não podem deslocar outra aba.
 const nomesAbasTopoGestor={lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
+// Uma entrada temporária permite ao Voltar fechar a Central, sem sair do app.
+// O estado anterior é preservado; fechar pelo X também consome essa entrada.
+function criarHistoricoCentralGestor(opcoes){
+  let aberto=false,id=null,retornoPendente=false,sequencia=0;
+  function registrar(){try{id='central-'+Date.now()+'-'+(++sequencia);opcoes.historico.pushState({gestorCentralNavegacao:id,anterior:opcoes.historico.state},'');}catch(_){id=null;}}
+  function abrir(){if(aberto)return;aberto=true;if(!retornoPendente)registrar();opcoes.abrir();}
+  function fechar(){if(!aberto)return;aberto=false;opcoes.fechar();if(id&&opcoes.historico.state?.gestorCentralNavegacao===id){retornoPendente=true;opcoes.historico.back();}id=null;}
+  function voltar(){
+    if(retornoPendente){retornoPendente=false;if(aberto)registrar();return;}
+    id=null;
+    if(aberto){aberto=false;opcoes.fechar();}
+    else if(opcoes.historico.state?.gestorCentralNavegacao){id=opcoes.historico.state.gestorCentralNavegacao;aberto=true;opcoes.abrir();}
+  }
+  return {abrir,fechar,voltar};
+}
+if(window.history?.pushState){
+  if(window.history.state?.gestorCentralNavegacao)window.history.replaceState(window.history.state.anterior??null,'');
+  const abrirAntesHistoricoCentralGestor=window.abrirMenuMobile,fecharAntesHistoricoCentralGestor=window.fecharMenuMobile;
+  const controleCentralGestor=criarHistoricoCentralGestor({historico:window.history,abrir:abrirAntesHistoricoCentralGestor,fechar:fecharAntesHistoricoCentralGestor});
+  window.abrirMenuMobile=controleCentralGestor.abrir;window.fecharMenuMobile=controleCentralGestor.fechar;
+  window.addEventListener('popstate',controleCentralGestor.voltar);
+}
 function iniciarRolagemNavegacaoGestor(){
   const geracao=(window.geracaoNavegacaoGestor || 0)+1;window.geracaoNavegacaoGestor=geracao;
   window.scrollTo({top:0,left:0,behavior:'instant'});

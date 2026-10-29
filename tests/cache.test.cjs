@@ -38,6 +38,16 @@ test('gravações e consultas da API nunca entram no cache', async () => {
   assert.equal(await a.carregar({ method: 'POST' }), undefined);
   assert.equal(await a.carregar({ url: 'https://app.test/api/gestor' }), undefined);
 });
+
+test('manifesto atualizado substitui a identidade antiga em cache e continua disponível offline',async()=>{
+ let offline=false,politica;const novo={name:'Gestor',icons:[{src:'icons/icon-512.png?v=bolsa-1'}]},a=ambiente(async(_r,o)=>{politica=o.cache;if(offline)throw Error('offline');return new Response(JSON.stringify(novo),{headers:{'Content-Type':'application/manifest+json'}});});
+ const url='https://app.test/manifest.json';a.itens.set(url,new Response(JSON.stringify({name:'Antigo',icons:[{src:'antigo.png'}]}),{headers:{'Content-Type':'application/json'}}));
+ assert.deepEqual(await(await a.carregar({url,mode:'cors'})).json(),novo);assert.equal(politica,'no-cache');offline=true;assert.deepEqual(await(await a.carregar({url,mode:'cors'})).json(),novo);
+});
+
+test('página de login não substitui o manifesto com os ícones próprios',async()=>{
+ const url='https://app.test/manifest.json',a=ambiente(async()=>pagina('<html>Login</html>')),manifesto={name:'Gestor',icons:[{src:'proprio.png'}]};a.itens.set(url,new Response(JSON.stringify(manifesto),{headers:{'Content-Type':'application/json'}}));assert.deepEqual(await(await a.carregar({url,mode:'cors'})).json(),manifesto);assert.deepEqual(await a.itens.get(url).clone().json(),manifesto);
+});
 test('sem cache e sem rede responde com mensagem clara', async () => {
   const a = ambiente(async () => { throw Error('offline'); }); const r = await a.carregar();
   assert.equal(r.status, 503); assert((await r.text()).includes('internet'));

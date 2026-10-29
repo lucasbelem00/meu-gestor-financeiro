@@ -1,5 +1,7 @@
 # Pacote visual de 29/10/2026
 
+Registro do pacote v56. O ajuste posterior v57 usa 💠 também no filtro Pix, retira o vetor e corrige navegação e formulários; conferir `AJUSTES_EMPRESTIMOS_NAVEGACAO_20261029.md` para a situação atual.
+
 ## Checklist aplicado
 
 - [x] Todos os 12 atalhos da Central com fundo, borda e passagem do mouse iguais; cor própria no círculo do ícone.

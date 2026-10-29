@@ -1,4 +1,19 @@
-const CACHE_NAME = 'gestor-gastos-v56';
+const CACHE_NAME = 'gestor-gastos-v58';
+
+async function buscarManifestoAtualGestor(request){
+  const controlador=new AbortController(),prazo=setTimeout(()=>controlador.abort(),8000);
+  try{
+    const resposta=await fetch(request,{cache:'no-cache',signal:controlador.signal});
+    if(resposta.ok&&!resposta.redirected&&(resposta.headers.get('content-type')||'').includes('json')){
+      const manifesto=await resposta.clone().json();
+      if(typeof manifesto.name==='string'&&Array.isArray(manifesto.icons)&&manifesto.icons.length){
+        try{const cache=await caches.open(CACHE_NAME);await cache.put(request,resposta.clone());}catch(_){}
+        return resposta;
+      }
+    }
+  }catch(_){}finally{clearTimeout(prazo);}
+  return (await caches.match(request))||Response.error();
+}
 
 function ehEnderecoInicialGestor(url){return url.origin===self.location.origin&&['/','/index.html'].includes(url.pathname);}
 async function buscarCopiaPaginaGestor(request){
@@ -96,6 +111,11 @@ self.addEventListener('fetch', event => {
   // Deixa as chamadas à API do Google Apps Script passarem direto sem cache
   if (url.hostname === 'script.google.com' || url.hostname === 'script.googleusercontent.com') {
     return;
+  }
+
+  // A identidade instalada precisa receber o manifesto novo, mesmo com cache antigo.
+  if(url.origin===self.location.origin&&url.pathname==='/manifest.json'){
+    event.respondWith(buscarManifestoAtualGestor(event.request));return;
   }
 
   // Para o HTML / Página principal: Tenta a rede primeiro; se falhar (offline), usa a cache
