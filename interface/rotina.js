@@ -300,7 +300,7 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const meta=metadadosAcaoGestor(acao);if(meta.exigeProtocoloAtual && protocoloServidorGestor<15){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<15)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de gravar com esta versão. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
+window.apiCall=async function(acao,param,...resto){const meta=metadadosAcaoGestor(acao),escopoNovo=['previaEdicaoEmprestimoWeb','editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined,minimo=escopoNovo?17:15;if((meta.exigeProtocoloAtual||escopoNovo)&&protocoloServidorGestor<minimo){await apiAntesRotinaGestor('getDadosCompletos',null,1);if(protocoloServidorGestor<minimo)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de usar este editor. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -347,6 +347,6 @@ for(const tipo of ['input','change'])document.addEventListener(tipo,event=>{
 document.addEventListener('DOMContentLoaded',()=>{
   const dataEd=document.getElementById('inpEdEmpCombinada')?.closest('label');if(!dataEd)return;
   const l=document.createElement('label');l.className='block text-xs text-slate-300';l.textContent='Aplicar a data combinada';const s=document.createElement('select');s.id='escopoDataCombinadaEmpGestor';s.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';
-  for(const [v,t]of [['parcela','Somente esta parcela'],['proximas','Esta e as próximas parcelas a receber']]){const o=document.createElement('option');o.value=v;o.textContent=t;s.append(o);}l.append(s);dataEd.after(l);
+  for(const [v,t]of [['parcela','Somente esta parcela'],['proximas','Esta e próximas a receber']]){const o=document.createElement('option');o.value=v;o.textContent=t;s.append(o);}l.append(s);dataEd.after(l);
   const p=document.createElement('p');p.id='ajudaEscopoDataEmpGestor';p.className='mt-1 text-xs text-slate-300';p.textContent='Repete o dia nos meses seguintes. Você confere as datas antes de salvar; parcelas anteriores e recebidas são preservadas.';p.hidden=true;l.after(p);s.setAttribute('aria-describedby',p.id);s.onchange=()=>{p.hidden=s.value!=='proximas';};
 });

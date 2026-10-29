@@ -53,6 +53,10 @@ test('ícone de pagamento usa o tipo cadastrado inclusive em Pix renomeado',()=>
  const {c}=ambiente();assert.equal(c.iconeFormaPagamentoVisualGestor('Conta renomeada'),'💠');assert.equal(c.iconeFormaPagamentoVisualGestor({nome:'Qualquer nome',tipo:'pix'}),'💠');assert.equal(c.iconeFormaPagamentoVisualGestor('Dinheiro'),'⚡');assert.equal(c.iconeFormaPagamentoVisualGestor('Cartão fictício'),'💳');
 });
 
+test('informação de parcela distingue à vista, parcelado e fixo com seus símbolos',()=>{
+ const {c}=ambiente();for(const forma of ['Cartão fictício','Conta renomeada','Dinheiro']){assert.equal(c.formatarInfoParcelaCard('1/1',null,forma),'⚡ À vista');assert.match(c.formatarInfoParcelaCard('2/6',null,forma),/^➗ Parcela 2\/6/);}assert.equal(c.formatarInfoParcelaCard('∞/∞',null,'Cartão fictício'),'📌 Fixo mensal (∞)');assert.match(c.formatarInfoParcelaCard('2/6',{faltam:4,fimMes:'03/2027'},'Cartão fictício'),/fim 03\/2027/);assert.match(c.montarCardFaturaMensalSeguro(linha('Compra única')),/⚡ À vista/);
+});
+
 test('ranking destaca maiores gastos, preserva empates e não modifica o relatório',()=>{
  const {c}=ambiente(),dados=[{nome:'B',total:20},{nome:'D',total:0},{nome:'A',total:100},{nome:'C',total:50},{nome:'Outro empate',total:50}],antes=JSON.stringify(dados),r=c.rankingCategoriasVisualGestor(dados);assert.deepEqual(Array.from(r,x=>[x.nome,x.posicao,x.medalha]),[['A',1,'🥇'],['C',2,'🥈'],['Outro empate',2,'🥈'],['B',4,'4º']]);assert.equal(JSON.stringify(dados),antes);
  assert.deepEqual(Array.from(c.rankingCategoriasVisualGestor([{nome:'A',total:3},{nome:'B',total:2},{nome:'C',total:1}]),x=>x.medalha),['🥇','🥈','🥉']);

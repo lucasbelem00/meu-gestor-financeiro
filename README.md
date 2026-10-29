@@ -6,6 +6,7 @@ Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas po
 - [Identidade visual](IDENTIDADE_VISUAL.md): ícones reservados e significado das cores em todo o webapp.
 - [Pacote visual de 29/10/2026](PACOTE_VISUAL_20261029.md): menu uniforme, ícones, cores, filtros e validação.
 - [Ajustes de empréstimos e navegação de 29/10/2026](AJUSTES_EMPRESTIMOS_NAVEGACAO_20261029.md): seleção, Voltar do celular, Pix compacto e atualização da identidade instalada.
+- [Símbolos e alcance das parcelas](ESCOPO_PARCELAS_20261029.md): À vista, Parcelado, Fixo e menus de valor/data com prévia.
 - [Mensal pelo calendário](MENSAL_MES_VIGENTE_20261028.md): entrada no mês atual, consultas manuais e remoção do avanço por quitação.
 - [Correção de HTTP 504 na ativação](ATIVACAO_ANUAL_504_20261028.md): agendamento, andamento e retomada protegida.
 - [Correção de competência anual inválida](COMPETENCIA_ANUAL_DATAS_20261028.md): meses guardados como datas, retomada da ativação e JSON anual restaurável.
@@ -15,7 +16,7 @@ Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas po
 - [Testes](tests/README.md): execução das regressões com dados fictícios.
 - [Segurança da implantação](SEGURANCA_VERCEL.md): configuração do proxy e proteção de acesso.
 
-Os demais relatórios com datas descrevem versões anteriores. Para instalar este pacote, seguir o guia de continuidade com as correções da ativação e dos tipos de célula, protocolo 16 e cache v58. O ícone próprio do app está descrito na identidade visual. A Mensal abre no mês do calendário, sem opção de avanço por quitação.
+Os demais relatórios com datas descrevem versões anteriores. Para instalar este pacote, seguir o guia de continuidade e o ajuste de escopo das parcelas, protocolo 17 e cache v59. O editor de empréstimos exige o Backend/Code.gs atualizado. O ícone próprio do app está descrito na identidade visual. A Mensal abre no mês do calendário, sem opção de avanço por quitação.
 
 ## Desenvolvimento local
 

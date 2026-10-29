@@ -309,12 +309,32 @@ function indicesEdicaoEmprestimoGestor_(lido,idx){
   const parcelas=parseNumParcela(limparApostrofo(lido.disp[idx][6]));
   return indicesMesmaCompra(lido.disp,idx).filter(function(i){return i===idx||(parcelas.total>1&&lido.raw[i][9]!=='Recebido');});
 }
+// O escopo explícito é usado pelo editor atual. Pedidos antigos conservam seu contrato.
+function indicesValorEmprestimoGestor_(dados,lido,idx){
+  const escopo=dados.escopoValorParcelas;
+  if(escopo===undefined)return dados.propagarValorParcelas?indicesEdicaoEmprestimoGestor_(lido,idx):[idx];
+  if(!['parcela','proximas'].includes(escopo))throw Error('Escolha onde aplicar o valor da parcela.');
+  if(escopo==='parcela')return [idx];
+  if(lido.raw[idx][9]!=='A Receber')throw Error('Valores em conjunto só podem ser aplicados a parcelas a receber.');
+  const base=parseNumParcela(limparApostrofo(lido.disp[idx][6]));
+  return indicesMesmaCompra(lido.disp,idx).filter(function(i){const p=parseNumParcela(limparApostrofo(lido.disp[i][6]));return lido.raw[i][9]==='A Receber'&&p.total===base.total&&p.atual>=base.atual;});
+}
+function planoValoresEmprestimoGestor_(dados,lido,idx){
+  const valor=centavosGestor_(dados.valorParcela);
+  const itens=indicesValorEmprestimoGestor_(dados,lido,idx).map(function(i){
+    const pago=centavosGestor_(valorPagoBancoGestor_(lido.raw[i],true));
+    if(valor<pago)throw Error('O novo valor é menor que o pagamento registrado ao banco em uma das parcelas. Confira o pagamento antes de alterar.');
+    return {indice:i,id:String(lido.raw[i][11]),versao:Number(lido.raw[i][13]),parcela:lido.disp[i][6],mes:lido.disp[i][8],antes:Number(lido.raw[i][7]),depois:valor/100,pago:pago};
+  }).sort(function(a,b){return parseNumParcela(a.parcela).atual-parseNumParcela(b.parcela).atual||a.id.localeCompare(b.id);});
+  return {itens:itens,assinatura:hashGestor_({alvo:String(lido.raw[idx][11]),escopo:dados.escopoValorParcelas,itens:itens.map(function(i){return [i.id,i.versao,i.parcela,i.mes,i.antes,i.depois,i.pago];})})};
+}
 function planoPagamentoPixEdicaoGestor_(dados,lido,idx){
   if(formaEmprestimoConsomeLimite_(dados.formaPagto))return null;
   const alvo=lido.raw[idx],indices=indicesEdicaoEmprestimoGestor_(lido,idx);
   if(!indices.some(function(i){return chaveFormaGestor_(lido.disp[i][3])!==chaveFormaGestor_(dados.formaPagto);}))return null;
   validarTrocaFormaComPagamentoGestor_(indices.map(function(i){return lido.raw[i];}),dados.formaPagto,true);
-  const itens=indices.map(function(i){return {indice:i,id:String(lido.raw[i][11]),versao:Number(lido.raw[i][13]),forma:lido.disp[i][3],parcela:lido.disp[i][6],mes:lido.disp[i][8],valor:(i===idx||dados.propagarValorParcelas)?centavosGestor_(dados.valorParcela):centavosGestor_(lido.raw[i][7]),pago:centavosGestor_(valorPagoBancoGestor_(lido.raw[i],true))};}).sort(function(a,b){return a.id.localeCompare(b.id);});
+  const valores=new Set(indicesValorEmprestimoGestor_(dados,lido,idx));
+  const itens=indices.map(function(i){return {indice:i,id:String(lido.raw[i][11]),versao:Number(lido.raw[i][13]),forma:lido.disp[i][3],parcela:lido.disp[i][6],mes:lido.disp[i][8],valor:valores.has(i)?centavosGestor_(dados.valorParcela):centavosGestor_(lido.raw[i][7]),pago:centavosGestor_(valorPagoBancoGestor_(lido.raw[i],true))};}).sort(function(a,b){return a.id.localeCompare(b.id);});
   return {itens:itens,total:itens.reduce(function(s,i){return s+i.valor;},0)/100,assinatura:hashGestor_({alvo:String(alvo[11]),forma:dados.formaPagto,itens:itens.map(function(i){return [i.id,i.versao,i.forma,i.parcela,i.mes,i.valor,i.pago];})})};
 }
 function planoCorrecaoPixEmprestimoGestor_(dados,lido,idx){
@@ -333,7 +353,8 @@ function previaEdicaoEmprestimoWeb(param){
   if(idx<0)throw Error('Parcela não encontrada. Atualize a lista.');
   const forma=validarFormaAtualGestor_(param.formaPagto,{formaAnterior:lido.disp[idx][3]}),pix=planoPagamentoPixEdicaoGestor_(Object.assign({},param,{formaPagto:forma}),lido,idx);
   const correcao=planoCorrecaoPixEmprestimoGestor_(Object.assign({},param,{formaPagto:forma}),lido,idx);
-  return {datas:param.escopoDataCombinada==='proximas'?previaDatasDevolucaoWeb(param):null,pagamentoPix:pix?{assinatura:pix.assinatura,total:pix.total,quantidade:pix.itens.length}:null,correcaoPix:correcao?{assinatura:correcao.assinatura,total:correcao.total,quantidade:correcao.itens.length}:null};
+  const valores=param.escopoValorParcelas==='proximas'?planoValoresEmprestimoGestor_(param,lido,idx):null;
+  return {valores:valores?{assinatura:valores.assinatura,itens:valores.itens.map(function(i){return {id:i.id,parcela:i.parcela,mes:i.mes,antes:i.antes,depois:i.depois};})}:null,datas:param.escopoDataCombinada==='proximas'?previaDatasDevolucaoWeb(param):null,pagamentoPix:pix?{assinatura:pix.assinatura,total:pix.total,quantidade:pix.itens.length}:null,correcaoPix:correcao?{assinatura:correcao.assinatura,total:correcao.total,quantidade:correcao.itens.length}:null};
 }
 
 function referenciaRecorrenteNoMesGestor_(linhas, mes) {
@@ -862,6 +883,9 @@ function editarEmprestimoLinhaWebInterno_(dados) {
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idxAlvo < 0 || idxAlvo >= rawAll.length) throw new Error("Parcela do empréstimo não encontrada.");
+    const indicesValores=new Set(indicesValorEmprestimoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo));
+    const planoValores=dados.escopoValorParcelas==='proximas'?planoValoresEmprestimoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo):null;
+    if(planoValores&&dados.assinaturaValores!==planoValores.assinatura)throw Error('Os valores ou parcelas mudaram desde a prévia. Confira novamente antes de salvar.');
     const planoDatas=dados.escopoDataCombinada==='proximas'?planoDatasDevolucaoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo):null;
     if(planoDatas&&(!dados.assinaturaDatas||dados.assinaturaDatas!==planoDatas.assinatura))throw Error('As datas ou parcelas mudaram desde a prévia. Confira novamente antes de salvar.');
     dados = Object.assign({}, dados, { formaPagto: validarFormaAtualGestor_(dados.formaPagto, { formaAnterior: dispAll[idxAlvo][3] }) });
@@ -892,7 +916,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
 
     const infoParcAlvo = parseNumParcela(parcStr);
     const totalParcelas = infoParcAlvo.total;
-    const propagarValor = Boolean(dados.propagarValorParcelas);
+    const propagarValor = dados.escopoValorParcelas===undefined?Boolean(dados.propagarValorParcelas):dados.escopoValorParcelas==='proximas';
     const mudouMesFat = (novoMesFatLimpo !== origMesFat);
     const infoNovoMes = parseMesFat(novoMesFatLimpo);
     const grupoCompra = indicesMesmaCompra(dispAll, idxAlvo);
@@ -931,7 +955,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
             rawAll[i][3] = dados.formaPagto;
             rawAll[i][6] = "'" + pAtual;
 
-            if (propagarValor) {
+            if (propagarValor && indicesValores.has(i)) {
               rawAll[i][7] = valorFloat;
             }
 
@@ -2010,7 +2034,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor:16,
+      protocoloGestor:17,
       arquivosAnuais:arquivosAnuais.map(function(e){return {ano:e.ano,assinatura:e.hash,quantidade:e.resumo.quantidade,meses:e.resumo.meses};}),
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
@@ -4973,7 +4997,7 @@ function previaRestauracaoBackupWeb(param) {
     if(anuais.preservadas.length&&anuais.legiveis.length)avisos.push('Os registros anuais de '+anuais.preservadas.join(', ')+' também serão preservados.');
     if(anuais.necessaria)avisos.push('Recuperação de arquivos ou catálogo anual: a cópia anterior guardará o conteúdo legível, a matriz original do catálogo e o diagnóstico. O JSON selecionado reconstruirá os anos conferidos.');
     if(backup.recuperacaoOrigem)avisos.push('Esta cópia anterior foi gerada durante uma recuperação: pode não conter todos os anos originais. Consulte o diagnóstico preservado no arquivo antes de prosseguir.');
-    return { protocoloGestor:16, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
+    return { protocoloGestor:17, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
       const sh=ss.getSheetByName(aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
       return {nome:aba.nome,atual:resumirAbaRestauracaoGestor_(aba.nome,atual),backup:resumirAbaRestauracaoGestor_(aba.nome,aba.valores),diferencas:diferencasAbaRestauracaoGestor_(aba.nome,atual,aba.valores)};
     }) };
@@ -5843,7 +5867,7 @@ function configurarProtecaoAutomaticaGestor(pastaUrl){
 function obterStatusProtecaoWeb(){
   const c=configProtecaoGestor_(),ss=realProtecaoGestor_();
   const instalada=c.ativo===true&&c.planilhaId===propriedade_(CHAVE_ID_PLANILHA_GESTOR)&&ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor';});
-  return {protocoloGestor:16,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
+  return {protocoloGestor:17,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
 }
 function executarBackupProtegidoWeb(param){return comLockProtecaoGestor_(function(ss){const c=configProtecaoGestor_();if(!c.ativo)throw Error('Ative a proteção no Apps Script antes de gerar cópias no Drive.');return backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),param&&param.requestId);});}
 function previaManutencaoProtegidaWeb(){return comLockProtecaoGestor_(function(ss){conferirSemPendenciasProtecaoGestor_(ss);if(ativoAnualGestor_(ss))return {assinatura:assinaturaManutencaoAnualGestor_(ss),quantidade:0,anos:catalogoAnosGestor_(ss).filter(e=>e.estado==='ABERTO'&&e.ano<getHojeSeguro().getFullYear()).map(e=>e.ano),regra:'Organização por competência: prepara o ano atual, confere os destinos e fecha anos passados. Saldos antigos continuam vinculados por ajustes sem alterar o retrato fechado.'};const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);return {assinatura:hashGestor_(['Lançamentos','Empréstimos',ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_,ABA_ARQUIVOS_ANUAIS_GESTOR_].map(function(n){return [n,lerEstadoAbaGestor_(ss.getSheetByName(n))];})),quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),regra:'Somente compras integralmente encerradas de anos anteriores. Fixos, pendências e compras com parcelas futuras permanecem na principal. Histórico técnico confirmado há mais de 180 dias pode ser compactado; nenhum comprovante de identificação é apagado.'};});}

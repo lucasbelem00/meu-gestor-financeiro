@@ -38,7 +38,7 @@ test('conversão regional reproduz a transferência pendente e o erro de registr
 
 test('retomada confere origem e plano, repara somente formatos e conclui sem duplicar',()=>{
  const {a,db}=interrompido(),ids=['Lançamentos','Empréstimos'].map(n=>a.db.sheets[n].rows[1][11]);
- const r=api(a,'getDadosCompletos');assert.equal(r.protocoloGestor,16);assert.equal(r.integridade.bloqueada,false);
+ const r=api(a,'getDadosCompletos');assert.equal(r.protocoloGestor,17);assert.equal(r.integridade.bloqueada,false);
  assert.equal(api(a,'obterRelatorioMes','10/2026').kpis.total,'R$ 25,00');assert.equal(api(a,'obterFaturaPagamentoWeb',{forma:'Cartao',mesFatura:'10/2026'}).total,65);
  for(const [i,n]of ['Lançamentos','Empréstimos'].entries()){assert.equal(a.db.sheets[n].getLastRow(),1);assert.equal(db.sheets[n].getLastRow(),2);assert.equal(db.sheets[n].rows[1][11],ids[i]);assert.equal(typeof db.sheets[n].rows[1][6],'string');assert.equal(typeof db.sheets[n].rows[1][8],'string');}
  assert.equal(a.db.sheets['_Gestor_Operacoes'].rows.filter(r=>r[2]==='PRONTO').length,0);api(a,'getDadosCompletos');assert.equal(db.sheets['Lançamentos'].getLastRow(),2);
@@ -71,7 +71,7 @@ for(const locale of ['en_US','pt_BR'])test('gravação e restauração conservam
 });
 
 test('status da proteção informa a versão sem carregar nem modificar registros financeiros',()=>{
- const {a}=interrompido(),antes=JSON.stringify(a.db.sheets['Lançamentos'].rows);const r=api(a,'obterStatusProtecaoWeb');assert.equal(r.protocoloGestor,16);assert.equal(r.ativo,true);assert.equal(JSON.stringify(a.db.sheets['Lançamentos'].rows),antes);
+ const {a}=interrompido(),antes=JSON.stringify(a.db.sheets['Lançamentos'].rows);const r=api(a,'obterStatusProtecaoWeb');assert.equal(r.protocoloGestor,17);assert.equal(r.ativo,true);assert.equal(JSON.stringify(a.db.sheets['Lançamentos'].rows),antes);
 });
 
 test('leitura e exportação anual distinguem data, parcela e competência armazenadas como Date',()=>{

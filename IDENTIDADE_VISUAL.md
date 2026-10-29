@@ -17,6 +17,8 @@ Estas convenções devem ser mantidas nas novas alterações, títulos, navegaç
 | Pix | 💠, inclusive no filtro |
 | Termômetro de metas | 🎯 |
 | Quantidade de lançamentos | 🔢 |
+| Compra única / à vista | ⚡ |
+| Registrar recebimento parcial | ➖ |
 | Redução de gastos na comparação | 📉 |
 | Aumento de gastos na comparação | 📈 |
 
@@ -35,6 +37,8 @@ As cores expressam o significado no contexto: verde para quitação, recebimento
 Na comparação mensal atual, variação menor ou igual a zero usa verde; aumento usa rosa; ausência de base usa cinza. O texto e a porcentagem acompanham o ícone.
 
 Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante usa rosa. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
+
+As etiquetas do Histórico e da Mensal usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal (∞). Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
 
 Contagens mensais e anuais usam 🔢 com o período escrito. A quantidade e a média no cartão A pagar continuam representando todos os lançamentos do mês, mesmo com saldo zerado ou filtros. O ranking anual identifica os maiores gastos com 🥇, 🥈 e 🥉; empates compartilham posição. Medalhas indicam volume de gasto, sem representar uma avaliação positiva.
 

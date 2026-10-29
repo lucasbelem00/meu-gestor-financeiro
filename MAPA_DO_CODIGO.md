@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Conferido em 29/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 16. A publicação e a ativação na conta Google são etapas separadas.
+Conferido em 29/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -65,6 +65,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | Relatórios | `obterRelatorioMes`, `obterRelatorioAnual` |
 | Conferir e registrar pagamento ao banco | `previaPagamentoFaturaWeb`, `registrarPagamentoFaturaWeb` |
 | Editar empréstimo | `editarEmprestimoLinhaWeb`, `editarEmprestimoLinhaWebInterno_` |
+| Aplicar valores à parcela atual e próximas a receber | `indicesValorEmprestimoGestor_`, `planoValoresEmprestimoGestor_`, `previaEdicaoEmprestimoWeb` |
 | Gravar notas com revisão | `salvarNotasWeb`, `salvarNotasWebInterno_` |
 | Alterar categorias e nomes de formas | `salvarCategoriasWebInterno_`, `renomearFormaNasAbas` |
 | Restaurar dados | `restaurarBackupDadosWeb` e funções de prévia/importação |
