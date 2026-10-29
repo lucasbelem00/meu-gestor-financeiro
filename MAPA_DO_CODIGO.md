@@ -38,6 +38,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `Backend/Code.gs` | API e regras de dados no Apps Script; inclui blocos gerados | Ver tabela seguinte |
 | `api/gestor.js` | Validação e encaminhamento ao Apps Script, com token mantido no servidor | `ACAO_PERMITIDA` e função exportada `gestor` |
 | `sw.js` e `manifest.json` | Instalação e cache do PWA | Versão do cache e regras de atualização |
+| `icons/gestor.svg` e PNGs em `icons/` | Marca própria, favicon e ícones instalados; mestre incorporado no cabeçalho pelo build | `scripts/sincronizar-rachadinha.cjs`; convenções em `IDENTIDADE_VISUAL.md` |
 | `tests/` | Regressões com dados fictícios | `tests/README.md` e arquivos por assunto |
 
 ## Funções principais do servidor
@@ -46,6 +47,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | --- | --- |
 | Escolher a base configurada | `obterPlanilhaGestor_` |
 | Ler mês como texto ou data e exportar datas no JSON | `parseMesFat`, `valoresCelulasBackupGestor_` |
+| Preservar texto financeiro e retomar transferência com conversão de formato | `textoCelulaRegistroGestor_`, `recuperarTextosTransferenciaAnualGestor_` (fonte em `shared/anual.js`) |
 | Receber pedidos do app | `doPost` |
 | Preparar leitura inicial | `getDadosCompletos` |
 | Gravar e reconhecer reenvios | `executarOperacaoGestor_`, `consultarOperacaoWeb` |

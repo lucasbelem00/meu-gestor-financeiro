@@ -110,9 +110,10 @@ test('validação antiga de status é atualizada antes de gravar assinatura',()=
   sh.getRange=function(...args){
     const rg=getRange(...args),setValues=rg.setValues.bind(rg);
     rg.setDataValidation=function(regra){assert.equal(args[1],10);assert.equal(args[0],2);assert.equal(regra.allowInvalid,false);permitidos=Array.from(regra.values);return rg;};
-    rg.setValues=function(values){values.forEach((row,i)=>{const c=9-(args[1]-1);if(args[0]+i>1&&c>=0&&c<row.length&&row[c]&&!permitidos.includes(row[c]))throw Error('Validação antiga recusou status');});return setValues(values);};return rg;
+    // A validação do Planilhas compara o texto efetivo, sem o escape de entrada.
+    rg.setValues=function(values){values.forEach((row,i)=>{const c=9-(args[1]-1),status=typeof row[c]==='string'?row[c].replace(/^'/,''):row[c];if(args[0]+i>1&&c>=0&&c<row.length&&status&&!permitidos.includes(status))throw Error('Validação antiga recusou status');});return setValues(values);};return rg;
   };
   ctx.salvarLancamentoWeb({...launch,isAssinatura:true,requestId:'validacao-assinatura-001'});
   assert(permitidos.includes('Assinatura Ativa'));assert(permitidos.includes('Assinatura Cancelada'));
-  assert.equal(sh.rows[1][9],'Assinatura Ativa');ler(ctx);
+  assert.equal(sh.rows[1][9],'Assinatura Ativa');assert.throws(()=>sh.getRange(2,10).setValues([["'Status desconhecido"]]),/Validação antiga recusou status/);ler(ctx);
 });

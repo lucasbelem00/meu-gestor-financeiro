@@ -8,6 +8,11 @@ function sincronizarMotor(){
     fs.writeFileSync(arquivo,fonte.slice(0,fonte.indexOf(inicio))+inicio+'\n'+motor+'\n'+fonte.slice(fonte.indexOf(fim)));
   }
   const arquivo=path.join(raiz,'index.html');let html=fs.readFileSync(arquivo,'utf8');
+  const logoInicio='<!-- INICIO ICONE GESTOR GERADO -->',logoFim='<!-- FIM ICONE GESTOR GERADO -->';
+  if(html.includes(logoInicio)){
+    const logo=fs.readFileSync(path.join(raiz,'icons/gestor.svg'),'utf8').trim().replace('<svg ','<svg aria-hidden="true" focusable="false" class="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20 shrink-0" ');
+    html=html.slice(0,html.indexOf(logoInicio))+logoInicio+'\n'+logo+'\n'+html.slice(html.indexOf(logoFim));
+  }
   const catInicio='// INICIO CATALOGO ACOES GERADO',catFim='// FIM CATALOGO ACOES GERADO';
   if(html.includes(catInicio))html=html.slice(0,html.indexOf(catInicio))+catInicio+'\n'+fs.readFileSync(path.join(raiz,'shared/acoes.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(catFim));
   for(const nome of ['rachadinha','sincronizacao','usabilidade','rotina','desempenho','restauracao','navegacao','protecao']){

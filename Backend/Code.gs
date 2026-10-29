@@ -3881,6 +3881,7 @@ function atualizarValidacaoStatusLancamentosGestor_(sh, linhas) {
 function aplicarPlanoGestor_(ss, plano) {
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   conferirDestinosRestauracaoGestor_(plano,ss);
+  recuperarTextosTransferenciaAnualGestor_(ss,plano);
   (plano.mudancas || []).forEach(function (m) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     const destino=destinoMudancaAnualGestor_(ss,m,plano);
@@ -3899,7 +3900,9 @@ function aplicarPlanoGestor_(ss, plano) {
     if (!sh) sh = destino.insertSheet(m.nome);
     const cols = Math.max(1, m.colunas), rows = Math.max(1, m.linhas, atual.length);
     const alvo = copiarGestor_(atual); (m.alteracoes || []).forEach(function (a) { alvo[a[0]] = a[1]; }); alvo.length = m.linhas;
-    const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if (ehAbaRegistrosGestor_(m.nome) && i > 0 && [0,1,2,3,6,8,9,10,11,12,14,15].indexOf(j) >= 0 && typeof v === 'string') v = textoLiteralGestor_(v); return v; }); });
+    // Texto explícito também protege parcelas e competências da conversão em
+    // datas em destinos novos. Date e valores monetários mantêm o tipo original.
+    const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if (ehAbaRegistrosGestor_(m.nome) && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
     if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
     atualizarValidacaoStatusLancamentosGestor_(sh, Math.max(m.linhas, atual.length));
@@ -4436,6 +4439,8 @@ function confirmarManutencaoLeituraGestor_(ctx) {
 
 function limparTextoLiteralGestor_(valor) { return String(valor == null ? '' : valor).replace(/^'(?=[=+@-])/, ''); }
 function textoLiteralGestor_(valor) { const texto = String(valor == null ? '' : valor); return /^[=+@-]/.test(texto) ? "'" + texto : texto; }
+// Reconhece o escape legado para não acumular apóstrofos a cada gravação.
+function textoCelulaRegistroGestor_(v) { return typeof v==='string'&&v!==''&&!v.startsWith("'")?"'"+v:v; }
 function hashEstadoGestor_(matriz) {
   const m = matriz.map(function (r) { const linha = r.map(function (v) { return typeof v === 'string' ? v.replace(/^'/, '') : v; }); while (linha.length && (linha[linha.length - 1] === '' || linha[linha.length - 1] == null)) linha.pop(); return linha; });
   while (m.length && !m[m.length - 1].length) m.pop(); return hashGestor_(m);
@@ -5438,6 +5443,7 @@ function gravarMatrizProtecaoGestor_(sh,linhas,formulas){
   if(dados.length)sh.getRange(1,1,dados.length,colunas).setValues(dados.map(function(r,i){return r.map(function(v,j){
     const formula=formulas?.[i]?.[j];
     if(formula){if(typeof formula!=='string'||formula[0]!=='='||formula!==v)throw Error('Fórmula original incompatível com o plano de manutenção.');return formula;}
+    if(ehAbaRegistrosGestor_(sh.getName())&&i>0)return textoCelulaRegistroGestor_(v);
     return typeof v==='string'&&/^[=+@]/.test(v)?"'"+v:v;
   });}));
   SpreadsheetApp.flush();
@@ -5837,7 +5843,7 @@ function configurarProtecaoAutomaticaGestor(pastaUrl){
 function obterStatusProtecaoWeb(){
   const c=configProtecaoGestor_(),ss=realProtecaoGestor_();
   const instalada=c.ativo===true&&c.planilhaId===propriedade_(CHAVE_ID_PLANILHA_GESTOR)&&ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor';});
-  return {ativacaoAnual:statusAtivacaoAnualGestor_(),avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
+  return {protocoloGestor:16,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
 }
 function executarBackupProtegidoWeb(param){return comLockProtecaoGestor_(function(ss){const c=configProtecaoGestor_();if(!c.ativo)throw Error('Ative a proteção no Apps Script antes de gerar cópias no Drive.');return backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),param&&param.requestId);});}
 function previaManutencaoProtegidaWeb(){return comLockProtecaoGestor_(function(ss){conferirSemPendenciasProtecaoGestor_(ss);if(ativoAnualGestor_(ss))return {assinatura:assinaturaManutencaoAnualGestor_(ss),quantidade:0,anos:catalogoAnosGestor_(ss).filter(e=>e.estado==='ABERTO'&&e.ano<getHojeSeguro().getFullYear()).map(e=>e.ano),regra:'Organização por competência: prepara o ano atual, confere os destinos e fecha anos passados. Saldos antigos continuam vinculados por ajustes sem alterar o retrato fechado.'};const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);return {assinatura:hashGestor_(['Lançamentos','Empréstimos',ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_,ABA_ARQUIVOS_ANUAIS_GESTOR_].map(function(n){return [n,lerEstadoAbaGestor_(ss.getSheetByName(n))];})),quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),regra:'Somente compras integralmente encerradas de anos anteriores. Fixos, pendências e compras com parcelas futuras permanecem na principal. Histórico técnico confirmado há mais de 180 dias pode ser compactado; nenhum comprovante de identificação é apagado.'};});}
@@ -6023,7 +6029,7 @@ function ajustesAnuaisGestor_(ss){
 }
 function matrizFinanceiraAnualGestor_(ss,nome){
   const original=ss.getSheetByName(nome),cab=cabFinanceiroAnualGestor_(ss,nome),mapa=new Map();
-  const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11]||mapa.has(String(r[11])))throw Error('Registro sem identificação ou repetido entre os anos.');mapa.set(String(r[11]),copiarGestor_(r));};
+  const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
   for(const e of catalogoAnosGestor_(ss)){
     let dados;try{dados=dadosAnoGestor_(e);}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
     for(const r of dados.abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);
@@ -6042,7 +6048,7 @@ function folhaLeituraAnualGestor_(ss,nome){
   const folha={getName:()=>nome,getLastRow:()=>valores.length};
   folha.getRange=function(l,c,n=1,m=1){if(typeof l==='string'){const a=l.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);if(!a)throw Error('Intervalo anual inválido.');const num=s=>s.split('').reduce((x,y)=>x*26+y.charCodeAt(0)-64,0);l=Number(a[2]);c=num(a[1]);n=a[4]?Number(a[4])-l+1:1;m=a[3]?num(a[3])-c+1:1;}
     const ler=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>copiarGestor_(valores[l-1+i]?.[c-1+j]??'')));
-    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?Utilities.formatDate(v,getTimezone(),c+j===1?'dd/MM/yyyy':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
+    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?Utilities.formatDate(v,getTimezone(),c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
   };folha.getDataRange=()=>folha.getRange(1,1,valores.length,colunas);return folha;
 }
 function mudancaMatrizAnualGestor_(ss,nome,depois,destino){
@@ -6052,6 +6058,52 @@ function mudancaMatrizAnualGestor_(ss,nome,depois,destino){
   for(let i=0;i<Math.max(antes.length,depois.length);i++)if(hashEstadoGestor_([antes[i]||[]])!==hashEstadoGestor_([depois[i]||[]]))alteracoes.push([i,depois[i]||[]]);
   const m={nome:nome,antes:hashEstadoGestor_(antes),depois:hashEstadoGestor_(depois),linhas:depois.length,colunas:colunas,alteracoes:alteracoes};m.recuperacaoBlocos=prepararRecuperacaoBlocosGestor_(antes,depois,m);
   if(destino){m.destinoAnual={ano:destino.ano,id:destino.id};}return m;
+}
+function conversaoDataTextoAnualConfereGestor_(real,previsto,coluna,destino){
+  if(!(real instanceof Date)||!Number.isFinite(real.getTime())||typeof previsto!=='string')return false;
+  const fuso=destino.getSpreadsheetTimeZone()||getTimezone(),iso=Utilities.formatDate(real,fuso,"yyyy-MM-dd'T'HH:mm:ss");
+  if(!/T00:00:00$/.test(iso))return false;
+  const data=iso.slice(0,10).split('-').map(Number),p=limparApostrofo(previsto).match(/^(\d{1,2})\/(\d{1,4})(?:\/(\d{4}))?$/);
+  if(!p)return false;
+  if(coluna===8)return !p[3]&&data[0]===Number(p[2])&&data[1]===Number(p[1])&&data[2]===1;
+  const locale=destino.getSpreadsheetLocale?destino.getSpreadsheetLocale():'';
+  // Só formatos cuja interpretação está definida. Não adivinha datas ambíguas.
+  if(!['en_US','pt_BR'].includes(locale)||coluna!==0&&coluna!==6)return false;
+  if(coluna===0&&!p[3]||coluna===6&&p[3])return false;
+  const mes=Number(locale==='en_US'?p[1]:p[2]),dia=Number(locale==='en_US'?p[2]:p[1]);
+  return data[1]===mes&&data[2]===dia&&(!p[3]||data[0]===Number(p[3]));
+}
+function recuperarTextosTransferenciaAnualGestor_(ss,plano){
+  const reparos=[];
+  for(const m of plano.mudancas||[]){
+    if(!m.destinoAnual||!ehAbaRegistrosGestor_(m.nome))continue;
+    const origem=(plano.mudancas||[]).find(x=>x.nome===m.nome&&!x.destinoAnual&&x.linhas===1&&x.antes!==x.depois);
+    if(!origem)continue;
+    const fonte=lerEstadoAbaGestor_(ss.getSheetByName(m.nome));
+    // A origem integral ainda existe e coincide com o diário da transferência.
+    // Não usa semelhança de descrição/valor nem corrige anos fechados.
+    if(hashEstadoGestor_(fonte)!==origem.antes)continue;
+    const banco=destinoMudancaAnualGestor_(ss,m,plano),sh=banco.getSheetByName(m.nome),atual=lerEstadoAbaGestor_(sh);
+    if(hashEstadoGestor_(atual)===m.depois||hashEstadoGestor_(atual)===m.antes)continue;
+    const normalizado=copiarGestor_(atual),porId=new Map(fonte.slice(1).filter(r=>r[11]).map(r=>[String(r[11]),r])),celulas=[];
+    for(const [i,esperado] of m.alteracoes||[]){
+      if(i<1||!normalizado[i]||!esperado[11]||hashEstadoGestor_([porId.get(String(esperado[11]))||[]])!==hashEstadoGestor_([esperado]))continue;
+      for(const c of [0,6,8])if(conversaoDataTextoAnualConfereGestor_(normalizado[i][c],esperado[c],c,banco)){
+        normalizado[i][c]=esperado[c];celulas.push({linha:i+1,coluna:c+1,valor:esperado[c]});
+      }
+    }
+    // Todas as outras células, identificações e quantias precisam coincidir.
+    if(celulas.length&&hashEstadoGestor_(normalizado)===m.depois)reparos.push({sh,m,celulas});
+  }
+  for(const r of reparos){
+    // Agrupa somente células comprovadas, sem regravar outras colunas.
+    const celulas=r.celulas.sort((a,b)=>a.coluna-b.coluna||a.linha-b.linha);
+    for(let i=0;i<celulas.length;){let fim=i+1;while(fim<celulas.length&&celulas[fim].coluna===celulas[i].coluna&&celulas[fim].linha===celulas[fim-1].linha+1)fim++;
+      r.sh.getRange(celulas[i].linha,celulas[i].coluna,fim-i,1).setValues(celulas.slice(i,fim).map(c=>[textoCelulaRegistroGestor_(c.valor)]));i=fim;
+    }
+    SpreadsheetApp.flush();
+    if(hashEstadoGestor_(lerEstadoAbaGestor_(r.sh))!==r.m.depois)throw Error('A conversão de formato no destino anual ainda precisa de conferência. A origem permanece preservada.');
+  }
 }
 function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
