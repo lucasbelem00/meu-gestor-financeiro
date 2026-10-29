@@ -14,6 +14,11 @@ function sincronizarMotor(){
     html=html.slice(0,html.indexOf(logoInicio))+logoInicio+'\n'+logo+'\n'+html.slice(html.indexOf(logoFim));
   }
   const catInicio='// INICIO CATALOGO ACOES GERADO',catFim='// FIM CATALOGO ACOES GERADO';
+  const pixInicio='<!-- INICIO SIMBOLO PIX GERADO -->',pixFim='<!-- FIM SIMBOLO PIX GERADO -->';
+  if(html.includes(pixInicio)){
+    const pix=fs.readFileSync(path.join(raiz,'icons/pix.svg'),'utf8').trim().replace('<svg ','<svg aria-hidden="true" focusable="false" class="w-6 h-6 shrink-0" ');
+    html=html.slice(0,html.indexOf(pixInicio))+pixInicio+'\n'+pix+'\n'+html.slice(html.indexOf(pixFim));
+  }
   if(html.includes(catInicio))html=html.slice(0,html.indexOf(catInicio))+catInicio+'\n'+fs.readFileSync(path.join(raiz,'shared/acoes.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(catFim));
   for(const nome of ['rachadinha','sincronizacao','usabilidade','rotina','desempenho','restauracao','navegacao','protecao']){
     const inicio='// INICIO INTERFACE '+nome.toUpperCase()+' GERADA',fim='// FIM INTERFACE '+nome.toUpperCase()+' GERADA';

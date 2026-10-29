@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Conferido em 28/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 16. A publicação e a ativação na conta Google são etapas separadas.
+Conferido em 29/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 16. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -42,6 +42,16 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `tests/` | Regressões com dados fictícios | `tests/README.md` e arquivos por assunto |
 
 ## Funções principais do servidor
+
+### Apresentação e filtros em `index.html`
+
+- `iconeFormaPagamentoVisualGestor`: escolhe ícone pelo tipo da forma, inclusive Pix renomeado.
+- `corValorLancamentoGestor` e `obterClasseBadgeStatus`: cores de valores e situações nas listas.
+- `rankingCategoriasVisualGestor`: ordenação, posições e empates do ranking anual.
+- `normalizarFiltrosMensaisGestor` e `situacoesFiltroMensalGestor`: normalizam seleções e expandem os atalhos A pagar/Pago em situações visíveis.
+- `aplicarFiltroInternoMensal`, `sincronizarEstadoFiltrosMensalGestor` e `filtrarItensMensaisGestor`: seleção, estado acessível e combinação dos filtros. Categorias e metas compartilham o mesmo grupo.
+
+### Entradas do Apps Script
 
 | Necessidade | Funções em `Backend/Code.gs` |
 | --- | --- |
