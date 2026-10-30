@@ -42,7 +42,7 @@ Na comparação mensal atual, variação menor ou igual a zero usa verde; aument
 
 Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante usa rosa. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
 
-As etiquetas do Histórico e da Mensal usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal. O infinito não aparece nessa etiqueta; `∞/∞` permanece como identificação técnica da recorrência nos dados. Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
+As etiquetas do Histórico, da Mensal e de Empréstimos usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal. O infinito não aparece nessa etiqueta; `∞/∞` permanece como identificação técnica da recorrência nos dados. Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
 
 Contagens mensais e anuais usam 🔢 com o período escrito. A quantidade e a média no cartão A pagar continuam representando todos os lançamentos do mês, mesmo com saldo zerado ou filtros. O ranking anual identifica os maiores gastos com 🥇, 🥈 e 🥉; empates compartilham posição. Medalhas indicam volume de gasto, sem representar uma avaliação positiva.
 
@@ -53,3 +53,7 @@ Nas subferramentas, a seleção usa azul com `aria-pressed`. Consultar/Novo empr
 O manifesto versiona a URL dos PNGs para sinalizar a identidade própria aos navegadores. O service worker consulta o manifesto pela rede com revalidação, preservando a última cópia em falhas de conexão; não deve mantê-lo indefinidamente no caminho de cache prioritário dos recursos estáticos. O ícone Apple também tem URL versionada. A troca do ícone instalado e da tela de abertura depende do navegador e do sistema; pode exigir aceitar a atualização da identidade do app.
 
 A entrada normal na aba Mensal seleciona o mês vigente do calendário, inclusive quando ainda não há registros. Não existe caixa de avanço nem mudança de período por quitação ou fechamento dos cartões. É possível consultar outro mês manualmente enquanto permanece na tela; uma atualização de dados preserva essa consulta. Ao tocar novamente na aba Mensal, retorna ao mês vigente. Atalhos explícitos para uma fatura respeitam o período escolhido no clique.
+
+A Agenda financeira usa 🗓️ e fica em Planejamento. Seus eventos distinguem 💳 vencimento bancário e 🤝 devolução combinada, sempre com texto. Não gera despesas ou pagamentos. O Painel segue a ordem: Seu mês, O que precisa de atenção, Pagamentos e recebimentos, Horizonte e Análise e planejamento. O total de todo o histórico fica recolhido.
+
+As bases anuais usam a identidade dos cabeçalhos da base de controle e um resumo de doze meses do respectivo ano. A apresentação não duplica cadastros ou automações. Um ano fechado continua sendo o retrato financeiro do fechamento, inclusive se houver ajustes posteriores no webapp.

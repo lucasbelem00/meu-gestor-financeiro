@@ -77,6 +77,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(s.organizacaoAnual&&(!j||j.estado==='CONCLUIDA'))lista.append(criar('p','Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
     for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
     if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
+    if(s.avisoApresentacaoAnual)lista.append(criar('p','Apresentação anual: '+s.avisoApresentacaoAnual,'text-amber-300'));
     if(s.avisoBackupAssistido)lista.append(criar('p',s.avisoBackupAssistido,'text-amber-300'));
     if(s.ultimaCopiaPreservada)lista.append(criar('p','Última cópia preservada para recuperação assistida: '+dataLegivelBackupGestor(s.ultimaCopiaPreservada.data)+'. Ela não substitui a confirmação de um backup restaurável.','text-slate-300'));
     for(const arquivo of s.arquivos||[]){const link=linkSeguroProtecaoGestor(arquivo.url);if(!link)continue;const a=criar('a','Arquivo '+arquivo.ano+' · '+arquivo.quantidade+' registro(s) · '+arquivo.pessoal+' pessoais','block text-sky-200 underline');a.href=link;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}

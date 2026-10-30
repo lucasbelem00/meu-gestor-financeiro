@@ -17,7 +17,7 @@ test('alterar fatura depois da prévia compacta impede pagamento com versão ant
  const {ctx,db}=preparar();const p=ctx.executarAcaoApi_('previaPagamentoFaturaWeb',{...alvo,resumo:true,valor:150});db.sheets['Lançamentos'].rows[1][7]=101;
  assert.throws(()=>ctx.registrarPagamentoFaturaWeb({...p,requestId:'resumo-mudou-001'}),/fatura mudou/);assert.equal(ctx.obterFaturaPagamentoWeb({...alvo,resumo:true}).pago,0);
 });
-function painel(){const c=vm.createContext({Date,window:{renderizarDados(){}},addEventListener(){},lerValorMoeda:Number});c.window=c;c.renderizarDados=()=>{};c.addEventListener=()=>{};vm.runInContext(fs.readFileSync('interface/painel.js','utf8'),c);return c;}
+function painel(){const c=vm.createContext({Date,document:{addEventListener(){}},window:{renderizarDados(){}},addEventListener(){},lerValorMoeda:Number});c.window=c;c.renderizarDados=()=>{};c.addEventListener=()=>{};vm.runInContext(fs.readFileSync('interface/painel.js','utf8'),c);return c;}
 test('lembretes respeitam data combinada válida e não confundem mês da fatura com atraso',()=>{
  const c=painel(),base={status:'A Receber',pessoa:'Pessoa',mesFatura:'01/2020'};
  const itens=[{...base,dataCombinada:''},{...base,dataCombinada:'31/02/2026'},{...base,dataCombinada:'30/10/2026'},{...base,dataCombinada:'28/10/2026'},{...base,dataCombinada:'06/11/2026'},{...base,dataCombinada:'29/10/2026',status:'Recebido'}],antes=JSON.stringify(itens);

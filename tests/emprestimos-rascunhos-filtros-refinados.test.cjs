@@ -38,13 +38,8 @@ test('busca e seletores recebem rótulos e altura iguais, sem puxar os campos pa
     const classes=new Set();return {tagName:tag.toUpperCase(),classes,children:[],classList:{add:(...v)=>v.forEach(s=>classes.add(s)),remove:(...v)=>v.forEach(s=>classes.delete(s))},closest(nome){return this.parentElement?.tagName===nome.toUpperCase()?this.parentElement:null;},before(n){n.parentElement=this.parentElement;this.parentElement.children.push(n);},append(n){n.parentElement=this;this.children.push(n);}};
   }
   const cabecalho=elemento(),grade=elemento();grade.parentElement=cabecalho;cabecalho.classList.add('sm:flex-row','sm:items-center');const campos=new Map();for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroStatusEmp','selFiltroFormaEmp','inpBuscaEmp']){const campo=elemento(id==='inpBuscaEmp'?'input':'select');campo.parentElement=grade;campos.set(id,campo);}
-  const c=vm.createContext({document:{getElementById:id=>campos.get(id),createElement:tag=>elemento(tag)}}),i=fonte.indexOf('function prepararFiltrosEmpRotinaGestor(');vm.runInContext(fonte.slice(i,fonte.indexOf('function organizarPagamentosPainelRotinaGestor(',i)),c);c.prepararFiltrosEmpRotinaGestor();c.prepararFiltrosEmpRotinaGestor();
+  const c=vm.createContext({document:{getElementById:id=>campos.get(id),createElement:tag=>elemento(tag)}}),i=fonte.indexOf('function prepararFiltrosEmpRotinaGestor(');vm.runInContext(fonte.slice(i,fonte.indexOf("document.addEventListener('DOMContentLoaded'",i)),c);c.prepararFiltrosEmpRotinaGestor();c.prepararFiltrosEmpRotinaGestor();
   assert.equal(grade.children.length,5);assert.equal(cabecalho.classes.has('sm:flex-row'),false);for(const campo of campos.values()){assert.equal(campo.parentElement.tagName,'LABEL');assert(campo.classes.has('h-10'));}assert(campos.get('inpBuscaEmp').parentElement.classes.has('lg:col-span-1'));
-});
-
-test('atalhos de pagamentos ficam antes da grade completa de gráficos e horizonte',()=>{
-  const pagamentos={},destinos=[],grade={before:e=>destinos.push(e)},horizonte={parentElement:grade,before:()=>assert.fail('não inserir dentro da grade de três colunas')};
-  const c=vm.createContext({document:{querySelector:()=>pagamentos,getElementById:()=>({closest:()=>horizonte})}}),i=fonte.indexOf('function organizarPagamentosPainelRotinaGestor(');vm.runInContext(fonte.slice(i,fonte.indexOf("document.addEventListener('DOMContentLoaded'",i)),c);c.organizarPagamentosPainelRotinaGestor();assert.equal(destinos[0],pagamentos);
 });
 
 test('consulta começa em Todos os meses e conserva o mês escolhido ao atualizar dados',()=>{

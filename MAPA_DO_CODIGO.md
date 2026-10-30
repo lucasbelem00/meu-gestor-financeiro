@@ -27,7 +27,8 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `interface/rachadinha.js` | Pessoas, itens, prévia, rascunho e preenchimento da divisão | `calcularRachadinha`, `renderizarPessoasRachaDet`, `preencherParteRachaGestor` |
 | `interface/desempenho.js` | Leituras compartilhadas, cache transitório e gráficos visíveis | `criarCoordenadorLeiturasGestor`, `invalidarLeiturasDesempenhoGestor`, `obterMetricasDesempenhoGestor` |
 | `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
-| `interface/painel.js` | Lembretes pela data combinada e limite pessoal opcional sem novas consultas | `listarDevolucoesPainelGestor`, `calcularLimitePessoalPainelGestor`, `renderizarRotinaPainelGestor` |
+| `interface/painel.js` | Ordem do Painel, lembretes pela data combinada e limite pessoal sem novas consultas | `organizarPainelDiarioGestor`, `listarDevolucoesPainelGestor`, `renderizarRotinaPainelGestor` |
+| `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
 | `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor`, `criarHistoricoCentralGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |
@@ -37,6 +38,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `shared/acoes.js` | Contrato único das ações, usado por interface, cache e proxy | `CATALOGO_ACOES_GESTOR`, `metadadosAcaoGestor` |
 | `shared/notas-backup.js` | Compatibilidade do esquema antigo de Notas | `normalizarAbaNotasBackupGestor_`, `garantirCabecalhoNotasGestor_` |
 | `shared/anual.js` | Bases por competência, fechamento, ajustes e restauração v3 | `matrizFinanceiraAnualGestor_`, `desdobrarPlanoAnualGestor_`, `conferirDestinosAnuaisPlanoGestor_` |
+| `shared/apresentacao-anual.js` | Cabeçalhos e resumo visual de cada base anual; preserva os registros financeiros e personalizações detectadas | `prepararApresentacaoAnoGestor_`, `atualizarResumoVisualAnualGestor_`, `hashResumoVisualAnualGestor_` |
 | `shared/ativacao.js` | Agendamento e acompanhamento da ativação anual sem espera HTTP | `solicitarAtivacaoAnualGestor_`, `retomarAtivacaoAnualGestor`, `statusAtivacaoAnualGestor_` |
 | `shared/relatorios.js` | Resumo nativo e PDFs mensais/anuais derivados | `atualizarResumoNativoGestor_`, `gerarRelatoriosPDFProgramadosGestor_` |
 | `Backend/Code.gs` | API e regras de dados no Apps Script; inclui blocos gerados | Ver tabela seguinte |
@@ -80,7 +82,7 @@ O sufixo `Interno_` costuma indicar a implementação chamada pela entrada públ
 ## Fontes e arquivos gerados
 
 - Editar módulos em `interface/` e `shared/` quando a responsabilidade já estiver lá. Não editar apenas a cópia incorporada entre marcadores `GERADO`.
-- `scripts/sincronizar-rachadinha.cjs` incorpora o motor compartilhado, os oito módulos de interface e a proteção do servidor. Apesar do nome antigo, não cuida somente da rachadinha.
+- `scripts/sincronizar-rachadinha.cjs` incorpora o motor compartilhado, os módulos de `interface/`, competências, catálogo de ações e módulos do servidor. Apesar do nome antigo, não cuida somente da rachadinha. A lista real de módulos fica nesse gerador.
 - `scripts/gerar-css.cjs` chama essa incorporação, compila o CSS e sincroniza os três HTMLs.
 - `scripts/sincronizar-interface.cjs` apenas copia o HTML raiz para `Backend/Index.html` e `Backend/Index_para_colar.txt`; não incorpora alterações dos módulos por conta própria.
 - `scripts/publicar-estatico.cjs` prepara `dist/` com os arquivos públicos. `npm run build` executa a compilação e essa preparação; não publica uma implantação remota.

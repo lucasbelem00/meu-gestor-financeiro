@@ -1,6 +1,6 @@
 // Cada troca de aba tem sua geração. Atualizações da mesma tela podem manter
 // a posição; respostas de uma navegação anterior não podem deslocar outra aba.
-const nomesAbasTopoGestor={lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
+const nomesAbasTopoGestor={lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',agenda:'Agenda financeira',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
 // A Central reflete a página aberta. Abrir/fechar o menu não troca a seleção.
 function sincronizarSelecaoCentralGestor(){
   for(const botao of document.querySelectorAll('#conteudoCentralNavegacao [data-menu-aba]')){

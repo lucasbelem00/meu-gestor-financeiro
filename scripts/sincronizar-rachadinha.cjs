@@ -20,14 +20,14 @@ function sincronizarMotor(){
   }
   const catInicio='// INICIO CATALOGO ACOES GERADO',catFim='// FIM CATALOGO ACOES GERADO';
   if(html.includes(catInicio))html=html.slice(0,html.indexOf(catInicio))+catInicio+'\n'+fs.readFileSync(path.join(raiz,'shared/acoes.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(catFim));
-  for(const nome of ['compartilhamento','rachadinha','sincronizacao','usabilidade','rotina','faturas','painel','desempenho','restauracao','navegacao','protecao']){
+  for(const nome of ['compartilhamento','rachadinha','sincronizacao','usabilidade','rotina','faturas','painel','agenda','desempenho','restauracao','navegacao','protecao']){
     const inicio='// INICIO INTERFACE '+nome.toUpperCase()+' GERADA',fim='// FIM INTERFACE '+nome.toUpperCase()+' GERADA';
     if(!html.includes(inicio)||!html.includes(fim))throw Error('Marcador da interface não encontrado: '+nome);
     html=html.slice(0,html.indexOf(inicio))+inicio+'\n'+fs.readFileSync(path.join(raiz,'interface',nome+'.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(fim));
   }
   fs.writeFileSync(arquivo,html);
   const backend=path.join(raiz,'Backend/Code.gs');let codigo=fs.readFileSync(backend,'utf8');
-  for(const nome of ['notas-backup','anual','relatorios','ativacao']){
+  for(const nome of ['notas-backup','anual','apresentacao-anual','relatorios','ativacao']){
     const fonteLocal=path.join(raiz,'shared',nome+'.js');if(!fs.existsSync(fonteLocal))continue;
     const ini='// INICIO MODULO '+nome.toUpperCase()+' GERADO',fimLocal='// FIM MODULO '+nome.toUpperCase()+' GERADO',conteudo=fs.readFileSync(fonteLocal,'utf8').trim();
     codigo=codigo.includes(ini)?codigo.slice(0,codigo.indexOf(ini))+ini+'\n'+conteudo+'\n'+codigo.slice(codigo.indexOf(fimLocal)):codigo+'\n'+ini+'\n'+conteudo+'\n'+fimLocal+'\n';

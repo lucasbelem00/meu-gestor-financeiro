@@ -32,7 +32,7 @@ function descricaoMinhaParteRachaGestor(){
   const nomes=modoRachadinhaAtual==='detalhado'?[...new Set(rachaDetItens.filter(it=>it.consumidores.includes(rachaEu)).map(it=>it.desc.trim()).filter(Boolean))]:[];
   const itens=nomes.slice(0,3).join(' + ')+(nomes.length>3?' (+'+(nomes.length-3)+' itens)':'');
   const descricao=local&&itens?local+' — '+itens:itens||local||'Conta dividida',letras=Array.from(descricao);
-  return (letras.length>210?letras.slice(0,209).join('')+'…':descricao)+' (minha parte)';
+  return letras.length>210?letras.slice(0,209).join('')+'…':descricao;
 }
 function dadosRascunhoRachaGestor(){
   const campos=Object.fromEntries(CAMPOS_RASCUNHO_RACHA.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?e.checked:e?.value || ''];}));
@@ -102,15 +102,21 @@ function calcularRachadinha(){
 }
 function mensagemDivisaoRachaGestor(d){
   const nomes=new Map(d.pessoas.map(p=>[p.id,p.nome]));
-  const linhas=['*Divisão da conta — '+(document.getElementById('rachaLocal').value.trim() || 'Encontro')+'*',''];
-  d.pessoas.forEach(p=>linhas.push(p.nome+': *'+formatBRL(p.finalCentavos/100)+'*'+(p.pagoCentavos?' • Já pagou ao estabelecimento: '+formatBRL(p.pagoCentavos/100):'')));
-  linhas.push('','Consumo: '+formatBRL(d.baseCentavos/100));
+  const linha=v=>String(v||'').replace(/[\r\n]+/g,' ').trim();
+  const linhas=['🤝 *Divisão da conta — '+(linha(document.getElementById('rachaLocal').value) || 'Encontro')+'*','','*Parte de cada pessoa:*',''];
+  d.pessoas.forEach(p=>{
+    linhas.push('• *'+linha(p.nome)+'*','Parte na conta: *'+formatBRL(p.finalCentavos/100)+'*');
+    if(p.pagoCentavos>0){linhas.push('Já pagou ao estabelecimento: '+formatBRL(p.pagoCentavos/100));const saldo=p.finalCentavos-p.pagoCentavos;if(saldo>0)linhas.push('Falta completar sua parte: '+formatBRL(saldo/100));else if(saldo<0)linhas.push('Adiantou pelo grupo: '+formatBRL(-saldo/100));}
+    linhas.push('');
+  });
+  if(d.descontoCentavos>0||d.taxaCentavos>0||d.acrescimoCentavos>0)linhas.push('Consumo: '+formatBRL(d.baseCentavos/100));
   if(d.descontoCentavos>0)linhas.push('Desconto: '+formatBRL(d.descontoCentavos/100));
   if(d.taxaCentavos>0)linhas.push('Serviço: '+formatBRL(d.taxaCentavos/100));
   if(d.acrescimoCentavos>0)linhas.push('Acréscimos: '+formatBRL(d.acrescimoCentavos/100)+(d.rateioAcrescimos==='igual'?' (iguais por pessoa)':' (proporcionais ao consumo)'));
-  linhas.push('*Total: '+formatBRL(d.totalCentavos/100)+'*');
-  if(d.transferencias.length){linhas.push('','*Acertos entre pessoas:*');d.transferencias.forEach(t=>linhas.push(nomes.get(t.de)+' → '+nomes.get(t.para)+': '+formatBRL(t.valorCentavos/100)));}
-  if(d.pendenteEstabelecimentoCentavos)linhas.push('Ainda falta pagar ao estabelecimento: '+formatBRL(d.pendenteEstabelecimentoCentavos/100));return linhas.join('\n');
+  linhas.push('💰 *Total da conta: '+formatBRL(d.totalCentavos/100)+'*','');
+  linhas.push(d.pendenteEstabelecimentoCentavos?'🏪 Falta pagar ao estabelecimento: *'+formatBRL(d.pendenteEstabelecimentoCentavos/100)+'*':'✅ Conta paga ao estabelecimento.');
+  if(d.transferencias.length){linhas.push('','*Acertos entre as pessoas:*','');d.transferencias.forEach(t=>linhas.push('• *'+linha(nomes.get(t.de)||t.de)+' → '+linha(nomes.get(t.para)||t.para)+'*','Valor a transferir: *'+formatBRL(t.valorCentavos/100)+'*',''));}
+  return linhas.join('\n').trim();
 }
 
 function copiarRachadinhaWhats(){const r=calcularRachadinha();if(r)abrirPreviaCobrancaWhats(mensagemDivisaoRachaGestor(r.divisao),'Divisão copiada.');}

@@ -2,6 +2,7 @@
 
 Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas por meio do Apps Script.
 
+- [Ferramentas diárias e proposta de Painel — 30/10](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md): empréstimos, arquivados, rachadinha, copiar Calculadora/Notas e recomendações para as bases anuais e o Painel.
 - [Conclusão das pendências — 30/10](CORRECOES_PENDENCIAS_20261030.md): fixos sem infinito, Atividade sem atalho de fatura, competências, formulário protegido, janela de pagamento e redução de cálculos redundantes.
 - [Mensagens para WhatsApp em blocos — 30/10](WHATSAPP_BLOCOS_20261030.md): Empréstimos, Histórico e Simulação com informações separadas, parcelas claras e totais preservados.
 - [Revisão antes da versão definitiva — 30/10](VISTORIA_PRE_DEFINITIVA_20261030.md): três falhas novas reproduzidas, dois helpers sem referências e medição com mil registros; diagnóstico sem mudanças nas regras do app.
@@ -23,7 +24,7 @@ Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas po
 - [Testes](tests/README.md): execução das regressões com dados fictícios.
 - [Segurança da implantação](SEGURANCA_VERCEL.md): configuração do proxy e proteção de acesso.
 
-Os demais relatórios com datas descrevem versões anteriores. Para instalar este pacote, seguir o guia de continuidade e o ajuste de escopo das parcelas, protocolo 17 e cache v63. O editor de empréstimos exige o Backend/Code.gs atualizado. O ícone próprio do app está descrito na identidade visual. A Mensal abre no mês do calendário, sem opção de avanço por quitação. Ao reabrir a Central, a página ou ferramenta atual fica destacada em azul.
+Os demais relatórios com datas descrevem versões anteriores. O estado local mais recente está no [pacote do Painel, Agenda e bases anuais](PACOTE_PAINEL_AGENDA_ANUAIS_20261030.md): protocolo 17 e cache v68. Ele inclui os [ajustes de ferramentas](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md). Atualizar também `Backend/Code.gs` para a apresentação anual e a compatibilidade do backup. A Mensal abre no mês do calendário; ao reabrir a Central, a página ou ferramenta atual fica destacada em azul. A publicação e a validação da implantação real são etapas separadas.
 
 ## Desenvolvimento local
 
