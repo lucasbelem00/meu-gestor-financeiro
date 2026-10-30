@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Conferido em 29/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
+Atualizado em 30/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -22,13 +22,17 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `index.html` | Estrutura das telas, integração e regras de interface ainda não extraídas | `apiCall`, `setAba`, `carregarDados`, renderização e formulários |
 | `interface/rotina.js` | Rascunhos financeiros, identidade da edição e fluxos diários | `lerRascunhoRotinaGestor`, `guardarRascunhoRotinaGestor` |
 | `interface/sincronizacao.js` | Orientações e recuperação das pendências | `orientacaoPendenciaGestor`, `conferirRecuperacaoServidorGestor` |
+| `interface/compartilhamento.js` | Mensagens em blocos para WhatsApp: empréstimos, Histórico e Simulação; totais e situações separados | `montarCobrancaMensagemGestor`, `montarResumoHistoricoMensagemGestor`, `montarSimulacaoMensagemGestor` |
 | `interface/usabilidade.js` | Horizonte, simulador, calculadora, notas e comportamento da Mensal | `renderizarNotasUI`; procurar também por horizonte, simulador e nota neste arquivo |
 | `interface/rachadinha.js` | Pessoas, itens, prévia, rascunho e preenchimento da divisão | `calcularRachadinha`, `renderizarPessoasRachaDet`, `preencherParteRachaGestor` |
 | `interface/desempenho.js` | Leituras compartilhadas, cache transitório e gráficos visíveis | `criarCoordenadorLeiturasGestor`, `invalidarLeiturasDesempenhoGestor`, `obterMetricasDesempenhoGestor` |
+| `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
+| `interface/painel.js` | Lembretes pela data combinada e limite pessoal opcional sem novas consultas | `listarDevolucoesPainelGestor`, `calcularLimitePessoalPainelGestor`, `renderizarRotinaPainelGestor` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
-| `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `criarHistoricoCentralGestor` |
+| `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor`, `criarHistoricoCentralGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |
 | `shared/rachadinha.js` | Cálculo da divisão em centavos, compartilhado pela tela e servidor | `calcularDivisaoContaGestor` |
+| `shared/competencias.js` | Intervalo de anos e validação da primeira/última competência das parcelas | `anoCompetenciaValidoGestor_`, `validarPeriodoParcelasGestor_`; incorporado na interface e no backend pelo gerador |
 | `shared/protecao.js` | Backup agendado, arquivo anual, compactação e recuperação da manutenção | `backupMensalProtecaoGestor_`, `planejarArquivoAnualProtecaoGestor_`, `rotinaProtecaoProgramadaGestor` |
 | `shared/acoes.js` | Contrato único das ações, usado por interface, cache e proxy | `CATALOGO_ACOES_GESTOR`, `metadadosAcaoGestor` |
 | `shared/notas-backup.js` | Compatibilidade do esquema antigo de Notas | `normalizarAbaNotasBackupGestor_`, `garantirCabecalhoNotasGestor_` |

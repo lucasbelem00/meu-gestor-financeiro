@@ -1,6 +1,6 @@
 {
-  "name": "Gestor Financeiro",
-  "short_name": "Gestor",
+  "name": "Gestor de Gastos",
+  "short_name": "Gestor de Gastos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b1120",

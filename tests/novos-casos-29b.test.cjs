@@ -1,0 +1,35 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {boot,fixture,personal}=require('./fixtures/gestor-mocks.cjs');
+const {ambienteProtecao}=require('./fixtures/protecao-mocks.cjs');
+test('ação de recuperação da série inválida está permitida pelo registro real',()=>{
+ const h=fs.readFileSync('index.html','utf8'),i=h.indexOf('    const ACOES_RENDERIZADAS = new Set(['),f=h.indexOf("    document.addEventListener('click'",i),c=vm.createContext({Set,escaparHTML:String});vm.runInContext(h.slice(i,f),c);assert.match(c.acaoHTML('abrirAtividadeGestor',[]),/abrirAtividadeGestor/);
+});
+function nativo(){const a=boot(fixture());a.ctx.console={log(){}};a.ctx.executarAcaoApi_('getDadosCompletos',null);const linhas=Array.from({length:14},()=>['','','','']);['16/10/2026','Compra nativa','Cartao','Teste',100,1,1,'10/2026','Em Aberto'].forEach((v,i)=>linhas[5+i][3]=v);a.db.insertSheet('Formulário de Lançamento').rows=linhas;let ocupado=false;a.ctx.LockService.getDocumentLock=()=>({waitLock(){assert(!ocupado);ocupado=true;},releaseLock(){ocupado=false;}});a.ctx.SpreadsheetApp.getUi=()=>({alert(){assert(!ocupado);}});return a;}
+test('falha na limpeza do formulário nativo não duplica a gravação ao repetir',()=>{
+ const a=nativo(),limpar=a.ctx.limparFormulario; a.ctx.limparFormulario=()=>{throw Error('Falha limpeza');};a.ctx.gravarLancamentoDoFormulario();assert.equal(a.db.sheets['Lançamentos'].rows.length,2);a.ctx.limparFormulario=limpar;a.ctx.gravarLancamentoDoFormulario();assert.equal(a.db.sheets['Lançamentos'].rows.length,2);assert(!a.props.get('GESTOR_FORMULARIO_ENVIO_V1'));
+});
+test('confirmação perdida no formulário nativo repete o mesmo pedido',()=>{
+ const a=nativo(),salvar=a.ctx.salvarLancamentoWeb;let falhou=false;a.ctx.salvarLancamentoWeb=p=>{const r=salvar(p);if(!falhou){falhou=true;throw Error('Resposta perdida');}return r;};a.ctx.gravarLancamentoDoFormulario();a.ctx.gravarLancamentoDoFormulario();assert.equal(a.db.sheets['Lançamentos'].rows.length,2);
+});
+test('gravação nativa preserva novos campos preenchidos durante o envio',()=>{
+ const a=nativo(),salvar=a.ctx.salvarLancamentoWeb;a.ctx.salvarLancamentoWeb=p=>{const r=salvar(p);a.db.sheets['Formulário de Lançamento'].rows[6][3]='Outro gasto';return r;};a.ctx.gravarLancamentoDoFormulario();assert.equal(a.db.sheets['Formulário de Lançamento'].rows[6][3],'Outro gasto');assert.equal(a.db.sheets['Lançamentos'].rows.length,2);
+});
+test('novo envio nativo usa a época restaurada; pedido anterior não atravessa outra restauração',()=>{
+ const a=nativo();a.ctx.epocaRestauracaoGestor_=()=> 'restauracao-atual';a.ctx.gravarLancamentoDoFormulario();assert.equal(a.db.sheets['Lançamentos'].rows.length,2);
+ const b=nativo(),salvar=b.ctx.salvarLancamentoWeb;b.ctx.epocaRestauracaoGestor_=()=> 'epoca-anterior';b.ctx.salvarLancamentoWeb=p=>{const r=salvar(p);throw Error('Resposta perdida');};b.ctx.gravarLancamentoDoFormulario();b.ctx.salvarLancamentoWeb=salvar;b.ctx.epocaRestauracaoGestor_=()=> 'outra-restauracao';b.ctx.gravarLancamentoDoFormulario();assert.equal(b.db.sheets['Lançamentos'].rows.length,2);assert(b.props.get('GESTOR_FORMULARIO_ENVIO_V1'));
+});
+test('backup pede nova identificação só na preparação desatualizada; falha incerta conserva pedido',async()=>{
+ const fonte=fs.readFileSync('interface/protecao.js','utf8'),i=fonte.indexOf('  backup.onclick='),f=fonte.indexOf('  manutencao.onclick=',i);let codigo='TIMEOUT_PROXY',confirmar,n=0;const chamadas=[];const c=vm.createContext({backup:{},status:{},pedidoBackup:'',novoRequestIdGestor:()=> 'novo-pedido-'+(++n),acao:async fn=>{try{await fn();}catch(_){}},mostrarConfirmacao:(t,m,fn)=>confirmar=fn,apiCall:async(a,p)=>{chamadas.push(p.requestId);if(codigo){const e=Error('falha');e.codigo=codigo;throw e;}}});vm.runInContext(fonte.slice(i,f),c);await c.backup.onclick();await c.backup.onclick();assert.equal(chamadas[0],chamadas[1]);assert.equal(confirmar,undefined);codigo='BACKUP_PREPARACAO_DESATUALIZADA';await c.backup.onclick();assert(confirmar);codigo='';confirmar();await new Promise(r=>setImmediate(r));assert.notEqual(chamadas.at(-1),chamadas[0]);assert.equal(c.pedidoBackup,'');
+});
+test('backup assistido conserva o aviso e a referência do mês mais recente',()=>{
+ const a=ambienteProtecao(fixture([personal('Compra',100)]));a.ativar();a.ctx.executarBackupProtegidoWeb({requestId:'teste-backup-outubro-29b'});a.db.sheets['Lançamentos'].rows[1][18]='Campo particular';for(const mes of [10,11]){a.ctx.getHojeSeguro=()=>new Date(2026,mes,16);a.ctx.rotinaProtecaoProgramadaGestor();}const c=a.ctx.configProtecaoGestor_();assert.equal(c.ultimaCopiaPreservada.periodo,'2026-12');assert(c.avisoBackupAssistido);
+});
+test('preparação de backup alterada retorna código específico, e novo pedido funciona',()=>{
+ const a=ambienteProtecao(fixture([personal('Compra',100)]));a.ativar();a.db.failure={name:'_Gestor_Backups',stage:'after',row:2,col:1};assert.throws(()=>a.ctx.executarBackupProtegidoWeb({requestId:'teste-backup-pendente-29b'}));a.db.sheets['Lançamentos'].rows[1][1]='Corrigida';assert.throws(()=>a.ctx.executarBackupProtegidoWeb({requestId:'teste-backup-pendente-29b'}),e=>e.codigo==='BACKUP_PREPARACAO_DESATUALIZADA');assert(a.ctx.executarBackupProtegidoWeb({requestId:'teste-backup-novo-29b'}).sucesso);
+});
+test('WhatsApp separa ocorrências puladas e identifica que não compõem o total',async()=>{
+ const a=boot(fixture([personal('Ativa',50),personal('Pulada',100,'∞/∞','10/2026','Ocorrência Pulada')]));a.ctx.console={log(){}};a.ctx.executarAcaoApi_('getDadosCompletos',null);const h=fs.readFileSync('index.html','utf8'),i=h.indexOf('    async function copiarResumoFiltroWhats()'),f=h.indexOf('    // ============================================================================',i);let texto;const c=vm.createContext({filtrosAtuais:{categoria:'Teste'},mostrarAviso(){},apiCall:(a1,p)=>a.ctx.executarAcaoApi_(a1,p),abrirPreviaCobrancaWhats:t=>texto=t});vm.runInContext(fs.readFileSync('interface/compartilhamento.js','utf8'),c);vm.runInContext(h.slice(i,f),c);await c.copiarResumoFiltroWhats();assert.match(texto, /Total:\* R\$ 50,00/);assert.match(texto,/Registros fora do total/);assert.match(texto,/Ocorrência Pulada \(fora do total\)/);
+});
+test('calculadora mantém histórico visível se a limpeza não puder ser persistida',()=>{
+ const s=fs.readFileSync('interface/usabilidade.js','utf8'),i=s.indexOf('function limparHistoricoCalcGestor('),f=s.indexOf('\nfunction ',i+20);let confirmar,render=0,avisou=false;const c=vm.createContext({historicoCalcGestor:[{resultado:100}],mostrarConfirmacao:(t,m,fn)=>confirmar=fn,gravarArmazenamentoGestor(){throw Error('Sem acesso');},mostrarAviso(){avisou=true;},renderizarHistoricoCalcGestor(){render++;}});vm.runInContext(s.slice(i,f),c);c.limparHistoricoCalcGestor();confirmar();assert.equal(c.historicoCalcGestor.length,1);assert(avisou);assert.equal(render,0);c.gravarArmazenamentoGestor=()=>true;confirmar();assert.equal(c.historicoCalcGestor.length,0);assert.equal(render,1);
+});

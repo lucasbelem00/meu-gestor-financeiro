@@ -54,7 +54,7 @@ test('ícone de pagamento usa o tipo cadastrado inclusive em Pix renomeado',()=>
 });
 
 test('informação de parcela distingue à vista, parcelado e fixo com seus símbolos',()=>{
- const {c}=ambiente();for(const forma of ['Cartão fictício','Conta renomeada','Dinheiro']){assert.equal(c.formatarInfoParcelaCard('1/1',null,forma),'⚡ À vista');assert.match(c.formatarInfoParcelaCard('2/6',null,forma),/^➗ Parcela 2\/6/);}assert.equal(c.formatarInfoParcelaCard('∞/∞',null,'Cartão fictício'),'📌 Fixo mensal (∞)');assert.match(c.formatarInfoParcelaCard('2/6',{faltam:4,fimMes:'03/2027'},'Cartão fictício'),/fim 03\/2027/);assert.match(c.montarCardFaturaMensalSeguro(linha('Compra única')),/⚡ À vista/);
+ const {c}=ambiente();for(const forma of ['Cartão fictício','Conta renomeada','Dinheiro']){assert.equal(c.formatarInfoParcelaCard('1/1',null,forma),'⚡ À vista');assert.match(c.formatarInfoParcelaCard('2/6',null,forma),/^➗ Parcela 2\/6/);}assert.equal(c.formatarInfoParcelaCard('∞/∞',null,'Cartão fictício'),'📌 Fixo mensal');assert.match(c.formatarInfoParcelaCard('2/6',{faltam:4,fimMes:'03/2027'},'Cartão fictício'),/fim 03\/2027/);assert.match(c.montarCardFaturaMensalSeguro(linha('Compra única')),/⚡ À vista/);
 });
 
 test('ranking destaca maiores gastos, preserva empates e não modifica o relatório',()=>{

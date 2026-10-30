@@ -38,3 +38,9 @@ Conferência posterior no navegador, com a inicialização dos controles incluí
 Prévia local em 390 × 844 com dados fictícios: Voltar fechou o menu e preservou Novo; escolher Calculadora atualizou nome e seleção azul visível; Novo empréstimo abriu e rolou até o cadastro. Os atalhos Empréstimo e Limpar mediram ambos 152 × 42 px. A prévia não consulta nem grava na planilha, e não reproduz a instalação Android.
 
 Cache PWA v58, protocolo 16. Build sincroniza os HTMLs e prepara `dist/`; não publica Vercel/Apps Script. Para este ajuste, publicar o frontend e o HTML atualizado do Apps Script. Nenhuma função nova precisa ser executada na planilha. Dados financeiros e regras do backend não foram alterados.
+
+### Destaque da página atual na Central
+
+Ao reabrir o menu, a ferramenta atual fica azul, incluindo Simular Compra, Calculadora, Notas, Rachadinha e Empréstimos. Os demais destinos de página também seguem a indicação. A seleção usa `aria-current="page"` e é recalculada a partir da aba e da subferramenta abertas; não depende do foco deixado pelo último toque. Exportação/backup e Chave Pix continuam ações que abrem modais.
+
+Foram retiradas as antigas mudanças de classes que cobriam apenas quatro atalhos. A Central passa a usar uma única regra de seleção. A conferência local em 390 × 844 confirmou Simular Compra selecionado ao reabrir, substituição pelo destaque de Calculadora e Voltar fechando a Central sem abandonar a ferramenta. Os quatro novos testes e a suíte completa passaram: 617 testes. Build atualizado, cache PWA v60, protocolo 17 preservado. Esta correção não exige executar função na planilha nem altera o backend; precisa publicar a interface para chegar ao app instalado.

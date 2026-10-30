@@ -123,7 +123,7 @@ function gerarRelatoriosPDFProgramadosGestor_(ss,pasta,limite){
     const tabela=abaTecnicaProtecaoGestor_(ss,ABA_RELATORIOS_PDF_GESTOR_,CAB_RELATORIOS_PDF_GESTOR_,false),linhas=(tabela?.getDataRange().getValues()||[]).slice(1),confirmados=new Set(linhas.filter(r=>r[3]==='CONFIRMADO').map(r=>r[1]+'|'+r[2]));
     // Se o último lançamento do período for excluído, a revisão zerada também
     // precisa existir. O PDF anterior permanece como retrato da revisão antiga.
-    for(const r of linhas){const p=String(r[1]);if(/^\d{2}\/\d{4}$/.test(p)){const info=parseMesFat(p);if(info.time&&info.time<inicio)periodos.add(p);}else if(/^\d{4}$/.test(p)&&Number(p)>=2000&&Number(p)<hoje.getFullYear())periodos.add(p);}
+    for(const r of linhas){const p=String(r[1]);if(/^\d{2}\/\d{4}$/.test(p)){const info=parseMesFat(p);if(info.time&&info.time<inicio)periodos.add(p);}else if(/^\d{4}$/.test(p)&&Number(p)>=ANO_MIN_COMPETENCIA_GESTOR_&&Number(p)<hoje.getFullYear())periodos.add(p);}
     const candidatos=Array.from(periodos).map(p=>dadosPeriodoPDFGestor_(registros,p)).filter(d=>!confirmados.has(d.periodo+'|'+d.hash)).sort((a,b)=>{const fim=p=>p.includes('/')?parseMesFat(p).time:new Date(Number(p),11,1).getTime();return fim(b.periodo)-fim(a.periodo)||a.periodo.length-b.periodo.length;});
     const novos=candidatos.slice(0,quantidade-gerados.length);for(const d of novos)gerados.push(emitirRelatorioPDFGestor_(ss,pasta,d));
     return {sucesso:true,ativo:true,gerados:gerados,pendentes:Math.max(0,candidatos.length-novos.length)};

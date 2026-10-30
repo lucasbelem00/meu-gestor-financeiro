@@ -2,6 +2,10 @@
 
 Estas convenções devem ser mantidas nas novas alterações, títulos, navegação e mensagens referentes aos mesmos recursos. Ícone acompanha texto; nunca é a única indicação da ação.
 
+Nome único do produto: **Gestor de Gastos**, incluindo título da janela e manifesto de instalação. A ação de consultar os totais e registrar o pagamento ao banco chama-se **Conferir fatura** no Painel e Mensal. Atividade e sincronização concentra o histórico das operações, confirmações e recuperação.
+
+No Histórico, o resumo usa 🔢 para contar lançamentos, quantidade neutra e valor roxo com o rótulo “Total da seleção”. Esse total pode incluir registros abertos e pagos; sua cor não deve indicar quitação.
+
 | Recurso | Ícone reservado |
 | --- | --- |
 | Marca do aplicativo | Bolsa dourada própria sobre fundo azul, fonte em `icons/gestor.svg` |
@@ -26,7 +30,7 @@ Estas convenções devem ser mantidas nas novas alterações, títulos, navegaç
 
 No celular, a Central mostra o título curto “Navegação”, com “↻ Atualizar” e Fechar na mesma linha. O título pode quebrar com fonte ampliada sem empurrar as ações para baixo. No computador, conserva “Central de Navegação”. A mensagem de atualização usa “↻ Atualizando…”. 📌 acompanha despesas fixas no cadastro, menu, filtro, aba e edição; 🔁 identifica repetir um lançamento.
 
-Todos os 12 atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. O atalho Empréstimo em Novo segue o fundo neutro; seleções Consultar/Novo empréstimo usam âmbar, característico da área. Cores de ações, alertas e confirmações continuam indicando seu significado.
+Todos os 12 atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. Ao abrir a Central, somente o destino da página/ferramenta atual recebe `aria-current="page"`, fundo azul suave e borda azul. Trocar de ferramenta substitui esse destaque; ações que abrem modais não representam a página atual. O atalho Empréstimo em Novo segue o fundo neutro; seleções Consultar/Novo empréstimo usam âmbar, característico da área. Cores de ações, alertas e confirmações continuam indicando seu significado.
 
 O ícone do aplicativo é um desenho vetorial próprio inspirado em 💰, sem fontes ou emojis do sistema. O arquivo mestre `icons/gestor.svg` gera a mesma identidade no cabeçalho (incorporada pelo build), no favicon e nos PNGs locais `icon-192.png`, `icon-512.png` e `apple-touch-icon.png` (180 px). O fundo é opaco e o símbolo permanece na área central segura para os recortes de ícones instalados. `icon-192.svg` conserva o caminho antigo com o novo desenho.
 
@@ -38,7 +42,7 @@ Na comparação mensal atual, variação menor ou igual a zero usa verde; aument
 
 Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante usa rosa. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
 
-As etiquetas do Histórico e da Mensal usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal (∞). Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
+As etiquetas do Histórico e da Mensal usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal. O infinito não aparece nessa etiqueta; `∞/∞` permanece como identificação técnica da recorrência nos dados. Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
 
 Contagens mensais e anuais usam 🔢 com o período escrito. A quantidade e a média no cartão A pagar continuam representando todos os lançamentos do mês, mesmo com saldo zerado ou filtros. O ranking anual identifica os maiores gastos com 🥇, 🥈 e 🥉; empates compartilham posição. Medalhas indicam volume de gasto, sem representar uma avaliação positiva.
 

@@ -61,3 +61,6 @@ test('resposta do Histórico preserva posição na mesma visita, mas não após 
   resolver({itens:[],temMais:false,versaoConsulta:'v2',qtdTotal:0});await pedido;a.flush();assert.equal(a.c.scrollY,navegar?0:1200);assert.equal(a.c.filtrosAtuais.forma,'Cartao');
  }
 });
+test('nova busca oculta a soma anterior imediatamente, inclusive quando a consulta falha',async()=>{
+ const a=navegacao();let ocultou=false,rejeitar;a.el('barraSomaFiltro').classList.add=n=>{if(n==='hidden')ocultou=true;};a.c.apiCall=()=>new Promise((_,r)=>rejeitar=r);require('./fixtures/integracao-interface-ui.cjs')(a.c,'chamarFiltroBackend');const p=a.c.chamarFiltroBackend(false);assert(ocultou);rejeitar(Error('Sem conexão'));await p;assert(ocultou);
+});

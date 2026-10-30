@@ -89,7 +89,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   anual.onclick=()=>mostrarConfirmacao('Organizar os anos desta base?','Destino: '+(ultimoStatus?.planilha||'base configurada')+'. O Google executará a ativação em segundo plano, conferindo um backup antes de organizar os registros. Acompanhe as etapas nesta tela; fechar o app não cancela o trabalho.',()=>acao(async()=>{if(protocoloServidorGestor<16)throw Error('Atualize e publique também o Backend/Code.gs no Apps Script para ativar sem depender do tempo da conexão.');status.textContent='Agendando a ativação no Google…';await apiCall('ativarOrganizacaoAnualWeb',{},1);invalidarLeiturasDesempenhoGestor();}),false,'Ativar nesta base','neutral');
   backup.onclick=()=>acao(async()=>{
     if(!pedidoBackup)pedidoBackup=novoRequestIdGestor();status.textContent='Gerando e conferindo a cópia no Drive…';
-    await apiCall('executarBackupProtegidoWeb',{requestId:pedidoBackup},1);pedidoBackup='';
+    try{await apiCall('executarBackupProtegidoWeb',{requestId:pedidoBackup},1);pedidoBackup='';}
+    catch(e){if(e.codigo==='BACKUP_PREPARACAO_DESATUALIZADA'){
+      const anterior=pedidoBackup;
+      mostrarConfirmacao('Iniciar nova cópia?','A preparação anterior foi preservada, mas os dados mudaram. Uma nova cópia usará a versão atual.',()=>{if(pedidoBackup!==anterior)return;pedidoBackup='';backup.onclick();},false,'Iniciar nova cópia','neutral');
+    }throw e;}
   });
   manutencao.onclick=async()=>{
     let p;await acao(async()=>{status.textContent='Conferindo o que pode ser arquivado…';p=await apiCall('previaManutencaoProtegidaWeb',null,1);});if(!p)return;

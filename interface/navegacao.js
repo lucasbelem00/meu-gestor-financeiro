@@ -1,6 +1,16 @@
 // Cada troca de aba tem sua geração. Atualizações da mesma tela podem manter
 // a posição; respostas de uma navegação anterior não podem deslocar outra aba.
 const nomesAbasTopoGestor={lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
+// A Central reflete a página aberta. Abrir/fechar o menu não troca a seleção.
+function sincronizarSelecaoCentralGestor(){
+  for(const botao of document.querySelectorAll('#conteudoCentralNavegacao [data-menu-aba]')){
+    const ferramenta=botao.dataset.menuFerramenta;
+    const ativo=botao.dataset.menuAba===abaAtivaAtual&&(!ferramenta||document.getElementById('btn-sub-'+ferramenta)?.getAttribute('aria-pressed')==='true');
+    if(ativo)botao.setAttribute('aria-current','page');else botao.removeAttribute('aria-current');
+  }
+}
+const abrirAntesSelecaoCentralGestor=window.abrirMenuMobile;
+window.abrirMenuMobile=function(...args){sincronizarSelecaoCentralGestor();return abrirAntesSelecaoCentralGestor(...args);};
 // Uma entrada temporária permite ao Voltar fechar a Central, sem sair do app.
 // O estado anterior é preservado; fechar pelo X também consome essa entrada.
 function criarHistoricoCentralGestor(opcoes){

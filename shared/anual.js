@@ -11,7 +11,7 @@ function catalogoAnosGestor_(ss){
   const sh=ss.getSheetByName(ABA_ANOS_GESTOR_);if(!sh||!sh.getLastRow())return [];
   const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('Catálogo dos anos incompatível. Preserve a base de controle.');
   const anos=new Set(),ids=new Set();return linhas.slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map(function(r){
-    const ano=Number(r[0]),id=String(r[1]);if(!Number.isInteger(ano)||ano<2000||ano>2200||anos.has(ano)||ids.has(id)||!/^[A-Za-z0-9_-]{8,160}$/.test(id)||!['ABERTO','FECHADO'].includes(r[2])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||(r[2]==='FECHADO'&&!/^[a-f0-9]{64}$/.test(r[3])))throw Error('Destino anual inválido ou repetido. Preserve o catálogo.');
+    const ano=Number(r[0]),id=String(r[1]);if(!Number.isInteger(ano)||ano<ANO_MIN_COMPETENCIA_GESTOR_||ano>ANO_MAX_COMPETENCIA_GESTOR_||anos.has(ano)||ids.has(id)||!/^[A-Za-z0-9_-]{8,160}$/.test(id)||!['ABERTO','FECHADO'].includes(r[2])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||(r[2]==='FECHADO'&&!/^[a-f0-9]{64}$/.test(r[3])))throw Error('Destino anual inválido ou repetido. Preserve o catálogo.');
     anos.add(ano);ids.add(id);return {ano:ano,id:id,estado:r[2],hash:String(r[3]||''),fechadoEm:r[4]||'',origem:r[5]};
   }).sort((a,b)=>a.ano-b.ano);
 }
@@ -140,7 +140,7 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     for(const e of catalogo)if(e.estado==='FECHADO')for(const r of dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
     const vistos=new Set();for(const [indice,r0] of aba.valores.slice(1).entries()){
       if(!r0.some(v=>v!==''&&v!=null))continue;const r=copiarGestor_(r0),id=String(r[11]);if(!id||vistos.has(id))throw Error('Identificação anual repetida.');vistos.add(id);
-      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<2000||ano>2200)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
+      const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<ANO_MIN_COMPETENCIA_GESTOR_||ano>ANO_MAX_COMPETENCIA_GESTOR_)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
       const original=fechados.get(id),e=catalogo.find(e=>e.ano===ano);
       if(original||e?.estado==='FECHADO'){
         if(!original||hashGestor_(r)!==hashGestor_(original.r))ajustes.push([nome,id,original?.ano||ano,original?hashGestor_(original.r):'NOVO','ATUALIZADO',JSON.stringify(serializarGestor_(r))]);
@@ -170,7 +170,7 @@ function conferirDestinosAnuaisPlanoGestor_(ss,plano){
   const linhas=copiarGestor_(lerEstadoAbaGestor_(ss.getSheetByName(ABA_ANOS_GESTOR_)));m.alteracoes.forEach(a=>linhas[a[0]]=a[1]);linhas.length=m.linhas;
   if(hashEstadoGestor_(linhas)!==m.depois||hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('O catálogo preparado dos anos está incompleto.');
   const anos=new Set(),ids=new Set();for(const r of linhas.slice(1)){
-    if(!Number.isInteger(r[0])||r[0]<2000||r[0]>2200||anos.has(r[0])||ids.has(r[1])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!['ABERTO','FECHADO'].includes(r[2]))throw Error('O destino da restauração anual é incompatível.');
+    if(!Number.isInteger(r[0])||r[0]<ANO_MIN_COMPETENCIA_GESTOR_||r[0]>ANO_MAX_COMPETENCIA_GESTOR_||anos.has(r[0])||ids.has(r[1])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!['ABERTO','FECHADO'].includes(r[2]))throw Error('O destino da restauração anual é incompatível.');
     anos.add(r[0]);ids.add(r[1]);dadosAnoGestor_({ano:r[0],id:r[1],estado:r[2],hash:r[3]});
     if(m.anosPreparados){const preparado=m.anosPreparados.find(e=>e.ano===r[0]&&e.id===r[1]);if(!preparado||!Array.isArray(preparado.abas)||preparado.abas.length!==2)throw Error('Falta a conferência integral do destino anual preparado.');const banco=SpreadsheetApp.openById(r[1]);for(const a of preparado.abas){const atual=lerEstadoAbaGestor_(banco.getSheetByName(a.nome)),hash=hashEstadoGestor_(atual),mudanca=plano.mudancas.find(x=>x.destinoAnual?.id===r[1]&&x.nome===a.nome);if(!ehAbaRegistrosGestor_(a.nome)||(!mudanca&&hash!==a.hash)||(mudanca&&(mudanca.antes!==a.hash||hash!==mudanca.antes&&hash!==mudanca.depois&&!estadoRecuperacaoBlocosGestor_(atual,mudanca))))throw Error('O destino anual preparado foi alterado depois da conferência. A restauração foi preservada sem substituir os demais dados.');}}
   }
@@ -183,9 +183,20 @@ function gravarPlanoOrganizacaoAnualGestor_(ss){
   if(!mudancas.length)return;const plano={mudancas:mudancas,resultado:{sucesso:true}},texto=JSON.stringify(serializarGestor_(plano)),partes=texto.match(/[\s\S]{1,12000}/g)||[''],diario=abrirDiarioGestor_(ss),inicio=diario.getLastRow()+1,id='organizarAnos:'+gerarIdGestor_();
   diario.getRange(inicio,1,1,6).setValues([[id,hashGestor_(plano),'PREPARANDO',partes.length,'',new Date()]]);diario.getRange(inicio+1,1,partes.length,6).setValues(partes.map((p,i)=>[id,'','PARTE',i+1,JSON.stringify(p),'']));SpreadsheetApp.flush();diario.getRange(inicio,3).setValue('PRONTO');SpreadsheetApp.flush();aplicarPlanoGestor_(ss,plano);diario.getRange(inicio,3).setValue('CONFIRMADO');SpreadsheetApp.flush();
 }
+function conferirCompetenciasOrganizacaoAnualGestor_(ss){
+  for(const nome of ['Lançamentos','Empréstimos']){
+    const sh=ss.getSheetByName(nome),linhas=ativoAnualGestor_(ss)?matrizFinanceiraAnualGestor_(ss,nome).slice(1):(sh?sh.getDataRange().getValues().slice(1):[]);
+    for(const [indice,r]of linhas.entries()){
+      if(!r.some(v=>v!==''&&v!=null))continue;
+      try{validarMesFaturaWeb_(formatarCelulaRegistroGestor_(r[8],'MM/yyyy'));}
+      catch(e){throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o Mês Fatura antes de ativar: '+e.message);}
+    }
+  }
+}
 function ativarOrganizacaoAnualWeb(){return comLockProtecaoGestor_(function(ss){
   recuperarPlanosAtivacaoAnualGestor_(ss);
   conferirSemPendenciasProtecaoGestor_(ss);const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Ative primeiro a proteção e confira a base de destino.');
+  conferirCompetenciasOrganizacaoAnualGestor_(ss);
   if(c.organizacaoAnual){if(!c.pdfAutomatico){c.pdfAutomatico=true;salvarConfigProtecaoGestor_(c);}if(lerAtivacaoAnualGestor_()?.estado==='EXECUTANDO'){etapaAtivacaoAnualGestor_('Concluindo a organização dos anos');cicloAnualGestor_(ss,pastaProtecaoGestor_());}return {sucesso:true,repetido:true};}
   etapaAtivacaoAnualGestor_('Conferindo fórmulas e dados');
   conferirFormulasOutrasAbasProtecaoGestor_(ss);
@@ -221,7 +232,7 @@ function validarBackupAnualGestor_(backup){
   const base=Object.assign({},backup,{formato:backup.arquivosAnuais?'gestor-financeiro-backup-v2':'gestor-financeiro-backup-v1'});delete base.anos;delete base.hashOrganizacao;
   const abas=validarBackupRestauracaoGestor_(base),vistos=new Set();let celulas=abas.reduce((s,a)=>s+a.valores.reduce((t,r)=>t+r.length,0),0);const idsSnapshot=new Set();
   abas.anos=backup.anos.map(function(e){
-    if(!Number.isInteger(e.ano)||e.ano<2000||e.ano>2200||vistos.has(e.ano)||!['ABERTO','FECHADO'].includes(e.estado)||!e.dados||e.dados.ano!==e.ano||!Array.isArray(e.dados.abas)||e.dados.abas.length!==2||!['Lançamentos','Empréstimos'].every(n=>e.dados.abas.some(a=>a.nome===n)))throw Error('Estrutura de ano incompatível.');vistos.add(e.ano);
+    if(!Number.isInteger(e.ano)||e.ano<ANO_MIN_COMPETENCIA_GESTOR_||e.ano>ANO_MAX_COMPETENCIA_GESTOR_||vistos.has(e.ano)||!['ABERTO','FECHADO'].includes(e.estado)||!e.dados||e.dados.ano!==e.ano||!Array.isArray(e.dados.abas)||e.dados.abas.length!==2||!['Lançamentos','Empréstimos'].every(n=>e.dados.abas.some(a=>a.nome===n)))throw Error('Estrutura de ano incompatível.');vistos.add(e.ano);
     const copia=Object.assign({},base,{formato:'gestor-financeiro-backup-v1',abas:base.abas.filter(a=>!ehAbaRegistrosGestor_(a.nome)).concat(e.dados.abas)}),dados=validarBackupRestauracaoGestor_(copia).filter(a=>ehAbaRegistrosGestor_(a.nome));
     dados.forEach(a=>a.valores.slice(1).forEach(r=>{if(parseMesFat(r[8]).a!==e.ano||!r[11]||idsSnapshot.has(r[11]))throw Error('Registro duplicado ou fora do ano no backup.');idsSnapshot.add(r[11]);}));
     celulas+=dados.reduce((s,a)=>s+a.valores.length*COLUNAS_GESTOR_,0);return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm||'',dados:{ano:e.ano,abas:dados.map(a=>({nome:a.nome,valores:a.valores}))}};
