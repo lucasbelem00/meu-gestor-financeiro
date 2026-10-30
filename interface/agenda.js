@@ -26,7 +26,7 @@ function mostrarMesCompletoAgendaGestor(){diaAgendaGestor=null;renderizarAgendaG
 function renderizarAgendaGestor(){
   const campo=document.getElementById('mesAgendaGestor'),grade=document.getElementById('calendarioAgendaGestor'),lista=document.getElementById('listaAgendaGestor');if(!campo||!grade||!lista)return;
   if(!campo.value){const h=new Date();campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
-  if(!mesAgendaValidoGestor(campo.value)){document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
+  if(!mesAgendaValidoGestor(campo.value)){grade.replaceChildren();lista.replaceChildren();diaAgendaGestor=null;document.getElementById('verMesAgendaGestor').hidden=true;document.getElementById('agendaAnteriorGestor').disabled=true;document.getElementById('agendaProximoGestor').disabled=true;document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
   const [ano,mes]=campo.value.split('-').map(Number),inicio=Date.UTC(ano,mes-1,1)/86400000,fim=Date.UTC(ano,mes,1)/86400000,tipo=document.getElementById('tipoAgendaGestor').value;
   if(diaAgendaGestor!==null&&(diaAgendaGestor<inicio||diaAgendaGestor>=fim))diaAgendaGestor=null;
   if(!eventosAgendaGestor)eventosAgendaGestor=compromissosAgendaGestor(dadosAgendaGestor);

@@ -36,6 +36,10 @@ test('Agenda separa banco de devolução, exclui recebidos, sem data e valores s
 test('Agenda limita mês/ano e ajusta o vencimento no fevereiro bissexto',()=>{
  const c=agenda();for(const m of ['2026-00','2026-13','2926-01','abc'])assert.equal(c.mesAgendaValidoGestor(m),false);assert.equal(c.mesAgendaValidoGestor('2024-02'),true);const e=c.compromissosAgendaGestor({formasPagamento:[{nome:'A',tipo:'cartao',vencimento:31}],faturas:{horizonte:{saldoBanco:{A:{'02/2024':10}}}}});assert.equal(e[0].data,'29/02/2024');
 });
+
+test('competência inválida na Agenda remove compromissos antigos e desativa navegação',()=>{
+ const c=agenda(),elementos={mesAgendaGestor:{value:'2926-01'},calendarioAgendaGestor:{replaceChildren(){this.limpo=true;}},listaAgendaGestor:{replaceChildren(){this.limpo=true;}},verMesAgendaGestor:{hidden:false},agendaAnteriorGestor:{disabled:false},agendaProximoGestor:{disabled:false},estadoAgendaGestor:{textContent:''}};c.document.getElementById=id=>elementos[id];c.renderizarAgendaGestor();assert.equal(elementos.calendarioAgendaGestor.limpo,true);assert.equal(elementos.listaAgendaGestor.limpo,true);assert.equal(elementos.verMesAgendaGestor.hidden,true);assert.equal(elementos.agendaAnteriorGestor.disabled,true);assert.equal(elementos.agendaProximoGestor.disabled,true);assert.match(elementos.estadoAgendaGestor.textContent,/1900 e 2200/);
+});
 test('fixo programado omite repetição; mudanças futuras de categoria e valor ficam explícitas',()=>{
  const c=vm.createContext({document:{addEventListener(){}}});vm.runInContext(fs.readFileSync('interface/usabilidade.js','utf8'),c);const p={mes:'11/2026',valor:'R$ 139,90',descricao:'Total Pass',forma:'Cartao',categoria:'Saúde'};assert.equal(c.textosProgramacoesFixasGestor({vigente:null,programadas:[p]})[0],'A partir da fatura 11/2026');const t=c.textosProgramacoesFixasGestor({vigente:p,programadas:[{...p,mes:'12/2026',valor:'R$ 149,90',categoria:'Outros'}]})[0];assert.match(t,/Novo valor: R\$ 149,90/);assert.match(t,/Categoria: Outros/);assert(!t.includes('Total Pass'));
 });

@@ -24,9 +24,11 @@ Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas po
 - [Testes](tests/README.md): execução das regressões com dados fictícios.
 - [Segurança da implantação](SEGURANCA_VERCEL.md): configuração do proxy e proteção de acesso.
 
-Os demais relatórios com datas descrevem versões anteriores. O estado local mais recente está no [pacote do Painel, Agenda e bases anuais](PACOTE_PAINEL_AGENDA_ANUAIS_20261030.md): protocolo 17 e cache v68. Ele inclui os [ajustes de ferramentas](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md). Atualizar também `Backend/Code.gs` para a apresentação anual e a compatibilidade do backup. A Mensal abre no mês do calendário; ao reabrir a Central, a página ou ferramenta atual fica destacada em azul. A publicação e a validação da implantação real são etapas separadas.
+Os demais relatórios com datas descrevem versões anteriores. O [pacote do Painel, Agenda e bases anuais](PACOTE_PAINEL_AGENDA_ANUAIS_20261030.md) reúne a implementação principal, seguida dos ajustes no [roteiro para a definitiva](ROTEIRO_TESTES_VERSAO_DEFINITIVA.md): protocolo 17 e cache v69. Inclui os [ajustes de ferramentas](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md). Atualizar também `Backend/Code.gs` para a apresentação anual e a compatibilidade do backup. A Mensal abre no mês do calendário; ao reabrir a Central, a página ou ferramenta atual fica destacada em azul. A publicação e a validação da implantação real são etapas separadas.
 
 ## Desenvolvimento local
+
+Antes de passar para o uso definitivo, seguir o [roteiro de testes com resultados esperados](ROTEIRO_TESTES_VERSAO_DEFINITIVA.md). O ajuste local mais recente usa cache v69: gráfico e Horizonte lado a lado no computador, cópia do texto ainda em edição nas Notas e limpeza dos resultados da Agenda quando o período é inválido. O pacote anual continua exigindo o backend indicado acima; estes três ajustes não acrescentam função manual de ativação.
 
 ```powershell
 npm test

@@ -314,6 +314,7 @@ function editarNotaRapidaGestor(id){const n=notasGlobais.find(n=>String(n.id)===
 function cancelarEdicaoNotaGestor(){const rev=revisaoTextoNotaGestor;mostrarConfirmacao('Cancelar edição?','As alterações deste rascunho serão descartadas. A nota salva será preservada.',()=>{if(rev===revisaoTextoNotaGestor)configurarEdicaoNotaGestor(null);},false,'Descartar rascunho','neutral');}
 function alternarFixacaoNotaGestor(id){const copia=notasFixadasGestor.includes(String(id))?notasFixadasGestor.filter(n=>n!==String(id)):[String(id),...notasFixadasGestor].slice(0,200);if(salvarCacheLeituraGestor('gestorNotasFixadasV1',JSON.stringify(copia))){notasFixadasGestor=copia;renderizarNotasUI();}}
 function copiarNotaGestor(id){const nota=(notasGlobais||[]).find(n=>String(n.id)===String(id));if(!nota){mostrarAviso('Nota não encontrada','A nota pode ter sido removida. Atualize a lista antes de copiar.');return;}copiarTextoAreaTransferencia(String(nota.texto||''),'Texto da nota copiado!');}
+function copiarTextoEditorNotaGestor(){const texto=document.getElementById('inpNovaNotaTexto')?.value||'';if(!texto.trim()){mostrarAviso('Nada para copiar','Escreva uma anotação primeiro.');return;}copiarTextoAreaTransferencia(texto,'Texto do campo copiado!');}
 function renderizarNotasUI(){
   const box=document.getElementById('listaNotasUI');if(!box)return;
   const termo=normalizarTexto(document.getElementById('buscaNotasGestor')?.value||''),filtro=document.getElementById('filtroNotasGestor')?.value||'todas';

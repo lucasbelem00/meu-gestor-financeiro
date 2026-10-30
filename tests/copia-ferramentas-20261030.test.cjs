@@ -9,3 +9,7 @@ test('conta inválida não copia resultado antigo ou não finito',()=>{
 test('cópia da nota preserva linhas e lê o conteúdo atual; nota removida não é copiada',()=>{
  const {c,copias,avisos}=tela();c.notasGlobais=[{id:'nota-1',texto:'Almoço: R$ 25,50\nDevolver para Ana na sexta.'}];c.copiarNotaGestor('nota-1');assert.equal(copias[0][0],c.notasGlobais[0].texto);c.notasGlobais[0].texto='Texto revisado';c.copiarNotaGestor('nota-1');assert.equal(copias[1][0],'Texto revisado');c.notasGlobais=[];c.copiarNotaGestor('nota-1');assert.equal(copias.length,2);assert.equal(avisos.length,1);
 });
+
+test('copiar o editor usa o rascunho atual sem adicionar ou alterar a nota salva',()=>{
+ const {c,copias,avisos}=tela(),editor={value:'Diário de hoje\n  Mercado: R$ 18,50\n'};c.document.getElementById=()=>editor;c.notasGlobais=[{id:'nota-1',texto:'Texto salvo'}];c.copiarTextoEditorNotaGestor();assert.equal(copias[0][0],editor.value);assert.equal(c.notasGlobais[0].texto,'Texto salvo');editor.value='   \n';c.copiarTextoEditorNotaGestor();assert.equal(copias.length,1);assert.equal(avisos.length,1);
+});

@@ -65,9 +65,11 @@ function organizarPainelDiarioGestor(){
   // O resumo geral de terceiros fica junto da ação; não repete um segundo banner.
   const banner=document.getElementById('bannerEmprestimosDash');if(banner){banner.style.display='none';banner.hidden=true;}
   const acoes=raiz.querySelector('[aria-label="Pagamentos e recebimentos"]');if(acoes){acoes.className='card-glass p-4 space-y-3';const p=criar('p',null,'text-xs text-amber-200');p.id='resumoTerceirosPainelGestor';acoes.querySelector('h3')?.after(p);}
-  const analise=criar('section',null,'space-y-3');analise.append(criar('h2','Análise e planejamento','text-base font-bold text-white'),grafico);const limite=document.getElementById('limitePessoalPainelGestor');if(limite)analise.append(limite);
+  // A mesma grade empilha no celular; no computador mantém gráfico e Horizonte lado a lado.
+  const comparacao=criar('div',null,'grid grid-cols-1 lg:grid-cols-3 gap-6');comparacao.id='comparacaoPainelGestor';grafico.classList.add('lg:order-1');horizonte.classList.add('lg:order-2');comparacao.append(horizonte,grafico);
+  const analise=criar('section',null,'space-y-3');analise.append(criar('h2','Análise e planejamento','text-base font-bold text-white'));const limite=document.getElementById('limitePessoalPainelGestor');if(limite)analise.append(limite);
   if(geral){const d=criar('details',null,'space-y-2');d.append(criar('summary','Consultar todo o histórico registrado','text-xs text-slate-300 cursor-pointer py-2'),geral);analise.append(d);}
-  raiz.append(resumo,atencao);if(acoes)raiz.append(acoes);raiz.append(horizonte,analise);if(grade&&!grade.children.length)grade.remove();
+  raiz.append(resumo,atencao);if(acoes)raiz.append(acoes);raiz.append(comparacao,analise);if(grade&&!grade.children.length)grade.remove();
   renderizarRotinaPainelGestor();
 }
 document.addEventListener('DOMContentLoaded',organizarPainelDiarioGestor);
