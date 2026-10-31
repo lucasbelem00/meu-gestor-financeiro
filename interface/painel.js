@@ -56,7 +56,7 @@ function organizarPainelDiarioGestor(){
   const raiz=document.getElementById('view-dashboard');if(!raiz||document.getElementById('resumoMesPainelGestor'))return;
   const kpis=document.getElementById('kpi-comp')?.closest('section'),horizonte=document.getElementById('tabelaHorizonte')?.closest('.card-glass'),grafico=document.getElementById('chartCategorias')?.closest('.card-glass');if(!kpis||!horizonte||!grafico)return;
   const grade=horizonte.parentElement,explicacao=document.getElementById('escopoKpiRotina')?.closest('details'),geral=document.getElementById('kpi-geral')?.parentElement;
-  document.getElementById('chartCategorias').parentElement.className='relative h-64 flex items-center justify-center';
+  document.getElementById('chartCategorias').parentElement.className='relative h-64 lg:h-auto lg:flex-1 lg:min-h-[24rem] flex items-center justify-center';
   const criar=(tag,texto,classe)=>{const e=document.createElement(tag);if(texto)e.textContent=texto;if(classe)e.className=classe;return e;};
   const resumo=criar('section',null,'space-y-3');resumo.id='resumoMesPainelGestor';resumo.append(criar('h2','Seu mês','text-base font-bold text-white'));
   const total=document.getElementById('kpi-comp').parentElement;total.classList.add('col-span-2','sm:col-span-1');kpis.className='grid grid-cols-2 sm:grid-cols-3 gap-3';kpis.append(total,document.getElementById('kpi-aberto').parentElement,document.getElementById('kpi-pago').parentElement);if(geral)geral.remove();resumo.append(kpis);if(explicacao)resumo.append(explicacao);

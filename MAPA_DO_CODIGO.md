@@ -31,6 +31,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
 | `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `enviarPlanejamentoGestor` |
 | `shared/planejamento.js` | Aba permanente Planejamento, valores em centavos, validação e versão da lista para evitar sobrescrita concorrente | `validarPlanejamentoGestor_`, `obterPlanejamentoWeb`, `salvarPlanejamentoWeb` |
+| `shared/datas-recuperacao.js` | Retomada estrita de conversões texto→Date em planos pendentes; exige coincidência integral do resultado e usa o fuso do destino | `recuperarDatasTextoPlanoGestor_` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
 | `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor`, `criarHistoricoCentralGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |

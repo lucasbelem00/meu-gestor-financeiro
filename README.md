@@ -2,6 +2,8 @@
 
 Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas por meio do Apps Script.
 
+- [Datas, Notas e Planejamento — 31/10](CORRECAO_DATAS_NOTAS_PLANEJAMENTO_20261031.md): pacote local v71, prevenção de conversões de datas em exclusões, recuperação estrita da pendência, instruções das metas, atalhos lado a lado e gráfico maior no computador. Atualizar backend e interface; a conta real só muda após essa atualização.
+
 - [Backup v3 e planejamento — 31/10](PACOTE_BACKUP_PLANEJAMENTO_20261031.md): conferência dos registros anuais, restauração pela interface, CSV, Outros, metas de reserva e compras planejadas. Estado local atual: protocolo 17 e cache v70; atualizar também backend e catálogo do proxy. O relatório distingue o que foi testado da medição de lentidão ainda necessária na implantação real.
 
 - [Ferramentas diárias e proposta de Painel — 30/10](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md): empréstimos, arquivados, rachadinha, copiar Calculadora/Notas e recomendações para as bases anuais e o Painel.

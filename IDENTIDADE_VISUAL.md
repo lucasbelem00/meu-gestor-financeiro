@@ -57,3 +57,5 @@ A entrada normal na aba Mensal seleciona o mês vigente do calendário, inclusiv
 A Agenda financeira usa 🗓️ e fica em Planejamento. Seus eventos distinguem 💳 vencimento bancário e 🤝 devolução combinada, sempre com texto. Não gera despesas ou pagamentos. O Painel segue a ordem: Seu mês, O que precisa de atenção, Pagamentos e recebimentos, comparação do Horizonte com a distribuição e Análise e planejamento. A partir de 1024 px, o gráfico ocupa a coluna esquerda e o Horizonte as duas colunas à direita. No celular, Horizonte vem antes do gráfico, empilhados. O total de todo o histórico fica recolhido.
 
 As bases anuais usam a identidade dos cabeçalhos da base de controle e um resumo de doze meses do respectivo ano. A apresentação não duplica cadastros ou automações. Um ano fechado continua sendo o retrato financeiro do fechamento, inclusive se houver ajustes posteriores no webapp.
+
+O título do grupo Planejamento usa 📑. A bússola 🧭 fica reservada à Central de Navegação.

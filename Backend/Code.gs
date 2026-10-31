@@ -3927,6 +3927,7 @@ function aplicarPlanoGestor_(ss, plano) {
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   conferirDestinosRestauracaoGestor_(plano,ss);
   recuperarTextosTransferenciaAnualGestor_(ss,plano);
+  recuperarDatasTextoPlanoGestor_(ss,plano);
   (plano.mudancas || []).forEach(function (m) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     const destino=destinoMudancaAnualGestor_(ss,m,plano);
@@ -3947,7 +3948,7 @@ function aplicarPlanoGestor_(ss, plano) {
     const alvo = copiarGestor_(atual); (m.alteracoes || []).forEach(function (a) { alvo[a[0]] = a[1]; }); alvo.length = m.linhas;
     // Texto explícito também protege parcelas e competências da conversão em
     // datas em destinos novos. Date e valores monetários mantêm o tipo original.
-    const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if (ehAbaRegistrosGestor_(m.nome) && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
+    const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if ((ehAbaRegistrosGestor_(m.nome)||m.nome==='Anotações'||m.nome==='Planejamento') && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
     if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
     atualizarValidacaoStatusLancamentosGestor_(sh, Math.max(m.linhas, atual.length));
@@ -6567,3 +6568,24 @@ function lerPlanejamentoInternoGestor_(){const sh=obterPlanilhaGestor_().getShee
 function obterPlanejamentoWeb(){return executarOperacaoGestor_('obterPlanejamentoWeb',{},lerPlanejamentoInternoGestor_,true);}
 function salvarPlanejamentoWeb(p){return executarOperacaoGestor_('salvarPlanejamentoWeb',p,function(){const atual=lerPlanejamentoInternoGestor_();if(p.versao!==atual.versao)throw Error('O planejamento mudou em outro aparelho. Consulte novamente antes de salvar.');const linhas=validarPlanejamentoGestor_([CAB_PLANEJAMENTO_GESTOR_,...p.itens]);const ss=obterPlanilhaGestor_(),sh=ss.getSheetByName(ABA_PLANEJAMENTO_GESTOR_)||ss.insertSheet(ABA_PLANEJAMENTO_GESTOR_);sh.valores=linhas.map(r=>r.map(v=>typeof v==='string'?textoLiteralGestor_(v):v));sh.colunas=8;sh.alterados=Object.create(null);sh.valores.forEach((r,i)=>r.forEach((_,j)=>sh.alterados[i+':'+j]=true));return {linhas,versao:hashGestor_(linhas)};},false);}
 // FIM MODULO PLANEJAMENTO GERADO
+
+
+// INICIO MODULO DATAS-RECUPERACAO GERADO
+// Corrige somente conversão de texto em Date depois de um bloco já aplicado.
+// A igualdade do hash integral é obrigatória antes e depois da escrita.
+function recuperarDatasTextoPlanoGestor_(ss,plano){
+ for(const m of plano.mudancas||[]){
+  const campos=m.nome==='Anotações'?[[3,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/]]:m.nome==='Planejamento'?[[5,'yyyy-MM-dd',/^\d{4}-\d{2}-\d{2}$/]]:ehAbaRegistrosGestor_(m.nome)?[[0,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/],[6,'d/M',/^\d{1,2}\/\d{1,2}$/],[8,'MM/yyyy',/^\d{2}\/\d{4}$/]]:[];
+  if(!campos.length||m.modo==='anexar')continue;
+  const destino=destinoMudancaAnualGestor_(ss,m,plano),sh=destino.getSheetByName(m.nome);if(!sh)continue;
+  const atual=lerEstadoAbaGestor_(sh);if(hashEstadoGestor_(atual)===m.depois)continue;
+  const normalizado=copiarGestor_(atual),reparos=[],fuso=destino.getSpreadsheetTimeZone();
+  for(const [i,r]of m.alteracoes||[])for(const [coluna,formato,padrao]of campos){const v=atual[i]?.[coluna],esperado=r?.[coluna];if(i>0&&v instanceof Date&&typeof esperado==='string'&&padrao.test(esperado)&&Utilities.formatDate(v,fuso,formato)===esperado&&Utilities.formatDate(v,fuso,'HH:mm:ss')==='00:00:00'){normalizado[i][coluna]=esperado;reparos.push([i+1,coluna+1,esperado]);}}
+  if(!reparos.length||hashEstadoGestor_(normalizado)!==m.depois)continue;
+  // Releitura protege contra alterações entre a conferência e a reparação.
+  if(hashEstadoGestor_(lerEstadoAbaGestor_(sh))!==hashEstadoGestor_(atual))throw Error('Os registros mudaram durante a conferência. Consulte novamente.');
+  for(const [linha,coluna,texto]of reparos)sh.getRange(linha,coluna).setValue("'"+texto);
+  SpreadsheetApp.flush();if(hashEstadoGestor_(lerEstadoAbaGestor_(sh))!==m.depois)throw Error('A conversão da data ainda precisa de conferência. O diário foi preservado.');
+ }
+}
+// FIM MODULO DATAS-RECUPERACAO GERADO

@@ -1,6 +1,6 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
-Preparado em 30/10/2026; atualizado em 31/10/2026. Pacote local: protocolo 17, cache v70. A continuação e as limitações estão em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`.
+Preparado em 30/10/2026; atualizado em 31/10/2026. Pacote local: protocolo 17, cache v71. A continuação está em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`; a correção das datas/pendência e a explicação das metas estão em `CORRECAO_DATAS_NOTAS_PLANEJAMENTO_20261031.md`.
 
 Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os testes locais automatizados não substituem os passos na sua conta. Faça primeiro na **Cópia de Gestor de Gastos**; restauração e ensaio de virada usam uma cópia separada, descartável. Não precisa testar tudo de uma vez: siga a ordem e registre onde parou.
 
