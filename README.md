@@ -2,6 +2,8 @@
 
 Webapp pessoal com interface PWA, proxy na Vercel e dados no Google Planilhas por meio do Apps Script.
 
+- [Backup v3 e planejamento — 31/10](PACOTE_BACKUP_PLANEJAMENTO_20261031.md): conferência dos registros anuais, restauração pela interface, CSV, Outros, metas de reserva e compras planejadas. Estado local atual: protocolo 17 e cache v70; atualizar também backend e catálogo do proxy. O relatório distingue o que foi testado da medição de lentidão ainda necessária na implantação real.
+
 - [Ferramentas diárias e proposta de Painel — 30/10](AJUSTES_FERRAMENTAS_PROPOSTA_PAINEL_20261030.md): empréstimos, arquivados, rachadinha, copiar Calculadora/Notas e recomendações para as bases anuais e o Painel.
 - [Conclusão das pendências — 30/10](CORRECOES_PENDENCIAS_20261030.md): fixos sem infinito, Atividade sem atalho de fatura, competências, formulário protegido, janela de pagamento e redução de cálculos redundantes.
 - [Mensagens para WhatsApp em blocos — 30/10](WHATSAPP_BLOCOS_20261030.md): Empréstimos, Histórico e Simulação com informações separadas, parcelas claras e totais preservados.

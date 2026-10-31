@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const url=linkSeguroProtecaoGestor(s.pastaUrl);if(url){const a=criar('a','Abrir pasta no Drive','block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}
     if(s.planilha)lista.append(criar('p','Base de controle: '+s.planilha,'text-slate-300'));
     if(s.organizacaoAnual&&(!j||j.estado==='CONCLUIDA'))lista.append(criar('p','Anos fechados preservam o retrato; pagamentos e recebimentos posteriores ficam vinculados no controle. PDFs são resumos de consulta; mantenha o backup JSON.','text-slate-300'));
+    if(s.anos?.length)lista.append(criar('p','Os lançamentos ficam nas bases de cada ano. A base de controle pode ficar apenas com os cabeçalhos; o webapp reúne os registros para consulta.','text-xs text-slate-200'));
     for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
     if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
     if(s.avisoApresentacaoAnual)lista.append(criar('p','Apresentação anual: '+s.avisoApresentacaoAnual,'text-amber-300'));

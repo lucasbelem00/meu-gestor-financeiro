@@ -2150,7 +2150,7 @@ function valoresCelulasBackupGestor_(linhas, fuso) {
 }
 function montarBackupDadosGestor_(ss,param,recuperacao) {
     const restauravel=Boolean(param && param.restauravel);
-    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'].concat(restauravel?[]:['_Gestor_Atividade']);
+    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento'].concat(restauravel?[]:['_Gestor_Atividade']);
     const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
     const abas = nomes.map(function (nome) {
       const sh = folhaLeituraAnualGestor_(ss,nome);
@@ -2177,6 +2177,8 @@ function propriedade_(nome) {
 
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
+    case 'obterPlanejamentoWeb': return obterPlanejamentoWeb();
+    case 'salvarPlanejamentoWeb': return salvarPlanejamentoWeb(param);
     case 'ativarOrganizacaoAnualWeb': return solicitarAtivacaoAnualGestor_();
     case 'ativarProtecaoAutomaticaWeb': return configurarProtecaoAutomaticaGestor(param&&param.pastaUrl);
     case 'obterStatusProtecaoWeb': return obterStatusProtecaoWeb();
@@ -4231,7 +4233,7 @@ function aplicarAnexoTecnicoGestor_(ss, m) {
 
 function executarOperacaoGestor_(acao, param, executar, leitura) {
   if (CONTEXTO_GESTOR_) return executar();
-  const inicioTempoGestor = Date.now();
+  const inicioTempoGestor = Date.now();let preparacaoMsGestor=0,execucaoMsGestor=0,planoMsGestor=0,gravacaoInicioGestor=0;
   const lock = LockService.getScriptLock(); lock.waitLock(30000);
   const esperaLockMsGestor = Date.now()-inicioTempoGestor;
   HASHES_EXECUCAO_GESTOR_ = new Map();
@@ -4275,11 +4277,13 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     }
     const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real, somenteLeitura:pendenciasIntegridade.length>0 };
     ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
+    preparacaoMsGestor=Date.now()-inicioTempoGestor-esperaLockMsGestor;const inicioExecucaoGestor=Date.now();
     let resultado;
     try {
       resultado = executar();
       if (!leitura) registrarAtividadeGestor_(ctx);
     } finally { CONTEXTO_GESTOR_ = null; }
+    execucaoMsGestor=Date.now()-inicioExecucaoGestor;const inicioPlanoGestor=Date.now();
     if(resultado && typeof resultado==='object' && !Array.isArray(resultado)) {
       informarOrigemAnualResultadoGestor_(resultado,ctx);
       resultado.integridade={bloqueada:ctx.somenteLeitura,pendencias:pendenciasIntegridade};
@@ -4289,6 +4293,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     const mudancas = finalizarPlanoGestor_(ctx);
     if (acao === 'restaurarBackupDadosWeb') mudancas.sort(function (a,b) { return (a.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0) - (b.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0); });
     if (leitura && mudancas.length === 0) { confirmarManutencaoLeituraGestor_(ctx); return resultado; }
+    planoMsGestor=Date.now()-inicioPlanoGestor;gravacaoInicioGestor=Date.now();
     const plano = { mudancas: mudancas, resultado: resultado };
     if(ctx.destinosAnuaisRestauracao)plano.destinosAnuaisRestauracao=ctx.destinosAnuaisRestauracao;
     const texto = JSON.stringify(serializarGestor_(plano));
@@ -4308,7 +4313,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
     throw e;
-  } finally { CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); console.log(JSON.stringify({tipo:'gestor_tempo',acao:acao,totalMs:Date.now()-inicioTempoGestor,esperaLockMs:esperaLockMsGestor})); }
+  } finally { CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); console.log(JSON.stringify({tipo:'gestor_tempo',acao:acao,totalMs:Date.now()-inicioTempoGestor,esperaLockMs:esperaLockMsGestor,preparacaoMs:preparacaoMsGestor,execucaoMs:execucaoMsGestor,planoMs:planoMsGestor,gravacaoMs:gravacaoInicioGestor?Date.now()-gravacaoInicioGestor:0})); }
 }
 
 function assinaturaManutencaoLeituraGestor_(ss) {
@@ -4593,7 +4598,7 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   adiantarParcelasWeb: 'Parcelas antecipadas', salvarNotasWeb: 'Notas atualizadas',
   editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada',
   salvarFormaPagamentoWeb: 'Forma de pagamento atualizada', excluirFormaPagamentoWeb: 'Forma de pagamento excluída',
-  reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas',
+  reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas', salvarPlanejamentoWeb:'Planejamento atualizado',
   restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
@@ -4787,7 +4792,7 @@ function desfazerAtividadeWeb(param) {
 }
 
 // Restauração com prévia, controle de concorrência e cópia anterior recuperável.
-const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações'];
+const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento'];
 const ABA_RESTAURACOES_GESTOR_ = '_Gestor_Restauracoes';
 const LIMITE_BACKUP_RESTAURACAO_GESTOR_ = 8 * 1024 * 1024;
 const CABECALHO_COPIAS_RESTAURACAO_GESTOR_ = ['Operação','Data','Parte','Conteúdo','SHA256','Partes'];
@@ -4806,6 +4811,7 @@ function validarConteudoAbaBackupGestor_(aba) {
   const vazia = function (r) { return r.every(function (v) { return v === '' || v === null; }); };
   const duplicados = new Set();
   const registrar = function (id) { if (duplicados.has(id)) throw new Error('Identificação repetida em ' + nome); duplicados.add(id); };
+  if (nome === 'Planejamento') validarPlanejamentoGestor_(linhas);
   if (nome === 'Anotações') {
     const titulos = ['ID','Texto','Concluída','Data','Versão','Excluída'];
     if (cols < 6 || titulos.some(function (t,i) { return linhas[0][i] !== t; })) throw new Error('Estrutura de Anotações incompleta.');
@@ -4874,6 +4880,7 @@ function validarBackupRestauracaoGestor_(backup) {
     if (registros && (cols < 11 || cols > COLUNAS_GESTOR_)) throw new Error('Estrutura financeira incompatível: ' + aba.nome);
     if (cabecalho && cabecalho.some(function (v, i) { return i < (registros ? 11 : Math.min(cols, cabecalho.length)) && String(v || '').trim() !== String(aba.valores[0][i] || '').trim(); })) throw new Error('Os cabeçalhos de ' + aba.nome + ' não correspondem à planilha atual.');
     const formulas = aba.formulas || [];
+    if(aba.nome==='Planejamento'&&formulas.some(r=>r.some(Boolean)))throw Error('Planejamento não aceita fórmulas nos dados.');
     const valores = aba.valores.map(function (r, i) { return r.map(function (v, j) {
       const formula = formulas[i] && formulas[i][j];
       if (formula) {
@@ -4919,7 +4926,7 @@ function validarBackupRestauracaoGestor_(backup) {
   }).filter(Boolean);
   ['Dashboard & Resumo','Formas de Pagamento','Lançamentos'].forEach(function (nome) { if (!vistos.has(nome)) throw new Error('O backup está incompleto: falta ' + nome); });
   // Ausência não significa exclusão: abas que não constam no arquivo ficam intactas.
-  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome); });
+  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome) && (nome!=='Planejamento'||obterPlanilhaGestor_().getSheetByName(nome)); });
   abas.avisos = abas.preservadas.map(function (nome) { return nome + ': ausente no arquivo; os dados atuais serão preservados.'; });
   validarIdentidadesEstadoRestauradoGestor_(abas);
   if (formulasCriticas) abas.avisos.push(formulasCriticas + ' fórmula(s) de configuração serão restauradas como os valores validados exibidos na prévia, preservando limites, nomes, dias e metas.');
@@ -5223,7 +5230,7 @@ function validarCategoriaAtualGestor_(nome) {
   const chave = chaveCategoria(nome), cadastradas = listarNomesCategoriasConfig(sh);
   const correspondentes = cadastradas.filter(function (categoria) { return chaveCategoria(categoria) === chave; });
   if (!chave || correspondentes.length !== 1) throw new Error('A categoria selecionada não está mais disponível ou seu cadastro está ambíguo. Atualize as categorias e confira o rascunho antes de gravar.');
-  return correspondentes[0];
+  return chave==='outros'?'Outros 📦':correspondentes[0];
 }
 
 function validarMetadadosTiposFormasGestor_(linhas) {
@@ -5673,6 +5680,7 @@ function resumoArquivoAnualProtecaoGestor_(dados){
 }
 function criarArquivoAnualProtecaoGestor_(ss,pasta,dados,lote){
   const novo=SpreadsheetApp.create('Gestor — Arquivo '+dados.ano+' — '+lote.slice(-8));
+  const inicial=novo.getSheets()[0];if(inicial&&inicial.getLastRow()===0&&inicial.setName)inicial.setName('Dashboard & Resumo');
   DriveApp.getFileById(novo.getId()).moveTo(pasta);
   ['Dashboard & Resumo','Formas de Pagamento','Anotações'].forEach(function(nome){
     const origem=ss.getSheetByName(nome);if(!origem)return;
@@ -6546,3 +6554,16 @@ function tentarApresentacaoAnoGestor_(origem,destino,ano,estado){
   catch(e){try{const c=configProtecaoGestor_();c.avisoApresentacaoAnual='Ano '+ano+': '+String(e.message||e).slice(0,250);salvarConfigProtecaoGestor_(c);}catch(_){}return {sucesso:false,ano:ano};}
 }
 // FIM MODULO APRESENTACAO-ANUAL GERADO
+
+// INICIO MODULO PLANEJAMENTO GERADO
+// Controle permanente, independente das bases anuais. Não cria lançamentos.
+const ABA_PLANEJAMENTO_GESTOR_='Planejamento';
+const CAB_PLANEJAMENTO_GESTOR_=['ID','Tipo','Nome','Valor','Progresso','Prazo','Prioridade','Estado'];
+function validarPlanejamentoGestor_(linhas){
+ if(!Array.isArray(linhas)||linhas.length>501||JSON.stringify(linhas[0])!==JSON.stringify(CAB_PLANEJAMENTO_GESTOR_))throw Error('Estrutura de planejamento inválida.');
+ const ids=new Set();for(const r of linhas.slice(1)){if(r.length!==8||typeof r[0]!=='string'||!/^[A-Za-z0-9_.:-]{8,160}$/.test(r[0])||ids.has(r[0])||!['meta','compra'].includes(r[1])||typeof r[2]!=='string'||!r[2].trim()||r[2].length>150||![r[3],r[4]].every(v=>Number.isSafeInteger(v)&&v>=0)||r[3]<=0||!['','alta','normal','baixa'].includes(r[6])||!['planejado','concluido'].includes(r[7]))throw Error('Confira nome, valores e identificação do planejamento.');if(r[5]!==''){if(typeof r[5]!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(r[5]))throw Error('Prazo inválido.');validarDataCalendarioWeb_(r[5].slice(8,10)+'/'+r[5].slice(5,7)+'/'+r[5].slice(0,4),'Prazo');}ids.add(r[0]);}return linhas;
+}
+function lerPlanejamentoInternoGestor_(){const sh=obterPlanilhaGestor_().getSheetByName(ABA_PLANEJAMENTO_GESTOR_),linhas=sh&&sh.getLastRow()?sh.getDataRange().getValues():[CAB_PLANEJAMENTO_GESTOR_];validarPlanejamentoGestor_(linhas);return {linhas,versao:hashGestor_(linhas)};}
+function obterPlanejamentoWeb(){return executarOperacaoGestor_('obterPlanejamentoWeb',{},lerPlanejamentoInternoGestor_,true);}
+function salvarPlanejamentoWeb(p){return executarOperacaoGestor_('salvarPlanejamentoWeb',p,function(){const atual=lerPlanejamentoInternoGestor_();if(p.versao!==atual.versao)throw Error('O planejamento mudou em outro aparelho. Consulte novamente antes de salvar.');const linhas=validarPlanejamentoGestor_([CAB_PLANEJAMENTO_GESTOR_,...p.itens]);const ss=obterPlanilhaGestor_(),sh=ss.getSheetByName(ABA_PLANEJAMENTO_GESTOR_)||ss.insertSheet(ABA_PLANEJAMENTO_GESTOR_);sh.valores=linhas.map(r=>r.map(v=>typeof v==='string'?textoLiteralGestor_(v):v));sh.colunas=8;sh.alterados=Object.create(null);sh.valores.forEach((r,i)=>r.forEach((_,j)=>sh.alterados[i+':'+j]=true));return {linhas,versao:hashGestor_(linhas)};},false);}
+// FIM MODULO PLANEJAMENTO GERADO

@@ -29,6 +29,8 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
 | `interface/painel.js` | Ordem do Painel, lembretes pela data combinada e limite pessoal sem novas consultas | `organizarPainelDiarioGestor`, `listarDevolucoesPainelGestor`, `renderizarRotinaPainelGestor` |
 | `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
+| `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `enviarPlanejamentoGestor` |
+| `shared/planejamento.js` | Aba permanente Planejamento, valores em centavos, validação e versão da lista para evitar sobrescrita concorrente | `validarPlanejamentoGestor_`, `obterPlanejamentoWeb`, `salvarPlanejamentoWeb` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
 | `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor`, `criarHistoricoCentralGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |

@@ -226,6 +226,7 @@ function resumoArquivoAnualProtecaoGestor_(dados){
 }
 function criarArquivoAnualProtecaoGestor_(ss,pasta,dados,lote){
   const novo=SpreadsheetApp.create('Gestor — Arquivo '+dados.ano+' — '+lote.slice(-8));
+  const inicial=novo.getSheets()[0];if(inicial&&inicial.getLastRow()===0&&inicial.setName)inicial.setName('Dashboard & Resumo');
   DriveApp.getFileById(novo.getId()).moveTo(pasta);
   ['Dashboard & Resumo','Formas de Pagamento','Anotações'].forEach(function(nome){
     const origem=ss.getSheetByName(nome);if(!origem)return;

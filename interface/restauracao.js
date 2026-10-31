@@ -43,9 +43,11 @@ async function hashTextoRestauracaoGestor(texto) {
 }
 
 function compactarBackupRestauracaoGestor(original) {
-  if (!original || !['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2'].includes(original.formato) || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
+  if (!original || !['gestor-financeiro-backup-v1','gestor-financeiro-backup-v2','gestor-financeiro-backup-v3'].includes(original.formato) || !Array.isArray(original.abas)) throw new Error('Selecione um arquivo JSON de backup exportado pelo Gestor. CSV serve para consulta e não restaura o app.');
   const resultado={formato:original.formato,geradoEm:original.geradoEm,fusoHorario:original.fusoHorario,planilha:original.planilha,observacao:original.observacao,abas:original.abas.filter(a=>a && a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas}))};
-  if(original.formato==='gestor-financeiro-backup-v2'){resultado.arquivosAnuais=original.arquivosAnuais;resultado.hashFinanceiro=original.hashFinanceiro;if(original.recuperacaoOrigem)resultado.recuperacaoOrigem=original.recuperacaoOrigem;}return resultado;
+  if(original.formato!=='gestor-financeiro-backup-v1'){for(const chave of ['arquivosAnuais','hashFinanceiro','recuperacaoOrigem'])if(original[chave]!==undefined)resultado[chave]=original[chave];}
+  if(original.formato==='gestor-financeiro-backup-v3'){resultado.anos=original.anos;resultado.hashOrganizacao=original.hashOrganizacao;if(original.recuperacaoAnos)resultado.recuperacaoAnos=original.recuperacaoAnos;}
+  return resultado;
 }
 
 function mensagemErroRestauracaoGestor(erro) {return erro?.message || 'Não foi possível conferir a restauração. Preserve o arquivo e tente a conferência novamente.';}

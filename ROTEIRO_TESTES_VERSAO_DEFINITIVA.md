@@ -1,6 +1,6 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
-Preparado em 30/10/2026. Pacote local: protocolo 17, cache v69.
+Preparado em 30/10/2026; atualizado em 31/10/2026. Pacote local: protocolo 17, cache v70. A continuação e as limitações estão em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`.
 
 Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os testes locais automatizados não substituem os passos na sua conta. Faça primeiro na **Cópia de Gestor de Gastos**; restauração e ensaio de virada usam uma cópia separada, descartável. Não precisa testar tudo de uma vez: siga a ordem e registre onde parou.
 
@@ -104,7 +104,7 @@ Se aparecer divergência financeira, duplicação, perda de notas, fórmula com 
 
 **Outra possibilidade: Lista de compras planejadas.** Descrição, estimativa e prioridade; abrir o simulador a partir de um item e dar baixa somente quando você registrar a compra. Só vale acrescentar se você costuma guardar essas intenções nas Notas. Não deve duplicar o simulador nem gerar lançamentos automaticamente.
 
-Estas são propostas; nenhuma ferramenta adicional foi criada nesta revisão.
+As propostas foram implementadas na continuação de 31/10: Menu → Planejamento → Metas e compras planejadas, com dados na planilha e no backup. Conferir também os passos do pacote de 31/10 antes de liberar a definitiva.
 
 ## O que já foi conferido no código deste ajuste
 
