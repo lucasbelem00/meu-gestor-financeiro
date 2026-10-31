@@ -59,3 +59,5 @@ A Agenda financeira usa 🗓️ e fica em Planejamento. Seus eventos distinguem 
 As bases anuais usam a identidade dos cabeçalhos da base de controle e um resumo de doze meses do respectivo ano. A apresentação não duplica cadastros ou automações. Um ano fechado continua sendo o retrato financeiro do fechamento, inclusive se houver ajustes posteriores no webapp.
 
 O título do grupo Planejamento usa 📑. A bússola 🧭 fica reservada à Central de Navegação.
+
+Comparar preços usa ⚖️ e fica em Ferramentas. Conferir extrato usa 🔎 em Dados e relatórios: a lupa mantém o significado de examinar/procurar. No computador (a partir de 1024 px), os quatro grupos do Menu ficam em duas colunas, com atalhos em pares e fundo neutro. No celular permanece a organização em pares.
