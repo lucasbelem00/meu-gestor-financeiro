@@ -45,7 +45,8 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
   resumo.append(criar('p','Gastos já pagos continuam contando. O valor restante é uma margem do seu limite, não saldo bancário.','text-xs text-slate-300'));
 }
 function renderizarRotinaPainelGestor(){
-  const dados=dadosRotinaPainelGestor;if(!dados)return;
+  const dados=dadosRotinaPainelGestor;if(!dados){const resumo=document.getElementById('resumoLimitePessoalGestor');if(resumo)resumo.textContent='Aguardando os gastos do mês. Você pode guardar seu limite agora; o resultado aparece quando a consulta estiver disponível.';return;}
+  renderizarLimitePessoalPainelGestor(dados);
   const acaoTerceiros=document.getElementById('resumoTerceirosPainelGestor');if(acaoTerceiros)acaoTerceiros.textContent='A receber de terceiros: '+(dados.emprestimos?.kpis?.totalAReceberGeral||'R$ 0,00')+' • todos os meses';
   const box=document.getElementById('devolucoesPainelGestor'),lista=document.getElementById('listaDevolucoesPainelGestor');
   if(box&&lista){
@@ -55,6 +56,9 @@ function renderizarRotinaPainelGestor(){
     if(itens.length>12){const p=document.createElement('p');p.className='text-xs text-slate-300';p.textContent='Mostrando as primeiras 12. Confira as demais em Empréstimos.';lista.append(p);}
   }
   const semAvisos=document.getElementById('semAvisosPainelGestor');if(semAvisos)semAvisos.hidden=!(document.getElementById('bannerVencimentoFatura')?.classList?.contains('hidden')&&document.getElementById('devolucoesPainelGestor')?.hidden);
+
+}
+function renderizarLimitePessoalPainelGestor(dados){
   const resumo=document.getElementById('resumoLimitePessoalGestor');if(!resumo)return;
   const config=lerJSONLocalGestor('gestorLimitePessoalV1',{}),r=calcularLimitePessoalPainelGestor(dados,config);
   const campo=document.getElementById('valorLimitePessoalGestor');
@@ -66,11 +70,11 @@ function renderizarRotinaPainelGestor(){
 function salvarLimitePessoalPainelGestor(limpar=false){
   const valor=limpar?0:lerValorMoeda('valorLimitePessoalGestor'),centavos=Math.round(valor*100);
   if(!limpar&&(!Number.isSafeInteger(centavos)||centavos<=0)){mostrarAviso('Confira o limite','Informe um valor maior que zero.');return;}
-  try{gravarArmazenamentoGestor('gestorLimitePessoalV1',JSON.stringify({centavos,incluirPrevistos:!limpar&&document.getElementById('previsoesLimitePessoalGestor').checked}));limitePessoalEmEdicaoGestor=false;renderizarRotinaPainelGestor();}
+  try{gravarArmazenamentoGestor('gestorLimitePessoalV1',JSON.stringify({centavos,incluirPrevistos:!limpar&&document.getElementById('previsoesLimitePessoalGestor').checked}));limitePessoalEmEdicaoGestor=false;renderizarRotinaPainelGestor();mostrarAviso(limpar?'Limite removido':'Limite guardado',dadosRotinaPainelGestor?'O acompanhamento mensal foi atualizado.':'O limite está salvo neste aparelho. Aguarde a consulta dos gastos para ver o resultado.');}
   catch(e){mostrarAviso('Limite não guardado',e.message);}
 }
 const renderDadosAntesRotinaPainelGestor=window.renderizarDados;
-window.renderizarDados=function(dados){const r=renderDadosAntesRotinaPainelGestor(dados);dadosRotinaPainelGestor=dados;renderizarRotinaPainelGestor();return r;};
+window.renderizarDados=function(dados){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados);}finally{renderizarRotinaPainelGestor();}};
 window.addEventListener('storage',e=>{if(e.key==='gestorLimitePessoalV1')renderizarRotinaPainelGestor();});
 function organizarPainelDiarioGestor(){
   const raiz=document.getElementById('view-dashboard');if(!raiz||document.getElementById('resumoMesPainelGestor'))return;
