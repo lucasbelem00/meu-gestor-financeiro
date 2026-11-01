@@ -4437,16 +4437,24 @@ function descartarImportacaoBackupWeb(param) {
     return {descartada:true};
   });
 }
+function montarDadosExportacaoCSVGestor_(ss,formato) {
+  const nome=formato==='emprestimos'?'Empréstimos':'Lançamentos',fuso=ss.getSpreadsheetTimeZone()||getTimezone(),sh=folhaLeituraAnualGestor_(ss,nome);
+  if(!sh)throw Error('A aba '+nome+' ainda não existe na planilha.');
+  const range=sh.getDataRange(),arquivos=catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,abas:dadosArquivoAnualProtecaoGestor_(e).abas.filter(a=>a.nome===nome).map(a=>({nome:a.nome,valores:valoresCelulasBackupGestor_(a.valores,fuso)}))};});
+  return {formato:'gestor-financeiro-csv-v1',tipoCSV:formato,geradoEm:Utilities.formatDate(new Date(),fuso,'yyyy-MM-dd HH:mm:ss'),abas:[{nome:nome,valores:valoresCelulasBackupGestor_(range.getValues(),fuso),exibidos:range.getDisplayValues()}],arquivosAnuais:arquivos};
+}
 function prepararExportacaoBackupWeb(param) {
+  const formato=param?.formato||'json';
+  if(!['json','lancamentos','emprestimos'].includes(formato))throw Error('Formato de exportação inválido.');
   return comImportacaoBackupGestor_(param,function(sh,id){
     let estado=lerImportacaoBackupGestor_(sh,id,false,true);
-    if(estado){if(estado.meta.origem!=='exportacao')throw new Error('Identificação já usada por outra preparação.');}
+    if(estado){if(estado.meta.origem!=='exportacao'||(estado.meta.formato||'json')!==formato)throw new Error('Identificação já usada por outra preparação.');}
     else {
       limparImportacoesExpiradasGestor_(sh);
       if(localizarLinhasTecnicasGestor_(sh,2,'MANIFESTO').length>=20)throw new Error('Há muitas preparações guardadas. Descarte as preparações antigas antes de exportar.');
-      const texto=JSON.stringify(montarBackupDadosGestor_(obterPlanilhaGestor_(),{restauravel:true})),bytes=Utilities.newBlob(texto).getBytes().length;
+      const ss=obterPlanilhaGestor_(),texto=JSON.stringify(formato==='json'?montarBackupDadosGestor_(ss,{restauravel:true}):montarDadosExportacaoCSVGestor_(ss,formato)),bytes=Utilities.newBlob(texto).getBytes().length;
       if(bytes>LIMITE_BACKUP_RESTAURACAO_GESTOR_)throw new Error('Os dados ultrapassam 8 MB. Preserve uma cópia da planilha para recuperação assistida.');
-      const partes=texto.match(/[\s\S]{1,12000}/g) || [''],meta={versao:1,origem:'exportacao',hash:hashTextoBackupGestor_(texto),bytes:bytes,partes:partes.length,pronta:true,expiraEm:Date.now()+86400000};
+      const partes=texto.match(/[\s\S]{1,12000}/g) || [''],meta={versao:1,origem:'exportacao',formato:formato,hash:hashTextoBackupGestor_(texto),bytes:bytes,partes:partes.length,pronta:true,expiraEm:Date.now()+86400000};
       anexarPartesImportacaoGestor_(sh,[[id,'MANIFESTO',0,partes.length,JSON.stringify(meta),new Date()]].concat(partes.map(function(chunk,i){return [id,'PARTE',i+1,partes.length,JSON.stringify(chunk),new Date()];})));SpreadsheetApp.flush();
       estado=lerImportacaoBackupGestor_(sh,id,false,true);
     }
@@ -4978,9 +4986,10 @@ function diferencasAbaRestauracaoGestor_(nome, antes, depois) {
         chave=r[11]?'id:'+r[11]:'legado:'+hashGestor_(conteudo);
       } else if (nome === 'Anotações') { chave='nota:'+r[0]; conteudo=[r[0],r[1],r[2],r[3],r[5]]; }
       else if (nome === 'Formas de Pagamento') { chave='forma:'+chaveFormaGestor_(r[1]); conteudo=r; }
+      else if (nome === 'Planejamento') { chave='plano:'+r[0]; conteudo=r.slice(0,8); }
       else { chave='categoria:'+chaveCategoria(r[1]); conteudo=[r[1],r[3]]; }
       const repeticao=repetidos.get(chave) || 0; repetidos.set(chave,repeticao+1);
-      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String(r[ehAbaRegistrosGestor_(nome) && nome==='Empréstimos'?2:1] || r[0] || '').slice(0,160)});
+      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String(r[nome==='Planejamento'||nome==='Empréstimos'?2:1] || r[0] || '').slice(0,160)});
     }); return mapa;
   };
   const atuais=construir(antes), novos=construir(depois), resumo={incluidos:0,alterados:0,removidos:0,mantidos:0,amostras:[]};

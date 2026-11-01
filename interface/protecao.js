@@ -50,7 +50,18 @@ function linkSeguroProtecaoGestor(url){return /^https:\/\/(?:drive\.google\.com|
 function abaCompletaCSVProtecaoGestor(dados,nome){
   const origem=dados.abas.find(a=>a.nome===nome);if(!origem)return null;
   const antigas=(dados.arquivosAnuais||[]).flatMap(d=>(d.abas.find(a=>a.nome===nome)?.valores||[]).slice(1));
-  return {...origem,exibidos:(origem.exibidos||origem.valores).concat(antigas.map(r=>r.map((v,i)=>[4,7,17].includes(i)&&typeof v==='number'?formatBRL(v):String(v??''))))};
+  const formatar=(linha,indice,exibida)=>linha.map((v,i)=>{
+    if(indice>0&&[4,7,17].includes(i)&&typeof v==='number')return formatBRL(v);
+    if(v&&typeof v==='object'&&v.tipo==='data'){
+      const p=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(v.valor||''));
+      if(p&&[0,6,8].includes(i))return i===0?p[3]+'/'+p[2]+'/'+p[1]:i===6?Number(p[3])+'/'+Number(p[2]):p[2]+'/'+p[1];
+      return String(v.valor||'');
+    }
+    return String(exibida?.[i]??v??'');
+  });
+  const base=origem.valores||origem.exibidos||[];
+  // A visão efetiva já reúne os anos v3 e os ajustes: nunca somar dados.anos.
+  return {...origem,exibidos:base.map((r,i)=>formatar(r,i,origem.exibidos?.[i])).concat(antigas.map(r=>formatar(r,1)))};
 }
 document.addEventListener('DOMContentLoaded',()=>{
   const modal=document.getElementById('modalExportarDados');if(!modal?.firstElementChild)return;

@@ -13,9 +13,8 @@ async function lerExportacaoPreparadaGestor(ref,api,progresso) {
   if(new TextEncoder().encode(texto).length!==ref.bytes||await hashTextoRestauracaoGestor(texto)!==ref.hashImportacao)throw Error('O comprovante do backup não confere. O arquivo não foi baixado.');
   return JSON.parse(texto);
 }
-const exportarAntesRestauracaoCompletaGestor=window.exportarBackupDados;
 window.exportarBackupDados=async function(formato='json') {
-  if(formato!=='json')return exportarAntesRestauracaoCompletaGestor(formato);
+  if(!['json','lancamentos','emprestimos'].includes(formato))return;
   if(window.exportarBackupDados.emAndamento)return;
   window.exportarBackupDados.emAndamento=true;
   const botoes=Array.from(document.querySelectorAll('[data-exportar-dados]')),estados=botoes.map(b=>b.disabled);botoes.forEach(b=>b.disabled=true);
@@ -24,11 +23,21 @@ window.exportarBackupDados=async function(formato='json') {
   try {
     if(!navigator.onLine)throw Error('Conecte-se para preparar um backup atualizado da planilha.');
     if(status)status.textContent='Preparando o arquivo de dados. A planilha não será alterada…';
-    ref=await apiCall('prepararExportacaoBackupWeb',{importacaoId:novoRequestIdGestor()},1);
+    ref=await apiCall('prepararExportacaoBackupWeb',{importacaoId:novoRequestIdGestor(),formato},1);
     const dados=await lerExportacaoPreparadaGestor(ref,(...a)=>apiCall(...a),(valor,total)=>{if(status)status.textContent='Conferindo backup: '+Math.round(valor/total*100)+'%';});
-    baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+new Date().toISOString().slice(0,10)+'.json');
-    if(status)status.textContent='Backup conferido e preparado para baixar. O histórico técnico continua preservado na planilha.';
-    mostrarAviso('Backup pronto','O arquivo JSON contém os dados restauráveis do app. Guarde-o em um local de confiança.');
+    if(formato==='json'){
+      baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+new Date().toISOString().slice(0,10)+'.json');
+      if(status)status.textContent='Backup conferido e preparado para baixar. O histórico técnico continua preservado na planilha.';
+      mostrarAviso('Backup pronto','O arquivo JSON contém os dados restauráveis do app. Guarde-o em um local de confiança.');
+    }else{
+      if(dados.formato!=='gestor-financeiro-csv-v1'||dados.tipoCSV!==formato)throw Error('Atualize o Apps Script para exportar o CSV em partes.');
+      const nome=formato==='emprestimos'?'Empréstimos':'Lançamentos',aba=abaCompletaCSVProtecaoGestor(dados,nome);
+      if(!aba)throw Error('A preparação não contém a aba solicitada.');
+      const url=URL.createObjectURL(new Blob([converterAbaCSV(aba.exibidos)],{type:'text/csv;charset=utf-8'}));
+      const link=document.createElement('a');link.href=url;link.download=(formato==='emprestimos'?'Emprestimos_':'Lancamentos_')+new Date().toISOString().slice(0,10)+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      if(status)status.textContent='CSV conferido e preparado para baixar. Os registros permanecem na planilha.';
+      mostrarAviso('CSV pronto','Arquivo de consulta. Use o backup JSON para restauração.');
+    }
   }catch(e){if(status)status.textContent=mensagemErroRestauracaoGestor(e);mostrarAviso('Backup não concluído',mensagemErroRestauracaoGestor(e));}
   finally {
     if(ref)try{await apiCall('descartarImportacaoBackupWeb',ref,1);}catch(_){}

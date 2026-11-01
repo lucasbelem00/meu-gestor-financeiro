@@ -50,7 +50,7 @@ test('limpar o ano permite pesquisar em todos os anos', () => {
 
 test('CSV protege fórmulas e preserva aspas, quebras de linha e delimitadores', () => {
   const ctx = vm.createContext({});
-  vm.runInContext(html.slice(html.indexOf('    function converterAbaCSV('), html.indexOf('    async function exportarBackupDados(')), ctx);
+  vm.runInContext(html.slice(html.indexOf('    function converterAbaCSV('), html.indexOf('    function renderizarAlertasVencimento(')), ctx);
   const csv = ctx.converterAbaCSV([['Descrição', 'Valor'], ['  =HYPERLINK("x")', 10], ['Texto; "aspas"\nlinha', 0], ['@SOMA(1)', 1]]);
   assert(csv.startsWith('\uFEFF')); assert(csv.includes("'  =HYPERLINK")); assert(csv.includes('""aspas""')); assert(csv.includes("'@SOMA")); assert(csv.includes('\nlinha'));
 });

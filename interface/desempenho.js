@@ -249,11 +249,46 @@ if (typeof painelEmprestimosAntesCoordenacaoGestor === 'function') {
     return painelEmprestimosAntesCoordenacaoGestor(...args);
   };
 }
-window.addEventListener('online', invalidarLeiturasDesempenhoGestor);
-window.addEventListener('focus', invalidarLeiturasDesempenhoGestor);
+window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();});
+window.addEventListener('focus',()=>{invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();});
 window.addEventListener('storage', evento => {
   if (evento.key === null || evento.key === 'gestorEpocaRestauracaoV1' || evento.key === 'cacheDadosGestorV11' || evento.key?.startsWith('gestorMutacaoV3:')) invalidarLeiturasDesempenhoGestor();
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') invalidarLeiturasDesempenhoGestor();
+  if (document.visibilityState === 'visible') {invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();}
+});
+
+// Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo
+// nem interromper formulários e modais em edição. Falhas permitem nova tentativa.
+function criarRevalidadorDiaGestor(opcoes){
+  const agora=opcoes.agora||(()=>new Date()),dia=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  let conferido=dia(agora()),pendente=null,proximaTentativa=0;
+  function verificar(){
+    const hoje=agora(),chave=dia(hoje);
+    if(chave===conferido||!opcoes.permitir())return Promise.resolve(false);
+    if(pendente)return pendente;
+    if(!opcoes.online()){opcoes.estado('Os dados podem ser do dia anterior. Conecte-se para atualizar.');return Promise.resolve(false);}
+    if(hoje.getTime()<proximaTentativa)return Promise.resolve(false);
+    proximaTentativa=hoje.getTime()+60000;opcoes.estado('Atualizando os dados do novo dia…');
+    pendente=Promise.resolve().then(()=>opcoes.carregar()).then(ok=>{
+      if(ok===false)throw Error('Consulta não atualizada');
+      conferido=chave;proximaTentativa=0;opcoes.estado('');return true;
+    }).catch(()=>{opcoes.estado('Os dados do novo dia ainda não foram atualizados. Tente atualizar os dados novamente quando houver conexão.');return false;}).finally(()=>{pendente=null;});
+    return pendente;
+  }
+  return {verificar};
+}
+const revalidadorDiaGestor=criarRevalidadorDiaGestor({
+  permitir:()=>document.visibilityState==='visible'&&typeof abaAtivaAtual!=='undefined'&&['dashboard','agenda'].includes(abaAtivaAtual)&&!document.querySelector('[role="dialog"]:not(.hidden):not([hidden])'),
+  online:()=>navigator.onLine,
+  carregar:()=>carregarDados(),
+  estado:texto=>{for(const id of ['estadoNovoDiaPainelGestor','estadoNovoDiaAgendaGestor']){const e=document.getElementById(id);if(e){e.textContent=texto;e.hidden=!texto;}}}
+});
+const abaAntesRevalidacaoDiaGestor=window.setAba;
+window.setAba=function(...args){const r=abaAntesRevalidacaoDiaGestor(...args);revalidadorDiaGestor.verificar();return r;};
+document.addEventListener('DOMContentLoaded',()=>{
+  for(const [view,id]of [['dashboard','estadoNovoDiaPainelGestor'],['agenda','estadoNovoDiaAgendaGestor']]){
+    const pai=document.getElementById('view-'+view);if(!pai)continue;const e=document.createElement('p');e.id=id;e.hidden=true;e.className='text-sm text-amber-200';e.setAttribute('role','status');pai.prepend(e);
+  }
+  setInterval(()=>revalidadorDiaGestor.verificar(),60000);
 });

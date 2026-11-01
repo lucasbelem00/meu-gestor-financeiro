@@ -122,3 +122,5 @@ O ciclo confere pendências e destinos, prepara o ano atual e fecha os anos pass
 Para instruções e limites, consulte [o pacote de continuidade](PACOTE_CONTINUIDADE_ANUAL_20261028.md).
 
 `interface/conferencia.js` reúne o comparador de preços (`compararPrecos`), o leitor CSV (`csv`), a comparação somente de leitura (`conciliar`) e o diagnóstico sem conteúdo financeiro (`diagnostico`). A geração incorpora esse módulo nas três interfaces. Uso, limites e roteiro de testes: [Comparador e extrato](PACOTE_COMPARADOR_EXTRATO_20261031.md).
+
+O [pacote da auditoria de 01/11](PACOTE_CORRECOES_AUDITORIA_20261101.md) documenta o CSV restrito em partes (`montarDadosExportacaoCSVGestor_`), a revalidação de dia (`criarRevalidadorDiaGestor`), a limpeza do comparador e os controles independentes de leitura e consulta do extrato. JSON e CSV usam a mesma preparação e conferência de integridade; só o JSON é restaurável.
