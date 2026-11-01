@@ -46,10 +46,10 @@ O proxy api/gestor.js recusa intencionalmente VERCEL_ENV=production com 404. Ess
 
 Na cópia de testes, conferir: consulta sem internet e reconexão; cadastro/edição com pagamento parcial; cobrança após corrigir descrição/data; Planejamento com confirmação antiga; limite e comparação de fatura. Organização anual, restauração e PDFs precisam ser validados na conta Google e em cópia descartável antes da transferência; os mocks não validam permissões, quotas ou aparência real do Drive.
 
-## Melhorias úteis para discutir
+## Melhorias de Planejamento aprovadas e implementadas
 
-1. Filtro para ocultar itens concluídos no Planejamento, sem apagar o histórico das metas.
-2. Ordenação do Planejamento por prazo e prioridade, para destacar o que merece atenção primeiro.
+1. Implementado: filtro para ocultar concluídos, ativado por padrão e reversível sem apagar registros.
+2. Implementado: ordenação padrão por prazo e prioridade, com opção de prioridade e prazo. Pendentes vêm antes de concluídos; sem prazo fica ao final no modo por prazo. A lista completa continua salva e os campos em edição são preservados ao mudar a visualização.
 
 Nenhuma nova ferramenta foi acrescentada só para preencher espaço no menu.
 
@@ -66,3 +66,5 @@ O controle anterior exclusivo da Central foi substituído pelo controle comparti
 A medição local com 100 e 1.000 registros fictícios também terminou: com 1.000 registros, carga repetida levou 816 ms e relatório mensal 757 ms, sem acrescentar linhas ao diário nessas leituras repetidas. São tempos do mock nesta máquina, sem rede, Google Sheets ou geração real de PDFs; não demonstram o tempo no celular ou na implantação. A primeira leitura pode fazer a manutenção inicial prevista pelo contrato. Nenhuma validação financeira foi retirada para reduzir esse tempo.
 
 Para publicar as correções de datas e relatórios, atualizar também Backend/Code.gs e a implantação do Apps Script, além da interface. Não há função nova de ativação obrigatória para este pacote. O pacote permanece local, sem commit, push ou implantação remota nesta rodada.
+
+Validação adicional das melhorias do Planejamento: 15 testes direcionados passaram, incluindo preservação do editor e envio integral dos itens concluídos ocultos. Essas melhorias de visualização não exigem mudança no Apps Script.

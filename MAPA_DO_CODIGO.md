@@ -29,7 +29,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
 | `interface/painel.js` | Ordem do Painel, lembretes pela data combinada e limite pessoal sem novas consultas | `organizarPainelDiarioGestor`, `listarDevolucoesPainelGestor`, `renderizarRotinaPainelGestor` |
 | `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
-| `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `enviarPlanejamentoGestor` |
+| `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `selecionarItensPlanejamentoGestor`, `enviarPlanejamentoGestor` |
 | `shared/planejamento.js` | Aba permanente Planejamento, valores em centavos, validação e versão da lista para evitar sobrescrita concorrente | `validarPlanejamentoGestor_`, `obterPlanejamentoWeb`, `salvarPlanejamentoWeb` |
 | `shared/datas-recuperacao.js` | Retomada estrita de conversões texto→Date em planos pendentes; exige coincidência integral do resultado e usa o fuso do destino | `recuperarDatasTextoPlanoGestor_` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
@@ -129,3 +129,5 @@ O [pacote da auditoria de 01/11](PACOTE_CORRECOES_AUDITORIA_20261101.md) documen
 `interface/situacoes.js` concentra a apresentação de recebimentos, pagamentos e prioridade dos dias da Agenda, sem registrar baixas. Regras e composição do Horizonte: [Situações visuais](PACOTE_SITUACOES_VISUAIS_20261101.md).
 
 A [auditoria profunda de 01/11](AUDITORIA_PROFUNDA_20261101.md) descreve a validação estrita das datas, proteção de confirmações e respostas do Planejamento, normalização do limite, reconhecimento de recebimentos parciais por identidade e retomada da consulta na reconexão. `assinaturaEdicaoPlanejamentoGestor` e `confirmarAcaoPlanejamentoGestor` protegem o formulário; `normalizarConfigLimitePessoalGestor` isola preferências locais inválidas.
+
+O Planejamento oculta concluídos por padrão, permite consultar o histórico desmarcando o filtro e oferece ordenação por prazo/prioridade ou prioridade/prazo. A filtragem é somente visual, com contagem de itens ocultos; a lista integral permanece na persistência e no backup. Trocar filtro ou ordem atualiza apenas a lista, preservando os campos em edição.
