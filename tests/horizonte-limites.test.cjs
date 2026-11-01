@@ -4,7 +4,7 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const fonte=fs.readFileSync(path.join(__dirname,'../interface/usabilidade.js'),'utf8');
 function ambiente(total=6,largura=390){
   const elementos=new Map();
-  const el=id=>{if(!elementos.has(id))elementos.set(id,{innerHTML:'',textContent:'',disabled:false});return elementos.get(id);};
+  const el=id=>{if(!elementos.has(id))elementos.set(id,{innerHTML:'',textContent:'',disabled:false,attrs:{},setAttribute(k,v){this.attrs[k]=v}});return elementos.get(id);};
   const c=vm.createContext({window:{innerWidth:largura},document:{addEventListener(){},querySelectorAll:()=>[],getElementById:el},
     evolucaoMeses:Array.from({length:total},(_,i)=>String(i+1).padStart(2,'0')+'/2026'),evolucaoIdx:0,evolucaoPivot:{},evolucaoChaveResumoGestor:'__TOTAL_CARTEIRA__',compararHorizonteCompleto:false,
     formatBRL:n=>'R$ '+n.toFixed(2),escaparHTML:String,acaoHTML:()=>'',tipoFormaPagamentoGestor:()=> 'cartao',formaEhCartaoGestor:()=>true,formaEhPixGestor:()=>false});
@@ -45,3 +45,5 @@ test('Horizonte ignora direção inválida e normaliza um índice corrompido sem
   c.evolucaoIdx=1;for(const step of ['',0,2,'inválido',NaN])c.mudarMesEvolucao(step);
   assert.equal(c.evolucaoIdx,1);assert.deepEqual(c.evolucaoMeses,meses);
 });
+
+test('comparação no celular reserva espaço e fixa a primeira coluna; sair restaura a janela compacta',()=>{const {c,el}=ambiente();c.evolucaoPivot={Cartao:{'01/2026':100}};c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.equal(el('dicaRolagemHorizonteGestor').hidden,true);c.compararHorizonteCompleto=true;c.renderTabelaEvolucao();assert.match(el('tabelaHorizonte').attrs.style,/min-width: 840px/);assert.equal(el('dicaRolagemHorizonteGestor').hidden,false);assert.match(el('faturas-header').innerHTML,/sticky left-0/);assert.match(el('faturas-body').innerHTML,/sticky left-0/);c.compararHorizonteCompleto=false;c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.doesNotMatch(el('faturas-header').innerHTML,/sticky left-0/);c.window.innerWidth=1024;c.compararHorizonteCompleto=true;c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.equal(el('dicaRolagemHorizonteGestor').hidden,true);});

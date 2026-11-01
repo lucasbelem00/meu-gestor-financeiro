@@ -129,13 +129,13 @@ function sincronizarUnidadesPrecosGestor(seletor,lista){
 function adicionarPrecoGestor(focar=false){
  const lista=document.getElementById('precos-opcoes');if(lista.children.length>=12)return;document.getElementById('precos-resultado').replaceChildren();
  const c=elConferenciaGestor('div','','card-glass p-4 grid grid-cols-2 sm:grid-cols-3 gap-3');
- for(const [id,titulo,valor]of [['nome','Produto / marca',''],['preco','Preço total (R$)',''],['quantidade','Conteúdo\npor pacote',''],['pacotes','Pacotes\nno conjunto','1']]){
-  const l=elConferenciaGestor('label','','text-xs text-slate-200 min-w-0 flex flex-col'),i=document.createElement('input');i.dataset.preco=id;i.value=valor;i.maxLength=id==='nome'?100:20;i.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-1 min-w-0';if(id!=='nome')i.inputMode='decimal';const t=elConferenciaGestor('span',titulo,'block whitespace-pre-line leading-tight');l.append(t,i);c.append(l);
+ for(const [id,titulo,valor]of [['nome','Produto / marca',''],['preco','Preço total (R$)',''],['quantidade','Conteúdo/pacote',''],['pacotes','Nº de pacotes','1']]){
+  const l=elConferenciaGestor('label','','text-xs text-slate-200 min-w-0 flex flex-col'),i=document.createElement('input');i.dataset.preco=id;i.value=valor;i.maxLength=id==='nome'?100:20;i.className='block w-full bg-slate-900 border border-slate-600 rounded-xl h-12 p-3 mt-1 min-w-0';if(id!=='nome')i.inputMode='decimal';const t=elConferenciaGestor('span',titulo,'block whitespace-pre-line leading-tight');l.append(t,i);c.append(l);
  }
- const l=elConferenciaGestor('label','Unidade','text-xs text-slate-200 min-w-0 flex flex-col'),s=document.createElement('select');s.dataset.preco='unidade';s.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-1 min-w-0';
+ const l=elConferenciaGestor('label','Unidade','text-xs text-slate-200 min-w-0 flex flex-col'),s=document.createElement('select');s.dataset.preco='unidade';s.className='block w-full bg-slate-900 border border-slate-600 rounded-xl h-12 p-3 mt-1 min-w-0';
  for(const [u,t]of [['g','g'],['kg','kg'],['ml','mL'],['l','L'],['un','unidade']]){const o=elConferenciaGestor('option',t);o.value=u;s.append(o);}
  s.value=lista.querySelector('[data-preco="unidade"]')?.value||'g';s.addEventListener('change',()=>sincronizarUnidadesPrecosGestor(s,lista));l.append(s);c.append(l);
- const b=elConferenciaGestor('button','Remover','text-rose-300 border border-slate-600 rounded-xl p-3 self-end disabled:opacity-40');b.type='button';b.dataset.removerPreco='true';b.onclick=()=>{if(lista.children.length<=2)return;c.remove();atualizarRemocaoPrecosGestor();document.getElementById('precos-resultado').replaceChildren();};c.append(b);
+ const b=elConferenciaGestor('button','Remover','text-rose-300 border border-slate-600 rounded-xl h-12 p-3 self-end disabled:opacity-40');b.type='button';b.dataset.removerPreco='true';b.onclick=()=>{if(lista.children.length<=2)return;c.remove();atualizarRemocaoPrecosGestor();document.getElementById('precos-resultado').replaceChildren();};c.append(b);
  c.addEventListener('input',()=>document.getElementById('precos-resultado').replaceChildren());c.addEventListener('change',()=>document.getElementById('precos-resultado').replaceChildren());lista.append(c);atualizarRemocaoPrecosGestor();if(focar)c.querySelector('[data-preco="nome"]')?.focus();
 }
 function limparPrecosGestor(confirmado=false,assinatura=null){

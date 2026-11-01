@@ -64,7 +64,6 @@ function renderizarLimitePessoalPainelGestor(dados){
   const campo=document.getElementById('valorLimitePessoalGestor');
   if(!limitePessoalEmEdicaoGestor){if(document.activeElement!==campo)campo.value=r.limite>0?formatBRL(r.limite/100):'';document.getElementById('previsoesLimitePessoalGestor').checked=config.incluirPrevistos===true;}
   document.getElementById('periodoLimitePessoalGestor').textContent=r.mes||'';
-  const indicador=document.getElementById('indicadorLimitePessoalGestor');if(indicador){indicador.textContent=r.limite>0?' • '+r.percentual+'% utilizado':'';indicador.className=r.limite>0&&r.margem<0?'text-rose-300':'text-slate-300';}
   renderizarResultadoLimitePessoalGestor(resumo,r,config);
 }
 function salvarLimitePessoalPainelGestor(limpar=false){

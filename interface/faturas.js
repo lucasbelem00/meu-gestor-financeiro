@@ -18,7 +18,12 @@ function resumoFaturaPainelGestor(forma,mes){
 function mostrarResumoFaturaGestor(f,atualizado,instante){
   const box=document.getElementById('resumoPagamentoFaturaGestor');box.replaceChildren();const situacao=situacaoBancoVisualGestor({total:f.total,pago:f.pago,saldo:f.restante,mesFatura:f.mesFatura,vencimento:formaSituacaoVisualGestor(f.forma).vencimento});
   [['Total registrado',f.total],['Pago ao banco',f.pago],['Em aberto',f.restante]].forEach(([rotulo,valor])=>{const c=elementoAtividadeGestor('div',null,'rounded-xl bg-slate-900 border border-slate-600 p-2 min-w-0');c.append(elementoAtividadeGestor('p',rotulo,'text-[10px] text-slate-300'),elementoAtividadeGestor('p',formatBRL(valor),'text-xs sm:text-sm font-bold mt-1 break-words '+(rotulo==='Em aberto'&&valor>0?situacao.cor:rotulo==='Pago ao banco'?'text-emerald-300':'text-white')));box.append(c);});
-  box.append(elementoAtividadeGestor('p','Seus gastos: '+formatBRL(f.pessoal)+' • Gastos de terceiros no cartão: '+formatBRL(f.terceiros),'col-span-3 text-xs text-slate-200 leading-relaxed'));
+  const composicao=elementoAtividadeGestor('div',null,'col-span-3 space-y-1.5 text-xs text-slate-200');
+  for(const [rotulo,valor]of [['Seus gastos',f.pessoal],['Gastos de terceiros',f.terceiros]]){
+    const linha=elementoAtividadeGestor('p',null,'flex flex-wrap items-baseline gap-x-1 gap-y-0.5');
+    linha.append(elementoAtividadeGestor('span',rotulo+':'),elementoAtividadeGestor('strong',formatBRL(valor),'text-white whitespace-nowrap'));composicao.append(linha);
+  }
+  box.append(composicao);
   box.append(elementoAtividadeGestor('p',situacao.texto,'col-span-3 text-xs font-bold '+situacao.cor));
   document.getElementById('consultaFaturaOrigemGestor').textContent=atualizado?'Consulta às '+new Date(instante).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : 'Resumo dos dados já carregados • aguardando conferência';
   document.getElementById('salvarPagamentoFaturaGestor').disabled=!atualizado||f.restante<=0;
