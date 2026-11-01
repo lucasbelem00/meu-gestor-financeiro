@@ -55,13 +55,14 @@ function normalizarTexto(str) {
 }
 
 function parseDataBR(str) {
-  const limpa = String(str || '').replace(/^'/, '').trim();
-  const p = limpa.split('/');
-  if (p.length === 3) {
-    const d = parseInt(p[0], 10), m = parseInt(p[1], 10), a = parseInt(p[2], 10);
-    if (!isNaN(d) && !isNaN(m) && !isNaN(a)) return new Date(a, m - 1, d, 0, 0, 0, 0);
+  if (str instanceof Date) {
+    if (!Number.isFinite(str.getTime())) return null;
+    str = Utilities.formatDate(str, getTimezone(), 'dd/MM/yyyy');
   }
-  return null;
+  const p = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || '').replace(/^'/, '').trim());
+  if (!p) return null;
+  const d=Number(p[1]),m=Number(p[2]),a=Number(p[3]),data=new Date(a,m-1,d);
+  return anoCompetenciaValidoGestor_(a)&&data.getFullYear()===a&&data.getMonth()===m-1&&data.getDate()===d?data:null;
 }
 
 function parseMesFat(str) {
@@ -72,10 +73,10 @@ function parseMesFat(str) {
     str = Utilities.formatDate(str, getTimezone(), 'MM/yyyy');
   }
   const limpa = String(str || '').replace(/^'/, '').trim();
-  const p = limpa.split('/');
-  if (p.length === 2) {
-    const m = parseInt(p[0], 10), a = parseInt(p[1], 10);
-    if (m >= 1 && m <= 12 && !isNaN(a)) return { m, a, time: new Date(a, m - 1, 1).getTime() };
+  const p = /^(\d{1,2})\/(\d{4})$/.exec(limpa);
+  if (p) {
+    const m = Number(p[1]), a = Number(p[2]);
+    if (m >= 1 && m <= 12 && anoCompetenciaValidoGestor_(a)) return { m, a, time: new Date(a, m - 1, 1).getTime() };
   }
   return { m: 0, a: 0, time: 0 };
 }
@@ -371,8 +372,8 @@ function referenciaRecorrenteNoMesGestor_(linhas, mes) {
   const tempo = parseMesFat(mes).time;
   let escolhida = null, referencia = -Infinity;
   linhas.forEach(function(r) {
-    const t = parseMesFat(formatarCelulaRegistroGestor_(r[8], 'MM/yyyy')).time;
-    if (t > 0 && t <= tempo && t >= referencia) { escolhida = r; referencia = t; }
+    const info = parseMesFat(formatarCelulaRegistroGestor_(r[8], 'MM/yyyy')),t=info.time;
+    if (info.m > 0 && t <= tempo && t >= referencia) { escolhida = r; referencia = t; }
   });
   return escolhida;
 }
@@ -407,7 +408,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
       const mesFat = String(displayData[idx][8] || '').trim();
       const infoFat = parseMesFat(mesFat);
 
-    if (infoFat.time > 0) {
+    if (infoFat.m > 0) {
         // Começar na primeira ocorrência permite preencher lacunas anteriores a
         // uma condição futura. Cada mês escolhe depois a condição vigente nele.
         if (!assinaturas[chave] || infoFat.time < assinaturas[chave].timeReferencia) {
@@ -910,10 +911,6 @@ function editarEmprestimoLinhaWebInterno_(dados) {
     const planoPix=planoPagamentoPixEdicaoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo);
     if(planoPix&&(dados.confirmarPagamentoPix!==true||dados.assinaturaPix!==planoPix.assinatura))throw Error('Confira a prévia e confirme o pagamento realizado via Pix antes de salvar.');
 
-    const origData = String(dispAll[idxAlvo][0] || '').replace(/^'/, '').trim();
-    const origPessoa = String(dispAll[idxAlvo][1] || '').trim();
-    const origDesc = String(dispAll[idxAlvo][2] || '').trim();
-    const origForma = String(dispAll[idxAlvo][3] || '').trim();
     const origMesFat = String(dispAll[idxAlvo][8] || '').replace(/^'/, '').trim();
     const parcStr = String(dispAll[idxAlvo][6] || '').replace(/^'/, '').trim();
 
@@ -944,9 +941,6 @@ function editarEmprestimoLinhaWebInterno_(dados) {
     if(dados.dataCombinada!==undefined)definirDataCombinadaGestor_(rawAll[idxAlvo],dados.dataCombinada);
 
     if (totalParcelas > 1) {
-      indicesMesmaCompra(dispAll, idxAlvo); // Bloqueia grupos legados ambíguos.
-
-      let indicesMesmaCompraEmp = [idxAlvo];
 
       for (let i = 0; i < rawAll.length; i++) {
         if (i === idxAlvo) continue;
@@ -957,7 +951,6 @@ function editarEmprestimoLinhaWebInterno_(dados) {
         if (
           String(d[12] || '') === String(dispAll[idxAlvo][12] || '')
         ) {
-          indicesMesmaCompraEmp.push(i);
           if (stAtual !== 'Recebido') {
             rawAll[i][0] = novaDataFmt;
             rawAll[i][1] = pessoaFmt;
@@ -969,7 +962,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
               rawAll[i][7] = valorFloat;
             }
 
-            if (mudouMesFat && infoNovoMes.time > 0) {
+            if (mudouMesFat && infoNovoMes.m > 0) {
               const infoP = parseNumParcela(pAtual);
               const diffParc = infoP.atual - infoParcAlvo.atual;
               if (diffParc > 0) {
@@ -1545,7 +1538,7 @@ function getDadosCompletos() {
 
         if (!cancelado && infoParc.total > 1 && parcela !== '∞/∞') {
           if (!resumoParcelasCompra[chaveCompraUnica]) {
-            resumoParcelasCompra[chaveCompraUnica] = { faltam: 0, maxTime: 0, fimMes: '' };
+            resumoParcelasCompra[chaveCompraUnica] = { faltam: 0, maxTime: -Infinity, fimMes: '' };
           }
           if (!pago) {
             resumoParcelasCompra[chaveCompraUnica].faltam += 1;
@@ -1644,7 +1637,7 @@ function getDadosCompletos() {
             }
           }
 
-          if (infoFat.time > 0) {
+          if (infoFat.m > 0) {
             mesesUnicos.push(mesFat);
             setMeses.add(mesFat);
             somarHorizonte(horizonte.totalPessoal,chaveForma,mesFat,valor);
@@ -1757,7 +1750,7 @@ function getDadosCompletos() {
         }
 
         if (valParc > 0) {
-          if (infoFat.time > 0) {
+          if (infoFat.m > 0) {
             mesesUnicos.push(mesFat);
             setMeses.add(mesFat);
             somarHorizonte(horizonte.totalTerceiros,chaveForma,mesFat,valParc);
@@ -1775,7 +1768,7 @@ function getDadosCompletos() {
 
           if (!recebido) {
             empKpiTotalAReceberGeral += valParc;
-            if (infoFat.time > 0) {
+            if (infoFat.m > 0) {
               terceirosAReceberPorMes[mesFat] = (terceirosAReceberPorMes[mesFat] || 0) + valParc;
             }
 
@@ -1795,7 +1788,7 @@ function getDadosCompletos() {
               terceirosAbertoMesPorForma[chaveForma] = (terceirosAbertoMesPorForma[chaveForma] || 0) + saldoBancoEmp;
             } else if (infoFat.time > timeMesAtual) {
               terceirosFuturoPorForma[chaveForma] = (terceirosFuturoPorForma[chaveForma] || 0) + saldoBancoEmp;
-            } else if (infoFat.time > 0) {
+            } else if (infoFat.m > 0) {
               terceirosVencidoPorForma[chaveForma] = (terceirosVencidoPorForma[chaveForma] || 0) + saldoBancoEmp;
             }
           }
@@ -1861,7 +1854,7 @@ function getDadosCompletos() {
           const serie = linhasSeriesProjecao.get(String(ass.compraId)) || [];
           const jaRegistrada = serie.some(function(r){return formatarCelulaRegistroGestor_(r[8],'MM/yyyy')===mHoriz;});
           const vigente = referenciaRecorrenteNoMesGestor_(serie, mHoriz);
-          if (!jaRegistrada && vigente && infoH.time > 0) {
+          if (!jaRegistrada && vigente && infoH.m > 0) {
             const forma=String(vigente[2]),valor=extractNum(vigente[7]);
             if (!pivotFaturas[forma]) pivotFaturas[forma] = Object.create(null);
             pivotFaturas[forma][mHoriz] = (pivotFaturas[forma][mHoriz] || 0) + valor;
@@ -2365,7 +2358,7 @@ function editarLancamentoLinhaWebInterno_(dados) {
       const over = { data: novaData, desc: descFmt, forma: dados.formaPagto, cat: dados.categoria, tags: tags };
       if (!isStatusPago(d[9])) {
         if (dados.propagarValorParcelas) over.valor = valor;
-        if (mudouMes && infoNovoMes.time > 0) {
+        if (mudouMes && infoNovoMes.m > 0) {
           const dif = parseNumParcela(limparApostrofo(d[6])).atual - infoAlvo.atual;
           if (dif > 0) {
             const dt = new Date(infoNovoMes.a, (infoNovoMes.m - 1) + dif, 1);
@@ -2483,7 +2476,7 @@ function adiantarParcelasWebInterno_(dados) {
 
     const mesDestino = validarMesFaturaWeb_(dados.mesDestino);
     const infoDest = parseMesFat(mesDestino);
-    if (infoDest.time === 0) throw new Error('Fatura destino inválida. Use o formato MM/AAAA.');
+    if (infoDest.m === 0) throw new Error('Fatura destino inválida. Use o formato MM/AAAA.');
 
     const grupo = indicesMesmaCompra(disp, idx);
     let candidatas = grupo.filter(function (i) {
@@ -3172,7 +3165,7 @@ function calcularResumoParcelas(linhas) {
   const mapa = Object.create(null);
   linhas.forEach(function (l) {
     if (isStatusCancelado(l.status) || l.infoParc.total <= 1 || l.parc === '∞/∞') return;
-    if (!mapa[l.chave]) mapa[l.chave] = { faltam: 0, maxTime: 0, fimMes: '' };
+    if (!mapa[l.chave]) mapa[l.chave] = { faltam: 0, maxTime: -Infinity, fimMes: '' };
     if (!isStatusPago(l.status)) {
       const m = mapa[l.chave];
       m.faltam += 1;
@@ -3288,7 +3281,7 @@ function composicaoAVistaRigido(linhas) {
 function obterRelatorioMes(mesFiltro) {
   const mes = validarMesFaturaWeb_(limparApostrofo(mesFiltro));
   const info = parseMesFat(mes);
-  if (!info.time) throw new Error('Mês inválido: ' + mes);
+  if (!info.m) throw new Error('Mês inválido: ' + mes);
 
   const todas = lerLancamentosParaRelatorio([info.a,info.m===1?info.a-1:info.a]);
   const resumo = calcularResumoParcelas(todas);
@@ -3619,7 +3612,7 @@ function validarEdicaoGestor_(dados, emprestimo) {
 function ehAbaRegistrosGestor_(nome) { return nome === 'Lançamentos' || nome === 'Empréstimos'; }
 function chaveLegadoGestor_(r, emprestimo) {
   if (!emprestimo && limparApostrofo(r[6]) === '∞/∞') return ['assinatura', normalizarTexto(r[1]), normalizarTexto(r[2])].join('|');
-  return [limparApostrofo(r[0]), normalizarTexto(r[emprestimo ? 1 : 1]), emprestimo ? normalizarTexto(r[2]) : '', normalizarTexto(r[emprestimo ? 3 : 2]), centavosGestor_(r[4]), parseNumParcela(r[6]).total].join('|');
+  return [limparApostrofo(r[0]), normalizarTexto(r[1]), emprestimo ? normalizarTexto(r[2]) : '', normalizarTexto(r[emprestimo ? 3 : 2]), centavosGestor_(r[4]), parseNumParcela(r[6]).total].join('|');
 }
 function migrarIdentidadesGestor_(aba, contexto) {
   if (!ehAbaRegistrosGestor_(aba.nome)) return;
@@ -6320,7 +6313,7 @@ function registrosResumoNativoGestor_(ss){
     if(!r.some(v=>v!==''&&v!=null))return;
     const id=String(r[11]||'');if(!id||ids.has(id))throw Error('O resumo encontrou registro sem identificação ou repetido. Atualize os dados antes de gerar relatórios.');ids.add(id);
     const mes=formatarCelulaRegistroGestor_(r[8],'MM/yyyy'),info=parseMesFat(mes),total=centavosGestor_(r[7]),emp=nome==='Empréstimos';
-    if(!info.time)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
+    if(!info.m)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
     if(isStatusCancelado(r[9])||total<=0)return;
     const pago=centavosGestor_(valorPagoBancoGestor_(r,emp));
     registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaLeituraGestor_(r[emp?3:2],ss),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
@@ -6386,7 +6379,7 @@ function precisaMigrarResumoNativoGestor_(ss){
 function escaparRelatorioPDFGestor_(texto){return String(texto??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dadosPeriodoPDFGestor_(registros,periodo){
   if(!/^(?:\d{4}|\d{2}\/\d{4})$/.test(String(periodo)))throw Error('Período do relatório inválido.');
-  if(String(periodo).includes('/')&&!parseMesFat(periodo).time)throw Error('Mês do relatório inválido.');
+  if(String(periodo).includes('/')&&!parseMesFat(periodo).m)throw Error('Mês do relatório inválido.');
   const itens=registros.filter(r=>String(periodo).includes('/')?r.mes===periodo:String(r.ano)===String(periodo)),grupos=agruparResumoNativoGestor_(itens),hash=hashGestor_({versao:1,periodo:String(periodo),registros:itens});
   return {periodo:String(periodo),hash:hash,grupos:grupos,quantidade:itens.length};
 }

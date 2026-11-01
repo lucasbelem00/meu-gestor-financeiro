@@ -249,7 +249,7 @@ if (typeof painelEmprestimosAntesCoordenacaoGestor === 'function') {
     return painelEmprestimosAntesCoordenacaoGestor(...args);
   };
 }
-window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();});
+window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor();const aviso=document.getElementById('avisoLeituraDadosGestor');revalidadorDiaGestor.verificar(aviso?.hidden===false);});
 window.addEventListener('focus',()=>{invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();});
 window.addEventListener('storage', evento => {
   if (evento.key === null || evento.key === 'gestorEpocaRestauracaoV1' || evento.key === 'cacheDadosGestorV11' || evento.key?.startsWith('gestorMutacaoV3:')) invalidarLeiturasDesempenhoGestor();
@@ -263,9 +263,9 @@ document.addEventListener('visibilitychange', () => {
 function criarRevalidadorDiaGestor(opcoes){
   const agora=opcoes.agora||(()=>new Date()),dia=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
   let conferido=dia(agora()),pendente=null,proximaTentativa=0;
-  function verificar(){
+  function verificar(forcar=false){
     const hoje=agora(),chave=dia(hoje);
-    if(chave===conferido||!opcoes.permitir())return Promise.resolve(false);
+    if((chave===conferido&&!forcar)||!opcoes.permitir())return Promise.resolve(false);
     if(pendente)return pendente;
     if(!opcoes.online()){opcoes.estado('Os dados podem ser do dia anterior. Conecte-se para atualizar.');return Promise.resolve(false);}
     if(hoje.getTime()<proximaTentativa)return Promise.resolve(false);
@@ -273,7 +273,7 @@ function criarRevalidadorDiaGestor(opcoes){
     pendente=Promise.resolve().then(()=>opcoes.carregar()).then(ok=>{
       if(ok===false)throw Error('Consulta não atualizada');
       conferido=chave;proximaTentativa=0;opcoes.estado('');return true;
-    }).catch(()=>{opcoes.estado('Os dados do novo dia ainda não foram atualizados. Tente atualizar os dados novamente quando houver conexão.');return false;}).finally(()=>{pendente=null;});
+    }).catch(()=>{opcoes.estado('Os dados do novo dia ainda não foram atualizados. Confira a conexão e tente atualizar novamente; o servidor também pode estar temporariamente indisponível.');return false;}).finally(()=>{pendente=null;});
     return pendente;
   }
   return {verificar};

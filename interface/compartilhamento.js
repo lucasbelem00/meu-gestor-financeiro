@@ -55,7 +55,7 @@ function montarSimulacaoMensagemGestor(s,primeiraFatura){
 }
 function chaveParcelaMensagemGestor(it){
   // Identidade da compra, não descrição/valor, comprova a ligação entre recebimentos.
-  return it.compraId?JSON.stringify([it.compraId,it.pessoa,it.descricao,it.forma,it.parcela,it.mesFatura,it.dataCombinada||'']):null;
+  return it.compraId?JSON.stringify([it.compraId,it.pessoa,it.forma,it.parcela,it.mesFatura]):null;
 }
 function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
   const f=filtros||{},grupos=new Map();let total=0,recebido=0;

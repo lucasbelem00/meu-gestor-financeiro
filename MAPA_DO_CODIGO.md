@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Atualizado em 30/10/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
+Atualizado em 01/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -33,7 +33,8 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `shared/planejamento.js` | Aba permanente Planejamento, valores em centavos, validação e versão da lista para evitar sobrescrita concorrente | `validarPlanejamentoGestor_`, `obterPlanejamentoWeb`, `salvarPlanejamentoWeb` |
 | `shared/datas-recuperacao.js` | Retomada estrita de conversões texto→Date em planos pendentes; exige coincidência integral do resultado e usa o fuso do destino | `recuperarDatasTextoPlanoGestor_` |
 | `interface/restauracao.js` | Seleção, envio em partes, comparação e confirmação do backup | `criarControleRestauracaoGestor`, `lerExportacaoPreparadaGestor` |
-| `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor`, `criarHistoricoCentralGestor` |
+| `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor` |
+| `interface/modais.js` | Histórico temporário coordenado de Menu, editores, confirmação, fatura, exportação e cobrança; Voltar fecha a camada superior usando os fechamentos existentes | `criarHistoricoModaisGestor`, `iniciarHistoricoModaisGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |
 | `shared/rachadinha.js` | Cálculo da divisão em centavos, compartilhado pela tela e servidor | `calcularDivisaoContaGestor` |
 | `shared/competencias.js` | Intervalo de anos e validação da primeira/última competência das parcelas | `anoCompetenciaValidoGestor_`, `validarPeriodoParcelasGestor_`; incorporado na interface e no backend pelo gerador |
@@ -126,3 +127,5 @@ Para instruções e limites, consulte [o pacote de continuidade](PACOTE_CONTINUI
 O [pacote da auditoria de 01/11](PACOTE_CORRECOES_AUDITORIA_20261101.md) documenta o CSV restrito em partes (`montarDadosExportacaoCSVGestor_`), a revalidação de dia (`criarRevalidadorDiaGestor`), a limpeza do comparador e os controles independentes de leitura e consulta do extrato. JSON e CSV usam a mesma preparação e conferência de integridade; só o JSON é restaurável.
 
 `interface/situacoes.js` concentra a apresentação de recebimentos, pagamentos e prioridade dos dias da Agenda, sem registrar baixas. Regras e composição do Horizonte: [Situações visuais](PACOTE_SITUACOES_VISUAIS_20261101.md).
+
+A [auditoria profunda de 01/11](AUDITORIA_PROFUNDA_20261101.md) descreve a validação estrita das datas, proteção de confirmações e respostas do Planejamento, normalização do limite, reconhecimento de recebimentos parciais por identidade e retomada da consulta na reconexão. `assinaturaEdicaoPlanejamentoGestor` e `confirmarAcaoPlanejamentoGestor` protegem o formulário; `normalizarConfigLimitePessoalGestor` isola preferências locais inválidas.

@@ -60,3 +60,9 @@ for(const nome of ['Lançamentos','Empréstimos'])test('mês inválido em '+nome
  assert.equal(JSON.stringify(a.db.sheets[nome].rows),antes);assert.equal(a.db.sheets['Lançamentos'].getLastRow(),2);assert.equal(a.db.sheets['Empréstimos'].getLastRow(),2);
  for(const [id,db]of a.planilhas)if(id!=='fixture')for(const n of ['Lançamentos','Empréstimos'])assert.equal(db.sheets[n]?.getLastRow(),1);
 });
+
+test('leitura de datas rejeita texto extra e dias inexistentes sem normalizar para outro mês',()=>{const a=ambiente();for(const t of ['10x/2026','10/2026resto','10/26','01/1899','01/2201'])assert.equal(a.ctx.parseMesFat(t).time,0,t);for(const t of ['31/02/2026','29/02/2025','01x/11/2026','01/11/2026resto','01/01/1899'])assert.equal(a.ctx.parseDataBR(t),null,t);assert.equal(a.ctx.parseDataBR('29/02/2024').getDate(),29);assert.equal(a.ctx.parseMesFat('1/2027').m,1);});
+
+test('relatório aceita janeiro de 1970 como competência válida dentro do intervalo do app',()=>{const {boot,fixture,personal}=require('./fixtures/gestor-mocks.cjs'),a=boot(fixture([personal('Histórica',25,'1/1','01/1970','Pago','Cartao','05/01/1970')]));a.ctx.executarAcaoApi_('getDadosCompletos',null);assert.equal(a.ctx.executarAcaoApi_('obterRelatorioMes','01/1970').kpis.total,'R$ 25,00');});
+
+test('parcelas anteriores a 1970 conservam a competência final e podem servir de referência',()=>{const {boot,fixture,personal}=require('./fixtures/gestor-mocks.cjs'),a=boot(fixture([personal('Histórica',25,'1/2','12/1969','Em Aberto','Cartao','05/12/1969')]));a.ctx.executarAcaoApi_('getDadosCompletos',null);const r=a.ctx.executarAcaoApi_('obterRelatorioMes','12/1969');assert.equal(r.lancamentos[0][12].fimMes,'12/69');const linha=Array(18).fill('');linha[8]='12/1969';assert.equal(a.ctx.referenciaRecorrenteNoMesGestor_([linha],'01/1970'),linha);});

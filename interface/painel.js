@@ -6,16 +6,15 @@ function abrirDevolucaoPainelGestor(item){
   for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp',item.status==='Recebido'?'Recebido':'A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
   renderizarPainelEmprestimos();
 }
-function diaDevolucaoPainelGestor(texto){
-  const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(texto||''));if(!m)return null;
-  const dia=Number(m[1]),mes=Number(m[2])-1,ano=Number(m[3]),d=new Date(Date.UTC(ano,mes,dia));
-  return d.getUTCFullYear()===ano&&d.getUTCMonth()===mes&&d.getUTCDate()===dia?d.getTime()/86400000:null;
-}
 function listarDevolucoesPainelGestor(itens,hoje=new Date()){
  const atual=hojeSituacaoVisualGestor(hoje);
  return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>{const situacao=situacaoRecebimentoVisualGestor(i,hoje),dia=diaSituacaoVisualGestor(i.dataCombinada)??(situacao.codigo==='mesEncerrado'?fimMesSituacaoVisualGestor(i.mesFatura):null);return {...i,situacao,dias:dia===null?null:dia-atual};}).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
 }
+function normalizarConfigLimitePessoalGestor(config){
+  return {centavos:Number.isSafeInteger(config?.centavos)&&config.centavos>0?config.centavos:0,incluirPrevistos:config?.incluirPrevistos===true};
+}
 function calcularLimitePessoalPainelGestor(dados,config){
+  config=normalizarConfigLimitePessoalGestor(config);
   const mes=dados?.faturas?.mesAtual,h=dados?.faturas?.horizonte;
   const somar=mapa=>Object.values(mapa||{}).reduce((s,v)=>s+Math.round(Number(v[mes]||0)*100),0);
   const registrado=h?somar(h.totalPessoal):Math.round(lerValorMoeda(dados?.kpis?.comprometimentoMes||0)*100);
@@ -31,7 +30,7 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
   const criar=(tag,texto,classe)=>{const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;};
   resumo.replaceChildren();resumo.className='mt-4 space-y-3';
   const aviso=criar('p','Você está editando. O resultado abaixo usa o limite guardado; clique em Guardar limite para atualizar.','text-xs text-amber-200');aviso.id='avisoEdicaoLimitePessoalGestor';aviso.hidden=!limitePessoalEmEdicaoGestor;resumo.append(aviso);
-  if(r.limite<=0){resumo.append(criar('p','Sem limite definido. Informe e guarde um valor acima para acompanhar seu teto mensal.','text-sm text-slate-300'));return;}
+  if(r.limite<=0){resumo.append(criar('p','Sem limite definido. Abra “Definir ou editar limite” para acompanhar seu teto mensal.','text-sm text-slate-300'));return;}
   const acima=r.margem<0,atingido=r.margem===0,cor=acima?'text-rose-300':atingido?'text-amber-300':'text-sky-300';
   const principal=criar('section','','rounded-2xl border p-4 space-y-2 '+(acima?'border-rose-500/40 bg-rose-500/10':atingido?'border-amber-500/40 bg-amber-500/10':'border-sky-500/40 bg-sky-500/10'));
   principal.append(criar('h4',acima?'Acima do limite':atingido?'Limite atingido':'Restam no limite','text-sm font-bold '+cor),criar('p',formatBRL(Math.abs(r.margem)/100),'text-2xl font-bold '+cor));
@@ -60,7 +59,7 @@ function renderizarRotinaPainelGestor(){
 }
 function renderizarLimitePessoalPainelGestor(dados){
   const resumo=document.getElementById('resumoLimitePessoalGestor');if(!resumo)return;
-  const config=lerJSONLocalGestor('gestorLimitePessoalV1',{}),r=calcularLimitePessoalPainelGestor(dados,config);
+  const config=normalizarConfigLimitePessoalGestor(lerJSONLocalGestor('gestorLimitePessoalV1',{})),r=calcularLimitePessoalPainelGestor(dados,config);
   const campo=document.getElementById('valorLimitePessoalGestor');
   if(!limitePessoalEmEdicaoGestor){if(document.activeElement!==campo)campo.value=r.limite>0?formatBRL(r.limite/100):'';document.getElementById('previsoesLimitePessoalGestor').checked=config.incluirPrevistos===true;}
   document.getElementById('periodoLimitePessoalGestor').textContent=r.mes||'';

@@ -12,7 +12,7 @@ function registrosResumoNativoGestor_(ss){
     if(!r.some(v=>v!==''&&v!=null))return;
     const id=String(r[11]||'');if(!id||ids.has(id))throw Error('O resumo encontrou registro sem identificação ou repetido. Atualize os dados antes de gerar relatórios.');ids.add(id);
     const mes=formatarCelulaRegistroGestor_(r[8],'MM/yyyy'),info=parseMesFat(mes),total=centavosGestor_(r[7]),emp=nome==='Empréstimos';
-    if(!info.time)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
+    if(!info.m)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
     if(isStatusCancelado(r[9])||total<=0)return;
     const pago=centavosGestor_(valorPagoBancoGestor_(r,emp));
     registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaLeituraGestor_(r[emp?3:2],ss),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
@@ -78,7 +78,7 @@ function precisaMigrarResumoNativoGestor_(ss){
 function escaparRelatorioPDFGestor_(texto){return String(texto??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dadosPeriodoPDFGestor_(registros,periodo){
   if(!/^(?:\d{4}|\d{2}\/\d{4})$/.test(String(periodo)))throw Error('Período do relatório inválido.');
-  if(String(periodo).includes('/')&&!parseMesFat(periodo).time)throw Error('Mês do relatório inválido.');
+  if(String(periodo).includes('/')&&!parseMesFat(periodo).m)throw Error('Mês do relatório inválido.');
   const itens=registros.filter(r=>String(periodo).includes('/')?r.mes===periodo:String(r.ano)===String(periodo)),grupos=agruparResumoNativoGestor_(itens),hash=hashGestor_({versao:1,periodo:String(periodo),registros:itens});
   return {periodo:String(periodo),hash:hash,grupos:grupos,quantidade:itens.length};
 }

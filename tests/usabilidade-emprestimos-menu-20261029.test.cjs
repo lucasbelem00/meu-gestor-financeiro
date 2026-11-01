@@ -2,12 +2,14 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const html=fs.readFileSync('index.html','utf8'),rotina=fs.readFileSync('interface/rotina.js','utf8'),nav=fs.readFileSync('interface/navegacao.js','utf8'),perf=fs.readFileSync('interface/desempenho.js','utf8');
 function trecho(fonte,a,b){const i=fonte.indexOf(a),f=fonte.indexOf(b,i+a.length);assert(i>=0&&f>i,a);return fonte.slice(i,f);}
 function historico(){
- const entradas=[{origem:'aba anterior'}];let pos=0,aberturas=0,fechamentos=0,pedidosVoltar=0;
- const h={get state(){return entradas[pos];},pushState(s){entradas.splice(++pos);entradas.push(s);},back(){pedidosVoltar++;}};
- const c=vm.createContext({Date});vm.runInContext(trecho(nav,'function criarHistoricoCentralGestor(','if(window.history'),c);
- const controle=c.criarHistoricoCentralGestor({historico:h,abrir(){aberturas++;},fechar(){fechamentos++;}});
+ const entradas=[{origem:'aba anterior'}];let pos=0,aberturas=0,fechamentos=0,pedidosVoltar=0,visivel=false;
+ const h={get state(){return entradas[pos];},pushState(s){entradas.splice(++pos);entradas.push(s);},replaceState(s){entradas[pos]=s;},back(){pedidosVoltar++;}};
+ const c=vm.createContext({Date});const fonte=fs.readFileSync('interface/modais.js','utf8');vm.runInContext(fonte.slice(0,fonte.indexOf('function iniciarHistoricoModaisGestor')),c);
+ const motor=c.criarHistoricoModaisGestor({historico:h,visiveis:()=>visivel?['central']:[],fechar(){visivel=false;fechamentos++;},podeReabrir:()=>true,abrir(){visivel=true;aberturas++;}});
+ const controle={abrir(){if(!visivel){visivel=true;aberturas++;}motor.sincronizar();},fechar(){if(visivel){visivel=false;fechamentos++;}motor.sincronizar();},voltar:motor.voltar};
  return {controle,h,entradas,get aberturas(){return aberturas;},get fechamentos(){return fechamentos;},get pedidosVoltar(){return pedidosVoltar;},voltar(){pos--;controle.voltar();},avancar(){pos++;controle.voltar();}};
 }
+
 test('Voltar fecha a Central sem sair da aba e preserva o estado anterior',()=>{
  const a=historico();a.controle.abrir();a.controle.abrir();assert.equal(a.entradas.length,2);assert.equal(a.aberturas,1);a.voltar();assert.equal(a.fechamentos,1);assert.equal(a.pedidosVoltar,0);assert.equal(a.h.state.origem,'aba anterior');a.avancar();assert.equal(a.aberturas,2);
 });

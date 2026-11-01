@@ -63,3 +63,5 @@ test('simulação abre prévia editável sem copiar antes da confirmação ou in
  a.el('textoModalPixCobranca').value='Simulação revisada por mim';a.el('chkIncluirPixCobranca').checked=true;a.el('btnCopiarPixCobranca').onclick();assert.equal(a.copias[0][0],'Simulação revisada por mim');assert.equal(a.envios.length,0);assert.equal(a.local.get('gestorPixPadraoV1'),'true');
  a.c.abrirPreviaCobrancaWhats('Cobrança','Copiado');assert.equal(a.el('tituloModalPixCobranca').textContent,'📋 Confira a mensagem');assert.equal(a.el('chkIncluirPixCobranca').checked,true);assert.equal(a.el('chkIncluirPixCobranca').disabled,false);a.el('btnCopiarPixCobranca').onclick();assert.match(a.copias[1][0],/Cobrança[\s\S]*Minha chave Pix/);
 });
+
+test('recebimento parcial mantém vínculo após editar descrição e data combinada',()=>{const c=tela(),aberto=item({valorRaw:31,descricao:'Descrição corrigida',dataCombinada:'14/11/2026'}),recebido=item({valorRaw:10,status:'Recebido',dataCombinada:'10/11/2026'});const t=c.montarCobrancaMensagemGestor('Núbia',[aberto],{status:'A Receber'},[aberto,recebido]);assert.match(t,/Já recebido: R\$ 10,00/);assert.match(t,/Valor a devolver: R\$ 31,00/);});
