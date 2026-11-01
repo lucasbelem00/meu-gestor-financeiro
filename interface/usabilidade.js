@@ -327,7 +327,15 @@ function reconciliarEdicaoNotaConfirmadaGestor(envio,resultado){
   // Apenas uma resposta do envio original autoriza atualizar a referência do editor.
   notaEmEdicaoGestor={...base,revision:confirmada.revision};persistirRascunhoNotaGestor();
 }
-function editarNotaRapidaGestor(id){const n=notasGlobais.find(n=>String(n.id)===String(id));if(!n)return;const texto=document.getElementById('inpNovaNotaTexto').value,rev=revisaoTextoNotaGestor;const aplicar=()=>{if(rev!==revisaoTextoNotaGestor){mostrarAviso('O texto mudou','O rascunho foi preservado. Abra a edição novamente.');return;}configurarEdicaoNotaGestor(n);};if(texto.trim())mostrarConfirmacao('Abrir outra nota?','O texto ainda não adicionado será substituído. Deseja continuar?',aplicar,false,'Abrir nota','neutral');else aplicar();}
+function editarNotaRapidaGestor(id){
+  const n=notasGlobais.find(n=>String(n.id)===String(id));if(!n)return;
+  const campo=document.getElementById('inpNovaNotaTexto'),base=notaEmEdicaoGestor;
+  if(base&&String(base.id)===String(n.id)){campo.focus();return;}
+  const texto=campo.value,rev=revisaoTextoNotaGestor;
+  const aplicar=()=>{if(rev!==revisaoTextoNotaGestor||campo.value!==texto||notaEmEdicaoGestor!==base){mostrarAviso('O texto mudou','O rascunho foi preservado. Abra a edição novamente.');return;}configurarEdicaoNotaGestor(n);};
+  const alterado=base?texto!==base.texto:texto.length>0;
+  if(alterado)mostrarConfirmacao('Abrir outra nota?','O texto em edição será substituído. Deseja continuar?',aplicar,false,'Abrir nota','neutral');else aplicar();
+}
 function cancelarEdicaoNotaGestor(){const rev=revisaoTextoNotaGestor;mostrarConfirmacao('Cancelar edição?','As alterações deste rascunho serão descartadas. A nota salva será preservada.',()=>{if(rev===revisaoTextoNotaGestor)configurarEdicaoNotaGestor(null);},false,'Descartar rascunho','neutral');}
 function alternarFixacaoNotaGestor(id){const copia=notasFixadasGestor.includes(String(id))?notasFixadasGestor.filter(n=>n!==String(id)):[String(id),...notasFixadasGestor].slice(0,200);if(salvarCacheLeituraGestor('gestorNotasFixadasV1',JSON.stringify(copia))){notasFixadasGestor=copia;renderizarNotasUI();}}
 function copiarNotaGestor(id){const nota=(notasGlobais||[]).find(n=>String(n.id)===String(id));if(!nota){mostrarAviso('Nota não encontrada','A nota pode ter sido removida. Atualize a lista antes de copiar.');return;}copiarTextoAreaTransferencia(String(nota.texto||''),'Texto da nota copiado!');}
