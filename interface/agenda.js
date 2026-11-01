@@ -3,18 +3,23 @@
 // A cache é descartada em renderizarDados; nenhuma ação aqui confirma pagamentos.
 let dadosAgendaGestor=null,diaAgendaGestor=null,eventosAgendaGestor=null;
 function mesAgendaValidoGestor(texto){const p=/^(\d{4})-(\d{2})$/.exec(String(texto));return Boolean(p&&anoCompetenciaValidoGestor_(Number(p[1]))&&Number(p[2])>=1&&Number(p[2])<=12);}
-function compromissosAgendaGestor(dados){
-  const eventos=[],h=dados?.faturas?.horizonte;
-  for(const f of dados?.formasPagamento||[]){
-    const dia=Number(f.vencimento);if(f.tipo!=='cartao'||!Number.isInteger(dia)||dia<1||dia>31)continue;
-    for(const [mes,valor]of Object.entries(h?.saldoBanco?.[f.nome]||{})){
-      const p=/^(\d{2})\/(\d{4})$/.exec(mes),centavos=Math.round(Number(valor)*100);if(!p||!anoCompetenciaValidoGestor_(Number(p[2]))||Number(p[1])<1||Number(p[1])>12||!Number.isSafeInteger(centavos)||centavos<=0)continue;
-      const d=Math.min(dia,new Date(Date.UTC(Number(p[2]),Number(p[1]),0)).getUTCDate()),data=String(d).padStart(2,'0')+'/'+mes;
-      eventos.push({id:'fatura:'+f.nome+':'+mes,tipo:'cartao',data,dia:diaDevolucaoPainelGestor(data),valor:centavos/100,descricao:f.nome,forma:f.nome,mesFatura:mes});
-    }
+function compromissosAgendaGestor(dados,hoje=new Date()){
+ const eventos=[],h=dados?.faturas?.horizonte;
+ for(const f of dados?.formasPagamento||[]){
+  const vencimento=Number(f.vencimento);if(f.tipo!=='cartao'||!Number.isInteger(vencimento)||vencimento<1||vencimento>31)continue;
+  const meses=new Set([...Object.keys(h?.totalBanco?.[f.nome]||{}),...Object.keys(h?.saldoBanco?.[f.nome]||{})]);
+  for(const mes of meses){const fim=fimMesSituacaoVisualGestor(mes),saldo=Number(h?.saldoBanco?.[f.nome]?.[mes]||0),total=Number(h?.totalBanco?.[f.nome]?.[mes]??saldo),pago=Number(h?.pagoBanco?.[f.nome]?.[mes]??Math.max(0,total-saldo));if(fim===null||!Number.isFinite(total)||total<=0)continue;
+   const data=String(Math.min(vencimento,new Date(fim*86400000).getUTCDate())).padStart(2,'0')+'/'+mes,event={id:'fatura:'+f.nome+':'+mes,tipo:'cartao',data,dia:diaSituacaoVisualGestor(data),valor:saldo>0.004?saldo:total,total,pago,saldo,vencimento,descricao:f.nome,forma:f.nome,mesFatura:mes};event.situacao=situacaoBancoVisualGestor(event,hoje);eventos.push(event);
   }
-  (dados?.emprestimos?.itens||[]).forEach((i,n)=>{const dia=diaDevolucaoPainelGestor(i.dataCombinada);if(i.status==='A Receber'&&dia!==null&&Number.isFinite(Number(i.valorRaw))&&Number(i.valorRaw)>0)eventos.push({...i,id:'devolucao:'+(i.registroId||n),tipo:'devolucao',dia,data:i.dataCombinada,valor:Number(i.valorRaw)});});
-  return eventos.sort((a,b)=>a.dia-b.dia||a.tipo.localeCompare(b.tipo)||String(a.descricao||'').localeCompare(String(b.descricao||'')));
+ }
+ (dados?.emprestimos?.itens||[]).forEach((i,n)=>{
+  let dia=diaSituacaoVisualGestor(i.dataCombinada);const situacao=situacaoRecebimentoVisualGestor(i,hoje),semData=!i.dataCombinada;
+  if(semData&&situacao.codigo==='mesEncerrado')dia=fimMesSituacaoVisualGestor(i.mesFatura);
+  if(dia===null||!['A Receber','Recebido'].includes(i.status)||!Number.isFinite(Number(i.valorRaw))||Number(i.valorRaw)<=0)return;
+  const data=semData?new Date(dia*86400000).toISOString().slice(0,10).split('-').reverse().join('/'):i.dataCombinada;
+  eventos.push({...i,id:'devolucao:'+(i.registroId||n),tipo:'devolucao',dia,data,semData,valor:Number(i.valorRaw),situacao});
+ });
+ return eventos.sort((a,b)=>a.dia-b.dia||a.tipo.localeCompare(b.tipo)||String(a.descricao||'').localeCompare(String(b.descricao||'')));
 }
 function criarElementoAgendaGestor(tag,texto,classe){const e=document.createElement(tag);if(texto!==null)e.textContent=texto;if(classe)e.className=classe;return e;}
 function moverMesAgendaGestor(passo){
@@ -29,22 +34,27 @@ function renderizarAgendaGestor(){
   if(!mesAgendaValidoGestor(campo.value)){grade.replaceChildren();lista.replaceChildren();diaAgendaGestor=null;document.getElementById('verMesAgendaGestor').hidden=true;document.getElementById('agendaAnteriorGestor').disabled=true;document.getElementById('agendaProximoGestor').disabled=true;document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
   const [ano,mes]=campo.value.split('-').map(Number),inicio=Date.UTC(ano,mes-1,1)/86400000,fim=Date.UTC(ano,mes,1)/86400000,tipo=document.getElementById('tipoAgendaGestor').value;
   if(diaAgendaGestor!==null&&(diaAgendaGestor<inicio||diaAgendaGestor>=fim))diaAgendaGestor=null;
-  if(!eventosAgendaGestor)eventosAgendaGestor=compromissosAgendaGestor(dadosAgendaGestor);
-  const eventos=eventosAgendaGestor.filter(i=>i.dia>=inicio&&i.dia<fim&&(!tipo||i.tipo===tipo));
+  eventosAgendaGestor=compromissosAgendaGestor(dadosAgendaGestor);
+  const filtroSituacao=document.getElementById('situacaoAgendaGestor')?.value||'';
+  const eventos=eventosAgendaGestor.filter(i=>i.dia>=inicio&&i.dia<fim&&(!tipo||i.tipo===tipo)&&(!filtroSituacao||(filtroSituacao==='pendentes'?i.situacao.prioridade>=2:i.situacao.prioridade===1)));
   document.getElementById('agendaAnteriorGestor').disabled=ano===ANO_MIN_COMPETENCIA_GESTOR_&&mes===1;document.getElementById('agendaProximoGestor').disabled=ano===ANO_MAX_COMPETENCIA_GESTOR_&&mes===12;
   grade.replaceChildren();lista.replaceChildren();
   for(const nome of ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'])grade.append(criarElementoAgendaGestor('span',nome,'text-center text-[10px] text-slate-300 py-2'));
   for(let n=0;n<new Date(inicio*86400000).getUTCDay();n++)grade.append(criarElementoAgendaGestor('span',null));
   for(let dia=inicio;dia<fim;dia++){
-    const numero=dia-inicio+1,itens=eventos.filter(e=>e.dia===dia),b=criarElementoAgendaGestor('button',null,'min-w-0 min-h-[48px] rounded-lg border p-1 text-xs '+(diaAgendaGestor===dia?'border-sky-300 bg-blue-900 text-white':'border-slate-700 bg-slate-900 text-slate-200'));b.type='button';b.setAttribute('aria-pressed',String(diaAgendaGestor===dia));b.setAttribute('aria-label',numero+'/'+mes+'/'+ano+' • '+itens.length+' compromisso(s)');b.append(criarElementoAgendaGestor('strong',String(numero),'block'));
-    b.id='agendaDiaGestor'+numero;if(itens.length)b.append(criarElementoAgendaGestor('span',itens.length+' •','block text-[10px] text-sky-200'));b.onclick=()=>{diaAgendaGestor=dia;renderizarAgendaGestor();document.getElementById(b.id)?.focus({preventScroll:true});};grade.append(b);
+    const numero=dia-inicio+1,itens=eventos.filter(e=>e.dia===dia),situacao=situacaoDiaAgendaGestor(itens),b=criarElementoAgendaGestor('button',null,'min-w-0 min-h-[52px] rounded-lg border p-1 text-xs '+situacao.fundo+(diaAgendaGestor===dia?' ring-2 ring-blue-400 ring-offset-1 ring-offset-slate-900':''));b.type='button';b.setAttribute('aria-pressed',String(diaAgendaGestor===dia));b.setAttribute('aria-label',numero+'/'+mes+'/'+ano+' • '+itens.length+' compromisso(s) • '+situacao.texto);b.title=itens.map(i=>(i.descricao||i.pessoa||i.forma)+': '+i.situacao.texto).join('\n');b.append(criarElementoAgendaGestor('strong',String(numero),'block'));
+    b.id='agendaDiaGestor'+numero;if(itens.length)b.append(criarElementoAgendaGestor('span',itens.length+' •','block text-[10px]'));b.onclick=()=>{diaAgendaGestor=dia;renderizarAgendaGestor();document.getElementById(b.id)?.focus({preventScroll:true});};grade.append(b);
   }
-  const visiveis=eventos.filter(e=>diaAgendaGestor===null||e.dia===diaAgendaGestor),hoje=new Date(),diaHoje=Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;
-  document.getElementById('estadoAgendaGestor').textContent=visiveis.length+' compromisso(s) '+(diaAgendaGestor===null?'no mês.':'no dia selecionado.')+' Dados já carregados; previsões de fixos não entram como faturas registradas.';
+  const visiveis=eventos.filter(e=>diaAgendaGestor===null||e.dia===diaAgendaGestor);
+  document.getElementById('estadoAgendaGestor').textContent=visiveis.length+' compromisso(s) '+(diaAgendaGestor===null?'no mês.':'no dia selecionado.')+' Dados já carregados. Verde: concluído; âmbar: pendente; laranja: prazo vencido ou mês encerrado. Nos dias mistos, prevalece a pendência. Previsões não entram.';
   document.getElementById('verMesAgendaGestor').hidden=diaAgendaGestor===null;
   document.getElementById('avisoDadosAgendaGestor').hidden=Boolean(dadosAgendaGestor?.faturas?.horizonte);
   if(!visiveis.length)lista.append(criarElementoAgendaGestor('p','Nenhum compromisso deste tipo com data para esta seleção nos dados carregados.','text-sm text-slate-300 py-4'));
-  for(const i of visiveis){const b=criarElementoAgendaGestor('button',null,'w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-left space-y-1');b.type='button';const cartao=i.tipo==='cartao';b.append(criarElementoAgendaGestor('strong',(cartao?'💳 ':'🤝 ')+(cartao?i.descricao:i.pessoa)+' • '+formatBRL(i.valor),cartao?'block text-sky-200':'block text-amber-200'),criarElementoAgendaGestor('span',i.data+' • '+(cartao?'Vencimento da fatura':'Devolução combinada')+(i.dia<diaHoje?' • Data passada':''),'block text-xs text-slate-200'),criarElementoAgendaGestor('span',(cartao?'Fatura '+i.mesFatura:i.descricao+' • Fatura de origem '+i.mesFatura),'block text-xs text-slate-300'));b.onclick=()=>cartao?abrirConferenciaFaturaGestor(i.forma,i.mesFatura):abrirDevolucaoPainelGestor(i);lista.append(b);}
+  for(const i of visiveis){
+   const b=criarElementoAgendaGestor('button',null,'w-full rounded-xl border p-3 text-left space-y-1 '+i.situacao.fundo);b.type='button';const cartao=i.tipo==='cartao';
+   b.append(criarElementoAgendaGestor('strong',(cartao?'💳 ':'🤝 ')+(cartao?i.descricao:i.pessoa)+' • '+formatBRL(i.valor),'block font-bold'),criarElementoAgendaGestor('span',i.situacao.texto,'block text-xs font-bold'),criarElementoAgendaGestor('span',i.data+' • '+(cartao?'Vencimento da fatura':i.semData?'Fim do mês da parcela · sem data combinada':'Devolução combinada'),'block text-xs'),criarElementoAgendaGestor('span',cartao?'Pago ao banco: '+formatBRL(i.pago)+' • Falta pagar: '+formatBRL(i.saldo):i.status==='Recebido'?'Recebido da pessoa: '+formatBRL(i.valor):'Falta receber: '+formatBRL(i.valor),'block text-xs'),criarElementoAgendaGestor('span',cartao?'Fatura '+i.mesFatura:i.descricao+' • Fatura de origem '+i.mesFatura,'block text-xs'));
+   b.onclick=()=>cartao?abrirConferenciaFaturaGestor(i.forma,i.mesFatura):abrirDevolucaoPainelGestor(i);lista.append(b);
+  }
 }
 const dadosAntesAgendaGestor=window.renderizarDados;
 window.renderizarDados=function(dados){const r=dadosAntesAgendaGestor(dados);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};

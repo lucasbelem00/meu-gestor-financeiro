@@ -17,11 +17,11 @@ test('alterar fatura depois da prévia compacta impede pagamento com versão ant
  const {ctx,db}=preparar();const p=ctx.executarAcaoApi_('previaPagamentoFaturaWeb',{...alvo,resumo:true,valor:150});db.sheets['Lançamentos'].rows[1][7]=101;
  assert.throws(()=>ctx.registrarPagamentoFaturaWeb({...p,requestId:'resumo-mudou-001'}),/fatura mudou/);assert.equal(ctx.obterFaturaPagamentoWeb({...alvo,resumo:true}).pago,0);
 });
-function painel(){const c=vm.createContext({Date,document:{addEventListener(){}},window:{renderizarDados(){}},addEventListener(){},lerValorMoeda:Number});c.window=c;c.renderizarDados=()=>{};c.addEventListener=()=>{};vm.runInContext(fs.readFileSync('interface/painel.js','utf8'),c);return c;}
+function painel(){const c=vm.createContext({Date,document:{addEventListener(){}},window:{renderizarDados(){}},addEventListener(){},lerValorMoeda:Number});c.window=c;c.renderizarDados=()=>{};c.addEventListener=()=>{};vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);vm.runInContext(fs.readFileSync('interface/painel.js','utf8'),c);return c;}
 test('lembretes respeitam data combinada válida e não confundem mês da fatura com atraso',()=>{
  const c=painel(),base={status:'A Receber',pessoa:'Pessoa',mesFatura:'01/2020'};
  const itens=[{...base,dataCombinada:''},{...base,dataCombinada:'31/02/2026'},{...base,dataCombinada:'30/10/2026'},{...base,dataCombinada:'28/10/2026'},{...base,dataCombinada:'06/11/2026'},{...base,dataCombinada:'29/10/2026',status:'Recebido'}],antes=JSON.stringify(itens);
- assert.deepEqual(Array.from(c.listarDevolucoesPainelGestor(itens,new Date(2026,9,29)),i=>i.dias),[-1,1]);assert.equal(JSON.stringify(itens),antes);
+ const pendentes=c.listarDevolucoesPainelGestor(itens,new Date(2026,9,29));assert.equal(pendentes.length,3);assert.equal(pendentes[0].situacao.codigo,'mesEncerrado');assert.deepEqual(Array.from(pendentes.slice(1),i=>i.dias),[-1,1]);assert.equal(JSON.stringify(itens),antes);
 });
 test('limite inclui gastos já pagos e previsões apenas por escolha; não soma terceiros',()=>{
  const c=painel(),dados={faturas:{mesAtual:'10/2026',horizonte:{totalPessoal:{Pix:{'10/2026':40},Cartao:{'10/2026':60,'11/2026':500}},totalTerceiros:{Cartao:{'10/2026':900}},previstoPessoal:{Cartao:{'10/2026':25}}}}};
@@ -29,8 +29,8 @@ test('limite inclui gastos já pagos e previsões apenas por escolha; não soma 
  assert.equal(c.calcularLimitePessoalPainelGestor(dados,{centavos:12000,incluirPrevistos:false}).margem,2000);
 });
 test('atualizar o Painel preserva a configuração do limite que ainda está sendo editada',()=>{
- const c=painel(),campos=new Map();const el=id=>{if(!campos.has(id))campos.set(id,{value:'',textContent:'',checked:false});return campos.get(id);};
- c.document={getElementById:id=>['devolucoesPainelGestor','listaDevolucoesPainelGestor'].includes(id)?null:el(id),activeElement:null};c.lerJSONLocalGestor=()=>({centavos:12000,incluirPrevistos:false});c.formatBRL=n=>'R$ '+n;
+ const c=painel(),campos=new Map();const criar=()=>({value:'',textContent:'',checked:false,style:{},children:[],append(...v){this.children.push(...v);},replaceChildren(...v){this.children=v;},setAttribute(){}});const el=id=>{if(!campos.has(id))campos.set(id,criar());return campos.get(id);};
+ c.document={createElement:criar,getElementById:id=>['devolucoesPainelGestor','listaDevolucoesPainelGestor'].includes(id)?null:el(id),activeElement:null};c.lerJSONLocalGestor=()=>({centavos:12000,incluirPrevistos:false});c.formatBRL=n=>'R$ '+n;
  c.renderizarDados({faturas:{mesAtual:'10/2026',horizonte:{totalPessoal:{Cartao:{'10/2026':150}}}}});
  el('valorLimitePessoalGestor').value='200';el('previsoesLimitePessoalGestor').checked=true;vm.runInContext('limitePessoalEmEdicaoGestor=true',c);c.renderizarRotinaPainelGestor();
  assert.equal(el('valorLimitePessoalGestor').value,'200');assert.equal(el('previsoesLimitePessoalGestor').checked,true);
@@ -38,7 +38,7 @@ test('atualizar o Painel preserva a configuração do limite que ainda está sen
 });
 function tela(){
  const campos=new Map(),chamadas=[],confirmacoes=[];function el(id){if(!campos.has(id))campos.set(id,{value:'',textContent:'',disabled:false,children:[],classList:{add(){},remove(){}},replaceChildren(){this.children=[];},append(...x){this.children.push(...x);}});return campos.get(id);}
- const c=vm.createContext({Date,Map,window:{},renderizarDados(){},geracaoLeituraGestor:1,requisicaoPagamentoGestor:0,faturaConferidaGestor:null,pagamentoFaturaEmCursoGestor:false,navigator:{onLine:true},document:{getElementById:el},formatBRL:n=>'R$ '+n,lerValorMoeda:v=>Number(campos.has(v)?el(v).value:v),elementoAtividadeGestor:()=>({append(){}}),mostrarConfirmacao:(...a)=>confirmacoes.push(a),mostrarAviso(){},apiCall:(a,p)=>new Promise((resolve,reject)=>chamadas.push({a,p,resolve,reject}))});c.window=c;vm.runInContext(fs.readFileSync('interface/faturas.js','utf8'),c);el('cartaoPagamentoFaturaGestor').value='Cartao';el('mesPagamentoFaturaGestor').value='10/2026';return {c,el,chamadas,confirmacoes};
+ const c=vm.createContext({Date,Map,window:{},renderizarDados(){},geracaoLeituraGestor:1,requisicaoPagamentoGestor:0,faturaConferidaGestor:null,pagamentoFaturaEmCursoGestor:false,navigator:{onLine:true},document:{getElementById:el},formatBRL:n=>'R$ '+n,lerValorMoeda:v=>Number(campos.has(v)?el(v).value:v),elementoAtividadeGestor:()=>({append(){}}),mostrarConfirmacao:(...a)=>confirmacoes.push(a),mostrarAviso(){},apiCall:(a,p)=>new Promise((resolve,reject)=>chamadas.push({a,p,resolve,reject}))});c.window=c;vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);vm.runInContext(fs.readFileSync('interface/faturas.js','utf8'),c);el('cartaoPagamentoFaturaGestor').value='Cartao';el('mesPagamentoFaturaGestor').value='10/2026';return {c,el,chamadas,confirmacoes};
 }
 const resumo={...alvo,total:308,pago:0,restante:308,pessoal:100,terceiros:208,quantidade:2};
 test('reabrir usa resumo recente; atualização forçada e mudança de dados consultam novamente',async()=>{

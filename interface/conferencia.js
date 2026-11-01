@@ -130,12 +130,12 @@ function adicionarPrecoGestor(focar=false){
  const lista=document.getElementById('precos-opcoes');if(lista.children.length>=12)return;document.getElementById('precos-resultado').replaceChildren();
  const c=elConferenciaGestor('div','','card-glass p-4 grid grid-cols-2 sm:grid-cols-3 gap-3');
  for(const [id,titulo,valor]of [['nome','Produto / marca',''],['preco','Preço do conjunto (R$)',''],['quantidade','Quantidade por embalagem',''],['pacotes','Embalagens no conjunto','1']]){
-  const l=elConferenciaGestor('label',titulo,'text-xs text-slate-200'),i=document.createElement('input');i.dataset.preco=id;i.value=valor;i.maxLength=id==='nome'?100:20;i.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-1';if(id!=='nome')i.inputMode='decimal';l.append(i);c.append(l);
+  const l=elConferenciaGestor('label',titulo,'text-xs text-slate-200 min-w-0 flex flex-col gap-1'),i=document.createElement('input');i.dataset.preco=id;i.value=valor;i.maxLength=id==='nome'?100:20;i.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-auto min-w-0';if(id!=='nome')i.inputMode='decimal';l.append(i);c.append(l);
  }
- const l=elConferenciaGestor('label','Unidade','text-xs text-slate-200'),s=document.createElement('select');s.dataset.preco='unidade';s.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-1';
+ const l=elConferenciaGestor('label','Unidade','text-xs text-slate-200 min-w-0 flex flex-col gap-1'),s=document.createElement('select');s.dataset.preco='unidade';s.className='block w-full bg-slate-900 border border-slate-600 rounded-xl p-3 mt-auto min-w-0';
  for(const [u,t]of [['g','g'],['kg','kg'],['ml','mL'],['l','L'],['un','unidade']]){const o=elConferenciaGestor('option',t);o.value=u;s.append(o);}
  s.value=lista.querySelector('[data-preco="unidade"]')?.value||'g';s.addEventListener('change',()=>sincronizarUnidadesPrecosGestor(s,lista));l.append(s);c.append(l);
- const b=elConferenciaGestor('button','Remover','text-rose-300 border border-slate-600 rounded-xl p-3 disabled:opacity-40');b.type='button';b.dataset.removerPreco='true';b.onclick=()=>{if(lista.children.length<=2)return;c.remove();atualizarRemocaoPrecosGestor();document.getElementById('precos-resultado').replaceChildren();};c.append(b);
+ const b=elConferenciaGestor('button','Remover','text-rose-300 border border-slate-600 rounded-xl p-3 self-end disabled:opacity-40');b.type='button';b.dataset.removerPreco='true';b.onclick=()=>{if(lista.children.length<=2)return;c.remove();atualizarRemocaoPrecosGestor();document.getElementById('precos-resultado').replaceChildren();};c.append(b);
  c.addEventListener('input',()=>document.getElementById('precos-resultado').replaceChildren());c.addEventListener('change',()=>document.getElementById('precos-resultado').replaceChildren());lista.append(c);atualizarRemocaoPrecosGestor();if(focar)c.querySelector('[data-preco="nome"]')?.focus();
 }
 function limparPrecosGestor(confirmado=false,assinatura=null){
@@ -164,6 +164,7 @@ function calcularPrecosGestor(){
    saida.append(card);
   }
   saida.append(elConferenciaGestor('p','Compare produtos equivalentes. Qualidade, rendimento e condições de promoção também contam. Valores por unidade arredondados para exibição.','text-xs text-slate-300'));
+  saida.scrollIntoView?.({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
  }catch(_){saida.append(elConferenciaGestor('p','Informe preços e quantidades maiores que zero. Compare apenas unidades compatíveis: g/kg, mL/L ou unidades.','text-amber-300'));}
 }
 const abaAntesConferenciaGestor=window.setAba;window.setAba=function(aba,...args){if(aba==='precos')return abrirFerramenta('precos');const r=abaAntesConferenciaGestor(aba,...args);if(aba==='extrato')prepararFormasConferenciaGestor();return r;};

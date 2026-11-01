@@ -61,3 +61,5 @@ As bases anuais usam a identidade dos cabeçalhos da base de controle e um resum
 O título do grupo Planejamento usa 📑. A bússola 🧭 fica reservada à Central de Navegação.
 
 Comparar preços usa ⚖️ e fica em Ferramentas. Conferir extrato usa 🔎 em Dados e relatórios: a lupa mantém o significado de examinar/procurar. No computador (a partir de 1024 px), os quatro grupos do Menu ficam em duas colunas, com atalhos em pares e fundo neutro. No celular permanece a organização em pares.
+
+Situações: verde para pago/recebido; âmbar para pendente; laranja para prazo vencido ou mês encerrado com recebimento pendente. O texto sempre distingue Banco e Pessoa. Rosa/vermelho continua identificando limite/meta ultrapassados. Na Agenda, todo o quadrado recebe a situação prioritária; seleção azul é apenas um contorno. No Horizonte, os nomes Total Carteira, Terceiros e Total Faturas usam azul-claro, âmbar e violeta, respectivamente; a situação dos valores é independente da cor do nome.

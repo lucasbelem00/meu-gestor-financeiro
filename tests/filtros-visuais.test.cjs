@@ -20,8 +20,8 @@ test('cartões não usam hover de fundo e filtro usa botão nativo separado de p
 test('conferir pagamento fica no grupo à esquerda e saldo parcial tem cor e rótulo próprios',()=>{
  const linha=html.slice(html.indexOf('          htmlFormas += `<div data-forma='),html.indexOf("document.getElementById('rel-formas-usadas')"));
  assert(linha.indexOf('${btnQuitar}')<linha.indexOf('text-right whitespace-nowrap'));
- assert(html.includes('text-emerald-300">Pago: ${formatBRL(l[17])}'));
- assert(html.includes('text-rose-300 font-bold">Saldo restante: ${formatBRL(l[18])}'));
+ assert(html.includes('text-emerald-300">Pago ao banco: ${formatBRL(l[17])}'));
+ assert(html.includes('${situacao.cor} font-bold">Falta pagar: ${formatBRL(l[18])}'));
  assert(linha.includes('grid-cols-[minmax(0,1fr)_auto]'));
 });
 

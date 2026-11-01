@@ -3,7 +3,7 @@ let dadosRotinaPainelGestor=null;
 let limitePessoalEmEdicaoGestor=false;
 function abrirDevolucaoPainelGestor(item){
   abrirResumoEmprestimos();
-  for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp','A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
+  for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp',item.status==='Recebido'?'Recebido':'A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
   renderizarPainelEmprestimos();
 }
 function diaDevolucaoPainelGestor(texto){
@@ -12,8 +12,8 @@ function diaDevolucaoPainelGestor(texto){
   return d.getUTCFullYear()===ano&&d.getUTCMonth()===mes&&d.getUTCDate()===dia?d.getTime()/86400000:null;
 }
 function listarDevolucoesPainelGestor(itens,hoje=new Date()){
-  const dia=Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;
-  return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>({...i,dias:diaDevolucaoPainelGestor(i.dataCombinada)===null?null:diaDevolucaoPainelGestor(i.dataCombinada)-dia})).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
+ const atual=hojeSituacaoVisualGestor(hoje);
+ return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>{const situacao=situacaoRecebimentoVisualGestor(i,hoje),dia=diaSituacaoVisualGestor(i.dataCombinada)??(situacao.codigo==='mesEncerrado'?fimMesSituacaoVisualGestor(i.mesFatura):null);return {...i,situacao,dias:dia===null?null:dia-atual};}).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
 }
 function calcularLimitePessoalPainelGestor(dados,config){
   const mes=dados?.faturas?.mesAtual,h=dados?.faturas?.horizonte;
@@ -23,14 +23,35 @@ function calcularLimitePessoalPainelGestor(dados,config){
   const limite=Number(config.centavos)||0,total=registrado+previsto;
   return {mes,registrado,previsto,total,limite,margem:limite-total,percentual:limite>0?Math.round(total*100/limite):0};
 }
+function sinalizarEdicaoLimitePainelGestor(){
+  limitePessoalEmEdicaoGestor=true;
+  const aviso=document.getElementById('avisoEdicaoLimitePessoalGestor');if(aviso)aviso.hidden=false;
+}
+function renderizarResultadoLimitePessoalGestor(resumo,r,config){
+  const criar=(tag,texto,classe)=>{const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;};
+  resumo.replaceChildren();resumo.className='mt-4 space-y-3';
+  const aviso=criar('p','Você está editando. O resultado abaixo usa o limite guardado; clique em Guardar limite para atualizar.','text-xs text-amber-200');aviso.id='avisoEdicaoLimitePessoalGestor';aviso.hidden=!limitePessoalEmEdicaoGestor;resumo.append(aviso);
+  if(r.limite<=0){resumo.append(criar('p','Sem limite definido. Informe e guarde um valor acima para acompanhar seu teto mensal.','text-sm text-slate-300'));return;}
+  const acima=r.margem<0,atingido=r.margem===0,cor=acima?'text-rose-300':atingido?'text-amber-300':'text-sky-300';
+  const principal=criar('section','','rounded-2xl border p-4 space-y-2 '+(acima?'border-rose-500/40 bg-rose-500/10':atingido?'border-amber-500/40 bg-amber-500/10':'border-sky-500/40 bg-sky-500/10'));
+  principal.append(criar('h4',acima?'Acima do limite':atingido?'Limite atingido':'Restam no limite','text-sm font-bold '+cor),criar('p',formatBRL(Math.abs(r.margem)/100),'text-2xl font-bold '+cor));
+  principal.append(criar('p',r.percentual+'% do limite utilizado'+(config.incluirPrevistos?' • inclui as previsões selecionadas.':'.'),'text-sm text-slate-200'));
+  resumo.append(principal);
+  const barra=criar('div','','h-2.5 rounded-full bg-slate-800 overflow-hidden'),preenchido=criar('div','','h-full rounded-full '+(acima?'bg-rose-400':r.percentual>=80?'bg-amber-400':'bg-sky-400'));
+  preenchido.style.width=Math.max(0,Math.min(100,r.percentual))+'%';barra.append(preenchido);barra.setAttribute('role','progressbar');barra.setAttribute('aria-label','Uso do limite pessoal mensal');barra.setAttribute('aria-valuemin','0');barra.setAttribute('aria-valuemax','100');barra.setAttribute('aria-valuenow',String(Math.max(0,Math.min(100,r.percentual))));barra.setAttribute('aria-valuetext',r.percentual+'% utilizado'+(acima?', acima do limite':''));resumo.append(barra);
+  const grade=criar('div','','grid grid-cols-2 gap-3');
+  for(const [titulo,valor]of [['Limite definido',r.limite],['Gastos registrados',r.registrado]]){const c=criar('div','','min-w-0 rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-1');c.append(criar('p',titulo,'text-xs text-slate-300'),criar('p',formatBRL(valor/100),'font-bold text-white break-words'));grade.append(c);}resumo.append(grade);
+  if(config.incluirPrevistos){const detalhe=criar('div','','rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-2');detalhe.append(criar('p','Fixos previstos incluídos','text-xs text-slate-300'),criar('p',formatBRL(r.previsto/100),'font-bold text-violet-300'),criar('p','Total considerado: '+formatBRL(r.total/100),'text-sm text-slate-200'));resumo.append(detalhe);}
+  resumo.append(criar('p','Gastos já pagos continuam contando. O valor restante é uma margem do seu limite, não saldo bancário.','text-xs text-slate-300'));
+}
 function renderizarRotinaPainelGestor(){
   const dados=dadosRotinaPainelGestor;if(!dados)return;
   const acaoTerceiros=document.getElementById('resumoTerceirosPainelGestor');if(acaoTerceiros)acaoTerceiros.textContent='A receber de terceiros: '+(dados.emprestimos?.kpis?.totalAReceberGeral||'R$ 0,00')+' • todos os meses';
   const box=document.getElementById('devolucoesPainelGestor'),lista=document.getElementById('listaDevolucoesPainelGestor');
   if(box&&lista){
     const itens=listarDevolucoesPainelGestor(dados.emprestimos?.itens);box.hidden=!itens.length;lista.replaceChildren();
-    document.getElementById('tituloDevolucoesPainelGestor').textContent='🤝 Devoluções combinadas • '+itens.length+' pendência(s)';
-    itens.slice(0,12).forEach(i=>{const b=document.createElement('button');b.type='button';b.className='w-full rounded-xl border border-slate-600 bg-slate-900 p-3 text-left text-xs';const titulo=document.createElement('strong'),detalhe=document.createElement('span');titulo.className='block text-amber-200';titulo.textContent=i.pessoa+' • '+formatBRL(i.valorRaw);detalhe.className='block mt-1 text-slate-300';detalhe.textContent=i.dataCombinada+' • '+(i.dias<0?'Devolução atrasada':i.dias===0?'Combinado para hoje':'Em '+i.dias+' dia(s)')+' • '+i.descricao;b.append(titulo,detalhe);b.onclick=()=>abrirDevolucaoPainelGestor(i);lista.append(b);});
+    document.getElementById('tituloDevolucoesPainelGestor').textContent='🤝 Recebimentos para acompanhar • '+itens.length+' pendência(s)';
+    itens.slice(0,12).forEach(i=>{const b=document.createElement('button');b.type='button';b.className='w-full rounded-xl border p-3 text-left text-xs '+i.situacao.fundo;const titulo=document.createElement('strong'),detalhe=document.createElement('span');titulo.className='block font-bold';titulo.textContent=i.pessoa+' • '+formatBRL(i.valorRaw);detalhe.className='block mt-1';detalhe.textContent=(i.dataCombinada||'Parcela de '+i.mesFatura)+' • '+i.situacao.texto+' • Falta receber: '+formatBRL(i.valorRaw)+' • '+i.descricao;b.append(titulo,detalhe);b.onclick=()=>abrirDevolucaoPainelGestor(i);lista.append(b);});
     if(itens.length>12){const p=document.createElement('p');p.className='text-xs text-slate-300';p.textContent='Mostrando as primeiras 12. Confira as demais em Empréstimos.';lista.append(p);}
   }
   const semAvisos=document.getElementById('semAvisosPainelGestor');if(semAvisos)semAvisos.hidden=!(document.getElementById('bannerVencimentoFatura')?.classList?.contains('hidden')&&document.getElementById('devolucoesPainelGestor')?.hidden);
@@ -40,8 +61,7 @@ function renderizarRotinaPainelGestor(){
   if(!limitePessoalEmEdicaoGestor){if(document.activeElement!==campo)campo.value=r.limite>0?formatBRL(r.limite/100):'';document.getElementById('previsoesLimitePessoalGestor').checked=config.incluirPrevistos===true;}
   document.getElementById('periodoLimitePessoalGestor').textContent=r.mes||'';
   const indicador=document.getElementById('indicadorLimitePessoalGestor');if(indicador){indicador.textContent=r.limite>0?' • '+r.percentual+'% utilizado':'';indicador.className=r.limite>0&&r.margem<0?'text-rose-300':'text-slate-300';}
-  resumo.textContent=r.limite>0?'Registrado: '+formatBRL(r.registrado/100)+(config.incluirPrevistos?' • Previsto: '+formatBRL(r.previsto/100):'')+' • '+(r.margem>=0?'Margem: '+formatBRL(r.margem/100):'Acima do limite: '+formatBRL(-r.margem/100))+' ('+r.percentual+'% do limite).':'Sem limite definido. Configure apenas se quiser acompanhar um teto geral de gastos.';
-  resumo.className='text-xs mt-3 '+(r.limite>0&&r.margem<0?'text-rose-300':'text-slate-200');
+  renderizarResultadoLimitePessoalGestor(resumo,r,config);
 }
 function salvarLimitePessoalPainelGestor(limpar=false){
   const valor=limpar?0:lerValorMoeda('valorLimitePessoalGestor'),centavos=Math.round(valor*100);

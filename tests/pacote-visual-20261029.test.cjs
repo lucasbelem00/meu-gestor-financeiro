@@ -16,6 +16,7 @@ function ambiente(){
   categoriasGlobaisEdit:[{nome:'Outros 📦'},{nome:'Saúde 💊'},{nome:'Mercado 🛒'}],document:{activeElement:null,getElementById:el,querySelectorAll:()=>controles},
   ultimoRelatorioMensalCache:{lancamentos:itens,categorias:[{nome:'Saúde 💊',total:200,meta:300},{nome:'Outros',total:100,meta:0}]},filtroInternoMensalAtivo:{},
   referenciaLinhaSegura:()=>'',acaoHTML:()=>'',detalheFechamentoAnualGestor:()=>'',modoEdicaoLancamentos:false,itensFiltradosAtualCache:[]});
+ vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);
  vm.runInContext(trecho('    function iconeFormaPagamentoVisualGestor(','    function formatarInfoParcelaCard('),c);
  vm.runInContext(trecho('    function getCategoriaExibicao(','    function ') ,c);
  vm.runInContext(trecho('    function formatarInfoParcelaCard(','    function renderTabelaLancamentos('),c);
@@ -46,7 +47,7 @@ test('categorias sem meta continuam disponíveis em Mais filtros e tags se combi
 
 test('cores dos lançamentos distinguem quitação, saldo e assinatura ativa sem mudar valores',()=>{
  const {c}=ambiente();for(const status of ['Em Aberto','Agendado','Assinatura Ativa','Assinatura Cancelada'])assert.equal(c.corValorLancamentoGestor(status),'text-white');for(const status of ['Pago','Assinatura Paga','Pago (Cancelada)'])assert.equal(c.corValorLancamentoGestor(status),'text-emerald-400');assert.equal(c.corValorLancamentoGestor('Pago',70),'text-white');
- const r=linha('Parcial','Teste',30);assert.match(c.montarCardFaturaMensalSeguro(r),/text-white font-bold text-base/);assert.match(c.montarCardFaturaMensalSeguro(r),/Saldo restante/);r[17]=100;r[18]=0;r[9]='Pago';assert.match(c.montarCardFaturaMensalSeguro(r),/text-emerald-400 font-bold text-base/);assert.match(c.obterClasseBadgeStatus('Assinatura Ativa'),/violet/);
+ const r=linha('Parcial','Teste',30);assert.match(c.montarCardFaturaMensalSeguro(r),/text-white font-bold text-base/);assert.match(c.montarCardFaturaMensalSeguro(r),/Falta pagar/);r[17]=100;r[18]=0;r[9]='Pago';assert.match(c.montarCardFaturaMensalSeguro(r),/text-emerald-400 font-bold text-base/);assert.match(c.obterClasseBadgeStatus('Assinatura Ativa'),/violet/);
 });
 
 test('ícone de pagamento usa o tipo cadastrado inclusive em Pix renomeado',()=>{

@@ -8,7 +8,7 @@ function ambiente(total=6,largura=390){
   const c=vm.createContext({window:{innerWidth:largura},document:{addEventListener(){},querySelectorAll:()=>[],getElementById:el},
     evolucaoMeses:Array.from({length:total},(_,i)=>String(i+1).padStart(2,'0')+'/2026'),evolucaoIdx:0,evolucaoPivot:{},evolucaoChaveResumoGestor:'__TOTAL_CARTEIRA__',compararHorizonteCompleto:false,
     formatBRL:n=>'R$ '+n.toFixed(2),escaparHTML:String,acaoHTML:()=>'',tipoFormaPagamentoGestor:()=> 'cartao',formaEhCartaoGestor:()=>true,formaEhPixGestor:()=>false});
-  vm.runInContext(fonte,c);
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../interface/situacoes.js'),'utf8'),c);vm.runInContext(fonte,c);
   return {c,el};
 }
 test('Horizonte sem meses ou com uma janela só mantém ambas as setas desativadas',()=>{

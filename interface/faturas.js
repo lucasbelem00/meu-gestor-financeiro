@@ -16,9 +16,10 @@ function resumoFaturaPainelGestor(forma,mes){
   return {forma,mesFatura:mes,total:valor('totalBanco'),pago:valor('pagoBanco'),restante:valor('saldoBanco'),pessoal:valor('totalPessoal'),terceiros:valor('totalTerceiros')};
 }
 function mostrarResumoFaturaGestor(f,atualizado,instante){
-  const box=document.getElementById('resumoPagamentoFaturaGestor');box.replaceChildren();
-  [['Total registrado',f.total],['Pago ao banco',f.pago],['Em aberto',f.restante]].forEach(([rotulo,valor])=>{const c=elementoAtividadeGestor('div',null,'rounded-xl bg-slate-900 border border-slate-600 p-2 min-w-0');c.append(elementoAtividadeGestor('p',rotulo,'text-[10px] text-slate-300'),elementoAtividadeGestor('p',formatBRL(valor),'text-xs sm:text-sm font-bold mt-1 break-words '+(rotulo==='Em aberto'&&valor>0?'text-rose-300':rotulo==='Pago ao banco'?'text-emerald-300':'text-white')));box.append(c);});
+  const box=document.getElementById('resumoPagamentoFaturaGestor');box.replaceChildren();const situacao=situacaoBancoVisualGestor({total:f.total,pago:f.pago,saldo:f.restante,mesFatura:f.mesFatura,vencimento:formaSituacaoVisualGestor(f.forma).vencimento});
+  [['Total registrado',f.total],['Pago ao banco',f.pago],['Em aberto',f.restante]].forEach(([rotulo,valor])=>{const c=elementoAtividadeGestor('div',null,'rounded-xl bg-slate-900 border border-slate-600 p-2 min-w-0');c.append(elementoAtividadeGestor('p',rotulo,'text-[10px] text-slate-300'),elementoAtividadeGestor('p',formatBRL(valor),'text-xs sm:text-sm font-bold mt-1 break-words '+(rotulo==='Em aberto'&&valor>0?situacao.cor:rotulo==='Pago ao banco'?'text-emerald-300':'text-white')));box.append(c);});
   box.append(elementoAtividadeGestor('p','Seus gastos: '+formatBRL(f.pessoal)+' • Gastos de terceiros no cartão: '+formatBRL(f.terceiros),'col-span-3 text-xs text-slate-200 leading-relaxed'));
+  box.append(elementoAtividadeGestor('p',situacao.texto,'col-span-3 text-xs font-bold '+situacao.cor));
   document.getElementById('consultaFaturaOrigemGestor').textContent=atualizado?'Consulta às '+new Date(instante).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : 'Resumo dos dados já carregados • aguardando conferência';
   document.getElementById('salvarPagamentoFaturaGestor').disabled=!atualizado||f.restante<=0;
   atualizarComparacaoFaturaGestor(f);

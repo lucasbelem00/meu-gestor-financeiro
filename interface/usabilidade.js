@@ -63,30 +63,47 @@ function renderTabelaEvolucao() {
     const soma = valores.reduce((s,v) => s + centavosInterfaceGestor(v.valor),0)/100;
     const cols = valores.map((v,i) => {
       const quitado = v.registrado > 0 && v.saldo < 0.005 && !v.previsto;
-      const cor = quitado ? 'text-emerald-400' : v.pago > 0 && v.saldo > 0 ? 'text-rose-300' : classe;
-      const aviso = v.previsto > 0 ? 'Inclui previsto' : quitado ? 'Quitado' : v.pago > 0 ? 'Parcial' : '';
-      const titulo = `Registrado: ${formatBRL(v.registrado || 0)}. ${rotulo==='Terceiros'?'Recebido':'Pago'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}`;
+      const cor = v.previsto > 0 && v.situacao?.codigo === 'pago' ? classe : v.situacao?.cor || (quitado ? 'text-emerald-400' : v.pago > 0 && v.saldo > 0 ? 'text-amber-200' : classe);
+      const aviso = v.previsto > 0 ? 'Inclui previsto' : v.situacao?.texto || (quitado ? 'Pago ao banco' : v.pago > 0 ? 'Pagamento parcial' : '');
+      const titulo = `Registrado: ${formatBRL(v.registrado || 0)}. ${v.recebivel?'Recebido':'Pago ao banco'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}`;
       const acao = v.previsto > 0 ? acaoHTML('abrirDetalheHorizonteGestor',[rotulo,meses[i],v,abrir]) : acaoHTML(abrir?'abrirConferenciaFaturaGestor':'irParaFaturaMensal',abrir?[rotulo,meses[i]]:[meses[i]]);
-      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full py-1 font-bold whitespace-nowrap" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${aviso?'<span class="block text-[9px] font-normal">'+(v.previsto>0?'Prev.: '+moeda(v.previsto)+' · detalhar':aviso)+'</span>':''}</button></td>`;
+      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full py-1 font-bold whitespace-nowrap" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(v.previsto>0?'Prev.: '+moeda(v.previsto)+' · detalhar':aviso)+'</span>':''}${v.pago>0&&v.saldo>0?'<span class="block text-[9px] font-normal">'+escaparHTML((v.recebivel?'Recebido: ':'Pago: ')+moeda(v.pago)+' • '+(v.recebivel?'Falta receber: ':'Falta pagar: ')+moeda(v.saldo))+'</span>':''}${v.aReceber!==undefined?'<span class="block text-[9px] font-normal '+v.sitReceber.cor+'">'+escaparHTML('A receber: '+moeda(v.aReceber)+' • '+v.sitReceber.texto)+'</span>':''}</button></td>`;
     }).join('');
-    html += `<tr class="border-b border-slate-700"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold ${classe}">${escaparHTML(rotulo)}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
+    html += `<tr class="border-b border-slate-700"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold ${classe}">${escaparHTML(rotulo)}${rotulo==='Terceiros'?'<span class="block text-[9px] font-normal">Nos cartões</span>':''}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
   }
   formas.forEach(f => linha(f,meses.map(m => {
     if(!h)return {valor:evolucaoPivot[f]?.[m] || 0};
     const cartao = formaEhCartaoGestor(f), previsto = valorMapaHorizonteGestor(h.previstoPessoal,f,m);
     const registrado=valorMapaHorizonteGestor(cartao?h.totalBanco:h.totalPessoal,f,m),pago=valorMapaHorizonteGestor(cartao?h.pagoBanco:h.pagoPessoal,f,m),saldo=valorMapaHorizonteGestor(cartao?h.saldoBanco:h.saldoPessoal,f,m);
-    return {valor:(total?registrado:saldo)+previsto,registrado,pago,saldo,previsto};
+    return {valor:(total?registrado:saldo)+previsto,registrado,pago,saldo,previsto,situacao:situacaoBancoVisualGestor({total:registrado,pago,saldo,mesFatura:m,vencimento:cartao?formaSituacaoVisualGestor(f).vencimento:null,imediato:!cartao})};
   }),'text-white',formaEhCartaoGestor(f)));
   if(h){
+    const itens=typeof emprestimosGlobal==='undefined'?[]:emprestimosGlobal.itens||[];
+    function estadoReceber(m,cartao,registrado,recebido){
+      const situacoes=itens.filter(i=>i.mesFatura===m&&formaEhCartaoGestor(i.forma)===cartao).map(i=>situacaoRecebimentoVisualGestor(i));
+      return situacoes.sort((a,b)=>b.prioridade-a.prioridade)[0]||estiloSituacaoVisualGestor(registrado>0&&registrado-recebido<0.005?'recebido':'pendente',registrado>0&&registrado-recebido<0.005?'Recebido':'A receber');
+    }
+    function estadoBanco(m,pessoal,registrado,pago,saldo,terceiros=false){
+      if(saldo<0.005||registrado<=0)return situacaoBancoVisualGestor({total:registrado,pago,saldo});
+      const atrasado=Object.keys(h.totalBanco||{}).filter(formaEhCartaoGestor).map(f=>situacaoBancoVisualGestor({total:valorMapaHorizonteGestor(pessoal?h.totalPessoal:h.totalBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.totalPessoal,f,m):0),pago:valorMapaHorizonteGestor(pessoal?h.pagoPessoal:h.pagoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.pagoPessoal,f,m):0),saldo:valorMapaHorizonteGestor(pessoal?h.saldoPessoal:h.saldoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.saldoPessoal,f,m):0),mesFatura:m,vencimento:formaSituacaoVisualGestor(f).vencimento})).find(s=>s.codigo==='vencido');
+      return atrasado||situacaoBancoVisualGestor({total:registrado,pago,saldo});
+    }
     function resumo(pessoal) { return meses.map(m => {
       const registrado=somaMapaHorizonteGestor(pessoal?h.totalPessoal:h.totalBanco,m,true),pago=somaMapaHorizonteGestor(pessoal?h.pagoPessoal:h.pagoBanco,m,true),saldo=somaMapaHorizonteGestor(pessoal?h.saldoPessoal:h.saldoBanco,m,true),previsto=somaMapaHorizonteGestor(h.previstoPessoal,m,true);
-      return {registrado,pago,saldo,previsto,valor:(total?registrado:saldo)+previsto};
+      return {registrado,pago,saldo,previsto,valor:(total?registrado:saldo)+previsto,situacao:estadoBanco(m,pessoal,registrado,pago,saldo)};
     }); }
-    linha('Total Carteira',resumo(true),'text-purple-300');
-    if(meses.some(m=>total?somaMapaHorizonteGestor(h.totalTerceiros,m,true)>0:somaMapaHorizonteGestor(h.saldoBanco,m,true)-somaMapaHorizonteGestor(h.saldoPessoal,m,true)>0.004))linha('Fatura Real',resumo(false),'text-purple-300');
-    if(meses.some(m=>somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.recebidoTerceiros,m)>0.004))linha('Terceiros',meses.map(m=>{const registrado=somaMapaHorizonteGestor(h.totalTerceiros,m),pago=somaMapaHorizonteGestor(h.recebidoTerceiros,m),saldo=Math.max(0,registrado-pago);return {valor:saldo,registrado,pago,saldo};}),'text-amber-300');
+    linha('Total Carteira',resumo(true),'text-sky-300');
+    const temTerceiros=meses.some(m=>somaMapaHorizonteGestor(h.totalTerceiros,m,true)>0);
+    if(temTerceiros)linha('Terceiros',meses.map(m=>{
+      const registrado=somaMapaHorizonteGestor(h.totalTerceiros,m,true),recebido=somaMapaHorizonteGestor(h.recebidoTerceiros,m,true),aReceber=Math.max(0,registrado-recebido),saldoBanco=Math.max(0,somaMapaHorizonteGestor(h.saldoBanco,m,true)-somaMapaHorizonteGestor(h.saldoPessoal,m,true)),pagoBanco=Math.max(0,registrado-saldoBanco),sitReceber=estadoReceber(m,true,registrado,recebido);
+      return {valor:total?registrado:saldoBanco,registrado,pago:total?recebido:pagoBanco,saldo:total?aReceber:saldoBanco,recebivel:total,aReceber,sitReceber,situacao:total?sitReceber:estadoBanco(m,false,registrado,pagoBanco,saldoBanco,true)};
+    }),'text-amber-300');
+    linha('Total Faturas',resumo(false),'text-violet-300');
+    if(meses.some(m=>somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.totalTerceiros,m,true)>0))linha('Terceiros fora dos cartões',meses.map(m=>{
+      const registrado=somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.totalTerceiros,m,true),pago=somaMapaHorizonteGestor(h.recebidoTerceiros,m)-somaMapaHorizonteGestor(h.recebidoTerceiros,m,true),saldo=Math.max(0,registrado-pago);return {valor:total?registrado:saldo,registrado,pago,saldo,recebivel:true,situacao:estadoReceber(m,false,registrado,pago)};
+    }),'text-amber-300');
   }else{
-    [evolucaoChaveResumoGestor,'__BANCO_TOTAL__','__TERCEIROS_A_RECEBER__'].forEach((f,i)=>{if(i===0||meses.some(m=>(evolucaoPivot[f]?.[m] || 0)>0))linha(['Total Carteira','Fatura Real','Terceiros'][i],meses.map(m=>({valor:evolucaoPivot[f]?.[m] || 0})),i===2?'text-amber-300':'text-purple-300');});
+    for(const [f,rotulo,cor]of [[evolucaoChaveResumoGestor,'Total Carteira','text-sky-300'],['__TERCEIROS_A_RECEBER__','A receber de terceiros','text-amber-300'],['__BANCO_TOTAL__','Total Faturas','text-violet-300']])if(f===evolucaoChaveResumoGestor||meses.some(m=>(evolucaoPivot[f]?.[m]||0)>0))linha(rotulo,meses.map(m=>({valor:evolucaoPivot[f]?.[m]||0})),cor);
   }
   document.getElementById('faturas-body').innerHTML = html || '<tr><td colspan="6" class="py-4 text-slate-300 text-center">Nenhum valor neste período.</td></tr>';
   const anterior = document.getElementById('btnEvolPrev'), proximo = document.getElementById('btnEvolNext');
