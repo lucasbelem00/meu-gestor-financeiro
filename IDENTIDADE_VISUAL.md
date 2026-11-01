@@ -28,9 +28,9 @@ No Histórico, o resumo usa 🔢 para contar lançamentos, quantidade neutra e v
 
 📈 e 📉 indicam direção de valores; não identificam a aba Anual. Um cabeçalho genérico de grupo não substitui a identidade de cada aba.
 
-No celular, a Central mostra o título curto “Navegação”, com “↻ Atualizar” e Fechar na mesma linha. O título pode quebrar com fonte ampliada sem empurrar as ações para baixo. No computador, conserva “Central de Navegação”. A mensagem de atualização usa “↻ Atualizando…”. 📌 acompanha despesas fixas no cadastro, menu, filtro, aba e edição; 🔁 identifica repetir um lançamento.
+No celular, a Central mostra o título curto “Navegação”, com “↻ Atualizar” e Fechar na mesma linha. O título pode quebrar com fonte ampliada sem empurrar as ações para baixo. No computador, conserva “Central de Navegação”. A mensagem de atualização usa “↻ Atualizando…”. 📌 acompanha a identificação de despesas fixas no cadastro, menu, filtro e aba; 🔁 identifica repetir um lançamento.
 
-Todos os 12 atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. Ao abrir a Central, somente o destino da página/ferramenta atual recebe `aria-current="page"`, fundo azul suave e borda azul. Trocar de ferramenta substitui esse destaque; ações que abrem modais não representam a página atual. O atalho Empréstimo em Novo segue o fundo neutro; seleções Consultar/Novo empréstimo usam âmbar, característico da área. Cores de ações, alertas e confirmações continuam indicando seu significado.
+Todos os atalhos da Central usam o mesmo fundo neutro `bg-slate-800/80`, borda `border-slate-700/80` e passagem do mouse `hover:bg-slate-700`. A cor da ferramenta fica no círculo do ícone. Ao abrir a Central, somente o destino da página/ferramenta atual recebe `aria-current="page"`, fundo azul suave e borda azul. Trocar de ferramenta substitui esse destaque; ações que abrem modais não representam a página atual. O atalho Empréstimo em Novo segue o fundo neutro; seleções Consultar/Novo empréstimo usam âmbar, característico da área. Cores de ações, alertas e confirmações continuam indicando seu significado.
 
 O ícone do aplicativo é um desenho vetorial próprio inspirado em 💰, sem fontes ou emojis do sistema. O arquivo mestre `icons/gestor.svg` gera a mesma identidade no cabeçalho (incorporada pelo build), no favicon e nos PNGs locais `icon-192.png`, `icon-512.png` e `apple-touch-icon.png` (180 px). O fundo é opaco e o símbolo permanece na área central segura para os recortes de ícones instalados. `icon-192.svg` conserva o caminho antigo com o novo desenho.
 
@@ -40,7 +40,7 @@ As cores expressam o significado no contexto: verde para quitação, recebimento
 
 Na comparação mensal atual, variação menor ou igual a zero usa verde; aumento usa rosa; ausência de base usa cinza. O texto e a porcentagem acompanham o ícone.
 
-Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante usa rosa. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
+Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante segue a situação: âmbar dentro do prazo e laranja em atraso. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
 
 As etiquetas do Histórico, da Mensal e de Empréstimos usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal. O infinito não aparece nessa etiqueta; `∞/∞` permanece como identificação técnica da recorrência nos dados. Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.
 
@@ -63,3 +63,13 @@ O título do grupo Planejamento usa 📑. A bússola 🧭 fica reservada à Cent
 Comparar preços usa ⚖️ e fica em Ferramentas. Conferir extrato usa 🔎 em Dados e relatórios: a lupa mantém o significado de examinar/procurar. No computador (a partir de 1024 px), os quatro grupos do Menu ficam em duas colunas, com atalhos em pares e fundo neutro. No celular permanece a organização em pares.
 
 Situações: verde para pago/recebido; âmbar para pendente; laranja para prazo vencido ou mês encerrado com recebimento pendente. O texto sempre distingue Banco e Pessoa. Rosa/vermelho continua identificando limite/meta ultrapassados. Na Agenda, todo o quadrado recebe a situação prioritária; seleção azul é apenas um contorno. No Horizonte, os nomes Total Carteira, Terceiros e Total Faturas usam azul-claro, âmbar e violeta, respectivamente; a situação dos valores é independente da cor do nome.
+
+Títulos dos modais de edição usam ✏️: empréstimos, lançamentos, formas de pagamento e despesas fixas. Títulos alterados ao abrir o editor preservam o símbolo. O modo Registrar recebimento mantém sua identificação própria, pois é uma ação de recebimento. No Bloco de Notas, a criação usa “➕ Adicionar nota”; o ícone 📝 identifica a ferramenta.
+
+## Botões de ação
+
+O padrão é símbolo acompanhado de texto: ⚙️ Gerenciar (antes Organizar), ✏️ Editar, 🗑️ Excluir/Remover, ➕ Adicionar/Incluir/Lançar, 🧹 Limpar, 📋 Copiar, 🫴 Cobrar, 💰 Registrar recebimento, ➖ Registrar recebimento parcial, 🔁 Repetir, 💾 Salvar/Guardar e ↻ Atualizar. A engrenagem também identifica Gestão e ajustes: é o mesmo contexto de gestão, distinto da edição de um registro. ⚖️ identifica Comparar preços; 💵 identifica Composição da fatura.
+
+Em Empréstimos, o recebimento usa a linha principal; Editar e Excluir ficam na linha seguinte em duas colunas iguais. Botões de ação têm altura mínima de 44 px, texto centralizado e espaçamento consistente. As cores continuam indicando a ação/situação.
+
+interface/botoes.js centraliza rótulos e preserva o padrão quando a tela altera um botão após clique, consulta ou envio. Não substitui eventos, valores, disabled ou identificadores. Conteúdo rico, navegação, filtros selecionáveis, setas de fechar/voltar e teclas da calculadora preservam sua composição própria. A observação de alterações trata somente botões criados ou com texto alterado; não percorre a página inteira a cada atualização.

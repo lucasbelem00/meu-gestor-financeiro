@@ -20,6 +20,7 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | Arquivo ou pasta | Responsabilidade | Pontos de entrada importantes |
 | --- | --- | --- |
 | `index.html` | Estrutura das telas, integração e regras de interface ainda não extraídas | `apiCall`, `setAba`, `carregarDados`, renderização e formulários |
+| `interface/botoes.js` | Identidade e tamanho mínimo dos botões de ação, inclusive após mudanças de texto, sem alterar callbacks ou registros | `rotuloAcaoBotaoGestor`, `padronizarBotaoAcaoGestor`, `iniciarPadraoBotoesGestor` |
 | `interface/rotina.js` | Rascunhos financeiros, identidade da edição e fluxos diários | `lerRascunhoRotinaGestor`, `guardarRascunhoRotinaGestor` |
 | `interface/sincronizacao.js` | Orientações e recuperação das pendências | `orientacaoPendenciaGestor`, `conferirRecuperacaoServidorGestor` |
 | `interface/compartilhamento.js` | Mensagens em blocos para WhatsApp: empréstimos, Histórico e Simulação; totais e situações separados | `montarCobrancaMensagemGestor`, `montarResumoHistoricoMensagemGestor`, `montarSimulacaoMensagemGestor` |

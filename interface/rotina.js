@@ -246,7 +246,7 @@ function devolverFocoEditorGestor(modal){const anterior=modal._focoAnteriorEdito
 function modoRecebimentoEditorRotinaGestor(modal,ativo){
   const campos=[...Array.from(modal.querySelectorAll?.('form > .grid') || [modal.querySelector?.('form > .grid')]),document.getElementById('boxPropagarValorEmp'),modal.querySelector?.('[onclick="togglePainelDividirEmp()"]'),modal.querySelector?.('[onclick="togglePainelMoverPessoal()"]'),document.getElementById('inpEdEmpCombinada')?.closest?.('label'),document.getElementById('escopoDataCombinadaEmpGestor')?.closest?.('label'),document.getElementById('ajudaEscopoDataEmpGestor'),document.getElementById('btnSalvarEdEmp')];
   campos.filter(Boolean).forEach(e=>{if(ativo){e.dataset.hiddenRecebimento=String(e.hidden);e.dataset.classeRecebimento=String(e.classList.contains('hidden'));e.hidden=true;e.classList.add('hidden');}else if(e.dataset.hiddenRecebimento!==undefined){e.hidden=e.dataset.hiddenRecebimento==='true';e.classList.toggle('hidden',e.dataset.classeRecebimento==='true');delete e.dataset.hiddenRecebimento;delete e.dataset.classeRecebimento;}});
-  const titulo=modal.querySelector?.('h3');if(titulo)titulo.textContent=ativo?'Registrar recebimento':'Editar Empréstimo';
+  const titulo=modal.querySelector?.('h3');if(titulo)titulo.textContent=ativo?'Registrar recebimento':'✏️ Editar Empréstimo';
 }
 function protegerEditorRotinaGestor(abrir,fechar,id){
   const originalAbrir=window[abrir],originalFechar=window[fechar];
