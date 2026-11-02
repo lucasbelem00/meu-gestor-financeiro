@@ -66,10 +66,10 @@ function renderTabelaEvolucao() {
     const cols = valores.map((v,i) => {
       const quitado = v.registrado > 0 && v.saldo < 0.005 && !v.previsto;
       const cor = v.previsto > 0 && v.situacao?.codigo === 'pago' ? classe : v.situacao?.cor || (quitado ? 'text-emerald-400' : v.pago > 0 && v.saldo > 0 ? 'text-amber-200' : classe);
-      const aviso = v.previsto > 0 ? 'Inclui previsto' : v.situacao?.texto || (quitado ? 'Pago ao banco' : v.pago > 0 ? 'Pagamento parcial' : '');
+      const aviso = ['vencido','mesEncerrado'].includes(v.situacao?.codigo) ? 'Vencido' : v.previsto > 0 ? 'Previsto' : v.situacao?.codigo === 'parcial' || (v.pago > 0 && v.saldo > 0) ? 'Parcial' : '';
       const titulo = `Registrado: ${formatBRL(v.registrado || 0)}. ${v.recebivel?'Recebido':'Pago ao banco'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}${v.aReceber!==undefined?' A receber da pessoa: '+formatBRL(v.aReceber)+'. '+v.sitReceber.texto:''}`;
-      const acao = celular || v.previsto > 0 ? acaoHTML('abrirDetalheHorizonteGestor',[rotulo,meses[i],v,abrir]) : acaoHTML(abrir?'abrirConferenciaFaturaGestor':'irParaFaturaMensal',abrir?[rotulo,meses[i]]:[meses[i]]);
-      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(v.previsto>0?'Prev.: '+moeda(v.previsto)+' · detalhar':aviso)+'</span>':''}${!celular&&v.pago>0&&v.saldo>0?'<span class="block text-[9px] font-normal">'+escaparHTML((v.recebivel?'Recebido: ':'Pago: ')+moeda(v.pago)+' • '+(v.recebivel?'Falta receber: ':'Falta pagar: ')+moeda(v.saldo))+'</span>':''}${!celular&&v.aReceber!==undefined?'<span class="block text-[9px] font-normal '+v.sitReceber.cor+'">'+escaparHTML('A receber: '+moeda(v.aReceber)+' • '+v.sitReceber.texto)+'</span>':''}</button></td>`;
+      const acao = acaoHTML('abrirDetalheHorizonteGestor',[rotulo,meses[i],v,abrir]);
+      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(aviso)+'</span>':''}</button></td>`;
     }).join('');
     html += `<tr class="border-b border-slate-700"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold break-words ${comparacao?'sticky left-0 z-10 bg-slate-800':''} ${classe}">${escaparHTML(rotulo)}${rotulo==='Terceiros'?'<span class="block text-[9px] font-normal">Nos cartões</span>':''}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
   }
@@ -77,7 +77,7 @@ function renderTabelaEvolucao() {
     if(!h)return {valor:evolucaoPivot[f]?.[m] || 0};
     const cartao = formaEhCartaoGestor(f), previsto = valorMapaHorizonteGestor(h.previstoPessoal,f,m);
     const registrado=valorMapaHorizonteGestor(cartao?h.totalBanco:h.totalPessoal,f,m),pago=valorMapaHorizonteGestor(cartao?h.pagoBanco:h.pagoPessoal,f,m),saldo=valorMapaHorizonteGestor(cartao?h.saldoBanco:h.saldoPessoal,f,m);
-    return {valor:(total?registrado:saldo)+previsto,registrado,pago,saldo,previsto,situacao:situacaoBancoVisualGestor({total:registrado,pago,saldo,mesFatura:m,vencimento:cartao?formaSituacaoVisualGestor(f).vencimento:null,imediato:!cartao})};
+    return {valor:(total?registrado:saldo)+previsto,registrado,pago,saldo,previsto,situacao:situacaoBancoVisualGestor({total:registrado,pago,saldo,forma:f,mesFatura:m,vencimento:cartao?formaSituacaoVisualGestor(f).vencimento:null,imediato:!cartao})};
   }),'text-white',formaEhCartaoGestor(f)));
   if(h){
     const itens=typeof emprestimosGlobal==='undefined'?[]:emprestimosGlobal.itens||[];
@@ -87,7 +87,7 @@ function renderTabelaEvolucao() {
     }
     function estadoBanco(m,pessoal,registrado,pago,saldo,terceiros=false){
       if(saldo<0.005||registrado<=0)return situacaoBancoVisualGestor({total:registrado,pago,saldo});
-      const atrasado=Object.keys(h.totalBanco||{}).filter(formaEhCartaoGestor).map(f=>situacaoBancoVisualGestor({total:valorMapaHorizonteGestor(pessoal?h.totalPessoal:h.totalBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.totalPessoal,f,m):0),pago:valorMapaHorizonteGestor(pessoal?h.pagoPessoal:h.pagoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.pagoPessoal,f,m):0),saldo:valorMapaHorizonteGestor(pessoal?h.saldoPessoal:h.saldoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.saldoPessoal,f,m):0),mesFatura:m,vencimento:formaSituacaoVisualGestor(f).vencimento})).find(s=>s.codigo==='vencido');
+      const atrasado=Object.keys(h.totalBanco||{}).filter(formaEhCartaoGestor).map(f=>situacaoBancoVisualGestor({total:valorMapaHorizonteGestor(pessoal?h.totalPessoal:h.totalBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.totalPessoal,f,m):0),pago:valorMapaHorizonteGestor(pessoal?h.pagoPessoal:h.pagoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.pagoPessoal,f,m):0),saldo:valorMapaHorizonteGestor(pessoal?h.saldoPessoal:h.saldoBanco,f,m)-(terceiros?valorMapaHorizonteGestor(h.saldoPessoal,f,m):0),forma:f,mesFatura:m,vencimento:formaSituacaoVisualGestor(f).vencimento})).find(s=>s.codigo==='vencido');
       return atrasado||situacaoBancoVisualGestor({total:registrado,pago,saldo});
     }
     function resumo(pessoal) { return meses.map(m => {

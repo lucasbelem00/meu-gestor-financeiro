@@ -9,7 +9,7 @@ function compromissosAgendaGestor(dados,hoje=new Date()){
   const vencimento=Number(f.vencimento);if(f.tipo!=='cartao'||!Number.isInteger(vencimento)||vencimento<1||vencimento>31)continue;
   const meses=new Set([...Object.keys(h?.totalBanco?.[f.nome]||{}),...Object.keys(h?.saldoBanco?.[f.nome]||{})]);
   for(const mes of meses){const fim=fimMesSituacaoVisualGestor(mes),saldo=Number(h?.saldoBanco?.[f.nome]?.[mes]||0),total=Number(h?.totalBanco?.[f.nome]?.[mes]??saldo),pago=Number(h?.pagoBanco?.[f.nome]?.[mes]??Math.max(0,total-saldo));if(fim===null||!Number.isFinite(total)||total<=0)continue;
-   const data=String(Math.min(vencimento,new Date(fim*86400000).getUTCDate())).padStart(2,'0')+'/'+mes,event={id:'fatura:'+f.nome+':'+mes,tipo:'cartao',data,dia:diaSituacaoVisualGestor(data),valor:saldo>0.004?saldo:total,total,pago,saldo,vencimento,descricao:f.nome,forma:f.nome,mesFatura:mes};event.situacao=situacaoBancoVisualGestor(event,hoje);eventos.push(event);
+   const prazo=vencimentoFaturaBancarioGestor(f.nome,mes,vencimento),data=prazo.data,event={id:'fatura:'+f.nome+':'+mes,tipo:'cartao',prazo,data,dia:diaSituacaoVisualGestor(data),valor:saldo>0.004?saldo:total,total,pago,saldo,vencimento,descricao:f.nome,forma:f.nome,mesFatura:mes};event.situacao=situacaoBancoVisualGestor(event,hoje);eventos.push(event);
   }
  }
  (dados?.emprestimos?.itens||[]).forEach((i,n)=>{
@@ -53,6 +53,7 @@ function renderizarAgendaGestor(){
   for(const i of visiveis){
    const b=criarElementoAgendaGestor('button',null,'w-full rounded-xl border p-3 text-left space-y-1 '+i.situacao.fundo);b.type='button';const cartao=i.tipo==='cartao';
    b.append(criarElementoAgendaGestor('strong',(cartao?'💳 ':'🤝 ')+(cartao?i.descricao:i.pessoa)+' • '+formatBRL(i.valor),'block font-bold'),criarElementoAgendaGestor('span',i.situacao.texto,'block text-xs font-bold'),criarElementoAgendaGestor('span',i.data+' • '+(cartao?'Vencimento da fatura':i.semData?'Fim do mês da parcela · sem data combinada':'Devolução combinada'),'block text-xs'),criarElementoAgendaGestor('span',cartao?'Pago ao banco: '+formatBRL(i.pago)+' • Falta pagar: '+formatBRL(i.saldo):i.status==='Recebido'?'Recebido da pessoa: '+formatBRL(i.valor):'Falta receber: '+formatBRL(i.valor),'block text-xs'),criarElementoAgendaGestor('span',cartao?'Fatura '+i.mesFatura:i.descricao+' • Fatura de origem '+i.mesFatura,'block text-xs'));
+   if(cartao&&i.prazo.dia!==i.prazo.original)b.append(criarElementoAgendaGestor('span','Original: '+i.prazo.dataOriginal+' • '+i.prazo.motivo,'block text-xs'));
    b.onclick=()=>cartao?abrirConferenciaFaturaGestor(i.forma,i.mesFatura):abrirDevolucaoPainelGestor(i);lista.append(b);
   }
 }
@@ -60,3 +61,10 @@ const dadosAntesAgendaGestor=window.renderizarDados;
 window.renderizarDados=function(dados){const r=dadosAntesAgendaGestor(dados);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
 const abaAntesAgendaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
+
+// Recalcula os avisos com a mesma data usada no calendário, inclusive virada de mês/ano.
+function alertasBancariosGestor(dados,hoje=new Date()){
+ if(!dados?.faturas?.horizonte)return dados?.alertasVencimento||[];
+ const atual=hojeSituacaoVisualGestor(hoje);
+ return compromissosAgendaGestor(dados,hoje).filter(i=>i.tipo==='cartao'&&i.saldo>0.004&&i.dia-atual<=7).map(i=>({forma:i.forma,mes:i.mesFatura,data:i.data,valor:formatBRL(i.saldo),dias:i.dia-atual}));
+}

@@ -16,7 +16,7 @@ function resumoFaturaPainelGestor(forma,mes){
   return {forma,mesFatura:mes,total:valor('totalBanco'),pago:valor('pagoBanco'),restante:valor('saldoBanco'),pessoal:valor('totalPessoal'),terceiros:valor('totalTerceiros')};
 }
 function mostrarResumoFaturaGestor(f,atualizado,instante){
-  const box=document.getElementById('resumoPagamentoFaturaGestor');box.replaceChildren();const situacao=situacaoBancoVisualGestor({total:f.total,pago:f.pago,saldo:f.restante,mesFatura:f.mesFatura,vencimento:formaSituacaoVisualGestor(f.forma).vencimento});
+  const box=document.getElementById('resumoPagamentoFaturaGestor');box.replaceChildren();const situacao=situacaoBancoVisualGestor({total:f.total,pago:f.pago,saldo:f.restante,forma:f.forma,mesFatura:f.mesFatura,vencimento:formaSituacaoVisualGestor(f.forma).vencimento});
   [['Total registrado',f.total],['Pago ao banco',f.pago],['Em aberto',f.restante]].forEach(([rotulo,valor])=>{const c=elementoAtividadeGestor('div',null,'rounded-xl bg-slate-900 border border-slate-600 p-2 min-w-0');c.append(elementoAtividadeGestor('p',rotulo,'text-[10px] text-slate-300'),elementoAtividadeGestor('p',formatBRL(valor),'text-xs sm:text-sm font-bold mt-1 break-words '+(rotulo==='Em aberto'&&valor>0?situacao.cor:rotulo==='Pago ao banco'?'text-emerald-300':'text-white')));box.append(c);});
   const composicao=elementoAtividadeGestor('div',null,'col-span-3 space-y-1.5 text-xs text-slate-200');
   for(const [rotulo,valor]of [['Seus gastos',f.pessoal],['Gastos de terceiros',f.terceiros]]){
@@ -24,6 +24,7 @@ function mostrarResumoFaturaGestor(f,atualizado,instante){
     linha.append(elementoAtividadeGestor('span',rotulo+':'),elementoAtividadeGestor('strong',formatBRL(valor),'text-white whitespace-nowrap'));composicao.append(linha);
   }
   box.append(composicao);
+  mostrarVencimentoBancarioFaturaGestor(box,f,atualizado,instante);
   box.append(elementoAtividadeGestor('p',situacao.texto,'col-span-3 text-xs font-bold '+situacao.cor));
   document.getElementById('consultaFaturaOrigemGestor').textContent=atualizado?'Consulta às '+new Date(instante).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : 'Resumo dos dados já carregados • aguardando conferência';
   document.getElementById('salvarPagamentoFaturaGestor').disabled=!atualizado||f.restante<=0;
@@ -115,3 +116,24 @@ async function confirmarPagamentoFaturaGestor() {
   }, false, 'Sim, paguei ao banco', 'success');
 }
 
+
+function guardarVencimentoFaturaGestor(forma,mes,data){
+ if(!forma||fimMesSituacaoVisualGestor(mes)===null||(data&&diaSituacaoVisualGestor(data)===null))throw Error('Informe uma data válida entre 1900 e 2200.');
+ let mapa;try{mapa=JSON.parse(localStorage.getItem('gestorVencimentosFaturasV1')||'{}');}catch(e){throw Error('Não foi possível ler os vencimentos salvos neste aparelho.');}
+ if(!mapa||typeof mapa!=='object'||Array.isArray(mapa))throw Error('Os vencimentos locais precisam ser conferidos.');
+ const chave=JSON.stringify([forma,mes]);if(data)mapa[chave]=data;else delete mapa[chave];
+ if(!gravarArmazenamentoGestor('gestorVencimentosFaturasV1',JSON.stringify(mapa)))throw Error('Não foi possível guardar a data neste aparelho.');
+}
+function mostrarVencimentoBancarioFaturaGestor(box,f,atualizado,instante){
+ const prazo=vencimentoFaturaBancarioGestor(f.forma,f.mesFatura,formaSituacaoVisualGestor(f.forma).vencimento);if(!prazo)return;
+ const area=elementoAtividadeGestor('div',null,'col-span-3 space-y-2 text-xs text-slate-200');
+ area.append(elementoAtividadeGestor('p','Vencimento para pagamento: '+prazo.data,'font-bold text-white'));
+ if(prazo.dia!==prazo.original)area.append(elementoAtividadeGestor('p','Original: '+prazo.dataOriginal+' • '+prazo.motivo));
+ const detalhe=elementoAtividadeGestor('details',null,'rounded-xl border border-slate-600 p-3'),titulo=elementoAtividadeGestor('summary','✏️ Informar outra data indicada pelo banco','cursor-pointer');
+ detalhe.append(titulo,elementoAtividadeGestor('p','Exceção somente desta fatura, salva neste aparelho. Não altera o vencimento cadastrado do cartão nem é sincronizada ou incluída no backup. Feriados locais não são aplicados automaticamente.','mt-2 text-slate-300'));
+ const label=elementoAtividadeGestor('label','Data informada pelo banco','block mt-2'),campo=elementoAtividadeGestor('input',null,'block w-full mt-1 rounded-lg bg-slate-900 border border-slate-600 p-3 text-white');campo.type='date';campo.min='1900-01-01';campo.max='2200-12-31';campo.value=prazo.data.split('/').reverse().join('-');label.append(campo);detalhe.append(label);
+ const acoes=elementoAtividadeGestor('div',null,'flex flex-wrap gap-2 mt-2');
+ function concluir(data){try{guardarVencimentoFaturaGestor(f.forma,f.mesFatura,data);if(dadosResumoFaturasGestor)window.renderizarDados(dadosResumoFaturasGestor);mostrarResumoFaturaGestor(f,atualizado,instante);mostrarAviso('Vencimento atualizado',data?'Data do banco salva neste aparelho.':'Calendário bancário automático restaurado.');}catch(e){mostrarAviso('Data não guardada',e.message);}}
+ const salvar=elementoAtividadeGestor('button','💾 Guardar data','rounded-lg bg-blue-600 text-white px-3 py-2 font-bold');salvar.type='button';salvar.onclick=()=>{if(!campo.value||!campo.reportValidity())return;concluir(campo.value.split('-').reverse().join('/'));};
+ const restaurar=elementoAtividadeGestor('button','↩️ Usar data automática','rounded-lg bg-slate-700 text-white px-3 py-2');restaurar.type='button';restaurar.onclick=()=>concluir('');acoes.append(salvar,restaurar);detalhe.append(acoes);area.append(detalhe);box.append(area);
+}
