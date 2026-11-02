@@ -92,6 +92,8 @@ Estados visíveis usam Recorrência ativa, Recorrência paga e Recorrência desa
 
 Antecipação usa ⏩ Adiantar parcelas e ciano, distinguindo-a de À vista (⚡). Fatura destino e Quantidade mantêm os campos alinhados; os atalhos 1/2/3/Todas ficam abaixo de Quantidade, dentro da coluna. O texto explica que as últimas parcelas em aberto são movidas para a fatura escolhida. O cálculo e a confirmação financeira permanecem os mesmos.
 
+Os quatro botões expansíveis dos editores usam texto centralizado na área disponível e seta fixa à direita. Nas transferências, pergunta e ação são blocos separados: ficam lado a lado quando cabem e em linhas próprias quando falta largura. A quebra acompanha o conteúdo e a largura real, sem impor duas linhas no computador.
+
 O Perfil dos gastos aparece em Análise e planejamento, depois do limite pessoal. Os dois grupos ficam empilhados no celular e lado a lado em telas maiores; os títulos reservam duas linhas. Cada classificação tem o valor abaixo do nome e abre o Histórico correspondente.
 
 ## Posição ao navegar entre abas

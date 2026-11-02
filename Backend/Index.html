@@ -151,7 +151,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 <style>
  @media(min-width:1024px){#painelCentralNavegacao{max-width:1100px}#conteudoCentralNavegacao{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start}#conteudoCentralNavegacao>:not([hidden]){margin:0}#conteudoCentralNavegacao>div>div.grid{grid-template-columns:repeat(2,minmax(0,1fr))}#conteudoCentralNavegacao .menu-atalho{min-height:78px}#conteudoCentralNavegacao .menu-atalho>div{min-width:0}#conteudoCentralNavegacao .menu-atalho .truncate{white-space:normal;overflow:visible}#conteudoCentralNavegacao [data-menu-ajuda]{display:none}}
  @media(min-width:1024px){#conteudoCentralNavegacao [data-menu-ferramenta=emprestimos]{grid-column:auto}}
-</style><style id="gestor-padrao-botoes">.grupo-acoes-emprestimo>button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:.375rem;line-height:1.25;text-align:center}.acao-compacta-gestor{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}button[id^="chip-hist-"]{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}</style>
+</style><style id="gestor-padrao-botoes">.atalhos-antecipacao-gestor{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(2.75rem,1.5fr);gap:.25rem;margin-top:.5rem}.atalhos-antecipacao-gestor>button{display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;min-height:28px;padding:.25rem .125rem;line-height:1.2}.botao-expansivel-gestor{display:grid;grid-template-columns:minmax(0,1fr) 1rem;align-items:center;gap:.5rem;text-align:center}.botao-expansivel-gestor>.rotulo-expansivel-gestor{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:.25em;min-width:0;line-height:1.4}.rotulo-expansivel-gestor>span{display:inline-block;max-width:100%}.botao-expansivel-gestor>.seta-expansivel-gestor{text-align:center;line-height:1}.grupo-acoes-emprestimo>button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:.375rem;line-height:1.25;text-align:center}.acao-compacta-gestor{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}button[id^="chip-hist-"]{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}</style>
 
   <style id="gestor-navegacao-periodo">
     .btn-periodo-gestor{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:44px;height:44px;padding:0;line-height:1;border:1px solid #475569;border-radius:.625rem;background:#1e293b;color:#e2e8f0;transition:background-color .15s;-webkit-tap-highlight-color:transparent}
@@ -1402,18 +1402,18 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         </div>
 
         <div class="pt-2 border-t border-slate-700 space-y-2">
-          <button type="button" onclick="togglePainelDividirEmp()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>➖ Registrar recebimento parcial</span>
-            <span id="setaDividirEmp">▼</span>
+          <button type="button" onclick="togglePainelDividirEmp()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition">
+            <span class="rotulo-expansivel-gestor">➖ Registrar recebimento parcial</span>
+            <span class="seta-expansivel-gestor" id="setaDividirEmp" aria-hidden="true">▼</span>
           </button>
           <div id="painelDividirEmpCampos" class="hidden mt-2 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-2.5">
             <input type="text" id="inpDividirEmpValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor recebido agora (R$)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-amber-400">
             <button type="button" onclick="executarDividirParcelaEmp()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">➖ Registrar recebimento parcial</button>
           </div>
 
-          <button type="button" onclick="togglePainelMoverPessoal()" class="w-full bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>↔️ Era seu gasto? Mover para Pessoal</span>
-            <span id="setaMoverPessoal">▼</span>
+          <button type="button" onclick="togglePainelMoverPessoal()" class="w-full bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition">
+            <span class="rotulo-expansivel-gestor"><span>↔️ Era seu gasto?</span><span>Mover para Pessoal</span></span>
+            <span class="seta-expansivel-gestor" id="setaMoverPessoal" aria-hidden="true">▼</span>
           </button>
           <div id="painelMoverPessoalCampos" class="hidden mt-2 p-3.5 rounded-xl bg-slate-900/80 border border-blue-500/30 space-y-2.5">
             <select id="selMoverPessoalCat" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs outline-none focus:border-blue-400"></select>
@@ -1602,9 +1602,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
         <!-- PAINEL DE ANTECIPAÇÃO -->
         <div id="boxAdiantarContainer" class="hidden pt-2 border-t border-slate-700">
-          <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>⏩ Adiantar parcelas</span>
-            <span id="setaAdiantar">▼</span>
+          <button type="button" onclick="togglePainelAdiantar()" class="w-full bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition">
+            <span class="rotulo-expansivel-gestor">⏩ Adiantar parcelas</span>
+            <span class="seta-expansivel-gestor" id="setaAdiantar" aria-hidden="true">▼</span>
           </button>
           <div id="painelAdiantarCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-cyan-500/30 space-y-3">
             <p class="text-[11px] text-slate-300 leading-relaxed">Move as últimas parcelas em aberto para a fatura escolhida.</p>
@@ -1616,11 +1616,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <div class="min-w-0">
                 <label for="inpAdiantarQtd" class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Quantidade</label>
                 <input type="number" id="inpAdiantarQtd" min="1" placeholder="Todas" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs text-center font-bold outline-none focus:border-cyan-400">
-                  <div class="grid grid-cols-4 gap-1 mt-1.5">
+                  <div class="atalhos-antecipacao-gestor">
                     <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='1'" class="text-[9px] bg-slate-800 min-w-0 px-1 py-1 rounded text-cyan-300 border border-slate-700 font-bold">1</button>
                     <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='2'" class="text-[9px] bg-slate-800 min-w-0 px-1 py-1 rounded text-cyan-300 border border-slate-700 font-bold">2</button>
                     <button type="button" onclick="document.getElementById('inpAdiantarQtd').value='3'" class="text-[9px] bg-slate-800 min-w-0 px-1 py-1 rounded text-cyan-300 border border-slate-700 font-bold">3</button>
-                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value=''" class="text-[9px] bg-slate-800 min-w-0 px-1 py-1 rounded text-cyan-300 border border-slate-700 font-bold">Todas</button>
+                    <button type="button" onclick="document.getElementById('inpAdiantarQtd').value=''" aria-label="Adiantar todas as parcelas futuras em aberto" title="Todas as parcelas futuras em aberto" class="text-[9px] bg-slate-800 min-w-0 px-1 py-1 rounded text-cyan-300 border border-slate-700 font-bold">Tudo</button>
                   </div>
               </div>
             </div>
@@ -1638,9 +1638,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
         <!-- CONVERSOR RÁPIDO: MOVER COMPRA PARA EMPRÉSTIMOS DE TERCEIROS -->
         <div class="pt-2 border-t border-slate-700">
-          <button type="button" onclick="togglePainelMoverEmprestimo()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>↔️ Era compra de outra pessoa? Mover p/ Empréstimos</span>
-            <span id="setaMoverEmp">▼</span>
+          <button type="button" onclick="togglePainelMoverEmprestimo()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition">
+            <span class="rotulo-expansivel-gestor"><span>↔️ Era compra de outra pessoa?</span><span>Mover para Empréstimos</span></span>
+            <span class="seta-expansivel-gestor" id="setaMoverEmp" aria-hidden="true">▼</span>
           </button>
           <div id="painelMoverEmprestimoCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-2.5">
             <p class="text-[11px] text-slate-300 leading-relaxed">Transfere esta compra (e todas as suas parcelas) da sua aba pessoal para a aba <strong>Empréstimos</strong>.</p>
