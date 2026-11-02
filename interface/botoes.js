@@ -4,7 +4,7 @@ function rotuloAcaoBotaoGestor(valor){
  const original=String(valor??'').trim();
  if(['✏️','✏'].includes(original))return '✏️ Editar';
  if(['🗑️','🗑'].includes(original))return '🗑️ Excluir';
- const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|💸|📃|➖|⏸️?|⏹️?)\s*)+/u,'').replace(/^Conferir recebimento$/,'Registrar recebimento parcial');
+ const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|💸|📃|➖|⏸️?|⏹️?|⏩)\s*)+/u,'').replace(/^Conferir recebimento$/,'Registrar recebimento parcial');
  const regras=[
   [/^(Organizar|Gerenciar)\b/,'⚙️'],
   [/^Editar\b/,'✏️'],[/^(Excluir|Remover)\b/,'🗑️'],
@@ -17,6 +17,7 @@ function rotuloAcaoBotaoGestor(valor){
   [/^Terceiros(?:\s|$)/,'🤝'],[/^Conferir fatura\b/,'📃'],[/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
   [/^(Salvar|Guardar)\b/,'💾'],[/^Atualizar\b/,'↻'],
   [/^(Cancelar|Fechar)\b/,'✕'],[/^Pular m[êe]s\b/,'⏸️'],[/^Desativar\b/,'⏹️'],[/^Reativar\b/,'▶️'],
+  [/^Confirmar antecipação$/i,'⏩'],
   [/^(Marcar concluído|Confirmar\b|Sim, [Cc]onfirmar)/,'✅'],[/^Reabrir\b/,'↩️'],
   [/^(Enviando|Salvando|Conferindo|Processando|Transferindo|Baixando|Preparando)\b/,'⏳']
  ];

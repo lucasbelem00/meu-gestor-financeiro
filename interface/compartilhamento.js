@@ -1,3 +1,6 @@
+    function rotuloStatusRecorrenciaGestor(status) {
+      const texto=String(status??'');return {'Assinatura Ativa':'Recorrência ativa','Assinatura Paga':'Recorrência paga','Assinatura Cancelada':'Recorrência desativada'}[texto.trim()]||texto;
+    }
 // Mensagens de texto para celular. Formatação não altera registros ou pagamentos.
 function textoLinhaMensagemGestor(valor){return String(valor??'').replace(/[\r\n]+/g,' ').trim();}
 function tipoCompraMensagemGestor(parcela){
@@ -17,8 +20,8 @@ function filtrosMensagemGestor(filtros,emprestimo=false){
   if(f.categoria)linhas.push('Categoria: '+textoLinhaMensagemGestor(f.categoria));
   if(f.tag)linhas.push('Tag: #'+textoLinhaMensagemGestor(f.tag).replace(/^#/,''));
   if(f.termo)linhas.push('Busca: '+textoLinhaMensagemGestor(f.termo));
-  if(f.tipoRapido)linhas.push('Filtro rápido: '+({parcelados:'Parcelados',fixos:'Fixos',pix:'Pix',apagar:'A pagar',mesatual:'Mês atual'}[f.tipoRapido]||textoLinhaMensagemGestor(f.tipoRapido)));
-  if(f.status)linhas.push((emprestimo?'Situação: ':'Situação filtrada: ')+textoLinhaMensagemGestor(f.status));
+  if(f.tipoRapido)linhas.push('Filtro rápido: '+({parcelados:'Parcelados',fixos:'Recorrentes',pix:'Pix',apagar:'A pagar',mesatual:'Mês atual'}[f.tipoRapido]||textoLinhaMensagemGestor(f.tipoRapido)));
+  if(f.status)linhas.push((emprestimo?'Situação: ':'Situação filtrada: ')+textoLinhaMensagemGestor(rotuloStatusRecorrenciaGestor(f.status)));
   return linhas;
 }
 function montarResumoHistoricoMensagemGestor(itens,resumo,filtros){
@@ -29,7 +32,7 @@ function montarResumoHistoricoMensagemGestor(itens,resumo,filtros){
     const excluido=['assinatura cancelada','ocorrência pulada'].includes(status.toLocaleLowerCase('pt-BR'));
     const bloco=['• *'+textoLinhaMensagemGestor(item[1])+'*','Data: '+textoLinhaMensagemGestor(item[0]),tipoCompraMensagemGestor(item[6]),formaMensagemGestor(item[2])];
     if(item[8])bloco.push('Fatura: '+textoLinhaMensagemGestor(item[8]));
-    if(status)bloco.push('Situação: '+status+(excluido?' (fora do total)':''));
+    if(status)bloco.push('Situação: '+rotuloStatusRecorrenciaGestor(status)+(excluido?' (fora do total)':''));
     bloco.push('Valor: *'+textoLinhaMensagemGestor(item[7])+'*');
     (excluido?fora:ativos).push(bloco.join('\n'));
   });

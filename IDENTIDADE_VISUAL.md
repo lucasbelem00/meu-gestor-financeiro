@@ -88,6 +88,10 @@ Os períodos usam chevrons SVG com traço arredondado, centralizados por inline-
 
 Recorrências identifica as cobranças automáticas (antes Despesas Fixas). É independente de classificar um gasto como Fixo/Variável e Essencial/Ajustável. Nas categorias, o nome pode quebrar; a meta ocupa sua própria linha e os indicadores de classificação ficam abaixo. No editor, os seletores ficam empilhados no celular e em duas colunas no computador.
 
+Estados visíveis usam Recorrência ativa, Recorrência paga e Recorrência desativada, inclusive nas mensagens e no extrato PDF. Os códigos antigos Assinatura Ativa/Paga/Cancelada permanecem nos registros e nas chamadas, preservando compatibilidade. O Perfil dos gastos informa que as opções com valor filtram o Histórico; opções zeradas continuam visíveis, desabilitadas. Marcadores ao lado dos nomes reproduzem as cores da barra.
+
+Antecipação usa ⏩ Adiantar parcelas e ciano, distinguindo-a de À vista (⚡). Fatura destino e Quantidade mantêm os campos alinhados; os atalhos 1/2/3/Todas ficam abaixo de Quantidade, dentro da coluna. O texto explica que as últimas parcelas em aberto são movidas para a fatura escolhida. O cálculo e a confirmação financeira permanecem os mesmos.
+
 O Perfil dos gastos aparece em Análise e planejamento, depois do limite pessoal. Os dois grupos ficam empilhados no celular e lado a lado em telas maiores; os títulos reservam duas linhas. Cada classificação tem o valor abaixo do nome e abre o Histórico correspondente.
 
 ## Posição ao navegar entre abas

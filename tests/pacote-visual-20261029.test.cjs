@@ -16,6 +16,7 @@ function ambiente(){
   categoriasGlobaisEdit:[{nome:'Outros 📦'},{nome:'Saúde 💊'},{nome:'Mercado 🛒'}],document:{activeElement:null,getElementById:el,querySelectorAll:()=>controles},
   ultimoRelatorioMensalCache:{lancamentos:itens,categorias:[{nome:'Saúde 💊',total:200,meta:300},{nome:'Outros',total:100,meta:0}]},filtroInternoMensalAtivo:{},
   referenciaLinhaSegura:()=>'',acaoHTML:()=>'',detalheFechamentoAnualGestor:()=>'',modoEdicaoLancamentos:false,itensFiltradosAtualCache:[]});
+ vm.runInContext(fs.readFileSync('interface/compartilhamento.js','utf8'),c);
  vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);
  vm.runInContext(trecho('    function iconeFormaPagamentoVisualGestor(','    function formatarInfoParcelaCard('),c);
  vm.runInContext(trecho('    function getCategoriaExibicao(','    function ') ,c);
