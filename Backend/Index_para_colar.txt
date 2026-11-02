@@ -151,7 +151,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 <style>
  @media(min-width:1024px){#painelCentralNavegacao{max-width:1100px}#conteudoCentralNavegacao{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start}#conteudoCentralNavegacao>:not([hidden]){margin:0}#conteudoCentralNavegacao>div>div.grid{grid-template-columns:repeat(2,minmax(0,1fr))}#conteudoCentralNavegacao .menu-atalho{min-height:78px}#conteudoCentralNavegacao .menu-atalho>div{min-width:0}#conteudoCentralNavegacao .menu-atalho .truncate{white-space:normal;overflow:visible}#conteudoCentralNavegacao [data-menu-ajuda]{display:none}}
  @media(min-width:1024px){#conteudoCentralNavegacao [data-menu-ferramenta=emprestimos]{grid-column:auto}}
-</style><style id="gestor-padrao-botoes">.acao-botao-gestor{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:.375rem;line-height:1.25;text-align:center}</style>
+</style><style id="gestor-padrao-botoes">.grupo-acoes-emprestimo>button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:.375rem;line-height:1.25;text-align:center}.acao-compacta-gestor{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}button[id^="chip-hist-"]{min-height:30px;display:inline-flex;align-items:center;justify-content:center;line-height:1.25}</style>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
@@ -188,10 +188,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   <div id="modalPixCobranca" role="dialog" aria-modal="true" aria-labelledby="tituloModalPixCobranca" class="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center z-[610] hidden px-4" onclick="if(event.target === this) fecharModalPixCobranca()">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 rounded-2xl shadow-2xl space-y-3">
       <div class="flex items-center justify-between gap-3">
-        <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📋 Confira a mensagem</h3>
+        <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📲 Prévia para WhatsApp</h3>
         <button type="button" onclick="fecharModalPixCobranca()" aria-label="Fechar" class="text-slate-400 hover:text-white bg-slate-700 px-2.5 py-1 rounded-lg">✕</button>
       </div>
-      <textarea id="textoModalPixCobranca" rows="9" aria-label="Mensagem de cobrança editável" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
+      <textarea id="textoModalPixCobranca" rows="9" aria-label="Mensagem para WhatsApp editável" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
       <label id="linhaIncluirPixCobranca" class="hidden flex items-start gap-2.5 rounded-xl bg-slate-900/70 border border-slate-700 p-3 cursor-pointer">
         <input id="chkIncluirPixCobranca" type="checkbox" class="mt-0.5 w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
         <span class="text-xs text-slate-200">Incluir minha chave Pix nesta mensagem</span>
@@ -582,7 +582,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           <span class="text-slate-300">Total da seleção: <strong id="txtSomaTotal" class="text-purple-400 text-sm sm:text-base">R$ 0,00</strong></span>
           <span id="badgeSomaMetade" hidden class="hidden bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 px-2.5 py-0.5 rounded-lg font-bold text-xs">➗ 50%: R$ 0,00</span>
         </div>
-        <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">📋 Copiar Resumo p/ WhatsApp</button>
+        <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">📲 Prévia para WhatsApp</button>
       </div>
 
       <div id="lista-lancamentos" class="grid grid-cols-1 md:grid-cols-2 gap-3 transition-all duration-300"></div>
@@ -825,7 +825,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             </table></div>
             <section class="mt-4 pt-4 border-t border-slate-700 space-y-3" aria-label="Pagamentos e recebimentos">
               <h3 class="text-sm font-bold text-white">Pagamentos e recebimentos</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button type="button" onclick="abrirConferenciaFaturaGestor()" class="rounded-xl border border-purple-400/40 bg-purple-500/10 text-purple-200 px-3 py-3 text-xs font-bold text-left">🔎 Conferir fatura</button><button type="button" onclick="abrirResumoEmprestimos()" class="rounded-xl border border-amber-400/40 bg-amber-500/10 text-amber-200 px-3 py-3 text-xs font-bold text-left">Terceiros — registrar recebimento e cobrar</button></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button type="button" onclick="abrirConferenciaFaturaGestor()" class="rounded-xl border border-purple-400/40 bg-purple-500/10 text-purple-200 px-3 py-3 text-xs font-bold text-left">💳 Conferir fatura</button><button type="button" onclick="abrirResumoEmprestimos()" class="rounded-xl border border-amber-400/40 bg-amber-500/10 text-amber-200 px-3 py-3 text-xs font-bold text-left">Terceiros — registrar recebimento e cobrar</button></div>
               <p class="text-xs text-slate-200 leading-relaxed">Pagar a fatura e receber de terceiros são registros separados. Receber da pessoa não quita o cartão; pagar o cartão não confirma que ela devolveu o dinheiro.</p>
             </section>
           </div>
@@ -1094,7 +1094,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <p id="rachaResumoCentavos" class="text-[11px] leading-relaxed text-slate-400"></p>
 
             <div class="flex flex-col sm:flex-row gap-2 pt-1">
-              <button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📋 Copiar p/ WhatsApp</button>
+              <button type="button" onclick="copiarRachadinhaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Prévia para WhatsApp</button>
               <button type="button" id="btnLancarMinhaParteNormal" onclick="lancarMinhaParteRachadinha('normal')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">➕ Preencher minha parte</button>
               <button type="button" id="btnLancarParteBebeu" onclick="lancarMinhaParteRachadinha('bebeu')" class="hidden flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">🍺 Minha parte com bebida</button>
             </div>
@@ -1134,7 +1134,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <h3 class="text-xs font-bold text-emerald-400 uppercase tracking-wider">3️⃣ Conferir partes e pagamentos</h3>
             <div id="listaResumoIndividualRachaDet" class="space-y-2 text-xs"></div>
             <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-800">
-              <button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📋 Copiar p/ WhatsApp</button>
+              <button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Prévia para WhatsApp</button>
             </div>
           </div>
         </div>
@@ -1188,7 +1188,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-          <button type="button" onclick="copiarSimulacaoWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center">📲 Prévia WhatsApp</button>
+          <button type="button" onclick="copiarSimulacaoWhats()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center">📲 Prévia para WhatsApp</button>
           <button type="button" onclick="transformarSimulacaoEmEmprestimo()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center">🤝 Lançar Empréstimo</button>
           <button type="button" onclick="transformarSimulacaoEmLancamento()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-4 rounded-xl text-xs shadow-md transition active:scale-95 flex items-center justify-center">➕ Lançar Meu Gasto</button>
         </div>
@@ -1391,11 +1391,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </button>
           <div id="painelDividirEmpCampos" class="hidden mt-2 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-2.5">
             <input type="text" id="inpDividirEmpValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor recebido agora (R$)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-amber-400">
-            <button type="button" onclick="executarDividirParcelaEmp()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">💰 Confirmar Recebimento Parcial</button>
+            <button type="button" onclick="executarDividirParcelaEmp()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">➖ Registrar recebimento parcial</button>
           </div>
 
           <button type="button" onclick="togglePainelMoverPessoal()" class="w-full bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>🔄 Era seu gasto? Mover para Pessoal</span>
+            <span>↔️ Era seu gasto? Mover para Pessoal</span>
             <span id="setaMoverPessoal">▼</span>
           </button>
           <div id="painelMoverPessoalCampos" class="hidden mt-2 p-3.5 rounded-xl bg-slate-900/80 border border-blue-500/30 space-y-2.5">
@@ -1624,7 +1624,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <!-- CONVERSOR RÁPIDO: MOVER COMPRA PARA EMPRÉSTIMOS DE TERCEIROS -->
         <div class="pt-2 border-t border-slate-700">
           <button type="button" onclick="togglePainelMoverEmprestimo()" class="w-full bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-between transition">
-            <span>🤝 Era compra de outra pessoa? Mover p/ Empréstimos</span>
+            <span>↔️ Era compra de outra pessoa? Mover p/ Empréstimos</span>
             <span id="setaMoverEmp">▼</span>
           </button>
           <div id="painelMoverEmprestimoCampos" class="hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-2.5">
@@ -1963,7 +1963,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
     function abrirPreviaCobrancaWhats(textoBase, mensagemSucesso, somenteConfiguracao = false, opcoes = {}) {
       const modal = document.getElementById('modalPixCobranca');
-      if (!modal) { copiarTextoAreaTransferencia(textoBase, mensagemSucesso); return; }
+      if (!modal) { mostrarAviso('Prévia indisponível','Atualize o app para revisar a mensagem antes de copiar.'); return; }
 
       const titulo = document.getElementById('tituloModalPixCobranca');
       const texto = document.getElementById('textoModalPixCobranca');
@@ -1977,11 +1977,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       const botaoRemover = document.getElementById('btnRemoverChavePixCobranca');
       const chaveAtual = lerChavePixCobranca();
       const permitirPix = opcoes.permitirPix !== false;
+      botaoCopiar.textContent = '📋 Copiar mensagem';
 
       modal._textoBaseCobranca = String(textoBase || '');
       modal._mensagemSucessoCobranca = mensagemSucesso || 'Mensagem copiada para o WhatsApp.';
       modal._somenteConfiguracaoPix = Boolean(somenteConfiguracao);
-      titulo.textContent = somenteConfiguracao ? '🔑 Minha chave Pix de cobrança' : (opcoes.titulo || '📋 Confira a mensagem');
+      titulo.textContent = somenteConfiguracao ? '🔑 Minha chave Pix de cobrança' : (opcoes.titulo || '📲 Prévia para WhatsApp');
       texto.value = modal._textoBaseCobranca;
       texto.classList.toggle('hidden', Boolean(somenteConfiguracao));
       botaoCopiar.classList.toggle('hidden', Boolean(somenteConfiguracao));
@@ -3952,8 +3953,8 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
                   ${situacaoPessoa.prioridade===3?'<span class="block text-[11px] text-orange-300">Há recebimentos em atenção</span>':''}${!fSt?'<span class="block text-[11px] text-emerald-300">Recebido na seleção: '+formatBRL(p.recebido)+'</span>':''}
                 </div>
               </div>
-              <div class="flex gap-2 pt-2 border-t border-slate-800">
-                <button type="button" ${acaoHTML('copiarCobrancaPessoaWhats', [p.nome])} class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">${fSt==='Recebido'?'Compartilhar resumo':'Cobrar no WhatsApp'}</button>
+              <div class="grupo-acoes-emprestimo flex gap-2 pt-2 border-t border-slate-800">
+                <button type="button" ${acaoHTML('copiarCobrancaPessoaWhats', [p.nome])} class="flex-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">${fSt==='Recebido'?'📲 Prévia para WhatsApp':'🫴 Cobrar no WhatsApp'}</button>
                 ${btnQuitarMes}
               </div>
             </div>`;
@@ -3989,7 +3990,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
                 </div>
               </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs"><div class="rounded-lg bg-slate-900/60 p-2 space-y-1"><p class="font-bold ${situacaoBanco.cor}">Banco · ${escaparHTML(situacaoBanco.texto)}</p><p class="text-emerald-300">Pago: ${formatBRL(pagoBanco)}</p><p class="${situacaoBanco.cor}">Falta pagar: ${formatBRL(saldoBanco)}</p></div><div class="rounded-lg bg-slate-900/60 p-2 space-y-1"><p class="font-bold ${situacao.cor}">Pessoa · ${escaparHTML(situacao.texto)}</p>${!isRec&&recebidoParcela>0?'<p class="text-emerald-300">Recebido nesta parcela: '+formatBRL(recebidoParcela)+'</p>':''}<p class="${situacao.cor}">${isRec?"Recebido: ":"Falta receber: "}${formatBRL(it.valorRaw)}</p></div></div>
-            ${it.arquivado?'<p class="pt-2 text-xs text-slate-300">Arquivo anual · somente consulta</p>':`<div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/40">
+            ${it.arquivado?'<p class="pt-2 text-xs text-slate-300">Arquivo anual · somente consulta</p>':`<div class="grupo-acoes-emprestimo grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/40">
                 <button type="button" ${acaoHTML('alternarStatusItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="col-span-2 min-w-0 ${isRec ? 'bg-slate-700 text-slate-300' : 'bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white'} py-1.5 rounded-xl text-xs font-bold transition">${isRec ? '↩️ Voltar p/ A Receber' : 'Registrar recebimento'}</button>
                 <button type="button" ${acaoHTML('abrirModalEdicaoEmp', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.data, it.pessoa || '', it.descricao || '', it.forma, it.valorRaw, it.mesFatura, it.status, it.parcela || '', it.observacoes || ''])} class="bg-purple-900/20 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">✏️ Editar</button>
                 <button type="button" ${acaoHTML('excluirItemEmprestimo', [referenciaLinhaSegura('e', it.linha, it.registroId, it.versao), it.pessoa || '', it.descricao || '', it.parcela || ''])} class="bg-rose-900/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition">🗑️ Excluir</button>
@@ -4251,7 +4252,7 @@ function rotuloAcaoBotaoGestor(valor){
  const original=String(valor??'').trim();
  if(['✏️','✏'].includes(original))return '✏️ Editar';
  if(['🗑️','🗑'].includes(original))return '🗑️ Excluir';
- const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|➖)\s*)+/u,'');
+ const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|➖)\s*)+/u,'').replace(/^Conferir recebimento$/,'Registrar recebimento parcial');
  const regras=[
   [/^(Organizar|Gerenciar)\b/,'⚙️'],
   [/^Editar\b/,'✏️'],[/^(Excluir|Remover)\b/,'🗑️'],
@@ -4260,21 +4261,20 @@ function rotuloAcaoBotaoGestor(valor){
   [/^(Registrar|Confirmar) recebimento parcial/i,'➖'],
   [/^(Registrar recebimento|Receber\b|Confirmar [Rr]ecebimento)/,'💰'],
   [/^Registrar pagamento\b/,'💳'],[/^Transferir\b/,'↔️'],[/^Compartilhar\b/,'📤'],[/^Repetir\b/,'🔁'],
-  [/^Comparar meses\b/,'📅'],[/^Comparar(?: preços)?$/,'⚖️'],
-  [/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
+  [/^Prévia(?: para)? WhatsApp$/,'📲'],[/^Comparar meses\b/,'📅'],[/^Comparar(?: preços)?$/,'⚖️'],
+  [/^Conferir fatura\b/,'💳'],[/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
   [/^(Salvar|Guardar)\b/,'💾'],[/^Atualizar\b/,'↻'],
   [/^(Cancelar|Fechar)\b/,'✕'],[/^Desativar\b/,'⏸️'],[/^Reativar\b/,'▶️'],
   [/^(Marcar concluído|Confirmar\b|Sim, [Cc]onfirmar)/,'✅'],[/^Reabrir\b/,'↩️'],
   [/^(Enviando|Salvando|Conferindo|Processando|Transferindo|Baixando|Preparando)\b/,'⏳']
  ];
  const regra=regras.find(([teste])=>teste.test(texto));
- return regra?regra[1]+' '+texto.replace(/^Organizar\b/,'Gerenciar').replace(/\s+(?:⚡|🤝|👇)$/u,''):original;
+ return regra?regra[1]+' '+texto.replace(/^Organizar\b/,'Gerenciar').replace(/^Prévia WhatsApp$/,'Prévia para WhatsApp').replace(/\s+(?:⚡|🤝|👇)$/u,''):original;
 }
 function padronizarBotaoAcaoGestor(botao){
  if(!botao||botao.tagName!=='BUTTON'||botao.children.length||botao.hasAttribute('aria-pressed')||botao.hasAttribute('data-menu-aba'))return;
  const original=botao.textContent,novo=rotuloAcaoBotaoGestor(original);
  if(novo!==original)botao.textContent=novo;
- if(/^(?:⚙|✏|🗑|➕|🧹|📋|🫴|💰|📤|🔁|⚖|🔎|🔍|💾|↻|⏸|▶|✅|↩|⏳|✕|📅|🎛|↔|💳|➖)\uFE0F?\s+\S/u.test(novo))botao.classList.add('acao-botao-gestor');
 }
 function iniciarPadraoBotoesGestor(){
  document.querySelectorAll('button').forEach(padronizarBotaoAcaoGestor);
@@ -4978,7 +4978,7 @@ function rodarSimuladorCompra() {
   box.innerHTML=html;
 }
 function copiarSimulacaoWhats() {
-  try{const s=lerSimulacaoGestor(),primeira=s.forma?calcularMesFaturaCartao(buscarFormaPagamentoGestor(s.forma),s.data).mesFat:'';abrirPreviaCobrancaWhats(montarSimulacaoMensagemGestor(s,primeira),'Simulação copiada!',false,{titulo:'💳 Confira a simulação',permitirPix:false});}catch(e){mostrarAviso('Confira a simulação',e.message);}
+  try{const s=lerSimulacaoGestor(),primeira=s.forma?calcularMesFaturaCartao(buscarFormaPagamentoGestor(s.forma),s.data).mesFat:'';abrirPreviaCobrancaWhats(montarSimulacaoMensagemGestor(s,primeira),'Simulação copiada!',false,{titulo:'📲 Prévia para WhatsApp',permitirPix:false});}catch(e){mostrarAviso('Confira a simulação',e.message);}
 }
 function transferirSimulacaoGestor(emp) {
   let s;try{s=lerSimulacaoGestor(true);}catch(e){mostrarAviso('Confira a simulação',e.message);return;}
@@ -5897,7 +5897,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
         </div></div>
         <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
           <span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</span>
-${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="ml-auto shrink-0 text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">✏️ Editar</button>`}
+${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || ''])} class="acao-compacta-gestor ml-auto shrink-0 text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">✏️ Editar</button>`}
         </div>
       </div>`;
     }
@@ -5997,7 +5997,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         (res.formas || []).forEach(f => {
           const pct = totalMesRaw > 0 ? Math.round((f.total / totalMesRaw) * 100) : 0;
           const btnQuitar = (Number(f.abertoBanco ?? f.totalBanco ?? f.total ?? 0) > 0 && formaEhCartaoGestor(f))
-            ? `<button type="button" ${acaoHTML('quitarFaturaCartaoMes', [f.nome, mesFiltro])} class="relative z-10 pointer-events-auto bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">🔎 Conferir fatura</button>`
+            ? `<button type="button" ${acaoHTML('quitarFaturaCartaoMes', [f.nome, mesFiltro])} class="acao-compacta-gestor relative z-10 pointer-events-auto bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 font-bold px-2 py-0.5 rounded text-[10px] border border-emerald-500/30 transition">💳 Conferir fatura</button>`
             : '';
           const infoTerc = (f.terceiros > 0)
             ? `<div class="relative pointer-events-none text-[10px] text-amber-300 mt-1 pt-1 border-t border-slate-800/80 flex justify-between"><span>🤝 + ${formatBRL(f.terceiros)} de terceiros</span><span>${formaEhCartaoGestor(f) ? 'Fatura total' : 'Total à vista'}: <strong class="text-white">${formatBRL(f.totalBanco)}</strong></span></div>`
@@ -8492,7 +8492,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
-function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','Conferir recebimento'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
+function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','➖ Registrar recebimento parcial'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
 function camposFocaveisEditorGestor(modal){return Array.from(modal.querySelectorAll('button,input:not([type="hidden"]),select,textarea,a[href],[tabindex]')).filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&!e.closest('[hidden],.hidden,[inert]'));}
 function configurarAcessibilidadeEditorGestor(modal){
   if(!modal?.setAttribute||!modal.querySelectorAll)return;

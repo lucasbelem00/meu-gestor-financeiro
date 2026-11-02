@@ -188,7 +188,7 @@ function rodarSimuladorCompra() {
   box.innerHTML=html;
 }
 function copiarSimulacaoWhats() {
-  try{const s=lerSimulacaoGestor(),primeira=s.forma?calcularMesFaturaCartao(buscarFormaPagamentoGestor(s.forma),s.data).mesFat:'';abrirPreviaCobrancaWhats(montarSimulacaoMensagemGestor(s,primeira),'Simulação copiada!',false,{titulo:'💳 Confira a simulação',permitirPix:false});}catch(e){mostrarAviso('Confira a simulação',e.message);}
+  try{const s=lerSimulacaoGestor(),primeira=s.forma?calcularMesFaturaCartao(buscarFormaPagamentoGestor(s.forma),s.data).mesFat:'';abrirPreviaCobrancaWhats(montarSimulacaoMensagemGestor(s,primeira),'Simulação copiada!',false,{titulo:'📲 Prévia para WhatsApp',permitirPix:false});}catch(e){mostrarAviso('Confira a simulação',e.message);}
 }
 function transferirSimulacaoGestor(emp) {
   let s;try{s=lerSimulacaoGestor(true);}catch(e){mostrarAviso('Confira a simulação',e.message);return;}

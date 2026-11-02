@@ -4,7 +4,7 @@ function rotuloAcaoBotaoGestor(valor){
  const original=String(valor??'').trim();
  if(['✏️','✏'].includes(original))return '✏️ Editar';
  if(['🗑️','🗑'].includes(original))return '🗑️ Excluir';
- const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|➖)\s*)+/u,'');
+ const texto=original.replace(/^(?:(?:⚙️?|✏️?|🗑️?|📋|📲|🧹|➕|\+|🔁|⚖️?|💰|✅|❌|↩️?|↻|💾|📤|🫴|🔎|🔍|⏳|✕|📅|🎛️?|🤝|↔️?|💳|➖)\s*)+/u,'').replace(/^Conferir recebimento$/,'Registrar recebimento parcial');
  const regras=[
   [/^(Organizar|Gerenciar)\b/,'⚙️'],
   [/^Editar\b/,'✏️'],[/^(Excluir|Remover)\b/,'🗑️'],
@@ -13,21 +13,20 @@ function rotuloAcaoBotaoGestor(valor){
   [/^(Registrar|Confirmar) recebimento parcial/i,'➖'],
   [/^(Registrar recebimento|Receber\b|Confirmar [Rr]ecebimento)/,'💰'],
   [/^Registrar pagamento\b/,'💳'],[/^Transferir\b/,'↔️'],[/^Compartilhar\b/,'📤'],[/^Repetir\b/,'🔁'],
-  [/^Comparar meses\b/,'📅'],[/^Comparar(?: preços)?$/,'⚖️'],
-  [/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
+  [/^Prévia(?: para)? WhatsApp$/,'📲'],[/^Comparar meses\b/,'📅'],[/^Comparar(?: preços)?$/,'⚖️'],
+  [/^Conferir fatura\b/,'💳'],[/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
   [/^(Salvar|Guardar)\b/,'💾'],[/^Atualizar\b/,'↻'],
   [/^(Cancelar|Fechar)\b/,'✕'],[/^Desativar\b/,'⏸️'],[/^Reativar\b/,'▶️'],
   [/^(Marcar concluído|Confirmar\b|Sim, [Cc]onfirmar)/,'✅'],[/^Reabrir\b/,'↩️'],
   [/^(Enviando|Salvando|Conferindo|Processando|Transferindo|Baixando|Preparando)\b/,'⏳']
  ];
  const regra=regras.find(([teste])=>teste.test(texto));
- return regra?regra[1]+' '+texto.replace(/^Organizar\b/,'Gerenciar').replace(/\s+(?:⚡|🤝|👇)$/u,''):original;
+ return regra?regra[1]+' '+texto.replace(/^Organizar\b/,'Gerenciar').replace(/^Prévia WhatsApp$/,'Prévia para WhatsApp').replace(/\s+(?:⚡|🤝|👇)$/u,''):original;
 }
 function padronizarBotaoAcaoGestor(botao){
  if(!botao||botao.tagName!=='BUTTON'||botao.children.length||botao.hasAttribute('aria-pressed')||botao.hasAttribute('data-menu-aba'))return;
  const original=botao.textContent,novo=rotuloAcaoBotaoGestor(original);
  if(novo!==original)botao.textContent=novo;
- if(/^(?:⚙|✏|🗑|➕|🧹|📋|🫴|💰|📤|🔁|⚖|🔎|🔍|💾|↻|⏸|▶|✅|↩|⏳|✕|📅|🎛|↔|💳|➖)\uFE0F?\s+\S/u.test(novo))botao.classList.add('acao-botao-gestor');
 }
 function iniciarPadraoBotoesGestor(){
  document.querySelectorAll('button').forEach(padronizarBotaoAcaoGestor);

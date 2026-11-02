@@ -70,6 +70,12 @@ Títulos dos modais de edição usam ✏️: empréstimos, lançamentos, formas 
 
 O padrão é símbolo acompanhado de texto: ⚙️ Gerenciar (antes Organizar), ✏️ Editar, 🗑️ Excluir/Remover, ➕ Adicionar/Incluir/Lançar, 🧹 Limpar, 📋 Copiar, 🫴 Cobrar, 💰 Registrar recebimento, ➖ Registrar recebimento parcial, 🔁 Repetir, 💾 Salvar/Guardar e ↻ Atualizar. A engrenagem também identifica Gestão e ajustes: é o mesmo contexto de gestão, distinto da edição de um registro. ⚖️ identifica Comparar preços; 💵 identifica Composição da fatura.
 
-Em Empréstimos, o recebimento usa a linha principal; Editar e Excluir ficam na linha seguinte em duas colunas iguais. Botões de ação têm altura mínima de 44 px, texto centralizado e espaçamento consistente. As cores continuam indicando a ação/situação.
+Em Empréstimos, o recebimento usa a linha principal; Editar e Excluir ficam na linha seguinte em duas colunas iguais. Nesse grupo de Empréstimos, os botões têm altura mínima de 44 px, texto centralizado e espaçamento consistente. Atalhos internos da Mensal e filtros usam dimensões compactas próprias do contexto; a regra de rótulos não impõe tamanho global. As cores continuam indicando a ação/situação.
 
 interface/botoes.js centraliza rótulos e preserva o padrão quando a tela altera um botão após clique, consulta ou envio. Não substitui eventos, valores, disabled ou identificadores. Conteúdo rico, navegação, filtros selecionáveis, setas de fechar/voltar e teclas da calculadora preservam sua composição própria. A observação de alterações trata somente botões criados ou com texto alterado; não percorre a página inteira a cada atualização.
+
+## Prévia e cópia para WhatsApp
+
+Dividir com a galera (rápido e detalhado), Simular compra e resumo do Histórico usam “📲 Prévia para WhatsApp”. Empréstimos pendentes usam “🫴 Cobrar no WhatsApp”; recebidos usam a prévia do resumo. Todos abrem a mensagem editável; dentro dela a ação é “📋 Copiar mensagem”, que copia o texto revisado e o complemento Pix selecionado. A simulação não inclui Pix. Notas e resultado da calculadora mantêm cópia direta. Se a janela de prévia não estiver disponível, o app orienta atualizar em vez de copiar sem revisão. Nenhuma dessas ações envia mensagem automaticamente.
+
+Conferir fatura usa 💳. O botão do recebimento parcial usa “➖ Registrar recebimento parcial”, com a confirmação existente antes da gravação. Transferir entre Pessoal e Empréstimos usa ↔️; 🔁 fica para repetir. Os filtros rápidos do Histórico compartilham alinhamento e altura compacta.

@@ -219,7 +219,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
-function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','Conferir recebimento'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
+function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','➖ Registrar recebimento parcial'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
 function camposFocaveisEditorGestor(modal){return Array.from(modal.querySelectorAll('button,input:not([type="hidden"]),select,textarea,a[href],[tabindex]')).filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&!e.closest('[hidden],.hidden,[inert]'));}
 function configurarAcessibilidadeEditorGestor(modal){
   if(!modal?.setAttribute||!modal.querySelectorAll)return;
