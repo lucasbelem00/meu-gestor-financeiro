@@ -82,7 +82,13 @@ Conferir fatura usa 📃, remetendo ao documento. 💳 identifica cartão/forma 
 
 ## Navegação por período
 
-Agenda, Horizonte, Mensal e Anual usam chevrons SVG com traço arredondado, centralizados por inline-flex em botões de 44 × 44 px. Os controles auxiliares de mês dos formulários usam a mesma geometria em 30 × 30 px. A classe btn-periodo-gestor concentra borda, fundo, foco de teclado, hover e estado desabilitado. Os ícones não dependem de fonte ou emoji e ficam ocultos para leitores de tela; cada botão possui nome acessível indicando a direção.
+Os períodos usam chevrons SVG com traço arredondado, centralizados por inline-flex. Agenda e Horizonte mantêm botões de 44 × 44 px. Mensal e Anual usam 32 × 32 px, com seletores e PDF de mesma altura, agrupados e centralizados; em telas estreitas o grupo pode quebrar linha. Os controles auxiliares de mês dos formulários usam 26 × 22 px para harmonizar com o formulário. A classe btn-periodo-gestor concentra borda, fundo, foco de teclado, hover e estado desabilitado. Os ícones não dependem de fonte ou emoji e ficam ocultos para leitores de tela; cada botão possui nome acessível indicando a direção.
+
+## Classificação e recorrências
+
+Recorrências identifica as cobranças automáticas (antes Despesas Fixas). É independente de classificar um gasto como Fixo/Variável e Essencial/Ajustável. Nas categorias, o nome pode quebrar; a meta ocupa sua própria linha e os indicadores de classificação ficam abaixo. No editor, os seletores ficam empilhados no celular e em duas colunas no computador.
+
+O Perfil dos gastos aparece em Análise e planejamento, depois do limite pessoal. Os dois grupos ficam empilhados no celular e lado a lado em telas maiores; os títulos reservam duas linhas. Cada classificação tem o valor abaixo do nome e abre o Histórico correspondente.
 
 ## Posição ao navegar entre abas
 

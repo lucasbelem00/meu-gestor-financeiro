@@ -8,6 +8,11 @@ function ambiente(dados=fixture()){
  const c=a.ctx.configProtecaoGestor_();c.pdfAutomatico=true;a.ctx.salvarConfigProtecaoGestor_(c);return a;
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
+test('classificação gera nova revisão mensal e anual sem substituir PDFs anteriores',()=>{
+ const a=ambiente(fixture([personal('Antiga',100,'1/1','12/2025','Pago')]));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,2);const ids=pdfs(a).map(f=>f.id);
+ const r=a.db.sheets['Lançamentos'].rows[1];a.ctx.definirPerfilGastoGestor_(r,{tipo:'fixo',prioridade:'essencial'});r[16]=a.ctx.hashRegistroGestor_(r);
+ const resultado=a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2);assert.equal(resultado.sucesso,true);assert.equal(resultado.gerados.length,2);assert.equal(pdfs(a).length,4);assert(ids.every(id=>a.arquivos.has(id)));assert(a.conversoes.at(-1).includes('Perfil dos gastos pessoais'));assert(a.conversoes.at(-1).includes('Essencial'));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,0);
+});
 function formulaIndicador(a,endereco,formula){a.db.sheets['Dashboard & Resumo'].getRange(endereco).setValue(formula);}
 
 test('resumo inclui arquivo anual e separa banco de recebimentos sem alterar cadastros',()=>{

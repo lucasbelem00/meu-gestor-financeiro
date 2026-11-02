@@ -298,7 +298,7 @@ function definirDataCombinadaGestor_(r,data){
   if(data)validarDataCalendarioWeb_(data,'Data combinada');
   const texto=String(r[15] || ''),prefixo='gestor-devolucao-v1:';let anterior={legado:texto};
   if(texto.startsWith(prefixo)){try{anterior=JSON.parse(texto.slice(prefixo.length));}catch(_){throw new Error('O controle da devolução precisa de conferência. O conteúdo foi preservado.');}}
-  r[15]=prefixo+JSON.stringify({legado:anterior.legado || '',data:data || ''});return r;
+  r[15]=prefixo+JSON.stringify(Object.assign({},anterior,{legado:anterior.legado || '',data:data || ''}));return r;
 }
 function planoDatasDevolucaoGestor_(dados,lido,idx){
   const escopo=dados.escopoDataCombinada||'parcela',data=String(dados.dataCombinada||'');
@@ -470,6 +470,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
           ref[10] || ''
         ].concat([gerarIdGestor_(), ref[12] || gerarIdGestor_(), 1, 'Em Aberto', ref[15] || '', '', 0]);
         definirSerieRecorrenteGestor_(novaLinha, { diaReferencia: diaOrig, encerrada: false });
+        definirPerfilGastoGestor_(novaLinha,perfilPadraoCategoriaGestor_(obterPlanilhaGestor_(),novaLinha[3]));
         novasLinhas.push(novaLinha);
         existentes.add(mes);
       }
@@ -1274,6 +1275,8 @@ function sincronizarLoteWebInterno_(loteOffline) {
         statusPadrao = (dtCompra && dtCompra.getTime() > hoje.getTime()) ? 'Agendado' : 'Pago';
       }
 
+      const perfilNovo=perfilNovoLancamentoGestor_(ss,categoriaAtual,dados.perfilGasto);
+      const compraIdNovo=gerarIdGestor_();
       const parcelasLoop = isAssinatura ? 1 : numParcelas;
       for (let p = parcelaInicial; p <= parcelasLoop; p++) {
         const idx = p - parcelaInicial;
@@ -1282,7 +1285,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
         const aFmt = dRef.getFullYear();
         const pTxt = isAssinatura ? '∞/∞' : "'" + p + "/" + numParcelas;
 
-        novasLinhasGerais.push([
+        const novaLinha=[
           "'" + dtCompraStr,
           descFormatada,
           formaAtual,
@@ -1294,13 +1297,15 @@ function sincronizarLoteWebInterno_(loteOffline) {
           "'" + mFmt + '/' + aFmt,
           isPix && numParcelas > 1 && (idx > 0 || dRef.getFullYear() > hoje.getFullYear() || (dRef.getFullYear() === hoje.getFullYear() && dRef.getMonth() > hoje.getMonth())) ? 'Em Aberto' : statusPadrao,
           normalizarTagsGestor_(dados.tags)
-        ]);
+        ].concat([gerarIdGestor_(),compraIdNovo,1,'Em Aberto','','',0]);
+        definirPerfilGastoGestor_(novaLinha,perfilNovo);
+        novasLinhasGerais.push(novaLinha);
       }
     });
 
     if (novasLinhasGerais.length > 0) {
       const prox = Math.max(2, lancSheet.getLastRow() + 1);
-      lancSheet.getRange(prox, 1, novasLinhasGerais.length, 11).setValues(novasLinhasGerais);
+      lancSheet.getRange(prox, 1, novasLinhasGerais.length, COLUNAS_GESTOR_).setValues(novasLinhasGerais);
       lancSheet.getRange(prox, 5, novasLinhasGerais.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
       lancSheet.getRange(prox, 8, novasLinhasGerais.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
       organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
@@ -1696,7 +1701,7 @@ function getDadosCompletos() {
         let dt = r[0] instanceof Date ? Utilities.formatDate(r[0], getTimezone(), 'dd/MM/yyyy') : String(d[0]).replace(/^'/, '');
         let val = formatBRL(extractNum(r[7]));
         let resParc = resumoParcelasCompra[item.chaveCompraUnica] || null;
-        return [dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];
+        const itemHistorico=[dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];itemHistorico[20]=lerPerfilGastoGestor_(r);return itemHistorico;
       }).filter(Boolean).reverse();
     }
 
@@ -2001,7 +2006,7 @@ function getDadosCompletos() {
         const nome = String(catNamesRange[i][0] || '').trim();
         const meta = extractNum(catMetasRange[i][0]);
         if (nome) {
-          configCategorias.push({ nome: nome, meta: meta });
+          const perfil=perfilPadraoCategoriaGestor_(ss,nome);configCategorias.push({ nome: nome, meta: meta,tipoGasto:perfil.tipo,prioridadeGasto:perfil.prioridade });
           opcoesCategorias.push(nome);
           if (mapCatTotal[nome] > 0) {
             categorias.push({ nome: nome, total: mapCatTotal[nome] });
@@ -2042,7 +2047,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor:17,
+      protocoloGestor:18,
       arquivosAnuais:arquivosAnuais.map(function(e){return {ano:e.ano,assinatura:e.hash,quantidade:e.resumo.quantidade,meses:e.resumo.meses};}),
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
       kpis: {
@@ -2054,6 +2059,7 @@ function getDadosCompletos() {
       faturas: { mesesGlobais: mesesContinuos, pivot: pivotFaturas, mesAtual: mesAtualStr, chaveResumo: chaveTotalCarteira, horizonte: horizonte },
       categorias: categorias,
       configCategorias: configCategorias,
+      perfilGastos:resumoPerfilGastosGestor_(lancamentosValidos,mesAtualStr),
       consumoCategoriasPorMes: consumoCatPorMes,
       formasPagamento: listaFormasPagto,
       versoesConfiguracao: {formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:versaoConfiguracaoGestor_(ss,'categorias')},
@@ -2144,7 +2150,7 @@ function valoresCelulasBackupGestor_(linhas, fuso) {
 }
 function montarBackupDadosGestor_(ss,param,recuperacao) {
     const restauravel=Boolean(param && param.restauravel);
-    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento'].concat(restauravel?[]:['_Gestor_Atividade']);
+    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias'].concat(restauravel?[]:['_Gestor_Atividade']);
     const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
     const abas = nomes.map(function (nome) {
       const sh = folhaLeituraAnualGestor_(ss,nome);
@@ -2357,6 +2363,7 @@ function editarLancamentoLinhaWebInterno_(dados) {
       const d = disp[i], r = raw[i];
       if (i === idx) {
         novas[i] = montarLinhaLanc(d, r, { data: novaData, desc: descFmt, forma: dados.formaPagto, cat: dados.categoria, valor: valor, mes: novoMes, status: dados.status, tags: tags });
+        if(dados.perfilGasto!==undefined)definirPerfilGastoGestor_(novas[i],dados.perfilGasto);
         return;
       }
       const over = { data: novaData, desc: descFmt, forma: dados.formaPagto, cat: dados.categoria, tags: tags };
@@ -2612,6 +2619,7 @@ function editarAssinaturaWebInterno_(dados) {
     const dia = Math.min(diaReferencia, new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate());
     nova[0] = "'" + pad2(dia) + '/' + mes; nova[11] = gerarIdGestor_(); nova[13] = 1; nova[14] = 'Em Aberto'; nova[17] = 0;
     definirSerieRecorrenteGestor_(nova, { diaReferencia: diaReferencia, encerrada: false });
+    definirPerfilGastoGestor_(nova,perfilPadraoCategoriaGestor_(ss,catNova));
     escreverLinhaPlanilha(lancSheet, Math.max(2, lancSheet.getLastRow() + 1), nova); qtd++;
   }
   organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
@@ -2792,7 +2800,7 @@ function versaoConfiguracaoGestor_(ss, grupo) {
     const colunaIdentidade=validarIdentidadesFormasGestor_(sh.getDataRange().getValues()).coluna;
     return hashEstadoGestor_([linhas, colunaTipo && sh.getLastRow() >= 7 ? ler(sh.getRange(7,colunaTipo,sh.getLastRow()-6,1)) : [],colunaIdentidade&&sh.getLastRow()>=7?ler(sh.getRange(7,colunaIdentidade,sh.getLastRow()-6,1)):[]]);
   }
-  return hashEstadoGestor_([ler(sh.getRange('B17:B41')).map(function(r){return r[0];}),ler(sh.getRange('D17:D41')).map(function(r){return r[0];})]);
+  return hashEstadoGestor_([ler(sh.getRange('B17:B41')).map(function(r){return r[0];}),ler(sh.getRange('D17:D41')).map(function(r){return r[0];}),[JSON.stringify(lerPerfisCategoriasGestor_(ss))]]);
 }
 function validarVersaoConfiguracaoGestor_(ss, grupo, param) {
   if (!param || typeof param.versaoConfiguracao !== 'string' || param.versaoConfiguracao !== versaoConfiguracaoGestor_(ss, grupo)) throw new Error('A configuração mudou ou esta tela está desatualizada. Seu rascunho foi mantido. Atualize os dados e confira as alterações antes de salvar novamente.');
@@ -2978,7 +2986,7 @@ function salvarCategoriasWebInterno_(param) {
       const chave=chaveCategoria(nome);
       if (!nome || nome.length>150 || !chave || vistos.has(chave)) throw new Error('Cada categoria deve ter um nome válido e único.');
       vistos.add(chave);
-      return {nome:nome, meta:numeroConfiguracaoGestor_(c.meta,'Meta')};
+      return {nome:nome, meta:numeroConfiguracaoGestor_(c.meta,'Meta'),tipoGasto:c.tipoGasto,prioridadeGasto:c.prioridadeGasto};
     });
     const temOutros=cats.some(function(c){return chaveCategoria(c.nome)==='outros';});
     if (!temOutros && listarNomesCategoriasConfig(dash).some(function(n){return chaveCategoria(n)==='outros';})) throw new Error('Outros é uma categoria reservada e não pode ser removida. Você pode ajustar sua meta.');
@@ -2995,6 +3003,7 @@ function salvarCategoriasWebInterno_(param) {
       nomes.push([textoLiteralGestor_(nome)]);
       metas.push([nome && meta > 0 ? meta : '']);
     }
+    salvarPerfisCategoriasGestor_(ss,cats,renomeacoes);
     dash.getRange('B17:B41').setValues(nomes);
     dash.getRange('D17:D41').setValues(metas);
 
@@ -3188,7 +3197,7 @@ function itemLancamento(l, resumo, modo) {
   const res = resumo[l.chave] || null;
   const item=(modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res])).concat([l.r[11], l.r[12], Number(l.r[13] || 1), l.r[14]]);
   const resultado=modo==='relatorio'?item.concat([valorPagoBancoGestor_(l.r,false),arred2(l.valor-valorPagoBancoGestor_(l.r,false))]):item;
-  return l.arquivado?resultado.concat([true]):resultado;
+  if(l.arquivado)resultado[modo==='relatorio'?19:17]=true;resultado[20]=lerPerfilGastoGestor_(l.r);return resultado;
 }
 
 function lerMetasCategorias() {
@@ -3355,6 +3364,7 @@ function obterRelatorioMes(mesFiltro) {
     },
     categorias: categorias,
     metasCategorias: metasCategorias,
+    perfilGastos:resumoPerfilGastosGestor_(doMes.map(l=>l.r),mes),
     formas: formas,
     terceiros: resumirTerceirosRelatorio_(Object.values(terceiros).reduce(function (itens, grupo) { return itens.concat(grupo.itens); }, [])),
     tags: somarTags(doMes),
@@ -3398,6 +3408,7 @@ function obterRelatorioAnual(ano) {
     maiorMes: idxMaior >= 0 ? NOMES_MESES_PT[idxMaior] + ' • ' + formatBRL(grafico[idxMaior]) : '-',
     menorMes: idxMenor >= 0 ? NOMES_MESES_PT[idxMenor] + ' • ' + formatBRL(grafico[idxMenor]) : '-',
     qtdTransacoes: doAno.length,
+    perfilGastos:resumoPerfilGastosGestor_(doAno.map(l=>l.r),String(anoNum)),
     composicao: { aVistaValor: comp.aVistaValor, aVistaPct: comp.aVistaPct, rigidoValor: comp.rigidoValor, rigidoPct: comp.rigidoPct },
     graficoMeses: grafico.map(arred2),
     categorias: somarPor(doAno, 'catRes'),
@@ -3436,6 +3447,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
     .filter(Boolean);
 
   const filtrados = todas.filter(function (l) {
+    if (!correspondePerfilGastoGestor_(l.r,f)) return false;
     if (f.mes && l.mes !== f.mes) return false;
     if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
     if (f.forma && chaveFormaGestor_(l.forma) !== chaveFormaGestor_(nomeFormaLeituraGestor_(f.forma))) return false;
@@ -4498,7 +4510,7 @@ function unificarCategoriasNaPlanilha() { return executarOperacaoGestor_('unific
 
 function hashRegistroGestor_(registro) {
   const campos=registro.slice(0,11).concat([registro[14],registro[17] || 0]);
-  if(/^gestor-(?:serie|devolucao)-v1:/.test(String(registro[15] || ''))) campos.push(registro[15]);
+  if(/^gestor-(?:serie|devolucao|perfil)-v1:/.test(String(registro[15] || ''))) campos.push(registro[15]);
   return calcularHashRegistroGestor_(campos);
 }
 function calcularHashRegistroGestor_(campos){return hashEstadoGestor_([campos]);}
@@ -4798,7 +4810,7 @@ function desfazerAtividadeWeb(param) {
 }
 
 // Restauração com prévia, controle de concorrência e cópia anterior recuperável.
-const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento'];
+const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias'];
 const ABA_RESTAURACOES_GESTOR_ = '_Gestor_Restauracoes';
 const LIMITE_BACKUP_RESTAURACAO_GESTOR_ = 8 * 1024 * 1024;
 const CABECALHO_COPIAS_RESTAURACAO_GESTOR_ = ['Operação','Data','Parte','Conteúdo','SHA256','Partes'];
@@ -4818,6 +4830,7 @@ function validarConteudoAbaBackupGestor_(aba) {
   const duplicados = new Set();
   const registrar = function (id) { if (duplicados.has(id)) throw new Error('Identificação repetida em ' + nome); duplicados.add(id); };
   if (nome === 'Planejamento') validarPlanejamentoGestor_(linhas);
+  if (nome === 'Perfil de Categorias') validarTabelaPerfilCategoriasGestor_(linhas);
   if (nome === 'Anotações') {
     const titulos = ['ID','Texto','Concluída','Data','Versão','Excluída'];
     if (cols < 6 || titulos.some(function (t,i) { return linhas[0][i] !== t; })) throw new Error('Estrutura de Anotações incompleta.');
@@ -4915,6 +4928,7 @@ function validarBackupRestauracaoGestor_(backup) {
       if (!r.some(function (v) { return v !== ''; })) return;
       [0,6,8].forEach(function(c){if(r[c] instanceof Date) r[c]=formatarCelulaRegistroGestor_(r[c],c===0?'dd/MM/yyyy':c===6?'d/M':'MM/yyyy');});
       if (centavosGestor_(r[7]) < 0 || centavosGestor_(r[17] || 0) < 0 || centavosGestor_(r[17] || 0) > centavosGestor_(r[7])) throw new Error('Valor financeiro inconsistente no backup.');
+      lerPerfilGastoGestor_(r);
       validarDataCalendarioWeb_(limparApostrofo(r[0]), 'Data no backup'); validarMesFaturaWeb_(limparApostrofo(r[8]));
       if (r[11] && (typeof r[11] !== 'string' || r[11].length > 160 || typeof r[12] !== 'string' || !r[12] || r[12].length > 160 || !Number.isSafeInteger(Number(r[13])) || Number(r[13]) < 1)) throw new Error('Identidade financeira inválida no backup.');
       const estados = aba.nome === 'Empréstimos' ? ['A Receber','Recebido'] : ['Pago','Em Aberto','Agendado','Assinatura Ativa','Assinatura Paga','Assinatura Cancelada','Pago (Cancelada)','Ocorrência Pulada'];
@@ -4932,7 +4946,7 @@ function validarBackupRestauracaoGestor_(backup) {
   }).filter(Boolean);
   ['Dashboard & Resumo','Formas de Pagamento','Lançamentos'].forEach(function (nome) { if (!vistos.has(nome)) throw new Error('O backup está incompleto: falta ' + nome); });
   // Ausência não significa exclusão: abas que não constam no arquivo ficam intactas.
-  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome) && (nome!=='Planejamento'||obterPlanilhaGestor_().getSheetByName(nome)); });
+  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome) && (!['Planejamento','Perfil de Categorias'].includes(nome)||obterPlanilhaGestor_().getSheetByName(nome)); });
   abas.avisos = abas.preservadas.map(function (nome) { return nome + ': ausente no arquivo; os dados atuais serão preservados.'; });
   validarIdentidadesEstadoRestauradoGestor_(abas);
   if (formulasCriticas) abas.avisos.push(formulasCriticas + ' fórmula(s) de configuração serão restauradas como os valores validados exibidos na prévia, preservando limites, nomes, dias e metas.');
@@ -5027,7 +5041,7 @@ function previaRestauracaoBackupWeb(param) {
     if(anuais.preservadas.length&&anuais.legiveis.length)avisos.push('Os registros anuais de '+anuais.preservadas.join(', ')+' também serão preservados.');
     if(anuais.necessaria)avisos.push('Recuperação de arquivos ou catálogo anual: a cópia anterior guardará o conteúdo legível, a matriz original do catálogo e o diagnóstico. O JSON selecionado reconstruirá os anos conferidos.');
     if(backup.recuperacaoOrigem)avisos.push('Esta cópia anterior foi gerada durante uma recuperação: pode não conter todos os anos originais. Consulte o diagnóstico preservado no arquivo antes de prosseguir.');
-    return { protocoloGestor:17, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
+    return { protocoloGestor:18, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
       const sh=ss.getSheetByName(aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
       return {nome:aba.nome,atual:resumirAbaRestauracaoGestor_(aba.nome,atual),backup:resumirAbaRestauracaoGestor_(aba.nome,aba.valores),diferencas:diferencasAbaRestauracaoGestor_(aba.nome,atual,aba.valores)};
     }) };
@@ -5898,7 +5912,7 @@ function configurarProtecaoAutomaticaGestor(pastaUrl){
 function obterStatusProtecaoWeb(){
   const c=configProtecaoGestor_(),ss=realProtecaoGestor_();
   const instalada=c.ativo===true&&c.planilhaId===propriedade_(CHAVE_ID_PLANILHA_GESTOR)&&ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor';});
-  return {protocoloGestor:17,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoApresentacaoAnual:c.avisoApresentacaoAnual||'',avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
+  return {protocoloGestor:18,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoApresentacaoAnual:c.avisoApresentacaoAnual||'',avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
 }
 function executarBackupProtegidoWeb(param){return comLockProtecaoGestor_(function(ss){const c=configProtecaoGestor_();if(!c.ativo)throw Error('Ative a proteção no Apps Script antes de gerar cópias no Drive.');return backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),param&&param.requestId);});}
 function previaManutencaoProtegidaWeb(){return comLockProtecaoGestor_(function(ss){conferirSemPendenciasProtecaoGestor_(ss);if(ativoAnualGestor_(ss))return {assinatura:assinaturaManutencaoAnualGestor_(ss),quantidade:0,anos:catalogoAnosGestor_(ss).filter(e=>e.estado==='ABERTO'&&e.ano<getHojeSeguro().getFullYear()).map(e=>e.ano),regra:'Organização por competência: prepara o ano atual, confere os destinos e fecha anos passados. Saldos antigos continuam vinculados por ajustes sem alterar o retrato fechado.'};const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);return {assinatura:hashGestor_(['Lançamentos','Empréstimos',ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_,ABA_ARQUIVOS_ANUAIS_GESTOR_].map(function(n){return [n,lerEstadoAbaGestor_(ss.getSheetByName(n))];})),quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),regra:'Somente compras integralmente encerradas de anos anteriores. Fixos, pendências e compras com parcelas futuras permanecem na principal. Histórico técnico confirmado há mais de 180 dias pode ser compactado; nenhum comprovante de identificação é apagado.'};});}
@@ -6307,7 +6321,7 @@ function informarOrigemAnualResultadoGestor_(resultado,ctx){
 // arquivos anuais conferidos. Esta aba e os PDFs nunca substituem o backup.
 const ABA_RESUMO_NATIVO_GESTOR_='_Gestor_Resumo';
 const MARCADOR_RESUMO_NATIVO_GESTOR_='Resumo gerenciado pelo Gestor — v1';
-const CAB_RESUMO_NATIVO_GESTOR_=['Ano','Mês','Forma','Categoria','Origem','Registrado','Pago ao banco','Saldo ao banco','Recebido de pessoas','A receber de pessoas','Quantidade'];
+const CAB_RESUMO_NATIVO_GESTOR_=['Ano','Mês','Forma','Categoria','Origem','Registrado','Pago ao banco','Saldo ao banco','Recebido de pessoas','A receber de pessoas','Quantidade','Tipo de gasto','Prioridade'];
 const ABA_RELATORIOS_PDF_GESTOR_='_Gestor_RelatoriosPDF';
 const CAB_RELATORIOS_PDF_GESTOR_=['Identificação','Período','Hash dos dados','Estado','Arquivo ou nome','SHA256 PDF','Gerado em','Metadados JSON'];
 
@@ -6320,7 +6334,7 @@ function registrosResumoNativoGestor_(ss){
     if(!info.m)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
     if(isStatusCancelado(r[9])||total<=0)return;
     const pago=centavosGestor_(valorPagoBancoGestor_(r,emp));
-    registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaLeituraGestor_(r[emp?3:2],ss),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
+    registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaLeituraGestor_(r[emp?3:2],ss),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',perfilGasto:emp?null:lerPerfilGastoGestor_(r),total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
   };
   for(const nome of ['Lançamentos','Empréstimos']){
     const valores=typeof ativoAnualGestor_==='function'&&ativoAnualGestor_(ss)?matrizFinanceiraAnualGestor_(ss,nome):ss.getSheetByName(nome)?.getDataRange().getValues()||[];
@@ -6330,7 +6344,7 @@ function registrosResumoNativoGestor_(ss){
   return registros.sort((a,b)=>a.id.localeCompare(b.id));
 }
 function agruparResumoNativoGestor_(registros){
-  const grupos=new Map();for(const r of registros){const chave=JSON.stringify([r.ano,r.mes,r.forma,r.categoria,r.origem]);if(!grupos.has(chave))grupos.set(chave,{ano:r.ano,mes:r.mes,forma:r.forma,categoria:r.categoria,origem:r.origem,total:0,pago:0,saldo:0,recebido:0,aReceber:0,quantidade:0});const g=grupos.get(chave);for(const k of ['total','pago','saldo','recebido','aReceber'])g[k]+=r[k];g.quantidade++;}
+  const grupos=new Map();for(const r of registros){const chave=JSON.stringify([r.ano,r.mes,r.forma,r.categoria,r.origem,r.perfilGasto?.tipo||'',r.perfilGasto?.prioridade||'']);if(!grupos.has(chave))grupos.set(chave,{ano:r.ano,mes:r.mes,forma:r.forma,categoria:r.categoria,origem:r.origem,perfilGasto:r.perfilGasto||null,total:0,pago:0,saldo:0,recebido:0,aReceber:0,quantidade:0});const g=grupos.get(chave);for(const k of ['total','pago','saldo','recebido','aReceber'])g[k]+=r[k];g.quantidade++;}
   return Array.from(grupos.values()).sort((a,b)=>parseMesFat(a.mes).time-parseMesFat(b.mes).time||a.origem.localeCompare(b.origem)||a.forma.localeCompare(b.forma)||a.categoria.localeCompare(b.categoria));
 }
 function normalizarFormulaResumoGestor_(formula){
@@ -6366,7 +6380,7 @@ function atualizarResumoNativoGestor_(ss){
     Object.assign(m,{categoria:categoria,gerada:gerada,aceitas:Array.from(new Set([formulas[i][j],gerada]))});const pos=migracoes.findIndex(x=>x.linha===m.linha&&x.coluna===m.coluna);if(pos<0)migracoes.push(m);else migracoes[pos]=m;
   }}
   if(!sh)sh=ss.insertSheet(ABA_RESUMO_NATIVO_GESTOR_);
-  const linhas=[[MARCADOR_RESUMO_NATIVO_GESTOR_,propriedade_(CHAVE_ID_PLANILHA_GESTOR),JSON.stringify({versao:1,migracoes:migracoes})],['SHA256 dos dados',hash],['Atualizado em',new Date().toISOString()],CAB_RESUMO_NATIVO_GESTOR_,...grupos.map(g=>[g.ano,g.mes,g.forma,g.categoria,g.origem,g.total/100,g.pago/100,g.saldo/100,g.recebido/100,g.aReceber/100,g.quantidade])];
+  const linhas=[[MARCADOR_RESUMO_NATIVO_GESTOR_,propriedade_(CHAVE_ID_PLANILHA_GESTOR),JSON.stringify({versao:1,migracoes:migracoes})],['SHA256 dos dados',hash],['Atualizado em',new Date().toISOString()],CAB_RESUMO_NATIVO_GESTOR_,...grupos.map(g=>[g.ano,g.mes,g.forma,g.categoria,g.origem,g.total/100,g.pago/100,g.saldo/100,g.recebido/100,g.aReceber/100,g.quantidade,g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.tipo):'',g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.prioridade):''])];
   gravarMatrizProtecaoGestor_(sh,linhas);if(sh.setFrozenRows)sh.setFrozenRows(4);
   if(grupos.length)sh.getRange(5,6,grupos.length,5).setNumberFormat('R$ #,##0.00');
   // A marca é persistida primeiro: interrupção após uma célula pode retomar
@@ -6380,18 +6394,25 @@ function precisaMigrarResumoNativoGestor_(ss){
   const formulas=sh.getDataRange().getFormulas();return formulas.some((r,i)=>r.some((f,j)=>f&&Boolean(reconhecerFormulaPadraoResumoGestor_(f,i+1,j+1,ss))));
 }
 
+function rotuloPerfilRelatorioGestor_(valor){return {fixo:'Fixo',variavel:'Variável',essencial:'Essencial',ajustavel:'Ajustável'}[valor]||'Não classificado';}
 function escaparRelatorioPDFGestor_(texto){return String(texto??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function dadosPeriodoPDFGestor_(registros,periodo){
   if(!/^(?:\d{4}|\d{2}\/\d{4})$/.test(String(periodo)))throw Error('Período do relatório inválido.');
   if(String(periodo).includes('/')&&!parseMesFat(periodo).m)throw Error('Mês do relatório inválido.');
-  const itens=registros.filter(r=>String(periodo).includes('/')?r.mes===periodo:String(r.ano)===String(periodo)),grupos=agruparResumoNativoGestor_(itens),hash=hashGestor_({versao:1,periodo:String(periodo),registros:itens});
-  return {periodo:String(periodo),hash:hash,grupos:grupos,quantidade:itens.length};
+  const itens=registros.filter(r=>String(periodo).includes('/')?r.mes===periodo:String(r.ano)===String(periodo)),grupos=agruparResumoNativoGestor_(itens),hash=hashGestor_({versao:2,periodo:String(periodo),registros:itens});
+  return {periodo:String(periodo),hash:hash,grupos:grupos,quantidade:itens.length,perfilGastos:resumoPerfilGastosGestor_(itens.filter(r=>r.origem==='Pessoal').map(r=>{const raw=[];raw[7]=r.total/100;raw[8]=r.mes;raw[9]='Em Aberto';definirPerfilGastoGestor_(raw,r.perfilGasto||{tipo:'',prioridade:''});return raw;}),String(periodo))};
 }
 function htmlRelatorioPDFGestor_(dados,geradoEm){
   const e=escaparRelatorioPDFGestor_,totais={pessoal:0,terceiros:0,pago:0,saldo:0,recebido:0,aReceber:0};for(const g of dados.grupos){totais[g.origem==='Pessoal'?'pessoal':'terceiros']+=g.total;for(const k of ['pago','saldo','recebido','aReceber'])totais[k]+=g[k];}
-  const dinheiro=n=>e(formatBRL(n/100)),tabela=origem=>dados.grupos.filter(g=>g.origem===origem).map(g=>'<tr><td>'+e(g.mes)+'</td><td>'+e(g.forma)+'</td><td>'+e(g.categoria)+'</td><td>'+dinheiro(g.total)+'</td><td>'+dinheiro(g.pago)+'</td><td>'+dinheiro(g.saldo)+'</td>'+(origem==='Terceiros'?'<td>'+dinheiro(g.recebido)+'</td><td>'+dinheiro(g.aReceber)+'</td>':'')+'</tr>').join('');
+  const dinheiro=n=>e(formatBRL(n/100)),tabela=origem=>dados.grupos.filter(g=>g.origem===origem).map(g=>'<tr><td>'+e(g.mes)+'</td><td>'+e(g.forma)+'</td><td>'+e(g.categoria)+'</td><td>'+dinheiro(g.total)+'</td><td>'+dinheiro(g.pago)+'</td><td>'+dinheiro(g.saldo)+'</td>'+(origem==='Pessoal'?'<td>'+e(rotuloPerfilRelatorioGestor_(g.perfilGasto?.tipo))+'</td><td>'+e(rotuloPerfilRelatorioGestor_(g.perfilGasto?.prioridade))+'</td>':'')+(origem==='Terceiros'?'<td>'+dinheiro(g.recebido)+'</td><td>'+dinheiro(g.aReceber)+'</td>':'')+'</tr>').join('');
   const cab='<th>Mês</th><th>Forma</th><th>Categoria</th><th>Registrado</th><th>Pago ao banco</th><th>Saldo ao banco</th>';
-  return '<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4 landscape;margin:14mm}body{font:11px Arial,sans-serif;color:#172033}h1{font-size:23px}h2{font-size:16px;margin-top:22px}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border-bottom:1px solid #d8dfe8;text-align:left;padding:7px}th{background:#eef2f7}td:nth-child(n+4){text-align:right}thead{display:table-header-group}tr{page-break-inside:avoid}.sub{color:#53627a;font-size:10px}.totais{line-height:1.8}</style></head><body><h1>Gestor de Gastos — '+e(dados.periodo)+'</h1><p class="sub">Resumo de consulta · Gerado em '+e(geradoEm)+' · '+e(dados.quantidade)+' registro(s)</p><p class="totais">Gastos pessoais: <strong>'+dinheiro(totais.pessoal)+'</strong> · Gastos de terceiros: <strong>'+dinheiro(totais.terceiros)+'</strong><br>Pago ao banco: '+dinheiro(totais.pago)+' · Saldo ao banco: '+dinheiro(totais.saldo)+'<br>Recebido de pessoas: '+dinheiro(totais.recebido)+' · A receber de pessoas: '+dinheiro(totais.aReceber)+'</p><h2>Gastos pessoais</h2><table><thead><tr>'+cab+'</tr></thead><tbody>'+tabela('Pessoal')+'</tbody></table><h2>Gastos de terceiros</h2><table><thead><tr>'+cab+'<th>Recebido</th><th>A receber</th></tr></thead><tbody>'+tabela('Terceiros')+'</tbody></table><p class="sub">Competência do gasto e situação atual na data de geração. Receber da pessoa e pagar ao banco são controles separados. Correções e recebimentos posteriores geram outra revisão, sem apagar este arquivo. Este PDF é um resumo de leitura; o JSON é necessário para restauração.</p><p class="sub">Revisão dos dados: '+e(dados.hash)+'</p></body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4 landscape;margin:14mm}body{font:11px Arial,sans-serif;color:#172033}h1{font-size:23px}h2{font-size:16px;margin-top:22px}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border-bottom:1px solid #d8dfe8;text-align:left;padding:7px}th{background:#eef2f7}td:nth-child(n+4):nth-child(-n+6){text-align:right}.perfil td:nth-child(n+2){text-align:right}h2,h3{page-break-after:avoid}thead{display:table-header-group}tr{page-break-inside:avoid}.sub{color:#53627a;font-size:10px}.totais{line-height:1.8}</style></head><body><h1>Gestor de Gastos — '+e(dados.periodo)+'</h1><p class="sub">Resumo de consulta · Gerado em '+e(geradoEm)+' · '+e(dados.quantidade)+' registro(s)</p><p class="totais">Gastos pessoais: <strong>'+dinheiro(totais.pessoal)+'</strong> · Gastos de terceiros: <strong>'+dinheiro(totais.terceiros)+'</strong><br>Pago ao banco: '+dinheiro(totais.pago)+' · Saldo ao banco: '+dinheiro(totais.saldo)+'<br>Recebido de pessoas: '+dinheiro(totais.recebido)+' · A receber de pessoas: '+dinheiro(totais.aReceber)+'</p>'+htmlPerfilRelatorioPDFGestor_(dados.perfilGastos)+'<h2>Gastos pessoais</h2><table><thead><tr>'+cab+'<th>Tipo</th><th>Prioridade</th></tr></thead><tbody>'+tabela('Pessoal')+'</tbody></table><h2>Gastos de terceiros</h2><table><thead><tr>'+cab+'<th>Recebido</th><th>A receber</th></tr></thead><tbody>'+tabela('Terceiros')+'</tbody></table><p class="sub">Competência do gasto e situação atual na data de geração. Receber da pessoa e pagar ao banco são controles separados. Correções e recebimentos posteriores geram outra revisão, sem apagar este arquivo. Este PDF é um resumo de leitura; o JSON é necessário para restauração.</p><p class="sub">Revisão dos dados: '+e(dados.hash)+'</p></body></html>';
+}
+function htmlPerfilRelatorioPDFGestor_(perfil){
+  if(!perfil)return '<h2>Perfil dos gastos pessoais</h2><p>Classificação indisponível nesta revisão.</p>';
+  const e=escaparRelatorioPDFGestor_,dinheiro=n=>e(formatBRL(n/100));
+  const tabela=(campo,nome,chaves)=>'<h3>'+nome+'</h3><table class="perfil"><thead><tr><th>Classificação</th><th>Gasto pessoal</th><th>Participação</th></tr></thead><tbody>'+chaves.map(k=>'<tr><td>'+e(rotuloPerfilRelatorioGestor_(k))+'</td><td>'+dinheiro(perfil[campo][k])+'</td><td>'+(perfil.total?100*perfil[campo][k]/perfil.total:0).toFixed(1).replace('.',',')+'%</td></tr>').join('')+'</tbody></table>';
+  return '<h2>Perfil dos gastos pessoais</h2><p class="sub">Pagos e em aberto; exclui terceiros, cancelados e previsões. Tipo e prioridade são leituras do mesmo total, não valores a somar.</p>'+tabela('tipo','Tipo de gasto',['fixo','variavel','naoClassificado'])+tabela('prioridade','Prioridade',['essencial','ajustavel','naoClassificado'])+'<p>Total pessoal analisado: <strong>'+dinheiro(perfil.total)+'</strong></p><p class="sub">Classificação registrada em cada lançamento. Mudar o padrão de uma categoria não reclassifica o passado.</p>';
 }
 function hashBlobRelatorioPDFGestor_(blob){return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,blob.getBytes()).map(n=>(n<0?n+256:n).toString(16).padStart(2,'0')).join('');}
 function conferirArquivoPDFRelatorioGestor_(arquivo,hash){const blob=arquivo.getBlob(),bytes=blob.getBytes();if(bytes.length<5||[37,80,68,70,45].some((b,i)=>(bytes[i]<0?bytes[i]+256:bytes[i])!==b)||hashBlobRelatorioPDFGestor_(blob)!==hash)throw Error('O PDF existente não passou na conferência. Preserve o arquivo e a identificação para revisão.');return arquivo;}
@@ -6684,9 +6705,71 @@ function retomarAssinaturaWeb(dados) {
     const id=gerarIdGestor_(),compraId=gerarIdGestor_();
     const nova=["'"+data,descricao,forma,categoria,'','','∞/∞',valor,"'"+mes,'Assinatura Ativa',lido.raw[idx][10]||'',id,compraId,1,'Em Aberto','','',0];
     definirSerieRecorrenteGestor_(nova,{diaReferencia:dia,encerrada:false,origemRetomada:origem});
+    definirPerfilGastoGestor_(nova,perfilPadraoCategoriaGestor_(ss,categoria));
     escreverLinhaPlanilha(sheet,Math.max(2,sheet.getLastRow()+1),nova);
     organizarEAtualizarPlanilha(sheet,ss.getSheetByName('Formas de Pagamento'));
     return {sucesso:true,mesRetorno:mes,diaCobranca:dia,registroId:id,compraId:compraId};
   },false);
 }
 // FIM MODULO RETOMAR-FIXO GERADO
+
+// INICIO MODULO PERFIL-GASTOS GERADO
+// Classificação independente de pagamento, parcelamento e recorrência.
+const ABA_PERFIL_CATEGORIAS_GESTOR_='Perfil de Categorias';
+const CAB_PERFIL_CATEGORIAS_GESTOR_=['Categoria','Tipo de gasto','Prioridade'];
+function validarPerfilGastoGestor_(p){
+  if(!p||typeof p!=='object'||Array.isArray(p)||!['','fixo','variavel'].includes(p.tipo)||!['','essencial','ajustavel'].includes(p.prioridade))throw Error('Confira o tipo e a prioridade do gasto.');
+  return {tipo:p.tipo,prioridade:p.prioridade};
+}
+function lerPerfilGastoGestor_(r){
+  let texto=String(r[15]||'');
+  for(let n=0;n<8;n++){
+    const m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);if(!m)break;
+    let info;try{info=JSON.parse(texto.slice(m[0].length));}catch(e){if(m[0]==='gestor-perfil-v1:')throw Error('Classificação inválida no controle do lançamento.');break;}
+    if(!info||typeof info!=='object')break;
+    if(Object.prototype.hasOwnProperty.call(info,'perfilGasto'))return validarPerfilGastoGestor_(info.perfilGasto);
+    texto=String(info.legado||'');
+  }
+  return {tipo:'',prioridade:''};
+}
+function definirPerfilGastoGestor_(r,p){
+  const perfil=validarPerfilGastoGestor_(p),texto=String(r[15]||''),m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);let info={legado:texto},prefixo='gestor-perfil-v1:';
+  const antigo=lerPerfilGastoGestor_(r);if(!perfil.tipo&&!perfil.prioridade&&!antigo.tipo&&!antigo.prioridade)return r;
+  if(m){prefixo=m[0];try{info=JSON.parse(texto.slice(prefixo.length));}catch(e){throw Error('O controle deste lançamento precisa de conferência antes de classificar.');}if(!info||typeof info!=='object'||Array.isArray(info))throw Error('Controle do lançamento inválido.');}
+  info.perfilGasto=perfil;r[15]=prefixo+JSON.stringify(info);return r;
+}
+function validarTabelaPerfilCategoriasGestor_(linhas){
+  if(!Array.isArray(linhas)||!linhas.length||linhas.length>26||JSON.stringify(linhas[0])!==JSON.stringify(CAB_PERFIL_CATEGORIAS_GESTOR_))throw Error('Estrutura de Perfil de Categorias inválida.');
+  const nomes=new Set();linhas.slice(1).forEach(function(r){const k=chaveCategoria(r[0]);if(r.length!==3||!k||typeof r[0]!=='string'||nomes.has(k))throw Error('Categoria inválida ou repetida na classificação.');nomes.add(k);validarPerfilGastoGestor_({tipo:r[1],prioridade:r[2]});});return linhas;
+}
+function lerPerfisCategoriasGestor_(ss){
+  const sh=ss.getSheetByName(ABA_PERFIL_CATEGORIAS_GESTOR_),mapa=Object.create(null);if(!sh||!sh.getLastRow())return mapa;
+  validarTabelaPerfilCategoriasGestor_(sh.getDataRange().getValues()).slice(1).forEach(function(r){mapa[chaveCategoria(r[0])]={tipo:r[1],prioridade:r[2]};});return mapa;
+}
+function perfilPadraoCategoriaGestor_(ss,nome){return lerPerfisCategoriasGestor_(ss)[chaveCategoria(nome)]||{tipo:'',prioridade:''};}
+function perfilNovoLancamentoGestor_(ss,nome,escolha){
+  const padrao=perfilPadraoCategoriaGestor_(ss,nome);if(escolha===undefined)return padrao;
+  if(!escolha||typeof escolha!=='object'||Array.isArray(escolha))throw Error('Classificação do lançamento inválida.');
+  return validarPerfilGastoGestor_({tipo:escolha.tipo===undefined?padrao.tipo:escolha.tipo,prioridade:escolha.prioridade===undefined?padrao.prioridade:escolha.prioridade});
+}
+function salvarPerfisCategoriasGestor_(ss,cats,renomeacoes){
+  const anterior=lerPerfisCategoriasGestor_(ss),linhas=[CAB_PERFIL_CATEGORIAS_GESTOR_];
+  cats.forEach(function(c){const ren=(renomeacoes||[]).find(function(r){return chaveCategoria(r.para)===chaveCategoria(c.nome);}),p=anterior[chaveCategoria(ren?ren.de:c.nome)]||{tipo:'',prioridade:''};
+    const perfil=validarPerfilGastoGestor_({tipo:c.tipoGasto===undefined?p.tipo:c.tipoGasto,prioridade:c.prioridadeGasto===undefined?p.prioridade:c.prioridadeGasto});linhas.push([c.nome,perfil.tipo,perfil.prioridade]);});
+  if(!ss.getSheetByName(ABA_PERFIL_CATEGORIAS_GESTOR_)&&!linhas.slice(1).some(r=>r[1]||r[2]))return;
+  const sh=ss.getSheetByName(ABA_PERFIL_CATEGORIAS_GESTOR_)||ss.insertSheet(ABA_PERFIL_CATEGORIAS_GESTOR_);
+  sh.valores=linhas.map(r=>r.map(v=>textoLiteralGestor_(v)));sh.colunas=3;sh.alterados=Object.create(null);sh.valores.forEach((r,i)=>r.forEach((_,j)=>sh.alterados[i+':'+j]=true));
+}
+function resumoPerfilGastosGestor_(itens,mes){
+  const res={mes,total:0,tipo:{fixo:0,variavel:0,naoClassificado:0},prioridade:{essencial:0,ajustavel:0,naoClassificado:0},naoClassificados:0};
+  for(const item of itens){const r=item.raw||item;if((String(mes).includes('/')?formatarCelulaRegistroGestor_(r[8],'MM/yyyy')!==mes:String(parseMesFat(r[8]).a)!==String(mes))||isStatusCancelado(r[9]))continue;const valor=centavosGestor_(r[7]);if(valor<=0)continue;const p=lerPerfilGastoGestor_(r);res.total+=valor;res.tipo[p.tipo||'naoClassificado']+=valor;res.prioridade[p.prioridade||'naoClassificado']+=valor;if(!p.tipo||!p.prioridade)res.naoClassificados+=valor;}
+  return res;
+}
+function correspondePerfilGastoGestor_(r,f){
+  if(!f.perfilCampo)return true;
+  if(!['tipo','prioridade','pendentes'].includes(f.perfilCampo))throw Error('Filtro de classificação inválido.');
+  if(isStatusCancelado(r[9])||centavosGestor_(r[7])<=0)return false;
+  const p=lerPerfilGastoGestor_(r);if(f.perfilCampo==='pendentes')return !p.tipo||!p.prioridade;
+  return p[f.perfilCampo]===(f.perfilValor==='naoClassificado'?'':f.perfilValor);
+}
+// FIM MODULO PERFIL-GASTOS GERADO

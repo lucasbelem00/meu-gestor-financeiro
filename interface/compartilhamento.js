@@ -2,7 +2,7 @@
 function textoLinhaMensagemGestor(valor){return String(valor??'').replace(/[\r\n]+/g,' ').trim();}
 function tipoCompraMensagemGestor(parcela){
   const p=textoLinhaMensagemGestor(parcela).replace(/^'/,'');
-  if(p==='∞/∞')return '📌 Fixo mensal';
+  if(p==='∞/∞')return '📌 Recorrente mensal';
   if(!p||p==='1/1')return '⚡ À vista';
   const m=/^(\d+)\/(\d+)$/.exec(p);
   return m?'➗ Parcela '+Number(m[1])+' de '+Number(m[2]):'Parcela: '+p;

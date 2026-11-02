@@ -3,7 +3,7 @@
 // Voltar fecha Menu/modais por history.back(). O navegador não deve restaurar
 // a rolagem da aba antiga quando essa volta acontece após abrir outra tela.
 try{if(window.history&&'scrollRestoration' in window.history)window.history.scrollRestoration='manual';}catch(_){}
-const nomesAbasTopoGestor={extrato:'Conferir extrato',lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',agenda:'Agenda financeira',planejamento:'Metas e compras planejadas',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
+const nomesAbasTopoGestor={extrato:'Conferir extrato',lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',agenda:'Agenda financeira',planejamento:'Metas e compras planejadas',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Recorrências',atividade:'Atividade e sincronização'};
 // A Central reflete a página aberta. Abrir/fechar o menu não troca a seleção.
 function sincronizarSelecaoCentralGestor(){
   for(const botao of document.querySelectorAll('#conteudoCentralNavegacao [data-menu-aba]')){

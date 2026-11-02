@@ -59,7 +59,7 @@ function exibirRascunhoJaEnviadoGestor(tipo,estado){
 function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
-  const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','checkAssinatura','chkPixParcelado'];
+  const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','chkPixParcelado'];
   return {campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
 }
 function datasEscolhidasRascunhoGestor(tipo,dados){
@@ -110,6 +110,7 @@ function rascunhoFormularioVazioRotinaGestor(tipo,dados){
   if(!['novo','emp'].includes(tipo))return false;
   if(dados?.requestId || dados?.registroId || dados?.envio || dados?.resultadoIncerto)return false;
   const c=dados?.campos || {},emp=tipo==='emp';
+  if(!emp&&['perfil-novo-tipo','perfil-novo-prioridade'].some(id=>Object.prototype.hasOwnProperty.call(c,id)&&(c[id]!==''||Array.isArray(dados?.camposManuais)&&dados.camposManuais.includes(id))&&c[id]!=='padrao'))return false;
   if(datasEscolhidasRascunhoGestor(tipo,dados))return false;
   const textos=emp?['inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpObs','inpEmpCombinada']:['inpDesc','selForma','selCat','inpTags'];
   if([dados?.desc,dados?.pessoa,dados?.forma,...textos.map(id=>c[id])].some(v=>String(v || '').trim()))return false;
@@ -215,6 +216,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
   const aplicar=()=>{if(bloqueioFormularioRotinaGestor(emp)||assinaturaFormularioRotinaGestor(form)!==antes||JSON.stringify(lerJSONLocalGestor(chave,null))!==JSON.stringify(valor)){mostrarAviso('Os dados mudaram','Confira o formulário e a cópia novamente.');return;}
     if(haRascunhoFormularioGestor(emp)){emp?salvarRascunhoEmp():salvarRascunho();const copia=lerJSONLocalGestor(chaveRascunhoRotinaGestor(tipo),null);if(!copia){mostrarAviso('Rascunho atual não guardado','Libere espaço antes de substituir os campos.');return;}try{gravarArmazenamentoGestor('gestorRascunhoV3:'+tipo+':'+novoRequestIdGestor(),JSON.stringify(copia));}catch(e){mostrarAviso('Rascunho preservado',e.message);return;}}
     adotarOrigemRascunhoFinanceiroGestor(tipo,chave,valor);
+    if(!emp)for(const id of ['perfil-novo-tipo','perfil-novo-prioridade']){const campo=document.getElementById(id);if(campo&&!Object.prototype.hasOwnProperty.call(valor.dados?.campos||{},id))campo.value='padrao';}
     Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');

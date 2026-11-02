@@ -37,7 +37,7 @@ test('somas de centavos não acumulam imprecisão visível',()=>{
 test('histórico conserva ano, fixo, situação e total do servidor com exclusões separadas',()=>{
  const c=tela(),a=['18/10/2026','Total Pass','Azul Skyline','Saúde',139.9,1,'∞/∞','R$ 139,90','11/2026','Assinatura Ativa'],b=['18/10/2025','Ocorrência antiga','Pix','Saúde',40,1,'∞/∞','R$ 40,00','10/2025','Ocorrência Pulada'];
  const t=c.montarResumoHistoricoMensagemGestor([a,b],{somaTotal:'R$ 139,90'},{ano:2026,categoria:'Saúde',tipoRapido:'fixos'});
- assert.match(t,/Data: 18\/10\/2026\n📌 Fixo mensal/);assert.match(t,/Total:\* R\$ 139,90/);assert.match(t,/Registros fora do total/);assert.match(t,/Ocorrência Pulada \(fora do total\)/);assert(t.indexOf('Total:*')<t.indexOf('Ocorrência antiga'));assert.match(t,/todos os meses de 2026/);assert.match(t,/Categoria: Saúde/);
+ assert.match(t,/Data: 18\/10\/2026\n📌 Recorrente mensal/);assert.match(t,/Total:\* R\$ 139,90/);assert.match(t,/Registros fora do total/);assert.match(t,/Ocorrência Pulada \(fora do total\)/);assert(t.indexOf('Total:*')<t.indexOf('Ocorrência antiga'));assert.match(t,/todos os meses de 2026/);assert.match(t,/Categoria: Saúde/);
 });
 test('simulação explicita doze parcelas e mantém a distribuição exata dos quatro mil reais',()=>{
  const s={data:'30/10/2026',valor:4000,n:12,parcelas:Array.from({length:12},(_,i)=>i<4?333.34:333.33),avista:3500,forma:'Azul Skyline'},t=tela().montarSimulacaoMensagemGestor(s,'11/2026');

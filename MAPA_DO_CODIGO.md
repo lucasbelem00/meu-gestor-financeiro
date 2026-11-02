@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Atualizado em 01/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 17. A publicação e a ativação na conta Google são etapas separadas.
+Atualizado em 02/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -14,6 +14,17 @@ Atualizado em 01/11/2026. Este mapa descreve o pacote local de continuidade, pro
 `Tela → apiCall → proxy /api/gestor → doPost no Apps Script → regra financeira → planilha → confirmação → atualização da tela`.
 
 O diário da operação permite reconhecer um reenvio. Falta de resposta não significa que a gravação falhou: a operação pode estar na planilha e ainda precisar de confirmação.
+
+## Perfil dos gastos (protocolo 18)
+
+- Categorias guardam padrões opcionais de tipo (Fixo/Variável) e prioridade (Essencial/Ajustável) na aba `Perfil de Categorias`, criada quando necessária. Não editar suas colunas técnicas manualmente.
+- O padrão é registrado no novo lançamento; o formulário permite uma exceção por dimensão. Alterar o padrão depois não muda os lançamentos existentes. O passado continua Não classificado até ser revisado individualmente.
+- A edição altera somente o lançamento selecionado, preservando as demais parcelas e os pagamentos. A classificação fica nos metadados financeiros, acompanhando backups e bases anuais; o cadastro de padrões permanece na base de controle.
+- O resumo no Painel usa valores em centavos dos gastos pessoais registrados no mês atual, pagos ou em aberto. Exclui terceiros, ocorrências canceladas/puladas e previsões. Cada grupo abre o respectivo filtro no Histórico.
+- Os relatórios mensal e anual devolvem `perfilGastos` para o período consultado. PDFs executivos e automáticos incluem tabelas de tipo e prioridade com valores e percentuais, inclusive Não classificado. O extrato executivo mensal inclui a classificação de cada lançamento.
+- `_Gestor_Resumo` mantém as onze colunas financeiras originais e acrescenta Tipo de gasto e Prioridade no final. Grupos de classificações diferentes permanecem separados, sem duplicar valores. Fórmulas financeiras existentes mantêm suas referências.
+- A revisão 2 dos PDFs automáticos inclui a classificação na identificação dos dados. Atualizar uma classificação gera nova revisão mensal/anual elegível na rotina já existente; PDFs anteriores não são sobrescritos. Mudar somente o padrão da categoria não muda o retrato financeiro. PDFs continuam sendo consulta; o backup JSON preserva os dados para restauração.
+- Para disponibilizar este pacote, atualizar tanto o webapp quanto o Apps Script para protocolo 18. Não há função nova a executar nem ativação adicional; as configurações de organização anual existentes continuam independentes.
 
 ## Onde procurar
 
@@ -29,6 +40,8 @@ O diário da operação permite reconhecer um reenvio. Falta de resposta não si
 | `interface/desempenho.js` | Leituras compartilhadas, cache transitório e gráficos visíveis | `criarCoordenadorLeiturasGestor`, `invalidarLeiturasDesempenhoGestor`, `obterMetricasDesempenhoGestor` |
 | `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
 | `interface/painel.js` | Ordem do Painel, lembretes pela data combinada e limite pessoal sem novas consultas | `organizarPainelDiarioGestor`, `listarDevolucoesPainelGestor`, `renderizarRotinaPainelGestor` |
+| `interface/perfil.js` | Padrões de classificação nas categorias, exceções por lançamento e Perfil dos gastos no Painel | `criarCamposPerfilLancamentoGestor`, `renderizarPerfilGastosPainelGestor`, `abrirPerfilHistoricoGestor` |
+| `shared/perfil-gastos.js` | Validação, padrões por categoria, classificação registrada no lançamento, resumo em centavos e filtros | `perfilNovoLancamentoGestor_`, `definirPerfilGastoGestor_`, `resumoPerfilGastosGestor_`, `correspondePerfilGastoGestor_` |
 | `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
 | `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `selecionarItensPlanejamentoGestor`, `enviarPlanejamentoGestor` |
 | `shared/planejamento.js` | Aba permanente Planejamento, valores em centavos, validação e versão da lista para evitar sobrescrita concorrente | `validarPlanejamentoGestor_`, `obterPlanejamentoWeb`, `salvarPlanejamentoWeb` |

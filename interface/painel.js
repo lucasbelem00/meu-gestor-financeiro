@@ -46,6 +46,7 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
 function renderizarRotinaPainelGestor(){
   const dados=dadosRotinaPainelGestor;if(!dados){const resumo=document.getElementById('resumoLimitePessoalGestor');if(resumo)resumo.textContent='Aguardando os gastos do mês. Você pode guardar seu limite agora; o resultado aparece quando a consulta estiver disponível.';return;}
   renderizarLimitePessoalPainelGestor(dados);
+  if(typeof renderizarPerfilGastosPainelGestor==='function')renderizarPerfilGastosPainelGestor(dados);
   const acaoTerceiros=document.getElementById('resumoTerceirosPainelGestor');if(acaoTerceiros)acaoTerceiros.textContent='A receber de terceiros: '+(dados.emprestimos?.kpis?.totalAReceberGeral||'R$ 0,00')+' • todos os meses';
   const box=document.getElementById('devolucoesPainelGestor'),lista=document.getElementById('listaDevolucoesPainelGestor');
   if(box&&lista){

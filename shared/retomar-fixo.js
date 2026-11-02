@@ -30,6 +30,7 @@ function retomarAssinaturaWeb(dados) {
     const id=gerarIdGestor_(),compraId=gerarIdGestor_();
     const nova=["'"+data,descricao,forma,categoria,'','','∞/∞',valor,"'"+mes,'Assinatura Ativa',lido.raw[idx][10]||'',id,compraId,1,'Em Aberto','','',0];
     definirSerieRecorrenteGestor_(nova,{diaReferencia:dia,encerrada:false,origemRetomada:origem});
+    definirPerfilGastoGestor_(nova,perfilPadraoCategoriaGestor_(ss,categoria));
     escreverLinhaPlanilha(sheet,Math.max(2,sheet.getLastRow()+1),nova);
     organizarEAtualizarPlanilha(sheet,ss.getSheetByName('Formas de Pagamento'));
     return {sucesso:true,mesRetorno:mes,diaCobranca:dia,registroId:id,compraId:compraId};

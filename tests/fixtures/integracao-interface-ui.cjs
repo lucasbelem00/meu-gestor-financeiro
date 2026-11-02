@@ -4,6 +4,9 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const fonte=fs.readFileSync(path.resolve(__dirname,'../../index.html'),'utf8');
 function carregar(contexto,...nomes){
   contexto.estadoIntegracaoInterfaceGestor=contexto;
+  if(!contexto.document)contexto.document={};
+  if(!contexto.document.addEventListener)contexto.document.addEventListener=()=>{};
+  vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../interface/perfil.js'),'utf8'),contexto);
   vm.runInContext(fs.readFileSync(path.resolve(__dirname,'../../interface/situacoes.js'),'utf8'),contexto);
   for(const nome of nomes){
     const re=new RegExp('    (?:async )?function '+nome+'\\('),m=re.exec(fonte);
