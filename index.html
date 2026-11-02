@@ -6914,7 +6914,7 @@ function limparSimuladorTudo() {
         valor: document.getElementById('inpValor')?.value || '',
         parc: document.getElementById('inpParc')?.value || '1',
         forma: document.getElementById('selForma')?.value || '',
-        campos: Object.fromEntries(['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData', 'inpMesFat', 'inpDesc', 'selForma', 'selCat', 'inpValor', 'inpParc', 'inpParcIni', 'inpTags', 'checkAssinatura', 'chkPixParcelado'].map(id => {
+        campos: Object.fromEntries(['inpDataDia', 'inpDataMes', 'inpDataAno', 'inpData', 'inpMesFat', 'inpDesc', 'selForma', 'selCat', 'inpValor', 'inpParc', 'inpParcIni', 'inpTags', 'perfil-novo-tipo', 'perfil-novo-prioridade', 'checkAssinatura', 'chkPixParcelado'].map(id => {
           const campo = document.getElementById(id);
           return [id, campo?.type === 'checkbox' ? campo.checked : campo?.value || ''];
         }))

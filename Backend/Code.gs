@@ -4900,6 +4900,7 @@ function validarBackupRestauracaoGestor_(backup) {
     if (registros && (cols < 11 || cols > COLUNAS_GESTOR_)) throw new Error('Estrutura financeira incompatível: ' + aba.nome);
     if (cabecalho && cabecalho.some(function (v, i) { return i < (registros ? 11 : Math.min(cols, cabecalho.length)) && String(v || '').trim() !== String(aba.valores[0][i] || '').trim(); })) throw new Error('Os cabeçalhos de ' + aba.nome + ' não correspondem à planilha atual.');
     const formulas = aba.formulas || [];
+    if(aba.nome==='Perfil de Categorias'&&formulas.some(r=>r.some(Boolean)))throw Error('Perfil de Categorias não aceita fórmulas nos dados.');
     if(aba.nome==='Planejamento'&&formulas.some(r=>r.some(Boolean)))throw Error('Planejamento não aceita fórmulas nos dados.');
     const valores = aba.valores.map(function (r, i) { return r.map(function (v, j) {
       const formula = formulas[i] && formulas[i][j];
@@ -4999,9 +5000,10 @@ function diferencasAbaRestauracaoGestor_(nome, antes, depois) {
       } else if (nome === 'Anotações') { chave='nota:'+r[0]; conteudo=[r[0],r[1],r[2],r[3],r[5]]; }
       else if (nome === 'Formas de Pagamento') { chave='forma:'+chaveFormaGestor_(r[1]); conteudo=r; }
       else if (nome === 'Planejamento') { chave='plano:'+r[0]; conteudo=r.slice(0,8); }
+      else if (nome === 'Perfil de Categorias') { chave='perfil:'+chaveCategoria(r[0]); conteudo=r.slice(0,3); }
       else { chave='categoria:'+chaveCategoria(r[1]); conteudo=[r[1],r[3]]; }
       const repeticao=repetidos.get(chave) || 0; repetidos.set(chave,repeticao+1);
-      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String(r[nome==='Planejamento'||nome==='Empréstimos'?2:1] || r[0] || '').slice(0,160)});
+      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String(r[nome==='Perfil de Categorias'?0:nome==='Planejamento'||nome==='Empréstimos'?2:1] || r[0] || '').slice(0,160)});
     }); return mapa;
   };
   const atuais=construir(antes), novos=construir(depois), resumo={incluidos:0,alterados:0,removidos:0,mantidos:0,amostras:[]};

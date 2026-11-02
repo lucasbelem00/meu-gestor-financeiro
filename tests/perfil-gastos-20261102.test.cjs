@@ -48,6 +48,14 @@ test('configuração concorrente e opções inválidas não fazem gravação par
 test('renomear categoria preserva seu padrão quando um cliente não envia campos novos',()=>{
  const a=base();categorias(a);const antes=a.dados();a.ctx.salvarCategoriasWeb({categorias:[{nome:'Nova',meta:500},{nome:'Outros',meta:0}],renomeacoes:[{de:'Teste',para:'Nova'}],versaoConfiguracao:antes.versoesConfiguracao.categorias,requestId:'renomear-perfil-001'});assert.equal(a.ctx.perfilPadraoCategoriaGestor_(a.db,'Nova').tipo,'variavel');assert.equal(perfil(a,rows(a)[0]).tipo,'');
 });
+test('prévia identifica mudanças de prioridade por categoria mesmo com tipos iguais e ordem diferente',()=>{
+ const a=base(),cab=['Categoria','Tipo de gasto','Prioridade'],antes=[cab,['Teste','fixo','essencial'],['Outros','fixo','ajustavel']],depois=[cab,['Outros','fixo','ajustavel'],['Teste','fixo','ajustavel']];
+ const d=a.ctx.diferencasAbaRestauracaoGestor_('Perfil de Categorias',antes,depois);assert.equal(d.alterados,1);assert.equal(d.mantidos,1);assert.equal(d.incluidos,0);assert.equal(d.removidos,0);assert.equal(d.amostras[0].descricao,'Teste');
+});
+test('backup com fórmula no perfil é recusado sem alterar os padrões existentes',()=>{
+ const a=base();categorias(a);const b=a.ctx.exportarBackupDadosWeb({restauravel:true}),aba=b.abas.find(x=>x.nome==='Perfil de Categorias'),antes=JSON.stringify(a.db.sheets['Perfil de Categorias'].rows);aba.formulas=aba.valores.map(r=>r.map(()=>''));aba.formulas[1][2]='="essencial"';
+ assert.throws(()=>a.ctx.previaRestauracaoBackupWeb({backup:b}),/Perfil de Categorias não aceita fórmulas/);assert.equal(JSON.stringify(a.db.sheets['Perfil de Categorias'].rows),antes);
+});
 test('organização anual preserva classificação no destino e padrões na base de controle',()=>{
  const {ambienteProtecao}=require('./fixtures/protecao-mocks.cjs');
  const a=ambienteProtecao(fixture([personal('Legado',50)]));a.ativar();a.n=0;a.dados=()=>a.ctx.executarAcaoApi_('getDadosCompletos',null);categorias(a);compra(a,{descricao:'Classificada anual'});
