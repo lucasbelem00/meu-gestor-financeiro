@@ -20,11 +20,11 @@ test('metas sem consumo são preservadas no cadastro, mas filtros só oferecem c
  assert.deepEqual(Array.from(c.categoriasFiltroMensalGestor(res),c=>c.nome),['Teste']);assert.equal(c.categoriasFiltroMensalGestor(vazio).length,0);
  const f=c.escolherFiltroAposRecargaMensalGestor({categoria:['Educação 📚','Teste']},'10/2026','10/2026',res);assert.deepEqual(Array.from(f.categoria),['Teste']);
 });
-function navegacao(){
+function navegacao(opcoes={}){
  const frames=[],eventos={},elementos=new Map(),rolagens=[];let c;
  function el(id){if(!elementos.has(id))elementos.set(id,{id,value:'não alterar',hidden:true,attrs:{},focus(){this.focado=true;},classList:{add(){},remove(){},toggle(){}},setAttribute(k,v){this.attrs[k]=v;},querySelector(){return el('botaoMais');}});return elementos.get(id);}
- c=vm.createContext({console,Promise,Map,Set,scrollY:900,abaAtivaAtual:'dashboard',filtrosAtuais:{forma:'Cartao',ano:'2026'},offsetAtual:0,LIMITE_PAGINA:50,pxReqFiltroId:0,pxPaginaHistoricoEmAndamento:false,pxVersaoConsultaHistorico:'v1',ultimoResumoSomaFiltro:null,
-  document:{getElementById:el,addEventListener:(n,f)=>eventos[n]=f},requestAnimationFrame:f=>frames.push(f),matchMedia:()=>({matches:true}),scrollTo:op=>{rolagens.push(op.top);c.scrollY=op.top;},setAba:aba=>{c.abaAtivaAtual=aba;},addEventListener:(n,f)=>eventos[n]=f,pxEl:el,renderTabelaLancamentos(){},temAlgumFiltroAtivo:()=>true,mostrarAviso(){}});c.window=c;vm.runInContext(nav,c);return {c,el,rolagens,frames,flush(){while(frames.length)frames.shift()();}};
+ c=vm.createContext({console,Promise,Map,Set,history:{scrollRestoration:'auto'},scrollY:900,abaAtivaAtual:'dashboard',filtrosAtuais:{forma:'Cartao',ano:'2026'},offsetAtual:0,LIMITE_PAGINA:50,pxReqFiltroId:0,pxPaginaHistoricoEmAndamento:false,pxVersaoConsultaHistorico:'v1',ultimoResumoSomaFiltro:null,
+  document:{getElementById:el,addEventListener:(n,f)=>eventos[n]=f},requestAnimationFrame:f=>frames.push(f),matchMedia:()=>({matches:true}),scrollTo:op=>{rolagens.push(op.top);c.scrollY=op.top;},setAba:aba=>{c.abaAtivaAtual=aba;opcoes.aoTrocar?.({c,el,frames});},selecionarSubFerramenta:sub=>{opcoes.aoSub?.({c,sub,el,frames});},addEventListener:(n,f)=>eventos[n]=f,pxEl:el,renderTabelaLancamentos(){},temAlgumFiltroAtivo:()=>true,mostrarAviso(){}});c.window=c;vm.runInContext(nav,c);return {c,el,rolagens,frames,flush(){while(frames.length)frames.shift()();}};
 }
 test('trocar abas começa no topo e Voltar ao topo não altera filtros nem pede teclado',()=>{
  const a=navegacao();a.c.setAba('lancamentos');a.flush();assert.equal(a.c.scrollY,0);a.c.scrollY=1200;a.c.atualizarBotaoTopoGestor();assert.equal(a.el('btnVoltarTopoGestor').hidden,false);
@@ -64,3 +64,10 @@ test('resposta do Histórico preserva posição na mesma visita, mas não após 
 test('nova busca oculta a soma anterior imediatamente, inclusive quando a consulta falha',async()=>{
  const a=navegacao();let ocultou=false,rejeitar;a.el('barraSomaFiltro').classList.add=n=>{if(n==='hidden')ocultou=true;};a.c.apiCall=()=>new Promise((_,r)=>rejeitar=r);require('./fixtures/integracao-interface-ui.cjs')(a.c,'chamarFiltroBackend');const p=a.c.chamarFiltroBackend(false);assert(ocultou);rejeitar(Error('Sem conexão'));await p;assert(ocultou);
 });
+
+test('Painel para Agenda zera documento depois do fechamento do menu e de alterações de layout',()=>{const a=navegacao({aoTrocar({c,frames}){c.scrollY=1200;frames.push(()=>frames.push(()=>{c.scrollY=900;}));}});const html={scrollTop:1200,scrollLeft:70},body={scrollTop:1200,scrollLeft:40};a.c.document.scrollingElement=html;a.c.document.documentElement=html;a.c.document.body=body;a.c.setAba('agenda');assert.equal(a.c.scrollY,0,'também zera após mostrar a aba');assert.equal(html.scrollTop,0);assert.equal(body.scrollTop,0);assert.equal(html.scrollLeft,0);assert.equal(body.scrollLeft,0);a.flush();assert.equal(a.c.scrollY,0,'layout do próximo quadro não restaura a aba anterior');assert.equal(a.el('view-agenda').focado,true);});
+test('subferramenta também abre no topo depois de mostrar o conteúdo',()=>{const a=navegacao({aoSub({c}){c.scrollY=700;}});a.c.abaAtivaAtual='ferramentas';a.c.selecionarSubFerramenta('precos');assert.equal(a.c.scrollY,0);a.flush();assert.equal(a.c.scrollY,0);});
+test('destino explícito cancela o ajuste pendente e conserva o deslocamento desejado',()=>{const a=navegacao();a.c.setAba('ferramentas');a.c.cancelarRolagemTopoAgendadaGestor();a.c.scrollY=420;a.flush();assert.equal(a.c.scrollY,420);});
+test('quadro pendente de visita anterior não interfere no destino explícito da nova visita',()=>{const a=navegacao();a.c.setAba('agenda');a.c.setAba('ferramentas');a.c.cancelarRolagemTopoAgendadaGestor();a.c.scrollY=550;a.flush();assert.equal(a.c.scrollY,550);});
+
+test('retorno tardio do histórico ao fechar o Menu não recupera a rolagem do Painel na Agenda',()=>{const a=navegacao();a.c.setAba('agenda');a.flush();const voltarDoMenu=()=>{if(a.c.history.scrollRestoration==='auto')a.c.scrollY=1400;};voltarDoMenu();assert.equal(a.c.scrollY,0);assert.equal(a.c.history.scrollRestoration,'manual');});

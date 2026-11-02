@@ -1,5 +1,8 @@
 // Cada troca de aba tem sua geração. Atualizações da mesma tela podem manter
 // a posição; respostas de uma navegação anterior não podem deslocar outra aba.
+// Voltar fecha Menu/modais por history.back(). O navegador não deve restaurar
+// a rolagem da aba antiga quando essa volta acontece após abrir outra tela.
+try{if(window.history&&'scrollRestoration' in window.history)window.history.scrollRestoration='manual';}catch(_){}
 const nomesAbasTopoGestor={extrato:'Conferir extrato',lancamentos:'Histórico',relatorio:'Mensal',anual:'Anual',dashboard:'Painel',agenda:'Agenda financeira',planejamento:'Metas e compras planejadas',ferramentas:'Ferramentas',formas:'Formas de pagamento',categorias:'Categorias e metas',assinaturas:'Despesas fixas',atividade:'Atividade e sincronização'};
 // A Central reflete a página aberta. Abrir/fechar o menu não troca a seleção.
 function sincronizarSelecaoCentralGestor(){
@@ -12,20 +15,40 @@ function sincronizarSelecaoCentralGestor(){
 const abrirAntesSelecaoCentralGestor=window.abrirMenuMobile;
 window.abrirMenuMobile=function(...args){sincronizarSelecaoCentralGestor();return abrirAntesSelecaoCentralGestor(...args);};
 // Uma entrada temporária de Menu e modais é coordenada em interface/modais.js.
+let revisaoRolagemTopoGestor=0;
+function cancelarRolagemTopoAgendadaGestor(){revisaoRolagemTopoGestor++;}
+function zerarRolagemDocumentoGestor(){
+  // O elemento rolável varia entre navegador, PWA e documento embutido.
+  for(const e of new Set([document.scrollingElement,document.documentElement,document.body]))if(e){e.scrollTop=0;e.scrollLeft=0;}
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+}
 function iniciarRolagemNavegacaoGestor(){
   const geracao=(window.geracaoNavegacaoGestor || 0)+1;window.geracaoNavegacaoGestor=geracao;
-  window.scrollTo({top:0,left:0,behavior:'instant'});
-  requestAnimationFrame(()=>{if(window.geracaoNavegacaoGestor===geracao){window.scrollTo({top:0,left:0,behavior:'instant'});atualizarBotaoTopoGestor();}});
+  const revisao=++revisaoRolagemTopoGestor;
+  zerarRolagemDocumentoGestor();
+  return {geracao,revisao};
+}
+function concluirRolagemNavegacaoGestor(visita){
+  const atual=()=>window.geracaoNavegacaoGestor===visita.geracao&&revisaoRolagemTopoGestor===visita.revisao;
+  if(!atual())return;
+  document.getElementById('view-'+abaAtivaAtual)?.focus?.({preventScroll:true});
+  zerarRolagemDocumentoGestor();atualizarBotaoTopoGestor();
+  // Reaplica após o fechamento do Menu, foco e mudanças de altura do conteúdo.
+  requestAnimationFrame(()=>{
+    if(!atual())return;
+    zerarRolagemDocumentoGestor();atualizarBotaoTopoGestor();
+    requestAnimationFrame(()=>{if(atual()){zerarRolagemDocumentoGestor();atualizarBotaoTopoGestor();}});
+  });
 }
 const setAbaAntesRolagemGestor=window.setAba;
 window.setAba=function(...args){
-  iniciarRolagemNavegacaoGestor();
-  const retorno=setAbaAntesRolagemGestor(...args);atualizarBotaoTopoGestor();return retorno;
+  const visita=iniciarRolagemNavegacaoGestor();
+  const retorno=setAbaAntesRolagemGestor(...args);concluirRolagemNavegacaoGestor(visita);return retorno;
 };
 // Subferramentas também iniciam no topo, sem herdar a rolagem da anterior.
 const selecionarSubAntesRolagemGestor=window.selecionarSubFerramenta;
 if(typeof selecionarSubAntesRolagemGestor==='function')window.selecionarSubFerramenta=function(...args){
-  iniciarRolagemNavegacaoGestor();const retorno=selecionarSubAntesRolagemGestor(...args);atualizarBotaoTopoGestor();return retorno;
+  const visita=iniciarRolagemNavegacaoGestor();const retorno=selecionarSubAntesRolagemGestor(...args);concluirRolagemNavegacaoGestor(visita);return retorno;
 };
 function atualizarBotaoTopoGestor(){
   const botao=document.getElementById('btnVoltarTopoGestor');if(!botao)return;

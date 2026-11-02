@@ -306,7 +306,7 @@ function alternarModoEmprestimosGestor(modo,rolar=false){
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
   for(const [id,ativo]of [['btnConsultarEmprestimos',!novo],['btnNovoEmprestimo',novo]]){const b=document.getElementById(id);if(b){b.setAttribute('aria-pressed',String(ativo));for(const classe of ['bg-slate-800','border-slate-600','text-slate-100'])b.classList.toggle(classe,!ativo);for(const classe of ['bg-amber-500/20','border-amber-400','text-amber-300'])b.classList.toggle(classe,ativo);}}
   if(!novo&&typeof renderizarPainelEmprestimos==='function')renderizarPainelEmprestimos();
-  if(rolar){const geracao=window.geracaoNavegacaoGestor;requestAnimationFrame(()=>{if(abaAtivaAtual==='ferramentas'&&window.geracaoNavegacaoGestor===geracao&&!(novo?cadastro:consulta)?.hidden)(novo?cadastro:consulta)?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});}
+  if(rolar){if(typeof cancelarRolagemTopoAgendadaGestor==='function')cancelarRolagemTopoAgendadaGestor();const geracao=window.geracaoNavegacaoGestor;requestAnimationFrame(()=>{if(abaAtivaAtual==='ferramentas'&&window.geracaoNavegacaoGestor===geracao&&!(novo?cadastro:consulta)?.hidden)(novo?cadastro:consulta)?.scrollIntoView({behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});});}
 }
 function prepararFiltrosEmpRotinaGestor(){
   const busca=document.getElementById('inpBuscaEmp'),grade=busca?.closest?.('label')?.parentElement || busca?.parentElement,cabecalho=grade?.parentElement;

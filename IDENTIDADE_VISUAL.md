@@ -83,3 +83,7 @@ Conferir fatura usa 📃, remetendo ao documento. 💳 identifica cartão/forma 
 ## Navegação por período
 
 Agenda, Horizonte, Mensal e Anual usam chevrons SVG com traço arredondado, centralizados por inline-flex em botões de 44 × 44 px. Os controles auxiliares de mês dos formulários usam a mesma geometria em 30 × 30 px. A classe btn-periodo-gestor concentra borda, fundo, foco de teclado, hover e estado desabilitado. Os ícones não dependem de fonte ou emoji e ficam ocultos para leitores de tela; cada botão possui nome acessível indicando a direção.
+
+## Posição ao navegar entre abas
+
+Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição anterior. O ajuste ocorre antes e depois da troca, com conferência nos quadros seguintes e proteção por geração da navegação. O app controla a restauração de rolagem do histórico para que o fechamento assíncrono do Menu não recupere a posição da aba anterior. Fechar um modal sem trocar de aba mantém a posição da tela. Atualizações na mesma visita podem preservar a rolagem; atalhos explícitos para cadastro ou resumo cancelam o ajuste pendente para alcançar o destino pretendido.
