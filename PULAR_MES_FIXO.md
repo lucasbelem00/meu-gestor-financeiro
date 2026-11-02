@@ -26,3 +26,7 @@ Atualizar também o Apps Script com Backend/Code.gs e a versão do webapp; nenhu
 4. Em mês pago ou parcialmente pago, verificar a oferta de consultar o próximo; cancelar deve preservar tudo.
 5. Confirmar um próximo mês sem pagamento e verificar que o mês pago não mudou.
 6. Desativar continua encerrando novas ocorrências, preservando o histórico.
+
+## Feedback imediato da consulta
+
+O modal abre antes da chamada de rede, com Conferindo a cobrança… e confirmação desabilitada. A resposta atualiza a mesma camada, sem abrir outra confirmação sobre ela. Cancelar, Escape ou Voltar invalidam o controle visual; uma resposta atrasada não reabre nem modifica outro modal. Em caso de falha, o erro fica visível e a ação de pular continua bloqueada. A validação do servidor e a confirmação do mês permanecem obrigatórias.

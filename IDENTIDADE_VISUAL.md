@@ -79,3 +79,7 @@ interface/botoes.js centraliza rótulos e preserva o padrão quando a tela alter
 Dividir com a galera (rápido e detalhado), Simular compra e resumo do Histórico usam “📲 Prévia para WhatsApp”. Empréstimos pendentes usam “🫴 Cobrar no WhatsApp”; recebidos usam a prévia do resumo. Todos abrem a mensagem editável; dentro dela a ação é “📋 Copiar mensagem”, que copia o texto revisado e o complemento Pix selecionado. A simulação não inclui Pix. Notas e resultado da calculadora mantêm cópia direta. Se a janela de prévia não estiver disponível, o app orienta atualizar em vez de copiar sem revisão. Nenhuma dessas ações envia mensagem automaticamente.
 
 Conferir fatura usa 📃, remetendo ao documento. 💳 identifica cartão/forma de pagamento. O atalho de Terceiros usa 🤝. O botão do recebimento parcial usa “➖ Registrar recebimento parcial”, com a confirmação existente antes da gravação. Transferir entre Pessoal e Empréstimos usa ↔️; 🔁 fica para repetir. Os filtros rápidos do Histórico compartilham alinhamento e altura compacta.
+
+## Navegação por período
+
+Agenda, Horizonte, Mensal e Anual usam chevrons SVG com traço arredondado, centralizados por inline-flex em botões de 44 × 44 px. Os controles auxiliares de mês dos formulários usam a mesma geometria em 30 × 30 px. A classe btn-periodo-gestor concentra borda, fundo, foco de teclado, hover e estado desabilitado. Os ícones não dependem de fonte ou emoji e ficam ocultos para leitores de tela; cada botão possui nome acessível indicando a direção.

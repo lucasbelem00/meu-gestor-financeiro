@@ -3,17 +3,19 @@ let consultaPularMesFixoGestor=0;
 async function pularMesFixoLocalGestor(descricao,forma,identidade,mesFatura='') {
   const consulta=++consultaPularMesFixoGestor,aba=typeof abaAtivaAtual==='undefined'?'':abaAtivaAtual;
   const geracao=window.geracaoNavegacaoGestor||0,param={...(identidade||{}),descricao,forma,...(mesFatura?{mesFatura}: {})};
+  const controle=mostrarConfirmacao('⏸️ Pular mês','Conferindo a cobrança… Aguarde a verificação de pagamentos e do mês disponível.',null,false,'⏳ Conferindo…','neutral',{carregando:true});
   try {
     const previa=await apiCall('previaPularMesFixoWeb',param);
-    if(consulta!==consultaPularMesFixoGestor||(window.geracaoNavegacaoGestor||0)!==geracao||(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual!==aba))return;
+    if(!controle.ativa())return;
+    if(consulta!==consultaPularMesFixoGestor||(window.geracaoNavegacaoGestor||0)!==geracao||(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual!==aba)){controle.fechar();return;}
     if(!previa.podePular){
       const motivo=previa.motivo==='pago'?'já tem pagamento registrado':'já foi pulado';
-      if(!previa.proximoMes){mostrarAviso('Mês não disponível',previa.mesFatura+' '+motivo+'. Não há próximo mês dentro do período aceito.');return;}
-      mostrarConfirmacao('Conferir próximo mês?',previa.mesFatura+' '+motivo+'. Deseja conferir '+previa.proximoMes+' para pular? Nenhum pagamento será alterado.',()=>pularMesFixoLocalGestor(descricao,forma,identidade,previa.proximoMes),false,'Conferir '+previa.proximoMes,'neutral');
+      if(!previa.proximoMes){controle.atualizar({titulo:'Mês não disponível',mensagem:previa.mesFatura+' '+motivo+'. Não há próximo mês dentro do período aceito.',rotulo:'Indisponível',bloqueado:true});return;}
+      controle.atualizar({titulo:'Conferir próximo mês?',mensagem:previa.mesFatura+' '+motivo+'. Deseja conferir '+previa.proximoMes+' para pular? Nenhum pagamento será alterado.',rotulo:'Conferir '+previa.proximoMes,onConfirmar:()=>pularMesFixoLocalGestor(descricao,forma,identidade,previa.proximoMes)});
       return;
     }
-    mostrarConfirmacao('⏸️ Pular mês','Pular a cobrança de '+previa.descricao+' em '+previa.mesFatura+'? Somente esse mês será pulado. A recorrência continua nos meses seguintes.',()=>apiCall('pularMesFixoWeb',{...param,mesFatura:previa.mesFatura,versaoPrevia:previa.versaoPrevia}).then(res=>{mostrarAviso('Mês pulado',res.mesFatura+' foi pulado. Você pode desfazer em Atividade.');return carregarDados();}).catch(e=>mostrarAviso('Mês não pulado',e.message)),false,'⏸️ Pular '+previa.mesFatura,'neutral');
-  } catch(e) {if(consulta===consultaPularMesFixoGestor)mostrarAviso('Não foi possível conferir o mês',e.message);}
+    controle.atualizar({titulo:'⏸️ Pular mês',mensagem:'Pular a cobrança de '+previa.descricao+' em '+previa.mesFatura+'? Somente esse mês será pulado. A recorrência continua nos meses seguintes.',rotulo:'⏸️ Pular '+previa.mesFatura,onConfirmar:()=>apiCall('pularMesFixoWeb',{...param,mesFatura:previa.mesFatura,versaoPrevia:previa.versaoPrevia}).then(res=>{mostrarAviso('Mês pulado',res.mesFatura+' foi pulado. Você pode desfazer em Atividade.');return carregarDados();}).catch(e=>mostrarAviso('Mês não pulado',e.message))});
+  } catch(e) {if(consulta===consultaPularMesFixoGestor&&controle.ativa())controle.atualizar({titulo:'Não foi possível conferir o mês',mensagem:e.message,rotulo:'Não conferido',bloqueado:true});}
 }
 function atualizarAvisoNotasServidorGestor(erro){
   const lista=document.getElementById('listaNotasUI');if(!lista)return;
