@@ -25,7 +25,7 @@ test('edição de lançamento preenche a classificação registrada, sem consult
 const resumo={mes:'10/2026',total:10000,tipo:{fixo:5000,variavel:3000,naoClassificado:2000},prioridade:{essencial:6000,ajustavel:2000,naoClassificado:2000},naoClassificados:2000};
 test('resumo fica após limite, não duplica ao atualizar e cada valor abre seu filtro correto',()=>{
  const a=tela();a.c.renderizarPerfilGastosPainelGestor({perfilGastos:resumo});a.c.renderizarPerfilGastosPainelGestor({perfilGastos:resumo});assert.equal(a.pai.children.length,2);const box=a.mapa.get('perfilGastosPainelGestor');assert.equal(a.pai.children[1],box);
- const grade=box.children[2],tipo=grade.children[0];tipo.children[2].onclick();assert.equal(a.pedidos[0].aba,'lancamentos');assert.equal(a.pedidos[1].perfilCampo,'tipo');assert.equal(a.pedidos[1].perfilValor,'fixo');assert.equal(a.pedidos[1].mes,'10/2026');assert.equal(tipo.children[2].children.length,2,'nome e valor em linhas separadas');
+ const grade=box.children[2],tipo=grade.children[0];for(const grupo of grade.children)grupo.children.slice(2).forEach((b,i)=>{const marcador=b.children[0].children[0];assert.equal(marcador.className.split(' ').at(-1),grupo.children[1].children[i].className);assert.equal(marcador.attrs['aria-hidden'],'true');});tipo.children[2].onclick();assert.equal(a.pedidos[0].aba,'lancamentos');assert.equal(a.pedidos[1].perfilCampo,'tipo');assert.equal(a.pedidos[1].perfilValor,'fixo');assert.equal(a.pedidos[1].mes,'10/2026');assert.equal(tipo.children[2].children.length,2,'nome e valor em linhas separadas');
  box.children[3].onclick();assert.equal(a.pedidos.at(-1).perfilCampo,'pendentes');
 });
 test('resumo vazio informa ausência de gastos; versão antiga não deixa indicadores obsoletos',()=>{
