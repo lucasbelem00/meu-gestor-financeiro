@@ -7,15 +7,15 @@ function diaSituacaoVisualGestor(texto){
 function fimMesSituacaoVisualGestor(mes){const p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(String(mes||''));if(!p||+p[2]<1900||+p[2]>2200)return null;return Date.UTC(+p[2],+p[1],0)/86400000;}
 function hojeSituacaoVisualGestor(hoje=new Date()){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
 function estiloSituacaoVisualGestor(codigo,texto){
-  const concluido=['recebido','pago'].includes(codigo),atencao=['vencido','mesEncerrado'].includes(codigo),neutro=codigo==='vazio';
-  return {codigo,texto,prioridade:atencao?3:concluido?1:neutro?0:2,cor:atencao?'text-[#ff9570]':concluido?'text-emerald-300':neutro?'text-slate-300':'text-amber-200',fundo:atencao?'bg-[#7c2d20]/80 border-[#f97350] text-[#ffdfd4]':concluido?'bg-emerald-900/60 border-emerald-500 text-emerald-100':neutro?'bg-slate-900 border-slate-700 text-slate-200':'bg-amber-900/60 border-amber-500 text-amber-100'};
+  const concluido=['recebido','pago'].includes(codigo),atencao=['vencido','mesEncerrado'].includes(codigo),neutro=codigo==='vazio',hoje=codigo==='hoje';
+  return {codigo,texto,prioridade:atencao?3:hoje?2.5:concluido?1:neutro?0:2,cor:hoje?'text-yellow-300':atencao?'text-[#ff9570]':concluido?'text-emerald-300':neutro?'text-slate-300':'text-amber-200',fundo:hoje?'bg-yellow-500/20 border-yellow-300 text-yellow-100':atencao?'bg-[#7c2d20]/80 border-[#f97350] text-[#ffdfd4]':concluido?'bg-emerald-900/60 border-emerald-500 text-emerald-100':neutro?'bg-slate-900 border-slate-700 text-slate-200':'bg-amber-900/60 border-amber-500 text-amber-100'};
 }
 function situacaoRecebimentoVisualGestor(item,hoje=new Date()){
   if(item.status==='Recebido')return estiloSituacaoVisualGestor('recebido','Recebido');
   if(/^cancelad/i.test(String(item.status||'')))return estiloSituacaoVisualGestor('vazio','Cancelado');
   const dia=diaSituacaoVisualGestor(item.dataCombinada),atual=hojeSituacaoVisualGestor(hoje);
   if(item.dataCombinada&&dia===null)return estiloSituacaoVisualGestor('conferir','Conferir data combinada');
-  if(dia!==null)return dia<atual?estiloSituacaoVisualGestor('vencido','Vencido há '+(atual-dia)+' dia(s)'):estiloSituacaoVisualGestor('pendente',dia===atual?'A receber hoje':'A receber');
+  if(dia!==null)return dia<atual?estiloSituacaoVisualGestor('vencido','Vencido há '+(atual-dia)+' dia(s)'):estiloSituacaoVisualGestor(dia===atual?'hoje':'pendente',dia===atual?'Receber hoje':'A receber');
   const fim=fimMesSituacaoVisualGestor(item.mesFatura);
   return fim!==null&&fim<atual?estiloSituacaoVisualGestor('mesEncerrado','Mês encerrado · A receber'):estiloSituacaoVisualGestor('pendente','A receber · Sem data combinada');
 }
@@ -46,6 +46,7 @@ function situacaoBancoVisualGestor(item,hoje=new Date()){
   if(saldo<0.005)return estiloSituacaoVisualGestor('pago',item.imediato?'Pagamento realizado':'Pago ao banco');
   const prazo=item.imediato?null:vencimentoFaturaBancarioGestor(item.forma,item.mesFatura,item.vencimento),atual=hojeSituacaoVisualGestor(hoje);
   if(prazo&&prazo.dia<atual)return estiloSituacaoVisualGestor('vencido','Vencido há '+(atual-prazo.dia)+' dia(s)');
+  if(prazo&&prazo.dia===atual)return estiloSituacaoVisualGestor('hoje',pago>0?'Vence hoje · Pagamento parcial':'Vence hoje');
   return estiloSituacaoVisualGestor(pago>0?'parcial':'pendente',pago>0?'Pagamento parcial':'A pagar');
 }
 function formaSituacaoVisualGestor(nome){return (typeof formasGlobais==='undefined'?[]:formasGlobais).find(f=>(typeof f==='string'?f:f.nome)===nome)||{};}

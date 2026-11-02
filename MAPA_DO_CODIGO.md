@@ -134,3 +134,7 @@ A [auditoria profunda de 01/11](AUDITORIA_PROFUNDA_20261101.md) descreve a valid
 O Planejamento oculta concluídos por padrão, permite consultar o histórico desmarcando o filtro e oferece ordenação por prazo/prioridade ou prioridade/prazo. A filtragem é somente visual, com contagem de itens ocultos; a lista integral permanece na persistência e no backup. Trocar filtro ou ordem atualiza apenas a lista, preservando os campos em edição.
 
 Calendário nacional de vencimentos, exceções locais e limites da implementação: [Calendário bancário](CALENDARIO_BANCARIO.md).
+
+Despesa fixa: prévia protegida e ação reversível para pular uma competência em [Pular mês](PULAR_MES_FIXO.md), implementadas em shared/pular-fixo.js.
+
+Retomada de assinaturas encerradas: [fluxo, validações e publicação](RETOMAR_ASSINATURA.md). Servidor em shared/retomar-fixo.js; modal em interface/retomada.js.

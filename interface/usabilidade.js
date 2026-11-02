@@ -1,4 +1,20 @@
 // Fonte da interface: Horizonte, simulador, calculadora e notas.
+let consultaPularMesFixoGestor=0;
+async function pularMesFixoLocalGestor(descricao,forma,identidade,mesFatura='') {
+  const consulta=++consultaPularMesFixoGestor,aba=typeof abaAtivaAtual==='undefined'?'':abaAtivaAtual;
+  const geracao=window.geracaoNavegacaoGestor||0,param={...(identidade||{}),descricao,forma,...(mesFatura?{mesFatura}: {})};
+  try {
+    const previa=await apiCall('previaPularMesFixoWeb',param);
+    if(consulta!==consultaPularMesFixoGestor||(window.geracaoNavegacaoGestor||0)!==geracao||(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual!==aba))return;
+    if(!previa.podePular){
+      const motivo=previa.motivo==='pago'?'já tem pagamento registrado':'já foi pulado';
+      if(!previa.proximoMes){mostrarAviso('Mês não disponível',previa.mesFatura+' '+motivo+'. Não há próximo mês dentro do período aceito.');return;}
+      mostrarConfirmacao('Conferir próximo mês?',previa.mesFatura+' '+motivo+'. Deseja conferir '+previa.proximoMes+' para pular? Nenhum pagamento será alterado.',()=>pularMesFixoLocalGestor(descricao,forma,identidade,previa.proximoMes),false,'Conferir '+previa.proximoMes,'neutral');
+      return;
+    }
+    mostrarConfirmacao('⏸️ Pular mês','Pular a cobrança de '+previa.descricao+' em '+previa.mesFatura+'? Somente esse mês será pulado. A recorrência continua nos meses seguintes.',()=>apiCall('pularMesFixoWeb',{...param,mesFatura:previa.mesFatura,versaoPrevia:previa.versaoPrevia}).then(res=>{mostrarAviso('Mês pulado',res.mesFatura+' foi pulado. Você pode desfazer em Atividade.');return carregarDados();}).catch(e=>mostrarAviso('Mês não pulado',e.message)),false,'⏸️ Pular '+previa.mesFatura,'neutral');
+  } catch(e) {if(consulta===consultaPularMesFixoGestor)mostrarAviso('Não foi possível conferir o mês',e.message);}
+}
 function atualizarAvisoNotasServidorGestor(erro){
   const lista=document.getElementById('listaNotasUI');if(!lista)return;
   let aviso=document.getElementById('avisoEstruturaNotasGestor');
@@ -66,10 +82,10 @@ function renderTabelaEvolucao() {
     const cols = valores.map((v,i) => {
       const quitado = v.registrado > 0 && v.saldo < 0.005 && !v.previsto;
       const cor = v.previsto > 0 && v.situacao?.codigo === 'pago' ? classe : v.situacao?.cor || (quitado ? 'text-emerald-400' : v.pago > 0 && v.saldo > 0 ? 'text-amber-200' : classe);
-      const aviso = ['vencido','mesEncerrado'].includes(v.situacao?.codigo) ? 'Vencido' : v.previsto > 0 ? 'Previsto' : v.situacao?.codigo === 'parcial' || (v.pago > 0 && v.saldo > 0) ? 'Parcial' : '';
-      const titulo = `Registrado: ${formatBRL(v.registrado || 0)}. ${v.recebivel?'Recebido':'Pago ao banco'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}${v.aReceber!==undefined?' A receber da pessoa: '+formatBRL(v.aReceber)+'. '+v.sitReceber.texto:''}`;
+      const aviso = v.situacao?.codigo==='hoje' ? (v.recebivel?'Receber hoje':'Vence hoje') : ['vencido','mesEncerrado'].includes(v.situacao?.codigo) ? 'Vencido' : v.previsto > 0 ? 'Previsto' : v.situacao?.codigo === 'parcial' || (v.pago > 0 && v.saldo > 0) ? 'Parcial' : '';
+      const titulo = `${v.situacao?.texto||''}. Registrado: ${formatBRL(v.registrado || 0)}. ${v.recebivel?'Recebido':'Pago ao banco'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}${v.aReceber!==undefined?' A receber da pessoa: '+formatBRL(v.aReceber)+'. '+v.sitReceber.texto:''}`;
       const acao = acaoHTML('abrirDetalheHorizonteGestor',[rotulo,meses[i],v,abrir]);
-      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(aviso)+'</span>':''}</button></td>`;
+      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(['hoje','vencido','mesEncerrado'].includes(v.situacao?.codigo)?aviso:v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',hoje:v.recebivel?'Receber hoje':'Vence hoje',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(aviso)+'</span>':''}</button></td>`;
     }).join('');
     html += `<tr class="border-b border-slate-700"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold break-words ${comparacao?'sticky left-0 z-10 bg-slate-800':''} ${classe}">${escaparHTML(rotulo)}${rotulo==='Terceiros'?'<span class="block text-[9px] font-normal">Nos cartões</span>':''}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
   }

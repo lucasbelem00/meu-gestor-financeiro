@@ -1840,6 +1840,7 @@ function getDadosCompletos() {
     lancamentosValidos.forEach(function(l){const r=l.raw;if(limparApostrofo(r[6])==='∞/∞'){const id=String(r[12]);if(!linhasSeriesProjecao.has(id))linhasSeriesProjecao.set(id,[]);linhasSeriesProjecao.get(id).push(r);}});
     Object.values(listaAssinaturas).forEach(function(ass){
       const serie=(linhasSeriesProjecao.get(String(ass.compraId))||[]).slice().sort(function(a,b){return parseMesFat(formatarCelulaRegistroGestor_(a[8],'MM/yyyy')).time-parseMesFat(formatarCelulaRegistroGestor_(b[8],'MM/yyyy')).time;});
+      if(!ass.controleInvalido && serie.length)Object.assign(ass,dadosRetomadaSerieGestor_(serie));
       const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
       const atual=referenciaRecorrenteNoMesGestor_(serie,mesAtualStr);ass.vigente=atual?apresentar(atual):null;ass.programadas=[];
       const condicao=function(r){return hashGestor_([r[1],r[2],r[3],extractNum(r[7])]);};let anterior=atual;
@@ -2221,6 +2222,9 @@ function executarAcaoApiInterna_(action, param) {
     case 'moverParaGastosPessoaisWeb': return moverParaGastosPessoaisWeb(param);
     case 'editarAssinaturaWeb': return editarAssinaturaWeb(param);
     case 'cancelarAssinaturaWeb': return cancelarAssinaturaWeb(param);
+    case 'retomarAssinaturaWeb': return retomarAssinaturaWeb(param);
+    case 'previaPularMesFixoWeb': return previaPularMesFixoWeb(param);
+    case 'pularMesFixoWeb': return pularMesFixoWeb(param);
     case 'salvarFormaPagamentoWeb': return salvarFormaPagamentoWeb(param);
     case 'reordenarFormasPagamentoWeb': return reordenarFormasPagamentoWeb(param);
     case 'excluirFormaPagamentoWeb': return excluirFormaPagamentoWeb(param);
@@ -4598,13 +4602,13 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   quitarFaturaWeb: 'Fatura quitada', registrarPagamentoFaturaWeb: 'Pagamento de fatura',
   moverParaEmprestimosWeb: 'Compra movida para terceiros', moverParaGastosPessoaisWeb: 'Compra movida para pessoal',
   adiantarParcelasWeb: 'Parcelas antecipadas', salvarNotasWeb: 'Notas atualizadas',
-  editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada',
+  editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada', retomarAssinaturaWeb: 'Assinatura retomada', pularMesFixoWeb: 'Mês da despesa fixa pulado',
   salvarFormaPagamentoWeb: 'Forma de pagamento atualizada', excluirFormaPagamentoWeb: 'Forma de pagamento excluída',
   reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas', salvarPlanejamentoWeb:'Planejamento atualizado',
   restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
-const ACOES_DESFAZER_GESTOR_ = ['registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
+const ACOES_DESFAZER_GESTOR_ = ['pularMesFixoWeb', 'registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
 
 function formatarCelulaRegistroGestor_(valor, formato) {
   if (!(valor instanceof Date)) return limparApostrofo(valor);
@@ -6591,3 +6595,98 @@ function recuperarDatasTextoPlanoGestor_(ss,plano){
  }
 }
 // FIM MODULO DATAS-RECUPERACAO GERADO
+
+// INICIO MODULO PULAR-FIXO GERADO
+// Pula uma competência da série sem encerrar a recorrência ou desfazer pagamentos.
+// A prévia é revalidada dentro da operação financeira, antes de qualquer escrita.
+function planoPularMesFixoGestor_(dados) {
+  if (!dados || !dados.registroId) throw Error('Atualize a tela para identificar a despesa fixa.');
+  const ss = obterPlanilhaGestor_(), sheet = ss.getSheetByName('Lançamentos'), lido = lerAbaCompleta(sheet, COLUNAS_GESTOR_);
+  const idx = localizarIndiceSeguro(lido.disp, dados.linhaBase, dados.descricao, '', '∞/∞');
+  if (idx < 0 || limparApostrofo(lido.disp[idx][6]) !== '∞/∞') throw Error('Despesa fixa não localizada. Atualize a tela.');
+  const grupo = indicesMesmaCompra(lido.disp, idx), linhas = grupo.map(function(i) { return lido.raw[i]; });
+  if (linhas.some(function(r) { return serieRecorrenteGestor_(r).invalida || serieRecorrenteGestor_(r).encerrada || ['Assinatura Cancelada','Pago (Cancelada)'].includes(r[9]); })) throw Error('Esta recorrência está encerrada ou precisa de conferência.');
+  const hoje = getHojeSeguro(), atual = pad2(hoje.getMonth()+1)+'/'+hoje.getFullYear();
+  const primeiro = linhas.map(function(r) { return formatarCelulaRegistroGestor_(r[8], 'MM/yyyy'); }).sort(function(a,b) { return parseMesFat(a).time-parseMesFat(b).time; })[0];
+  const mes = validarMesFaturaWeb_(dados.mesFatura || (parseMesFat(primeiro).time>parseMesFat(atual).time?primeiro:atual));
+  const tempo = parseMesFat(mes).time;
+  const alvos = grupo.filter(function(i) { return formatarCelulaRegistroGestor_(lido.raw[i][8], 'MM/yyyy')===mes; });
+  if (alvos.length>1) throw Error('Há mais de uma ocorrência desta série no mês. Confira os registros antes de pular.');
+  const ref = referenciaRecorrenteNoMesGestor_(linhas, mes);
+  if (!ref) throw Error('A despesa fixa ainda não começou nesse mês.');
+  const alvo = alvos.length ? alvos[0] : -1, r = alvo>=0 ? lido.raw[alvo] : null;
+  const motivo = r && (isStatusPago(r[9]) || centavosGestor_(valorPagoBancoGestor_(r,false))>0) ? 'pago' : r && r[9]==='Ocorrência Pulada' ? 'pulado' : '';
+  if (r && !motivo && isStatusCancelado(r[9])) throw Error('Esta ocorrência está cancelada. Confira o Histórico.');
+  const proxima = new Date(tempo); proxima.setMonth(proxima.getMonth()+1);
+  const proximoMes = proxima.getFullYear()<=2200 ? pad2(proxima.getMonth()+1)+'/'+proxima.getFullYear() : '';
+  return {ss:ss,sheet:sheet,lido:lido,alvo:alvo,ref:ref,linhas:linhas,mes:mes,motivo:motivo,proximoMes:proximoMes,hash:hashGestor_({mes:mes,linhas:linhas})};
+}
+function previaPularMesFixoWeb(dados) {
+  return executarOperacaoGestor_('previaPularMesFixoWeb',dados,function() {
+    const p=planoPularMesFixoGestor_(dados);
+    return {mesFatura:p.mes,podePular:!p.motivo,motivo:p.motivo,proximoMes:p.proximoMes,versaoPrevia:p.hash,descricao:limparApostrofo(p.ref[1]),forma:limparApostrofo(p.ref[2])};
+  },true);
+}
+function pularMesFixoWeb(dados) {
+  return executarOperacaoGestor_('pularMesFixoWeb',dados,function() {
+    const p=planoPularMesFixoGestor_(dados);
+    if (!dados.mesFatura || dados.versaoPrevia!==p.hash) throw Error('A despesa fixa mudou. Confira novamente o mês antes de pular.');
+    if (p.motivo==='pago') throw Error('Este mês já tem pagamento registrado. Nenhum pagamento foi alterado.');
+    if (p.motivo==='pulado') throw Error('Este mês já foi pulado. Confira novamente antes de escolher outro.');
+    const nova=p.alvo>=0?p.lido.raw[p.alvo].slice():montarLinhaLanc(valoresExibidosRegistroGestor_(p.ref,p.ref),p.ref,{mes:p.mes,status:'Ocorrência Pulada'});
+    if (p.alvo<0) {
+      const original=parseDataBR(formatarCelulaRegistroGestor_(p.ref[0],'dd/MM/yyyy')),mesOriginal=parseMesFat(formatarCelulaRegistroGestor_(p.ref[8],'MM/yyyy')),destino=parseMesFat(p.mes);
+      if(!original || !mesOriginal.m)throw Error('Confira a data da despesa fixa antes de pular um mês futuro.');
+      const data=new Date(original.getFullYear(),original.getMonth()+(destino.a-mesOriginal.a)*12+destino.m-mesOriginal.m,1);
+      const dia=diaReferenciaSerieGestor_(p.linhas);
+      nova[0]="'"+pad2(Math.min(dia,new Date(data.getFullYear(),data.getMonth()+1,0).getDate()))+'/'+pad2(data.getMonth()+1)+'/'+data.getFullYear();
+      nova[11]=gerarIdGestor_();nova[13]=1;
+      definirSerieRecorrenteGestor_(nova,{diaReferencia:dia,encerrada:false});
+    }
+    nova[9]='Ocorrência Pulada';nova[14]='Em Aberto';nova[17]=0;
+    escreverLinhaPlanilha(p.sheet,p.alvo>=0?p.alvo+2:Math.max(2,p.sheet.getLastRow()+1),nova);
+    organizarEAtualizarPlanilha(p.sheet,p.ss.getSheetByName('Formas de Pagamento'));
+    return {sucesso:true,pulada:true,mesFatura:p.mes};
+  },false);
+}
+// FIM MODULO PULAR-FIXO GERADO
+
+// INICIO MODULO RETOMAR-FIXO GERADO
+// Retomar cria outra série. Nenhum registro da série encerrada é alterado.
+function dadosRetomadaSerieGestor_(linhas) {
+  const hoje=getHojeSeguro();let inicio=new Date(hoje.getFullYear(),hoje.getMonth(),1);
+  linhas.forEach(function(r){
+    if(isStatusCancelado(r[9]))return;
+    const m=parseMesFat(formatarCelulaRegistroGestor_(r[8],'MM/yyyy'));
+    if(m.m&&m.time>=inicio.getTime())inicio=new Date(m.a,m.m,1);
+  });
+  return {diaCobranca:diaReferenciaSerieGestor_(linhas),retomarAPartir:inicio.getFullYear()<=2200?pad2(inicio.getMonth()+1)+'/'+inicio.getFullYear():''};
+}
+function retomarAssinaturaWeb(dados) {
+  return executarOperacaoGestor_('retomarAssinaturaWeb',dados,function(){
+    if(!dados||!dados.registroId)throw Error('Atualize a tela para identificar a assinatura encerrada.');
+    const ss=obterPlanilhaGestor_(),sheet=ss.getSheetByName('Lançamentos'),lido=lerAbaCompleta(sheet,COLUNAS_GESTOR_);
+    const idx=localizarIndiceSeguro(lido.disp,dados.linhaBase,dados.descOriginal,'','∞/∞');
+    if(idx<0||limparApostrofo(lido.disp[idx][6])!=='∞/∞')throw Error('Assinatura não localizada. Atualize a tela.');
+    const linhas=indicesMesmaCompra(lido.disp,idx).map(function(i){return lido.raw[i];});
+    if(linhas.some(function(r){return serieRecorrenteGestor_(r).invalida;}))throw Error('Confira o controle da recorrência antes de retomar.');
+    if(linhas.some(function(r){return !serieRecorrenteGestor_(r).encerrada&&!['Assinatura Cancelada','Pago (Cancelada)'].includes(r[9]);}))throw Error('Esta assinatura ainda está ativa. Edite a assinatura existente.');
+    const origem=String(serieRecorrenteGestor_(lido.raw[idx]).origemRetomada||lido.raw[idx][12]);
+    if(lido.raw.some(function(r){const info=serieRecorrenteGestor_(r);return limparApostrofo(r[6])==='∞/∞'&&String(info.origemRetomada||r[12])===origem&&!info.encerrada&&!['Assinatura Cancelada','Pago (Cancelada)'].includes(r[9]);}))throw Error('Esta assinatura já foi retomada e está ativa. Edite a retomada existente.');
+    const mes=validarMesFaturaWeb_(dados.mesRetorno),m=parseMesFat(mes),limite=dadosRetomadaSerieGestor_(linhas).retomarAPartir;
+    if(!limite||m.time<parseMesFat(limite).time)throw Error('Escolha '+(limite||'outro período válido')+' ou um mês posterior. O histórico e as cobranças anteriores serão preservados.');
+    const dia=Number(dados.diaCobranca);
+    if(!Number.isInteger(dia)||dia<1||dia>31)throw Error('Informe um dia de cobrança entre 1 e 31.');
+    const descricao=formatarTituloInteligente(dados.descricao),forma=validarFormaAtualGestor_(dados.formaPagto,{novaCompra:true}),categoria=validarCategoriaAtualGestor_(dados.categoria),valor=centavosGestor_(dados.valorMensal)/100;
+    const data=pad2(Math.min(dia,new Date(m.a,m.m,0).getDate()))+'/'+mes;
+    validarLancamentoWeb_({dataCompra:data,descricao:descricao,formaPagto:forma,categoria:categoria,valorTotal:valor,isAssinatura:true,numParcelas:1,mesPrimeiraFatura:mes});
+    if(lido.disp.some(function(r){return limparApostrofo(r[6])==='∞/∞'&&!serieRecorrenteGestor_(r).encerrada&&!['Assinatura Cancelada','Pago (Cancelada)'].includes(r[9])&&normalizarTexto(r[1])===normalizarTexto(descricao)&&chaveFormaGestor_(r[2])===chaveFormaGestor_(forma);}))throw Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento.');
+    const id=gerarIdGestor_(),compraId=gerarIdGestor_();
+    const nova=["'"+data,descricao,forma,categoria,'','','∞/∞',valor,"'"+mes,'Assinatura Ativa',lido.raw[idx][10]||'',id,compraId,1,'Em Aberto','','',0];
+    definirSerieRecorrenteGestor_(nova,{diaReferencia:dia,encerrada:false,origemRetomada:origem});
+    escreverLinhaPlanilha(sheet,Math.max(2,sheet.getLastRow()+1),nova);
+    organizarEAtualizarPlanilha(sheet,ss.getSheetByName('Formas de Pagamento'));
+    return {sucesso:true,mesRetorno:mes,diaCobranca:dia,registroId:id,compraId:compraId};
+  },false);
+}
+// FIM MODULO RETOMAR-FIXO GERADO
