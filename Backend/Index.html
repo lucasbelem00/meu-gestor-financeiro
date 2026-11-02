@@ -164,7 +164,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     .btn-periodo-gestor.controle{width:32px;height:32px}
     .btn-periodo-gestor.controle svg{width:18px;height:18px}
     .barra-periodo-gestor{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-    .controle-periodo-select{height:32px;font-size:12px;padding:0 10px;min-width:0}
+    .navegacao-periodo-gestor{display:flex;align-items:center;justify-content:center;gap:8px;max-width:100%;min-width:0}
+    .seletores-periodo-gestor{display:flex;align-items:center;gap:8px;min-width:0}
+    .controle-periodo-select{height:32px;font-size:12px;padding:0 10px;min-width:0;text-align:center;text-align-last:center}
     .controle-periodo-pdf{height:32px;font-size:12px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
     @media(hover:hover){.btn-periodo-gestor:enabled:hover{background:#334155}}
   </style>
@@ -616,12 +618,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span>
           </div>
           <div class="barra-periodo-gestor w-full sm:w-auto no-print">
+            <div class="navegacao-periodo-gestor">
             <button id="btnMesPrev" type="button" aria-label="Ir para o mês anterior disponível" title="Mês anterior disponível" onclick="mudarMesRelatorio(-1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
-            <div class="flex flex-1 sm:flex-none gap-2">
+            <div class="seletores-periodo-gestor">
               <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
               <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
             </div>
             <button id="btnMesNext" type="button" aria-label="Ir para o próximo mês disponível" title="Próximo mês disponível" onclick="mudarMesRelatorio(1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
             <button onclick="gerarPDFExecutivo('mensal')" class="controle-periodo-pdf bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition gap-1">📄 PDF Executivo</button>
           </div>
         </div>
@@ -724,11 +728,17 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     <!-- ABA 4: ANUAL COM RANKINGS CLICÁVEIS PARA AUDITORIA -->
     <div id="view-anual" class="hidden space-y-6 bg-[#0b1120]">
       <div class="card-glass p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2>
+        <div class="flex flex-wrap items-center gap-2 min-w-0">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2">📆 Balanço Anual (Pessoal)</h2>
+          <span id="anual-badge-comparacao" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700" aria-live="polite">...</span>
+          <p id="anual-criterio-comparacao" class="w-full text-[10px] text-slate-400"></p>
+        </div>
         <div class="barra-periodo-gestor w-full sm:w-auto no-print">
+          <div class="navegacao-periodo-gestor">
           <button id="btnAnoPrev" aria-label="Ano anterior disponível" onclick="mudarAnoSimples(-1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
           <select id="selFiltroAnoSimples" onchange="carregarRelatorioAnual()" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
           <button id="btnAnoNext" aria-label="Próximo ano disponível" onclick="mudarAnoSimples(1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
           <button onclick="gerarPDFExecutivo('anual')" class="controle-periodo-pdf bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition gap-1">📄 PDF Executivo</button>
         </div>
       </div>
@@ -3333,7 +3343,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           <div class="flex justify-between items-start gap-2"><div class="min-w-0">
             <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${escaparHTML(l[0])}</div>
             <div class="text-white font-bold text-base mt-0.5 leading-tight break-words">${escaparHTML(l[1])}</div>
-            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHtml}</div>${detalheFechamentoAnualGestor(l[18])}
+            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHtml}</div>${detalheFechamentoAnualGestor(l[21]||l[18])}
           </div><div class="text-right shrink-0">
             <div class="${alertaPrazo?situacao.cor:corValorLancamentoGestor(l[9])} font-bold text-lg leading-tight tracking-tight">${escaparHTML(l[7])}</div>
             <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</div>
@@ -4327,10 +4337,14 @@ function definirPerfilCategoriaEditorGestor(c){for(const [id,v]of [['inpCatTipoG
 function htmlPerfilCategoriaGestor(c){return '<div class="flex flex-wrap gap-1.5 text-xs text-slate-300"><span class="bg-slate-900 rounded-md px-2 py-1">'+escaparHTML(rotuloPerfilGastoGestor(c.tipoGasto))+'</span><span class="bg-slate-900 rounded-md px-2 py-1">'+escaparHTML(c.prioridadeGasto?rotuloPerfilGastoGestor(c.prioridadeGasto):'Prioridade não definida')+'</span></div>';}
 function lerPerfilLancamentoGestor(modo){
   const tipo=document.getElementById('perfil-'+modo+'-tipo'),prioridade=document.getElementById('perfil-'+modo+'-prioridade');if(!tipo||!prioridade||tipo.dataset?.perfilGastoCampo!=='tipo'||prioridade.dataset?.perfilGastoCampo!=='prioridade')return undefined;
+  if(modo==='edicao'&&tipo.dataset.perfilGastoDisponivel==='false'&&![tipo,prioridade].some(e=>e.dataset.escolhaManual==='true'))return undefined;
   const p={};if(tipo.value!=='padrao')p.tipo=tipo.value;if(prioridade.value!=='padrao')p.prioridade=prioridade.value;
   return Object.keys(p).length?p:undefined;
 }
-function preencherPerfilLancamentoGestor(modo,p){for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-'+modo+'-'+campo);if(e)e.value=p?.[campo]||'';}}
+function preencherPerfilLancamentoGestor(modo,p){
+  const valido=p&&['','fixo','variavel'].includes(p.tipo)&&['','essencial','ajustavel'].includes(p.prioridade);
+  for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-'+modo+'-'+campo);if(e){e.value=valido?p[campo]:'';e.dataset.perfilGastoDisponivel=valido?'true':'false';delete e.dataset.escolhaManual;}}
+}
 function criarCamposPerfilLancamentoGestor(modo){
   const d=document.createElement('details');d.id='perfil-'+modo;d.className='rounded-xl border border-slate-700 p-3 space-y-3';
   const titulo=document.createElement('summary');titulo.textContent='Classificação do gasto';titulo.className='text-sm text-slate-200 cursor-pointer';d.append(titulo);
@@ -6016,7 +6030,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
         <div class="flex justify-between items-start"><div>
           <div class="text-[10px] text-slate-400 font-bold uppercase">${escaparHTML(l[0])}</div>
           <div class="text-white font-bold text-sm mt-0.5 leading-tight">${escaparHTML(l[1])}</div>
-          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHTML}</div>${detalheFechamentoAnualGestor(l[20])}
+          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHTML}</div>${detalheFechamentoAnualGestor(l[21]||l[20])}
         </div><div class="text-right flex flex-col items-end">
           <div class="${situacao.codigo==='vencido'?situacao.cor:corValorLancamentoGestor(l[9],l[18])} font-bold text-base tracking-tight">${escaparHTML(l[7])}</div>
           <span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${escaparHTML(rotuloStatusRecorrenciaGestor(situacao.codigo==='vencido'?situacao.texto:l[9]))}</span>
@@ -6179,6 +6193,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
     function carregarRelatorioAnual() {
       const ano = document.getElementById('selFiltroAnoSimples').value; if (!ano) return;
       const requisicao = ++requisicaoRelatorioAnual;
+      const badgeComparacao=document.getElementById('anual-badge-comparacao'),criterioComparacao=document.getElementById('anual-criterio-comparacao');
+      const classeComparacao='px-2.5 py-0.5 rounded-lg text-[10px] font-bold border ';
+      if(badgeComparacao){badgeComparacao.className=classeComparacao+'bg-slate-800 text-slate-400 border-slate-700';badgeComparacao.textContent='Carregando…';badgeComparacao.title='';}if(criterioComparacao)criterioComparacao.textContent='';
       ultimoRelatorioAnualCache = null;
       relatorioAnualPendente = false;
       atualizarEstadoSetasAnual();
@@ -6194,6 +6211,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         if (!res || requisicao !== requisicaoRelatorioAnual) return;
         res.periodoReferencia = String(ano);
         ultimoRelatorioAnualCache = res;
+        const comparacao=res.comparacaoAnterior;
+        if(badgeComparacao){const v=comparacao?.variacao;badgeComparacao.textContent=(v!=null&&v!==0?(v<0?'📉 ':'📈 '):'')+(comparacao?.texto||'Comparação indisponível');badgeComparacao.className=classeComparacao+(v==null||v===0?'bg-slate-800 text-slate-400 border-slate-700':v<0?'bg-emerald-500/15 text-emerald-400 border-emerald-500/30':'bg-rose-500/15 text-rose-400 border-rose-500/30');badgeComparacao.title=comparacao?.criterio||'Atualize o Apps Script para incluir a comparação.';}
+        if(criterioComparacao)criterioComparacao.textContent=comparacao?(comparacao.intervalo+' · mesmos meses dos dois anos'):'';
         document.getElementById('tabela-anual-cat').setAttribute('aria-busy', 'false');
         document.querySelectorAll('[onclick="gerarPDFExecutivo(\'anual\')"]').forEach(b => { b.disabled = false; });
 
@@ -6238,6 +6258,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         }
       }).catch(err => {
         if (requisicao !== requisicaoRelatorioAnual) return;
+        if(badgeComparacao){badgeComparacao.textContent='Não atualizado';badgeComparacao.className=classeComparacao+'bg-slate-800 text-slate-400 border-slate-700';}if(criterioComparacao)criterioComparacao.textContent='';
         relatorioAnualPendente = true;
         ultimoRelatorioAnualCache = null;
         const tabela = document.getElementById('tabela-anual-cat');
@@ -6321,6 +6342,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         nota('Maior gasto: ' + (e.maiorGasto || '-') + '. À vista / 1x: ' + (e.aVistaValor || moeda(0)) + '; parcelados e fixos: ' + (e.rigidoValor || moeda(0)) + '.');
       } else {
         indicadores([['Total pessoal no ano', d.total || moeda(0), [109, 40, 217]], ['Média dos meses com gastos', d.media || moeda(0), [3, 105, 161]], ['Lançamentos pessoais', d.qtdTransacoes || 0, [4, 120, 87]]]);
+        if(d.comparacaoAnterior){titulo('Comparação com o ano anterior');nota(d.comparacaoAnterior.texto+'. '+d.comparacaoAnterior.criterio);nota('Total comparado: '+moeda(d.comparacaoAnterior.atualRaw)+' | Base anterior: '+moeda(d.comparacaoAnterior.anteriorRaw));}
         nota('Mês com maior gasto: ' + (d.maiorMes || '-') + '. Mês com menor gasto (entre os meses com registros): ' + (d.menorMes || '-') + '.');
         const comp = d.composicao || {};
         nota('À vista / 1x: ' + (comp.aVistaValor || moeda(0)) + ' (' + (comp.aVistaPct || 0) + '%). Parcelados e fixos: ' + (comp.rigidoValor || moeda(0)) + ' (' + (comp.rigidoPct || 0) + '%).');
@@ -9893,7 +9915,7 @@ function situacaoProtecaoLegivelGestor(s){
   return {protecao:'Proteção automática: '+(!s.ativo?'desativada':s.rotinaInstalada===true?'ativada':s.rotinaInstalada===false?'precisa reativar o agendamento':'agendamento não verificado'),anual:'Organização anual: '+(s.organizacaoAnual===true?'ativada':'desativada'),pdf:'PDFs automáticos: '+(s.pdfAutomatico===true?'ativados':'desativados')};
 }
 function detalheFechamentoAnualGestor(estado){
-  if(!estado)return '';
+  if(!estado||typeof estado!=='object'||Array.isArray(estado)||!Number.isInteger(estado.ano)||estado.ano<1900||estado.ano>9999)return '';
   const titulo='Ano '+estado.ano+' · '+(estado.incluidoDepois?'incluído após fechamento':estado.alteradoDepois?'atualizado após fechamento':'retrato preservado');
   const texto=estado.incluidoDepois?'Este registro foi incluído depois do fechamento. A planilha fechada permanece preservada.':'No fechamento: '+formatBRL(estado.pagoBancoNoFechamento||0)+' pagos ao banco'+(estado.recebidoNoFechamento===null?'':estado.recebidoNoFechamento?' · recebido da pessoa':' · ainda a receber da pessoa')+'. Os valores e a situação atuais aparecem neste cartão. Movimentos posteriores ficam vinculados no controle.';
   return '<details class="text-xs text-slate-300 mt-2"><summary class="cursor-pointer py-1">'+escaparHTML(titulo)+'</summary><p class="pt-1">'+escaparHTML(texto)+'</p></details>';

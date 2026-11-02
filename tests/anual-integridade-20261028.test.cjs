@@ -96,7 +96,9 @@ test('backup identifica fechamento mesmo sem alteração dos valores efetivos',(
  const b=JSON.parse(a.arquivos.get(depois.arquivoId).texto);assert.equal(b.anos.find(e=>e.ano===2026).estado,'FECHADO');assert.equal(api(a,'obterRelatorioMes','12/2026').kpis.total,'R$ 20,00');
 });
 test('consulta mostra situação preservada e atualização posterior sem alterar o gasto',()=>{
- const a=antigo();fechar(a);const antes=api(a,'obterRelatorioMes','12/2025').lancamentos[0][20];assert.equal(antes.ano,2025);assert.equal(antes.alteradoDepois,false);assert.equal(antes.pagoBancoNoFechamento,0);
- pagar(a);const depois=api(a,'obterRelatorioMes','12/2025').lancamentos[0][20];assert.equal(depois.alteradoDepois,true);assert.equal(depois.pagoBancoNoFechamento,0);assert.equal(api(a,'obterRelatorioMes','12/2025').kpis.total,'R$ 80,00');
+ const a=antigo();fechar(a);const antes=api(a,'obterRelatorioMes','12/2025').lancamentos[0][21];assert.equal(antes.ano,2025);assert.equal(antes.alteradoDepois,false);assert.equal(antes.pagoBancoNoFechamento,0);
+ pagar(a);const depois=api(a,'obterRelatorioMes','12/2025').lancamentos[0][21];assert.equal(depois.alteradoDepois,true);assert.equal(depois.pagoBancoNoFechamento,0);assert.equal(api(a,'obterRelatorioMes','12/2025').kpis.total,'R$ 80,00');
  const emprestimo=api(a,'getDadosCompletos').emprestimos.itens[0];assert.equal(emprestimo.estadoAno.recebidoNoFechamento,false);assert.equal(emprestimo.estadoAno.alteradoDepois,true);
 });
+
+test('classificação e fechamento ocupam campos separados na Mensal e no Histórico',()=>{const a=ambienteProtecao(fixture([personal('Classificada antiga',80,'1/1','12/2025')]));a.ativar();const r=a.db.sheets['Lançamentos'].rows[1];a.ctx.definirPerfilGastoGestor_(r,{tipo:'fixo',prioridade:'essencial'});r[16]=a.ctx.hashRegistroGestor_(r);a.ctx.ativarOrganizacaoAnualWeb();fechar(a);const mensal=api(a,'obterRelatorioMes','12/2025').lancamentos[0],historico=api(a,'filtrarLancamentosWeb',{filtros:{mes:'12/2025'},offset:0,limite:50}).itens[0];for(const linha of [mensal,historico]){assert.equal(linha[20].tipo,'fixo');assert.equal(linha[20].prioridade,'essencial');assert.equal(linha[21].ano,2025);assert.equal(linha[21].alteradoDepois,false);}assert.equal(mensal[17],0);assert.equal(mensal[18],80);});

@@ -4,7 +4,7 @@ function situacaoProtecaoLegivelGestor(s){
   return {protecao:'Proteção automática: '+(!s.ativo?'desativada':s.rotinaInstalada===true?'ativada':s.rotinaInstalada===false?'precisa reativar o agendamento':'agendamento não verificado'),anual:'Organização anual: '+(s.organizacaoAnual===true?'ativada':'desativada'),pdf:'PDFs automáticos: '+(s.pdfAutomatico===true?'ativados':'desativados')};
 }
 function detalheFechamentoAnualGestor(estado){
-  if(!estado)return '';
+  if(!estado||typeof estado!=='object'||Array.isArray(estado)||!Number.isInteger(estado.ano)||estado.ano<1900||estado.ano>9999)return '';
   const titulo='Ano '+estado.ano+' · '+(estado.incluidoDepois?'incluído após fechamento':estado.alteradoDepois?'atualizado após fechamento':'retrato preservado');
   const texto=estado.incluidoDepois?'Este registro foi incluído depois do fechamento. A planilha fechada permanece preservada.':'No fechamento: '+formatBRL(estado.pagoBancoNoFechamento||0)+' pagos ao banco'+(estado.recebidoNoFechamento===null?'':estado.recebidoNoFechamento?' · recebido da pessoa':' · ainda a receber da pessoa')+'. Os valores e a situação atuais aparecem neste cartão. Movimentos posteriores ficam vinculados no controle.';
   return '<details class="text-xs text-slate-300 mt-2"><summary class="cursor-pointer py-1">'+escaparHTML(titulo)+'</summary><p class="pt-1">'+escaparHTML(texto)+'</p></details>';

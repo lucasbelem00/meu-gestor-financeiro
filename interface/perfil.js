@@ -5,10 +5,14 @@ function definirPerfilCategoriaEditorGestor(c){for(const [id,v]of [['inpCatTipoG
 function htmlPerfilCategoriaGestor(c){return '<div class="flex flex-wrap gap-1.5 text-xs text-slate-300"><span class="bg-slate-900 rounded-md px-2 py-1">'+escaparHTML(rotuloPerfilGastoGestor(c.tipoGasto))+'</span><span class="bg-slate-900 rounded-md px-2 py-1">'+escaparHTML(c.prioridadeGasto?rotuloPerfilGastoGestor(c.prioridadeGasto):'Prioridade não definida')+'</span></div>';}
 function lerPerfilLancamentoGestor(modo){
   const tipo=document.getElementById('perfil-'+modo+'-tipo'),prioridade=document.getElementById('perfil-'+modo+'-prioridade');if(!tipo||!prioridade||tipo.dataset?.perfilGastoCampo!=='tipo'||prioridade.dataset?.perfilGastoCampo!=='prioridade')return undefined;
+  if(modo==='edicao'&&tipo.dataset.perfilGastoDisponivel==='false'&&![tipo,prioridade].some(e=>e.dataset.escolhaManual==='true'))return undefined;
   const p={};if(tipo.value!=='padrao')p.tipo=tipo.value;if(prioridade.value!=='padrao')p.prioridade=prioridade.value;
   return Object.keys(p).length?p:undefined;
 }
-function preencherPerfilLancamentoGestor(modo,p){for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-'+modo+'-'+campo);if(e)e.value=p?.[campo]||'';}}
+function preencherPerfilLancamentoGestor(modo,p){
+  const valido=p&&['','fixo','variavel'].includes(p.tipo)&&['','essencial','ajustavel'].includes(p.prioridade);
+  for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-'+modo+'-'+campo);if(e){e.value=valido?p[campo]:'';e.dataset.perfilGastoDisponivel=valido?'true':'false';delete e.dataset.escolhaManual;}}
+}
 function criarCamposPerfilLancamentoGestor(modo){
   const d=document.createElement('details');d.id='perfil-'+modo;d.className='rounded-xl border border-slate-700 p-3 space-y-3';
   const titulo=document.createElement('summary');titulo.textContent='Classificação do gasto';titulo.className='text-sm text-slate-200 cursor-pointer';d.append(titulo);

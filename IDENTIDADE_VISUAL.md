@@ -82,6 +82,8 @@ Conferir fatura usa 📃, remetendo ao documento. 💳 identifica cartão/forma 
 
 ## Navegação por período
 
+O cabeçalho Anual traz a comparação com o ano anterior ao lado do título, quebrando naturalmente no celular. A legenda informa o intervalo: no ano vigente, janeiro até o mês atual contra os mesmos meses anteriores; em anos encerrados, os doze meses. Redução usa verde/📉, aumento rosa/📈, igualdade e ausência de base usam cinza. Anos futuros não recebem variação. O detalhamento do critério acompanha o indicador e o PDF anual.
+
 Os períodos usam chevrons SVG com traço arredondado, centralizados por inline-flex. Agenda e Horizonte mantêm botões de 44 × 44 px. Mensal e Anual usam 32 × 32 px, com seletores e PDF de mesma altura, agrupados e centralizados; em telas estreitas o grupo pode quebrar linha. Os controles auxiliares de mês dos formulários usam 26 × 22 px para harmonizar com o formulário. A classe btn-periodo-gestor concentra borda, fundo, foco de teclado, hover e estado desabilitado. Os ícones não dependem de fonte ou emoji e ficam ocultos para leitores de tela; cada botão possui nome acessível indicando a direção.
 
 ## Classificação e recorrências

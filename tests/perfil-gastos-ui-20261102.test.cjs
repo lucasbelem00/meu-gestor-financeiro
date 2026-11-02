@@ -33,3 +33,5 @@ test('resumo vazio informa ausência de gastos; versão antiga não deixa indica
 });
 
 test('opções zeradas permanecem legíveis mas não abrem filtro vazio',()=>{const a=tela();a.c.renderizarPerfilGastosPainelGestor({perfilGastos:{...resumo,tipo:{fixo:10000,variavel:0,naoClassificado:0}}});const box=a.mapa.get('perfilGastosPainelGestor'),grupo=box.children[3].children[0];assert.match(box.children[2].textContent,/filtrar no Histórico/);const vazio=grupo.children[3];assert.equal(vazio.disabled,true);vazio.onclick();assert.equal(a.pedidos.length,0);assert.equal(grupo.children[2].disabled,false);});
+
+test('resposta antiga com fechamento não vira classificação vazia ao salvar outra edição',()=>{const a=tela();a.c.criarCamposPerfilLancamentoGestor('edicao');a.c.preencherPerfilLancamentoGestor('edicao',{ano:2025});assert.equal(a.c.lerPerfilLancamentoGestor('edicao'),undefined);const tipo=a.mapa.get('perfil-edicao-tipo');tipo.value='variavel';tipo.onchange();assert.equal(a.c.lerPerfilLancamentoGestor('edicao').tipo,'variavel');a.c.preencherPerfilLancamentoGestor('edicao',null);assert.equal(a.c.lerPerfilLancamentoGestor('edicao'),undefined);});

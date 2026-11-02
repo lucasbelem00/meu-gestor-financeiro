@@ -265,6 +265,6 @@ function informarOrigemAnualResultadoGestor_(resultado,ctx){
   }
   const atuais=new Map();for(const nome of ['Lançamentos','Empréstimos'])for(const r of ctx.ss.abas[nome]?.valores.slice(1)||[])atuais.set(String(r[11]),r);
   function estado(id){const o=mapa.get(String(id)),r=atuais.get(String(id))||o?.r,e=o?.e||fechados.get(parseMesFat(r?.[8]).a);if(!e)return null;return {ano:e.ano,fechadoEm:e.fechadoEm,incluidoDepois:!o,alteradoDepois:!o||hashGestor_(r)!==hashGestor_(o.r),pagoBancoNoFechamento:o?valorPagoBancoGestor_(o.r,o.emprestimo):null,recebidoNoFechamento:o?.emprestimo?o.r[9]==='Recebido':null};}
-  function visitar(valor){if(!valor||typeof valor!=='object')return;if(Array.isArray(valor)){if(valor.length>=17&&typeof valor[13]==='string'){const e=estado(valor[13]);if(e)valor[valor.length>=19?20:18]=e;return;}valor.forEach(visitar);}else{if(valor.registroId){const e=estado(valor.registroId);if(e)valor.estadoAno=e;}for(const k of Object.keys(valor))if(k!=='estadoAno')visitar(valor[k]);}}
+  function visitar(valor){if(!valor||typeof valor!=='object')return;if(Array.isArray(valor)){if(valor.length>=17&&typeof valor[13]==='string'){const e=estado(valor[13]);if(e)valor[21]=e;return;}valor.forEach(visitar);}else{if(valor.registroId){const e=estado(valor.registroId);if(e)valor.estadoAno=e;}for(const k of Object.keys(valor))if(k!=='estadoAno')visitar(valor[k]);}}
   visitar(resultado);
 }
