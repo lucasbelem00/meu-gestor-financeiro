@@ -68,6 +68,8 @@ Títulos dos modais de edição usam ✏️: empréstimos, lançamentos, formas 
 
 ## Botões de ação
 
+Textos auxiliares pequenos em fundos escuros usam cinza slate-400, evitando slate-500 nos rótulos de 10 px. Ver tudo usa purple-300 sem transparência e as quantidades das tags usam indigo-300. Nos elementos apontados pela auditoria da Mensal, o contraste medido no CSS real ficou entre 5,71:1 e 8,28:1; isso verifica esses elementos, não substitui uma auditoria completa das telas e estados.
+
 O padrão é símbolo acompanhado de texto: ⚙️ Gerenciar (antes Organizar), ✏️ Editar, 🗑️ Excluir/Remover, ➕ Adicionar/Incluir/Lançar, 🧹 Limpar, 📋 Copiar, 🫴 Cobrar, 💰 Registrar recebimento, ➖ Registrar recebimento parcial, 🔁 Repetir, 💾 Salvar/Guardar e ↻ Atualizar. A engrenagem também identifica Gestão e ajustes: é o mesmo contexto de gestão, distinto da edição de um registro. ⚖️ identifica Comparar preços; 💵 identifica Composição da fatura.
 
 Em Empréstimos, o recebimento usa a linha principal; Editar e Excluir ficam na linha seguinte em duas colunas iguais. Nesse grupo de Empréstimos, os botões têm altura mínima de 44 px, texto centralizado e espaçamento consistente. Atalhos internos da Mensal e filtros usam dimensões compactas próprias do contexto; a regra de rótulos não impõe tamanho global. As cores continuam indicando a ação/situação.
