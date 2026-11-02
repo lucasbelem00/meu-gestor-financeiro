@@ -13,6 +13,10 @@ function sincronizarMotor(){
     if(!fonte.includes(inicio)||!fonte.includes(fim))throw Error('Marcador de competências não encontrado: '+nome);
     fs.writeFileSync(arquivo,fonte.slice(0,fonte.indexOf(inicio))+inicio+'\n'+fs.readFileSync(path.join(raiz,'shared/competencias.js'),'utf8').trim()+'\n'+fonte.slice(fonte.indexOf(fim)));
   }
+  const arquivoSituacoes=path.join(raiz,'interface/situacoes.js'),situacoes=fs.readFileSync(arquivoSituacoes,'utf8');
+  const inicioCalendario='// INICIO CALENDARIO BANCARIO GERADO',fimCalendario='// FIM CALENDARIO BANCARIO GERADO';
+  if(situacoes.split(inicioCalendario).length!==2||situacoes.split(fimCalendario).length!==2)throw Error('Calendário bancário ausente ou duplicado.');
+  fs.writeFileSync(arquivoSituacoes,situacoes.slice(0,situacoes.indexOf(inicioCalendario))+inicioCalendario+'\n'+fs.readFileSync(path.join(raiz,'shared/calendario-bancario.js'),'utf8').trim()+'\n'+situacoes.slice(situacoes.indexOf(fimCalendario)));
   const arquivo=path.join(raiz,'index.html');let html=fs.readFileSync(arquivo,'utf8');
   const logoInicio='<!-- INICIO ICONE GESTOR GERADO -->',logoFim='<!-- FIM ICONE GESTOR GERADO -->';
   if(html.includes(logoInicio)){
@@ -28,7 +32,7 @@ function sincronizarMotor(){
   }
   fs.writeFileSync(arquivo,html);
   const backend=path.join(raiz,'Backend/Code.gs');let codigo=fs.readFileSync(backend,'utf8');
-  for(const nome of ['perfil-gastos','retomar-fixo','pular-fixo','planejamento','datas-recuperacao','notas-backup','anual','apresentacao-anual','relatorios','ativacao']){
+  for(const nome of ['calendario-bancario','perfil-gastos','retomar-fixo','pular-fixo','planejamento','datas-recuperacao','notas-backup','anual','apresentacao-anual','relatorios','ativacao']){
     const fonteLocal=path.join(raiz,'shared',nome+'.js');if(!fs.existsSync(fonteLocal))continue;
     const ini='// INICIO MODULO '+nome.toUpperCase()+' GERADO',fimLocal='// FIM MODULO '+nome.toUpperCase()+' GERADO',conteudo=fs.readFileSync(fonteLocal,'utf8').trim();
     codigo=codigo.includes(ini)?codigo.slice(0,codigo.indexOf(ini))+ini+'\n'+conteudo+'\n'+codigo.slice(codigo.indexOf(fimLocal)):codigo+'\n'+ini+'\n'+conteudo+'\n'+fimLocal+'\n';

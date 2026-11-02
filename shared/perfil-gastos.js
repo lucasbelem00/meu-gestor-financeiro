@@ -5,7 +5,7 @@ function validarPerfilGastoGestor_(p){
   if(!p||typeof p!=='object'||Array.isArray(p)||!['','fixo','variavel'].includes(p.tipo)||!['','essencial','ajustavel'].includes(p.prioridade))throw Error('Confira o tipo e a prioridade do gasto.');
   return {tipo:p.tipo,prioridade:p.prioridade};
 }
-function lerPerfilGastoGestor_(r){
+function perfilRegistradoGastoGestor_(r){
   let texto=String(r[15]||'');
   for(let n=0;n<8;n++){
     const m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);if(!m)break;
@@ -14,11 +14,12 @@ function lerPerfilGastoGestor_(r){
     if(Object.prototype.hasOwnProperty.call(info,'perfilGasto'))return validarPerfilGastoGestor_(info.perfilGasto);
     texto=String(info.legado||'');
   }
-  return {tipo:'',prioridade:''};
+  return null;
 }
+function lerPerfilGastoGestor_(r){return perfilRegistradoGastoGestor_(r)||{tipo:'',prioridade:''};}
 function definirPerfilGastoGestor_(r,p){
   const perfil=validarPerfilGastoGestor_(p),texto=String(r[15]||''),m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);let info={legado:texto},prefixo='gestor-perfil-v1:';
-  const antigo=lerPerfilGastoGestor_(r);if(!perfil.tipo&&!perfil.prioridade&&!antigo.tipo&&!antigo.prioridade)return r;
+  const antigo=perfilRegistradoGastoGestor_(r);if(antigo&&!perfil.tipo&&!perfil.prioridade&&!antigo.tipo&&!antigo.prioridade)return r;
   if(m){prefixo=m[0];try{info=JSON.parse(texto.slice(prefixo.length));}catch(e){throw Error('O controle deste lançamento precisa de conferência antes de classificar.');}if(!info||typeof info!=='object'||Array.isArray(info))throw Error('Controle do lançamento inválido.');}
   info.perfilGasto=perfil;r[15]=prefixo+JSON.stringify(info);return r;
 }

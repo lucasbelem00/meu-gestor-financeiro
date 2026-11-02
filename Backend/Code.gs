@@ -736,6 +736,10 @@ function organizarAbaEmprestimos(empSheet) {
 }
 
 // Dividir Parcela de Empréstimo (Amigo pagou só a metade)
+function observacaoPagamentoParcialGestor_(texto){
+  const base=String(texto||'').trim().replace(/(?:\s*\(Pagamento Parcial\))+\s*$/i,'').trim();
+  return !base||/^Pagamento Parcial$/i.test(base)?'Pagamento Parcial':base+' (Pagamento Parcial)';
+}
 function dividirParcelaEmprestimoWebInterno_(dados) {
   const lock = obterLockGestor_();
   try {
@@ -783,7 +787,7 @@ function dividirParcelaEmprestimoWebInterno_(dados) {
       valorRecebido,
       mStr ? "'" + mStr : '',
       'Recebido',
-      String(d[10] || '') + ' (Pagamento Parcial)'
+      observacaoPagamentoParcialGestor_(d[10])
     ].concat([gerarIdGestor_(), r[12], 1, r[14], r[15], '', pagoBancoRecebido]);
 
     const prox = empSheet.getLastRow() + 1;
@@ -1052,7 +1056,7 @@ function moverParaEmprestimosWebInterno_(dados) {
       const valTot = extractNum(r[4]) || (valParc * infoParc.total);
       const jaPago = isStatusPago(d[9]);
 
-      return [
+      const novaLinha = [
         "'" + dtClean,
         pessoaFmt,
         d[1],
@@ -1065,6 +1069,9 @@ function moverParaEmprestimosWebInterno_(dados) {
         'A Receber',
         d[10] || ''
       ].concat([r[11], r[12], r[13], jaPago ? 'Pago' : 'Em Aberto', r[15], r[16], r[17] || 0]);
+      // Uma compra pessoal antiga sem classificação também deve voltar assim.
+      if(!perfilRegistradoGastoGestor_(r))definirPerfilGastoGestor_(novaLinha,{tipo:'',prioridade:''});
+      return novaLinha;
     });
 
     const proxEmp = Math.max(2, empSheet.getLastRow() + 1);
@@ -1129,7 +1136,7 @@ function moverParaGastosPessoaisWebInterno_(dados) {
       const pagoBanco = valorPagoBancoGestor_(r, true);
       if (String(d[9] || '').trim() === 'Recebido') throw new Error('Esta compra possui valores já recebidos. A transferência foi interrompida para preservar esses recebimentos. Confira o histórico e, se o recebimento foi um engano, use a ação explícita de desfazer antes de mover.');
 
-      return [
+      const novaLinha = [
         "'" + dtClean,
         d[2],
         d[3],
@@ -1142,6 +1149,10 @@ function moverParaGastosPessoaisWebInterno_(dados) {
         (r[14] === 'Pago' || centavosGestor_(pagoBanco) >= centavosGestor_(valParc)) ? 'Pago' : 'Em Aberto',
         tagsFmt
       ].concat([r[11], r[12], r[13], r[14] || 'Em Aberto', r[15], r[16], pagoBanco]);
+      // Desativa o prazo de devolução, preservando a classificação e o histórico técnico.
+      if(String(novaLinha[15]||'').startsWith('gestor-devolucao-v1:'))definirDataCombinadaGestor_(novaLinha,'');
+      if(!perfilRegistradoGastoGestor_(r))definirPerfilGastoGestor_(novaLinha,perfilPadraoCategoriaGestor_(ss,catFmt));
+      return novaLinha;
     });
 
     const proxLanc = Math.max(2, lancSheet.getLastRow() + 1);
@@ -1354,14 +1365,12 @@ function calcularAlertasVencimento_(formas, lancamentos, hoje) {
     const cartao = cartoes[chaveFormaGestor_(d[2])];
     const mes = limparApostrofo(d[8]);
     if (!cartao || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(mes)) return;
-    const partes = mes.split('/').map(Number);
-    const ultimoDia = new Date(partes[1], partes[0], 0).getDate();
-    const dia = Math.min(cartao.dia, ultimoDia);
-    const dias = Math.round((Date.UTC(partes[1], partes[0] - 1, dia) - hojeUTC) / 86400000);
+    const prazo=vencimentoFaturaBaseBancarioGestor(mes,cartao.dia);if(!prazo)return;
+    const dias=prazo.dia-hojeUTC/86400000;
     const valor = extractNum(item.raw[7]) - valorPagoBancoGestor_(item.raw, false);
     if (dias > 7 || valor <= 0) return;
     const chave = chaveFormaGestor_(cartao.nome) + '|' + mes;
-    if (!faturas[chave]) faturas[chave] = { forma: cartao.nome, mes: mes, data: pad2(dia) + '/' + mes, dias: dias, valorRaw: 0 };
+    if (!faturas[chave]) faturas[chave] = { forma: cartao.nome, mes: mes, data:prazo.data, dias:dias, valorRaw: 0 };
     faturas[chave].valorRaw += valor;
   });
   return Object.values(faturas).map(function (f) {
@@ -1701,7 +1710,7 @@ function getDadosCompletos() {
         let dt = r[0] instanceof Date ? Utilities.formatDate(r[0], getTimezone(), 'dd/MM/yyyy') : String(d[0]).replace(/^'/, '');
         let val = formatBRL(extractNum(r[7]));
         let resParc = resumoParcelasCompra[item.chaveCompraUnica] || null;
-        const itemHistorico=[dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];itemHistorico[20]=lerPerfilGastoGestor_(r);return itemHistorico;
+        const itemHistorico=[dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];return completarLinhaConsultaGestor_(itemHistorico,r,'historico',false);
       }).filter(Boolean).reverse();
     }
 
@@ -3192,12 +3201,17 @@ function calcularResumoParcelas(linhas) {
 }
 
 // modo 'historico': [..., linha(10), tags(11), resParc(12)]  |  modo 'relatorio': [..., tags(10), linha(11), resParc(12)]
+function completarLinhaConsultaGestor_(linha,raw,modo,arquivado){
+  while(linha.length<22)linha.push(null);
+  linha[modo==='relatorio'?19:17]=Boolean(arquivado);linha[20]=lerPerfilGastoGestor_(raw);linha[21]=null;
+  return linha;
+}
 function itemLancamento(l, resumo, modo) {
   const base = [l.data, l.d[1], l.d[2], l.d[3], l.d[4], l.d[5], l.parc, formatBRL(l.valor), l.mes, l.d[9]];
   const res = resumo[l.chave] || null;
   const item=(modo === 'relatorio' ? base.concat([l.tags, l.idx + 2, res]) : base.concat([l.idx + 2, l.tags, res])).concat([l.r[11], l.r[12], Number(l.r[13] || 1), l.r[14]]);
   const resultado=modo==='relatorio'?item.concat([valorPagoBancoGestor_(l.r,false),arred2(l.valor-valorPagoBancoGestor_(l.r,false))]):item;
-  if(l.arquivado)resultado[modo==='relatorio'?19:17]=true;resultado[20]=lerPerfilGastoGestor_(l.r);return resultado;
+  return completarLinhaConsultaGestor_(resultado,l.r,modo,l.arquivado);
 }
 
 function lerMetasCategorias() {
@@ -6733,7 +6747,7 @@ function validarPerfilGastoGestor_(p){
   if(!p||typeof p!=='object'||Array.isArray(p)||!['','fixo','variavel'].includes(p.tipo)||!['','essencial','ajustavel'].includes(p.prioridade))throw Error('Confira o tipo e a prioridade do gasto.');
   return {tipo:p.tipo,prioridade:p.prioridade};
 }
-function lerPerfilGastoGestor_(r){
+function perfilRegistradoGastoGestor_(r){
   let texto=String(r[15]||'');
   for(let n=0;n<8;n++){
     const m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);if(!m)break;
@@ -6742,11 +6756,12 @@ function lerPerfilGastoGestor_(r){
     if(Object.prototype.hasOwnProperty.call(info,'perfilGasto'))return validarPerfilGastoGestor_(info.perfilGasto);
     texto=String(info.legado||'');
   }
-  return {tipo:'',prioridade:''};
+  return null;
 }
+function lerPerfilGastoGestor_(r){return perfilRegistradoGastoGestor_(r)||{tipo:'',prioridade:''};}
 function definirPerfilGastoGestor_(r,p){
   const perfil=validarPerfilGastoGestor_(p),texto=String(r[15]||''),m=/^gestor-(?:perfil|serie|devolucao)-v1:/.exec(texto);let info={legado:texto},prefixo='gestor-perfil-v1:';
-  const antigo=lerPerfilGastoGestor_(r);if(!perfil.tipo&&!perfil.prioridade&&!antigo.tipo&&!antigo.prioridade)return r;
+  const antigo=perfilRegistradoGastoGestor_(r);if(antigo&&!perfil.tipo&&!perfil.prioridade&&!antigo.tipo&&!antigo.prioridade)return r;
   if(m){prefixo=m[0];try{info=JSON.parse(texto.slice(prefixo.length));}catch(e){throw Error('O controle deste lançamento precisa de conferência antes de classificar.');}if(!info||typeof info!=='object'||Array.isArray(info))throw Error('Controle do lançamento inválido.');}
   info.perfilGasto=perfil;r[15]=prefixo+JSON.stringify(info);return r;
 }
@@ -6785,3 +6800,31 @@ function correspondePerfilGastoGestor_(r,f){
   return p[f.perfilCampo]===(f.perfilValor==='naoClassificado'?'':f.perfilValor);
 }
 // FIM MODULO PERFIL-GASTOS GERADO
+
+// INICIO MODULO CALENDARIO-BANCARIO GERADO
+function diaSituacaoVisualGestor(texto){
+  const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(texto||''));if(!m)return null;
+  const a=+m[3],mes=+m[2],d=+m[1],data=new Date(Date.UTC(a,mes-1,d));
+  return a>=1900&&a<=2200&&data.getUTCFullYear()===a&&data.getUTCMonth()===mes-1&&data.getUTCDate()===d?data.getTime()/86400000:null;
+}
+function fimMesSituacaoVisualGestor(mes){const p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(String(mes||''));if(!p||+p[2]<1900||+p[2]>2200)return null;return Date.UTC(+p[2],+p[1],0)/86400000;}
+// Calendário nacional de pagamentos; horário reduzido não equivale a feriado.
+const feriadosBancariosCacheGestor=new Map();
+function feriadosBancariosGestor(ano){
+ if(feriadosBancariosCacheGestor.has(ano))return feriadosBancariosCacheGestor.get(ano);
+ const datas=new Map(),adicionar=(m,d,n)=>datas.set(Date.UTC(ano,m-1,d)/86400000,n);
+ for(const [m,d,n]of [[1,1,'Confraternização Universal'],[4,21,'Tiradentes'],[5,1,'Dia do Trabalho'],[9,7,'Independência'],[10,12,'Nossa Senhora Aparecida'],[11,2,'Finados'],[11,15,'Proclamação da República'],[12,25,'Natal']])adicionar(m,d,n);
+ if(ano>=2024)adicionar(11,20,'Consciência Negra');
+ const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1,pascoa=Date.UTC(ano,mes-1,dia)/86400000;
+ for(const [offset,nome]of [[-48,'Carnaval'],[-47,'Carnaval'],[-2,'Sexta-feira da Paixão'],[60,'Corpus Christi']])datas.set(pascoa+offset,nome);
+ feriadosBancariosCacheGestor.set(ano,datas);return datas;
+}
+function dataDiaBancarioGestor(dia){return new Date(dia*86400000).toISOString().slice(0,10).split('-').reverse().join('/');}
+function vencimentoFaturaBaseBancarioGestor(mes,vencimento){
+ const fim=fimMesSituacaoVisualGestor(mes),n=Number(vencimento);if(fim===null||!Number.isInteger(n)||n<1||n>31)return null;
+ const [m,a]=mes.split('/').map(Number),original=Date.UTC(a,m-1,Math.min(n,new Date(fim*86400000).getUTCDate()))/86400000;
+ let dia=original;const motivos=[];
+ for(let t=0;t<20;t++,dia++){const d=new Date(dia*86400000),feriado=feriadosBancariosGestor(d.getUTCFullYear()).get(dia),fimSemana=[0,6].includes(d.getUTCDay());if(!feriado&&!fimSemana)break;motivos.push(feriado||'Fim de semana');}
+ return {dia,original,data:dataDiaBancarioGestor(dia),dataOriginal:dataDiaBancarioGestor(original),motivo:Array.from(new Set(motivos)).join(' e ')};
+}
+// FIM MODULO CALENDARIO-BANCARIO GERADO

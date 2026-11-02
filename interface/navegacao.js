@@ -31,7 +31,7 @@ function iniciarRolagemNavegacaoGestor(){
 function concluirRolagemNavegacaoGestor(visita){
   const atual=()=>window.geracaoNavegacaoGestor===visita.geracao&&revisaoRolagemTopoGestor===visita.revisao;
   if(!atual())return;
-  document.getElementById('view-'+abaAtivaAtual)?.focus?.({preventScroll:true});
+  const destino=document.getElementById('view-'+abaAtivaAtual);if(document.activeElement!==destino)destino?.focus?.({preventScroll:true});
   zerarRolagemDocumentoGestor();atualizarBotaoTopoGestor();
   // Reaplica após o fechamento do Menu, foco e mudanças de altura do conteúdo.
   requestAnimationFrame(()=>{

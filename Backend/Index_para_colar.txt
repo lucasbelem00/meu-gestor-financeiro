@@ -232,7 +232,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </div>
 
   <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
-  <div id="modalMenuMobile" role="dialog" aria-modal="true" aria-labelledby="tituloCentralNavegacao" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
+  <div id="modalMenuMobile" role="dialog" aria-modal="true" aria-labelledby="tituloCentralNavegacao" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
     <div id="painelCentralNavegacao" class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
       <div id="cabecalhoCentralNavegacao" class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2 min-w-0">
@@ -498,11 +498,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <div>
               <div class="flex items-center justify-between mb-1.5">
                 <label for="selCat" class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Categoria</label>
-                <span id="visorMetaCategoria" class="text-[10px] font-bold text-slate-500 hidden px-2 py-0.5 bg-slate-800 rounded-lg border border-slate-700"></span>
               </div>
               <select id="selCat" onchange="atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white focus:border-blue-500 outline-none transition">
                 <option value="">Selecione...</option>
               </select>
+              <div id="infoMetaCategoria" class="hidden text-[10px] sm:text-[11px] font-semibold mt-1 sm:mt-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight sm:leading-snug"></div>
             </div>
           </div>
 
@@ -511,19 +511,24 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <div class="flex items-end h-[28px] mb-1.5">
                 <label for="inpValor" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Valor (R$)</label>
               </div>
-              <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 outline-none transition">
+              <input type="text" inputmode="decimal" id="inpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-emerald-400 font-bold focus:border-blue-500 outline-none transition">
+              <div id="linhaSugestoesValor" class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <button type="button" id="btnSugestaoUltimoValor" onclick="vibrar(); aplicarUltimoValorSugerido()" class="hidden h-6 inline-flex items-center text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-2 rounded-lg border border-amber-500/30 transition active:scale-95"></button>
+                <button type="button" id="btnDividirMetade" onclick="vibrar(); alternarMetadeValor()" class="h-6 inline-flex items-center justify-center text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 rounded border border-indigo-500/30 transition active:scale-95">÷2</button>
+              </div>
             </div>
 
             <div id="boxParc">
               <div class="flex items-end justify-between h-[28px] mb-1.5">
                 <label for="inpParc" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
-                <div class="flex gap-1.5">
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">3x</button>
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">6x</button>
-                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(12, 'novo')" class="text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 w-8 text-center py-0.5 rounded border border-indigo-500/30 transition active:scale-95">12x</button>
-                </div>
+
               </div>
               <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+<div class="flex gap-1 mt-1.5">
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">3x</button>
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">6x</button>
+                  <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(12, 'novo')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">12x</button>
+                </div>
             </div>
 
             <div id="boxParcIni" class="hidden">
@@ -533,21 +538,21 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
             </div>
           </div>
+          <p id="lblPreviewParcelas" class="hidden text-xs text-indigo-300 break-words" aria-live="polite"></p>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
               <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">Tags (Opcional)</label>
               <button type="button" id="btnGastoFixo" onclick="alternarGastoFixoUI()" class="text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-700 transition active:scale-95 flex items-center gap-1 shadow-sm">📌 Recorrente</button>
               <input type="checkbox" id="checkAssinatura" class="hidden">
-              <input type="checkbox" id="inpFixo" class="hidden">
             </div>
             <div class="relative">
-              <input type="text" id="inpTags" autocapitalize="none" list="listaTagsOpcionais" oninput="toggleBotaoLimpar('inpTags', 'btnLimparTags'); salvarRascunho()" placeholder="toque nas tags abaixo ou digite..." class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 outline-none transition">
+              <input type="text" id="inpTags" autocapitalize="none" list="listaTagsUI" oninput="toggleBotaoLimpar('inpTags', 'btnLimparTags'); salvarRascunho()" placeholder="toque nas tags abaixo ou digite..." class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl pl-4 pr-10 text-white focus:border-blue-500 outline-none transition">
               <button type="button" id="btnLimparTags" onclick="vibrar(); limparCampoEVoltarFoco('inpTags', 'btnLimparTags')" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white bg-slate-800 w-6 h-6 rounded-full items-center justify-center font-bold">✕</button>
             </div>
             <div id="chipsTagsNovo" class="flex flex-wrap gap-1.5 mt-2"></div>
             <button type="button" id="btnTagsFrequentes" onclick="aplicarTagsFrequentes()" class="hidden mt-2 max-w-full break-words text-left px-2.5 py-1 rounded-lg text-[10px] font-bold text-indigo-200 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 transition"></button>
-            <datalist id="listaTagsOpcionais"></datalist>
+            <datalist id="listaTagsUI"></datalist>
           </div>
 
           <div class="pt-2 w-full">
@@ -961,19 +966,20 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <div id="gridEmpValorParcelas" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-2">
               <div id="boxEmpValor" class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Valor Total (R$)</label>
-                <input type="text" inputmode="decimal" id="inpEmpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white font-bold focus:border-amber-500 outline-none">
+                <input type="text" inputmode="decimal" id="inpEmpValor" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this); atualizarPreviewParcEmp(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3.5 text-white font-bold focus:border-amber-500 outline-none">
               </div>
 
               <div id="boxEmpParc">
                 <div class="flex justify-between items-center mb-1">
                   <label class="text-[11px] font-bold text-slate-400 uppercase">Parcelas</label>
-                  <div class="flex gap-1">
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='3'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">3x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='6'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">6x</button>
-                    <button type="button" onclick="vibrar(); document.getElementById('inpEmpParc').value='12'; atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" class="w-8 text-center text-[9px] bg-slate-800 py-0.5 rounded text-slate-300 font-bold active:scale-95">12x</button>
-                  </div>
+
                 </div>
                   <input type="number" id="inpEmpParc" aria-label="Quantidade total de parcelas" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelasEmprestimo(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+<div class="flex gap-1 mt-1.5">
+                    <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'emp')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">3x</button>
+                    <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'emp')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">6x</button>
+                    <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(12, 'emp')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">12x</button>
+                  </div>
               </div>
 
               <div id="boxEmpParcIni" class="hidden">
@@ -986,6 +992,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 <input type="text" id="inpEmpObs" placeholder="Ex.: Devolver por transferência" oninput="salvarRascunhoEmp()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white outline-none focus:border-amber-500">
               </div>
             </div>
+            <p id="lblPreviewParcEmp" class="hidden text-xs text-amber-200 break-words" aria-live="polite"></p>
 
             <div class="pt-2 w-full">
               <button type="submit" id="btnSalvarEmp" onclick="vibrar()" class="w-full h-[54px] bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(245,158,11,0.3)] transition active:scale-95 flex justify-center items-center gap-2">💾 Registrar Empréstimo</button>
@@ -2848,15 +2855,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
     function selecionarSubFerramenta(sub) {
       ['emprestimos', 'rachadinha', 'simulador', 'calculadora', 'notas', 'precos'].forEach(id => {
-        const subview = document.getElementById('subview-' + id);
-        if (subview) { subview.classList.add('hidden'); subview.inert = true; subview.setAttribute('aria-hidden', 'true'); }
-        const btn = document.getElementById('btn-sub-' + id);
-        if (btn) { btn.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold text-slate-300 hover:text-white transition'; btn.setAttribute('aria-pressed','false'); }
+        const ativo=id===sub,subview=document.getElementById('subview-'+id),btn=document.getElementById('btn-sub-'+id);
+        if(subview){subview.classList.toggle('hidden',!ativo);if(subview.inert!==!ativo)subview.inert=!ativo;if(subview.getAttribute('aria-hidden')!==String(!ativo))subview.setAttribute('aria-hidden',String(!ativo));}
+        if(btn){const classe='flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold '+(ativo?'bg-blue-600 text-white shadow-md transition':'text-slate-300 hover:text-white transition');if(btn.className!==classe)btn.className=classe;if(btn.getAttribute('aria-pressed')!==String(ativo))btn.setAttribute('aria-pressed',String(ativo));}
       });
-      const subviewAtiva = document.getElementById('subview-' + sub);
-      if (subviewAtiva) { subviewAtiva.classList.remove('hidden'); subviewAtiva.inert = false; subviewAtiva.setAttribute('aria-hidden', 'false'); }
-      const btnAtivo = document.getElementById('btn-sub-' + sub);
-      if (btnAtivo) { btnAtivo.className = 'flex-1 whitespace-nowrap py-2.5 px-3 rounded-xl text-xs font-bold bg-blue-600 text-white shadow-md transition'; btnAtivo.setAttribute('aria-pressed','true'); const barra=btnAtivo.parentElement;if(barra)barra.scrollTo({left:barra.scrollLeft+btnAtivo.getBoundingClientRect().left-barra.getBoundingClientRect().left-(barra.clientWidth-btnAtivo.offsetWidth)/2,behavior:'instant'}); }
+      const btnAtivo=document.getElementById('btn-sub-'+sub),barra=btnAtivo?.parentElement;
+      if(barra){const centralizar=()=>{if(btnAtivo.getAttribute('aria-pressed')!=='true'||barra.scrollWidth<=barra.clientWidth)return;barra.scrollTo({left:barra.scrollLeft+btnAtivo.getBoundingClientRect().left-barra.getBoundingClientRect().left-(barra.clientWidth-btnAtivo.offsetWidth)/2,behavior:'instant'});};if(typeof requestAnimationFrame==='function')requestAnimationFrame(centralizar);else centralizar();}
       const nomesFerramentas = {emprestimos:'Empréstimos',rachadinha:'Dividir c/ Galera',simulador:'Simular Compra',calculadora:'Calculadora',notas:'Notas',precos:'Comparar preços'};
       const subtitulo = document.getElementById('subtituloMobileAba');
       if (subtitulo && nomesFerramentas[sub]) subtitulo.textContent = nomesFerramentas[sub];
@@ -2968,9 +2972,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       if (!lbl) return;
       const val = lerValorMoeda('inpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
-      if (qtd <= 1) lbl.textContent = 'À vista';
-      else if (val > 0) lbl.textContent = resumoParcelasExatasGestor(val,qtd);
-      else lbl.textContent = `${qtd}x`;
+      const mostrar=qtd>1&&val>0&&!document.getElementById('checkAssinatura')?.checked;
+      lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent=mostrar?resumoParcelasExatasGestor(val,qtd):'';
     }
 
     function atualizarLayoutParcelas() {
@@ -3250,13 +3253,13 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     }
 
     function limparFormularioNovoGasto() {
-      for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-novo-'+campo);if(e)e.value='padrao';}
       try {
         if (sessionStorage.getItem(estadoIntegracaoInterfaceGestor.PX_CHAVE_RESULTADO_INCERTO) === 'true' && !estadoIntegracaoInterfaceGestor.pxLiberandoLimpezaIncerta) {
           mostrarAviso('Confira antes de limpar', 'Primeiro confira o Histórico e escolha uma opção no aviso abaixo do formulário.');
           return;
         }
       } catch (e) {}
+      for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-novo-'+campo);if(e)e.value='padrao';}
       var f = estadoIntegracaoInterfaceGestor.pxEl('formLancamento'); if (f) f.reset();
       ['inpDesc', 'inpValor', 'inpTags', 'inpMesFat'].forEach(function (id) { var el = estadoIntegracaoInterfaceGestor.pxEl(id); if (el) el.value = ''; });
       estadoIntegracaoInterfaceGestor.pxEl('selForma').value = '';
@@ -3264,7 +3267,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       estadoIntegracaoInterfaceGestor.pxEl('inpParc').value = '1';
       estadoIntegracaoInterfaceGestor.pxEl('inpParcIni').value = '1';
       var chk = estadoIntegracaoInterfaceGestor.pxEl('checkAssinatura'); if (chk) chk.checked = false;
-      var chk2 = estadoIntegracaoInterfaceGestor.pxEl('inpFixo'); if (chk2) chk2.checked = false;
       var bf = estadoIntegracaoInterfaceGestor.pxEl('btnGastoFixo'); if (bf) bf.className = estadoIntegracaoInterfaceGestor.CLS_FIXO_OFF;
       valorOriginalAntesMetade = null;
       tagDivididoAutoAdicionada = false;
@@ -3369,6 +3371,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
 
     function repetirLancamentoHoje(desc, forma, cat, valorParcelaStr, tags) {
+      if(bloqueioFormularioRotinaGestor(false)){mostrarAviso('Há um envio em conferência','Confira Atividade antes de substituir o formulário.');return;}
       limparFormularioNovoGasto();
       document.getElementById('inpDesc').value = desc;
       document.getElementById('selForma').value = forma;
@@ -3380,7 +3383,8 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       atualizarRegrasForma();
       sincronizarChipsTags('novo');
       setAba('novo');
-      mostrarAviso('Pronto ⚡', 'Dados preenchidos com a data de hoje! Confira e clique em Lançar.');
+      salvarRascunho();
+      mostrarAviso('Pronto 🔁', 'Dados preenchidos com a data de hoje! Confira e clique em Lançar.');
     }
 
     function filtrarPorTagRapida(tag) {
@@ -3820,7 +3824,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       if (!lbl) return;
       const val = lerValorMoeda('inpEmpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpEmpParc')?.value, 10) || 1);
-      lbl.textContent = (qtd > 1 && val > 0) ? resumoParcelasExatasGestor(val,qtd) : `${qtd}x`;
+      const mostrar=qtd>1&&val>0;lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent=mostrar?resumoParcelasExatasGestor(val,qtd):'';
     }
 
     function atualizarLayoutParcelasEmprestimo() {
@@ -3862,6 +3866,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           boxObs.className = 'col-span-2 sm:col-span-1';
         }
       }
+      atualizarPreviewParcEmp();
     }
 
     function atualizarFaturaEmprestimo() {
@@ -4850,12 +4855,33 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // INICIO INTERFACE SITUACOES GERADA
 // Identidade visual de situações. Somente apresentação: não registra baixas.
+// INICIO CALENDARIO BANCARIO GERADO
 function diaSituacaoVisualGestor(texto){
   const m=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(texto||''));if(!m)return null;
   const a=+m[3],mes=+m[2],d=+m[1],data=new Date(Date.UTC(a,mes-1,d));
   return a>=1900&&a<=2200&&data.getUTCFullYear()===a&&data.getUTCMonth()===mes-1&&data.getUTCDate()===d?data.getTime()/86400000:null;
 }
 function fimMesSituacaoVisualGestor(mes){const p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(String(mes||''));if(!p||+p[2]<1900||+p[2]>2200)return null;return Date.UTC(+p[2],+p[1],0)/86400000;}
+// Calendário nacional de pagamentos; horário reduzido não equivale a feriado.
+const feriadosBancariosCacheGestor=new Map();
+function feriadosBancariosGestor(ano){
+ if(feriadosBancariosCacheGestor.has(ano))return feriadosBancariosCacheGestor.get(ano);
+ const datas=new Map(),adicionar=(m,d,n)=>datas.set(Date.UTC(ano,m-1,d)/86400000,n);
+ for(const [m,d,n]of [[1,1,'Confraternização Universal'],[4,21,'Tiradentes'],[5,1,'Dia do Trabalho'],[9,7,'Independência'],[10,12,'Nossa Senhora Aparecida'],[11,2,'Finados'],[11,15,'Proclamação da República'],[12,25,'Natal']])adicionar(m,d,n);
+ if(ano>=2024)adicionar(11,20,'Consciência Negra');
+ const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1,pascoa=Date.UTC(ano,mes-1,dia)/86400000;
+ for(const [offset,nome]of [[-48,'Carnaval'],[-47,'Carnaval'],[-2,'Sexta-feira da Paixão'],[60,'Corpus Christi']])datas.set(pascoa+offset,nome);
+ feriadosBancariosCacheGestor.set(ano,datas);return datas;
+}
+function dataDiaBancarioGestor(dia){return new Date(dia*86400000).toISOString().slice(0,10).split('-').reverse().join('/');}
+function vencimentoFaturaBaseBancarioGestor(mes,vencimento){
+ const fim=fimMesSituacaoVisualGestor(mes),n=Number(vencimento);if(fim===null||!Number.isInteger(n)||n<1||n>31)return null;
+ const [m,a]=mes.split('/').map(Number),original=Date.UTC(a,m-1,Math.min(n,new Date(fim*86400000).getUTCDate()))/86400000;
+ let dia=original;const motivos=[];
+ for(let t=0;t<20;t++,dia++){const d=new Date(dia*86400000),feriado=feriadosBancariosGestor(d.getUTCFullYear()).get(dia),fimSemana=[0,6].includes(d.getUTCDay());if(!feriado&&!fimSemana)break;motivos.push(feriado||'Fim de semana');}
+ return {dia,original,data:dataDiaBancarioGestor(dia),dataOriginal:dataDiaBancarioGestor(original),motivo:Array.from(new Set(motivos)).join(' e ')};
+}
+// FIM CALENDARIO BANCARIO GERADO
 function hojeSituacaoVisualGestor(hoje=new Date()){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
 function estiloSituacaoVisualGestor(codigo,texto){
   const concluido=['recebido','pago'].includes(codigo),atencao=['vencido','mesEncerrado'].includes(codigo),neutro=codigo==='vazio',hoje=codigo==='hoje';
@@ -4870,26 +4896,11 @@ function situacaoRecebimentoVisualGestor(item,hoje=new Date()){
   const fim=fimMesSituacaoVisualGestor(item.mesFatura);
   return fim!==null&&fim<atual?estiloSituacaoVisualGestor('mesEncerrado','Mês encerrado · A receber'):estiloSituacaoVisualGestor('pendente','A receber · Sem data combinada');
 }
-// Calendário nacional de pagamentos; horário reduzido não equivale a feriado.
-const feriadosBancariosCacheGestor=new Map();
-function feriadosBancariosGestor(ano){
- if(feriadosBancariosCacheGestor.has(ano))return feriadosBancariosCacheGestor.get(ano);
- const datas=new Map(),adicionar=(m,d,n)=>datas.set(Date.UTC(ano,m-1,d)/86400000,n);
- for(const [m,d,n]of [[1,1,'Confraternização Universal'],[4,21,'Tiradentes'],[5,1,'Dia do Trabalho'],[9,7,'Independência'],[10,12,'Nossa Senhora Aparecida'],[11,2,'Finados'],[11,15,'Proclamação da República'],[12,25,'Natal']])adicionar(m,d,n);
- if(ano>=2024)adicionar(11,20,'Consciência Negra');
- const a=ano%19,b=Math.floor(ano/100),c=ano%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1,pascoa=Date.UTC(ano,mes-1,dia)/86400000;
- for(const [offset,nome]of [[-48,'Carnaval'],[-47,'Carnaval'],[-2,'Sexta-feira da Paixão'],[60,'Corpus Christi']])datas.set(pascoa+offset,nome);
- feriadosBancariosCacheGestor.set(ano,datas);return datas;
-}
-function dataDiaBancarioGestor(dia){return new Date(dia*86400000).toISOString().slice(0,10).split('-').reverse().join('/');}
 function vencimentoFaturaBancarioGestor(forma,mes,vencimento,usarCorrecao=true){
- const fim=fimMesSituacaoVisualGestor(mes),n=Number(vencimento);if(fim===null||!Number.isInteger(n)||n<1||n>31)return null;
- const [m,a]=mes.split('/').map(Number),original=Date.UTC(a,m-1,Math.min(n,new Date(fim*86400000).getUTCDate()))/86400000;
- let dia=original;const motivos=[];
- for(let t=0;t<20;t++,dia++){const d=new Date(dia*86400000),feriado=feriadosBancariosGestor(d.getUTCFullYear()).get(dia),fimSemana=[0,6].includes(d.getUTCDay());if(!feriado&&!fimSemana)break;motivos.push(feriado||'Fim de semana');}
- const automatico=dia;
+ const base=vencimentoFaturaBaseBancarioGestor(mes,vencimento);if(!base)return null;
+ let dia=base.dia;const automatico=dia;
  if(usarCorrecao&&forma){try{const mapa=JSON.parse(localStorage.getItem('gestorVencimentosFaturasV1')||'{}'),data=mapa[JSON.stringify([forma,mes])],manual=diaSituacaoVisualGestor(data);if(manual!==null)dia=manual;}catch(e){/* Preferência ausente ou inválida: usa o calendário. */}}
- return {dia,original,automatico,data:dataDiaBancarioGestor(dia),dataOriginal:dataDiaBancarioGestor(original),manual:dia!==automatico,motivo:dia!==automatico?'Data informada pelo banco':Array.from(new Set(motivos)).join(' e ')};
+ return {...base,dia,automatico,data:dataDiaBancarioGestor(dia),manual:dia!==automatico,motivo:dia!==automatico?'Data informada pelo banco':base.motivo};
 }
 function situacaoBancoVisualGestor(item,hoje=new Date()){
   const total=Number(item.total)||0,pago=Number(item.pago)||0,saldo=Number.isFinite(item.saldo)?item.saldo:Math.max(0,total-pago);
@@ -5576,7 +5587,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
               lockClass = 'locked-card opacity-90';
             }
             const botaoEditar = `<button type="button" ${acaoHTML('abrirModalForma', [nomeSeguro, bancoSeguro, p.limiteTotal || '', p.fechamento || '', p.vencimento || ''])} class="text-blue-400 hover:text-white text-xs font-bold px-4 py-2 bg-blue-900/20 border border-blue-500/20 hover:bg-blue-600 rounded-xl transition">✏️ Editar</button>`;
-            botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoExcluir}${botaoEditar}</div>`;
+            botoesRow = `<div class="flex justify-end gap-2 mt-1 ${margemInterna}">${botaoEditar}${botaoExcluir}</div>`;
           }
 
           if(p.arquivado)botoesRow='<p class="text-xs font-bold text-slate-300">Arquivado · histórico e faturas preservados</p><button type="button" '+acaoHTML('reativarFormaRotinaGestor',[p.nome])+' class="rounded-lg border border-sky-400 p-2 text-sky-200 text-xs">▶️ Reativar</button>';
@@ -6968,7 +6979,6 @@ function aplicarParcelamentoRapido(qtd, contexto = 'novo') {
         el.value = qtd;
         if (contexto === 'novo') {
           atualizarLayoutParcelas();
-          salvarRascunho();
 
           // Magia da Auto-Tag #parcelado
           const inpTags = document.getElementById('inpTags');
@@ -6981,11 +6991,11 @@ function aplicarParcelamentoRapido(qtd, contexto = 'novo') {
               sincronizarChipsTags('novo');
             }
           }
+          salvarRascunho();
           mostrarAviso('Parcelado 💳', `Dividido em ${qtd}x com a tag #parcelado inserida.`);
         } else {
-          // Se for na aba Empréstimos
+          atualizarLayoutParcelasEmprestimo();
           salvarRascunhoEmp();
-          atualizarPreviewParcEmp();
         }
       }
     }
@@ -7305,44 +7315,10 @@ try {
       d1.className = 'hidden text-[11px] font-semibold mt-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 leading-snug';
       selForma.insertAdjacentElement('afterend', d1);
     }
-    // aviso da meta da categoria
-    var selCat = pxEl('selCat');
-    if (selCat && !pxEl('infoMetaCategoria')) {
-      var d2 = document.createElement('div');
-      d2.id = 'infoMetaCategoria';
-      d2.className = 'hidden text-[10px] sm:text-[11px] font-semibold mt-1 sm:mt-1.5 px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-900/90 border border-slate-800 leading-tight sm:leading-snug';
-      selCat.insertAdjacentElement('afterend', d2);
-    }
-    var velho = pxEl('visorMetaCategoria'); if (velho) velho.remove();
-
-    // sugestoes embaixo do campo Valor
     var inpValor = pxEl('inpValor');
-    if (inpValor && !pxEl('linhaSugestoesValor')) {
-      var linha = document.createElement('div');
-      linha.id = 'linhaSugestoesValor';
-      linha.className = 'flex flex-wrap items-center gap-1.5 mt-1.5';
-
-      var b1 = document.createElement('button');
-      b1.type = 'button'; b1.id = 'btnSugestaoUltimoValor';
-      b1.className = 'hidden h-6 inline-flex items-center text-[10px] font-bold bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-2 rounded-lg border border-amber-500/30 transition active:scale-95';
-      b1.onclick = function () { vibrar(); aplicarUltimoValorSugerido(); };
-
-      linha.appendChild(b1);
-      var btnMetade = document.createElement('button');
-      btnMetade.type = 'button'; btnMetade.id = 'btnDividirMetade';
-      btnMetade.onclick = function () { vibrar(); alternarMetadeValor(); };
-      btnMetade.textContent = '÷2';
-      btnMetade.className = CLS_METADE_OFF;
-      linha.appendChild(btnMetade);
-      inpValor.insertAdjacentElement('afterend', linha);
-    }
-
     // lista de autocompletar das tags
-    var dl = pxEl('listaTagsOpcionais');
-    if (dl) { dl.id = 'listaTagsUI'; }
     var inpTags = pxEl('inpTags');
     if (inpTags) {
-      inpTags.setAttribute('list', 'listaTagsUI');
       inpTags.addEventListener('input', function () { sincronizarChipsTags('novo'); });
     }
     if (inpValor) inpValor.addEventListener('input', function () { sincronizarChipsTags('novo'); });
@@ -7350,25 +7326,6 @@ try {
     // guarda o texto original dos botoes de salvar
     var bs = pxEl('btnSalvar'); if (bs) bs.dataset.rotulo = bs.textContent.trim();
     var be = pxEl('btnSalvarEmp'); if (be) be.dataset.rotulo = be.textContent.trim();
-  });
-
-  /* ------------------------------------------------------------------ 5 */
-  /* Atalhos 3x/6x/12x: agora ficam pequenos, ABAIXO do campo (nao cobrem o "Inicio") */
-  seguro('chipsParcelas', function () {
-    var cls = 'flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95';
-    var botoes = document.querySelectorAll('button[onclick*="aplicarParcelamentoRapido"], button[onclick*="inpEmpParc"]');
-    var grupos = [];
-    botoes.forEach(function (b) {
-      var w = b.parentElement;
-      if (grupos.indexOf(w) < 0) grupos.push(w);
-      b.className = cls;
-    });
-    grupos.forEach(function (w) {
-      var coluna = w.parentElement && w.parentElement.parentElement;
-      if (!coluna) return;
-      w.className = 'flex gap-1 mt-1.5';
-      coluna.appendChild(w);
-    });
   });
 
   /* ------------------------------------------------------------------ 7 */
@@ -7581,6 +7538,7 @@ try {
         var b = pxEl('btnAdicionarCat');
         if (b) { b.textContent = 'Adicionar'; b.classList.replace('bg-amber-500', 'bg-blue-600'); }
         pxEl('inpNovaCat').value = ''; pxEl('inpNovaMeta').value = '';
+        definirPerfilCategoriaEditorGestor({});
       }
       return origToggleCat();
     };
@@ -9608,7 +9566,7 @@ function iniciarRolagemNavegacaoGestor(){
 function concluirRolagemNavegacaoGestor(visita){
   const atual=()=>window.geracaoNavegacaoGestor===visita.geracao&&revisaoRolagemTopoGestor===visita.revisao;
   if(!atual())return;
-  document.getElementById('view-'+abaAtivaAtual)?.focus?.({preventScroll:true});
+  const destino=document.getElementById('view-'+abaAtivaAtual);if(document.activeElement!==destino)destino?.focus?.({preventScroll:true});
   zerarRolagemDocumentoGestor();atualizarBotaoTopoGestor();
   // Reaplica após o fechamento do Menu, foco e mudanças de altura do conteúdo.
   requestAnimationFrame(()=>{
