@@ -6466,7 +6466,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         titulo.textContent = alerta.forma + ' • ' + prazo;
         const detalhe = document.createElement('span');
         detalhe.className = 'block mt-1 text-[11px] text-slate-300';
-        detalhe.textContent = alerta.valor + ' a pagar ao banco • Fatura ' + alerta.mes + ' • ' + alerta.data + ' →';
+        detalhe.textContent = alerta.valor + ' a pagar ao banco • Fatura ' + alerta.mes + ' • ' + alerta.data;
         btn.append(titulo, detalhe);
         btn.onclick = () => irParaFaturaMensal(alerta.mes);
         lista.appendChild(btn);
