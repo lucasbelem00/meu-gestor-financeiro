@@ -84,6 +84,7 @@ function organizarPainelDiarioGestor(){
   const resumo=criar('section',null,'space-y-3');resumo.id='resumoMesPainelGestor';resumo.append(criar('h2','Seu mês','text-base font-bold text-white'));
   const total=document.getElementById('kpi-comp').parentElement;total.classList.add('col-span-2','sm:col-span-1');kpis.className='grid grid-cols-2 sm:grid-cols-3 gap-3';kpis.append(total,document.getElementById('kpi-aberto').parentElement,document.getElementById('kpi-pago').parentElement);if(geral)geral.remove();resumo.append(kpis);if(explicacao)resumo.append(explicacao);
   const atencao=criar('section',null,'space-y-3');atencao.append(criar('h2','O que precisa de atenção','text-base font-bold text-white'));for(const id of ['bannerVencimentoFatura','devolucoesPainelGestor']){const e=document.getElementById(id);if(e)atencao.append(e);}
+  const alertaProtecao=criar('div',null,'hidden');alertaProtecao.id='alertaProtecaoPainelGestor';alertaProtecao.hidden=true;atencao.append(alertaProtecao);
   const vazio=criar('p','Sem avisos de vencimento ou devolução nos próximos 7 dias.','text-xs text-slate-300');vazio.id='semAvisosPainelGestor';vazio.hidden=true;atencao.append(vazio);
   // O resumo geral de terceiros fica junto da ação; não repete um segundo banner.
   const banner=document.getElementById('bannerEmprestimosDash');if(banner){banner.style.display='none';banner.hidden=true;}

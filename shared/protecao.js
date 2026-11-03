@@ -528,3 +528,9 @@ function prepararArquivosRestauracaoProtecaoGestor_(abas,ss){
   const sh=ss.getSheetByName(ABA_ARQUIVOS_ANUAIS_GESTOR_)||ss.insertSheet(ABA_ARQUIVOS_ANUAIS_GESTOR_);
   sh.valores=[CAB_ARQUIVOS_ANUAIS_GESTOR_].concat(entradas.map(function(e){return [e.ano,e.id,e.hash,JSON.stringify(e.resumo),e.data,e.lote];}));sh.colunas=6;sh.alterados=Object.create(null);sh.valores.forEach(function(r,i){r.forEach(function(_,j){sh.alterados[i+':'+j]=true;});});
 }
+
+// Resumo leve: somente propriedades, sem abrir arquivos ou consultar gatilhos.
+function resumoAlertaProtecaoGestor_(){
+ try{const c=configProtecaoGestor_(),j=lerAtivacaoAnualGestor_();return {falhaRotina:Boolean(c.ultimoErro),falhaRelatorios:Boolean(c.erroRelatorios),falhaAtivacao:j?.estado==='ERRO',ultimoBackup:c.ultimoBackup?.data||null};}
+ catch(e){return {falhaConfiguracao:true};}
+}

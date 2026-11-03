@@ -127,3 +127,6 @@ Módulo 7: calcular 50,33 com acréscimo de 10%; conferir 55,36 no visor, histó
 
 
 Módulo 8: excluir item com concluídos ocultos e outro rascunho aberto; somente o escolhido sai e rascunho permanece. Cancelar confirmação não altera nada. Excluir o item editado avisa sobre o rascunho e só limpa após sucesso. Alterar campos durante confirmação deve invalidá-la. Conflito entre aparelhos deve preservar estado; resposta incerta não deve gerar segundo pedido. Meta reservada acima do objetivo mantém percentual real, barra até 100%.
+
+
+Proteção: estado saudável/desativado/em ativação não exibe alerta. Falha registrada exibe um único aviso no Painel; Conferir proteção abre detalhes. Após execução resolver a falha e Atualizar situação confirmar estado saudável, aviso desaparece. Falha na consulta não deve apagar aviso anterior.

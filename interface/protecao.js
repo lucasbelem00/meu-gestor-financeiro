@@ -1,3 +1,9 @@
+function renderizarAlertaProtecaoPainelGestor(s){
+ const box=document.getElementById('alertaProtecaoPainelGestor');if(!box)return;
+ const falha=Boolean(s&&(s.falhaRotina||s.falhaRelatorios||s.falhaAtivacao||s.falhaConfiguracao));box.replaceChildren();box.hidden=!falha;box.className=falha?'rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 space-y-2':'hidden';if(!falha)return;
+ const p=document.createElement('p');p.className='text-sm text-amber-200';p.textContent='Proteção automática precisa de atenção. Confira os detalhes do backup e dos arquivos anuais.';box.append(p);
+ const b=document.createElement('button');b.type='button';b.className='rounded-lg border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200';b.textContent='Conferir proteção';b.onclick=()=>abrirExportacaoDados();box.append(b);
+}
 // Interface da proteção de longo prazo; não instala rotinas sem ação explícita.
 function situacaoProtecaoLegivelGestor(s){
   const j=s.ativacaoAnual;if(j&&j.estado!=='CONCLUIDA')return {protecao:'Proteção automática: '+(s.rotinaInstalada?'ativada':'confira o agendamento'),anual:'Organização anual: '+(j.estado==='ERRO'?'precisa de conferência':j.interrompida?'aguardando retomada':j.estado==='AGENDADA'?'ativação agendada':'ativação em andamento'),pdf:'PDFs automáticos: aguardando conclusão da ativação'};
@@ -42,7 +48,7 @@ const renderDadosAntesProtecaoGestor=window.renderizarDados;
 window.renderizarDados=function(dados){
   const novo=Array.isArray(dados.arquivosAnuais)?dados.arquivosAnuais:[];
   if(JSON.stringify(novo)!==JSON.stringify(arquivosAnuaisUIProtecaoGestor)){geracaoArquivosUIProtecaoGestor++;emprestimosArquivoUIProtecaoGestor=[];chaveEmprestimosArquivoUIProtecaoGestor='';pedidoEmprestimosArquivoUIProtecaoGestor=null;}
-  arquivosAnuaisUIProtecaoGestor=novo;return renderDadosAntesProtecaoGestor(dados);
+  arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
 };
 const setAbaAntesArquivosProtecaoGestor=window.setAba;
 window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length)chamarFiltroBackend(false,false);return r;};
@@ -79,6 +85,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   function controles(){const j=ultimoStatus?.ativacaoAnual,executando=j&&['AGENDADA','EXECUTANDO'].includes(j.estado)&&!j.interrompida;consultar.disabled=ocupado;ativar.disabled=ocupado||ultimoStatus?.ativo===true&&ultimoStatus?.rotinaInstalada!==false;ativar.textContent=ultimoStatus?.ativo&&ultimoStatus?.rotinaInstalada===true?'Proteção automática ativada':'Ativar proteção automática';backup.disabled=ocupado||!ultimoStatus?.ativo||executando;manutencao.disabled=ocupado||!ultimoStatus?.ativo||executando;const completo=ultimoStatus?.organizacaoAnual===true&&ultimoStatus?.pdfAutomatico===true&&(!j||j.estado==='CONCLUIDA');anual.disabled=ocupado||!ultimoStatus?.ativo||completo||executando;anual.hidden=false;anual.textContent=executando?'Ativação em andamento…':completo?'Organização anual e PDFs ativados':j?'Retomar ativação anual e PDFs':'Ativar organização por ano e PDFs';}
   function exibir(s){
     ultimoStatus=s;lista.replaceChildren();
+    const alertaAtual={falhaRotina:Boolean(s.ultimoErro),falhaRelatorios:Boolean(s.erroRelatorios),falhaAtivacao:s.ativacaoAnual?.estado==='ERRO'};
+    if(typeof dadosRotinaPainelGestor!=='undefined'&&dadosRotinaPainelGestor)dadosRotinaPainelGestor.alertaProtecao=alertaAtual;
+    renderizarAlertaProtecaoPainelGestor(alertaAtual);
     clearTimeout(timerAtivacao);timerAtivacao=null;
     const j=s.ativacaoAnual;if(j&&j.estado!=='CONCLUIDA'){lista.append(criar('p',(j.erro?'Ativação precisa de conferência: '+j.erro:'Ativação: '+j.etapa+'. O Google executa em segundo plano; você pode fechar esta tela.'),'text-amber-200'));if(['AGENDADA','EXECUTANDO'].includes(j.estado)&&!j.interrompida)timerAtivacao=setTimeout(()=>{if(navigator.onLine&&!modal.classList.contains('hidden'))consultar.onclick();},5000);}
     const situacao=situacaoProtecaoLegivelGestor(s);estados.replaceChildren();for(const texto of Object.values(situacao))estados.append(criar('p',texto));

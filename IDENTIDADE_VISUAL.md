@@ -117,3 +117,5 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Calculadora: resultados visíveis e copiados usam até duas casas decimais; precisão interna preservada. Conferir extrato: seção “Possíveis correspondências — datas próximas” separada dos candidatos estritos e das ambiguidades, com aviso de revisão manual e preservação das diferenças.
 
 - Planejamento: Excluir à direita de Editar, com ícone de lixeira e cor de exclusão; confirmação identifica o item e distingue rascunho do item excluído de campos preservados.
+
+- Painel: aviso compacto âmbar de proteção somente para falhas registradas, sem popup; botão Conferir proteção abre detalhes. Estado normal não ocupa espaço.

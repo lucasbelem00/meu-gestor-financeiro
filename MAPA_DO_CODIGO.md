@@ -204,3 +204,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Módulo 7: interface/usabilidade.js formata histórico/cópia da calculadora em até duas casas, preservando precisão interna. interface/conferencia.js calcula proximos por índices de data/valor e renderiza sugestões sem alterar candidatos, pagamentos ou itens sem correspondência.
 
 - Planejamento: excluirItemPlanejamentoGestor (interface/planejamento.js) confirma e remove por ID da lista integral; enviarPlanejamentoGestor recebe preservarEditor opcional para exclusões que não envolvem o rascunho aberto. Fluxos antigos mantêm comportamento padrão.
+
+- Proteção no Painel: resumoAlertaProtecaoGestor_ em shared/protecao.js compõe flags leves da carga getDadosCompletos; renderizarAlertaProtecaoPainelGestor em interface/protecao.js controla aviso e acesso aos detalhes, atualizado também pela consulta de situação.
