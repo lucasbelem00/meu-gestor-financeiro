@@ -150,3 +150,5 @@ Complementa os passos anteriores; não substitui suas instruções. A numeraçã
 | [ ] | 10 — Backup/anual | Em cópia descartável: exportar/restaurar e conferir totais, testar pendência anterior à restauração, retomada e virada anual; conferir aviso de falha e resolução. |
 
 Depois dos testes individuais, executar um fluxo integrado: cadastrar → parcelar/dividir → pagar banco/receber pessoa → consultar relatórios → exportar → restaurar em cópia descartável → conferir novamente. Repetir parte do fluxo em dois aparelhos e com interrupção de rede. Não provocar falhas de armazenamento nem mudar o ano da base definitiva para testar.
+
+Novo: informar R$ 250 em 3 parcelas e conferir 1ª de R$ 83,34 e demais 2 de R$ 83,33. Início 2 deve mostrar somente duas de R$ 83,33. Clicar em À vista deve ocultar Início, retornar ambos os campos a 1 e preservar valor, descrição e tags; recarregar e conferir rascunho.

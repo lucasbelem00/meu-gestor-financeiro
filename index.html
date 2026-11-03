@@ -535,10 +535,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <div class="flex items-end h-[28px] mb-1.5">
                 <label for="inpParcIni" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Início</label>
               </div>
-              <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="atualizarPreviewParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              <div class="mt-1.5"><button type="button" onclick="voltarPagamentoAVistaGestor()" class="w-full h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">⚡ À vista</button></div>
             </div>
           </div>
-          <p id="lblPreviewParcelas" class="hidden text-xs text-indigo-300 break-words" aria-live="polite"></p>
+          <p id="lblPreviewParcelas" class="hidden text-xs text-indigo-300 break-words whitespace-pre-line leading-relaxed" aria-live="polite"></p>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -3029,7 +3030,19 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       const val = lerValorMoeda('inpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
       const mostrar=qtd>1&&val>0&&!document.getElementById('checkAssinatura')?.checked;
-      lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent=mostrar?resumoParcelasExatasGestor(val,qtd):'';
+      lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent='';
+      if(mostrar){
+        const inicio=Number(document.getElementById('inpParcIni')?.value||1);
+        if(!Number.isInteger(inicio)||inicio<1||inicio>qtd){lbl.textContent='Informe um início entre 1 e '+qtd+'.';return;}
+        const centavos=Math.round(val*100),base=Math.floor(centavos/qtd),resto=centavos%qtd;
+        const maiores=Math.max(0,resto-inicio+1),menores=qtd-inicio+1-maiores;
+        const grupos=[maiores?(inicio===1&&maiores===1?'1ª de ':maiores+' de ')+formatBRL((base+1)/100):'',menores?(maiores?'demais ':'')+menores+' de '+formatBRL(base/100):''].filter(Boolean);
+        lbl.textContent='Divisão em '+qtd+' parcelas'+(inicio>1?' · A partir da parcela '+inicio+' de '+qtd:'')+'\n'+grupos.join(' · ');
+      }
+    }
+
+    function voltarPagamentoAVistaGestor(){
+      vibrar();document.getElementById('inpParc').value='1';document.getElementById('inpParcIni').value='1';atualizarLayoutParcelas();salvarRascunho();
     }
 
     function atualizarLayoutParcelas() {

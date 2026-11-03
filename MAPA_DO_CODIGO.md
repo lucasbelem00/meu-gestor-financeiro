@@ -233,3 +233,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Planejamento: excluirItemPlanejamentoGestor (interface/planejamento.js) confirma e remove por ID da lista integral; enviarPlanejamentoGestor recebe preservarEditor opcional para exclusões que não envolvem o rascunho aberto. Fluxos antigos mantêm comportamento padrão.
 
 - Proteção no Painel: resumoAlertaProtecaoGestor_ em shared/protecao.js compõe flags leves da carga getDadosCompletos; renderizarAlertaProtecaoPainelGestor em interface/protecao.js controla aviso e acesso aos detalhes, atualizado também pela consulta de situação.
+
+- Novo em index.html: voltarPagamentoAVistaGestor reutiliza atualizarLayoutParcelas e salvarRascunho; atualizarPreviewParcelas apresenta parcelas restantes sem alterar a divisão original em centavos.

@@ -43,8 +43,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v122` |
-| Última suíte completa documentada | 974 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v123` |
+| Última suíte completa documentada | 976 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -514,3 +514,9 @@ Validação do Módulo 8: quatro regressões novas; suíte completa com 971 apro
 Resumo leve alertaProtecao em getDadosCompletos lê propriedades, sem abrir arquivos ou consultar gatilhos. Indica falha registrada na rotina, relatórios, ativação anual ou configuração inválida; não alerta só por estar desativado ou em execução. Painel mostra um único aviso compacto com Conferir proteção, abrindo a área existente com detalhes e última cópia confirmada. Atualizar situação bem-sucedido atualiza o aviso; só desaparece quando o servidor não reporta falhas. Não há pop-ups, notificações externas nem sondagem adicional. Dados guardados no aparelho podem refletir uma consulta anterior até atualização online. Cache v122; requer frontend e Apps Script atualizados, sem nova função manual. Implementação local, sem publicação.
 
 Validação do aviso de proteção: três regressões novas; suíte completa com 974 aprovados, zero falhas. CSS e cópias sincronizados; dist preparado. Publicação e validação real pendentes.
+
+
+### Novo: retorno à vista e prévia de parcelas
+Botão ⚡ À vista abaixo de Início retorna quantidade e início a 1, usa layout existente para ocultar Início e salva rascunho. Preserva valor, descrição, tags e demais campos. Prévia em duas linhas distingue quantidade e valores, informando início posterior e somente parcelas restantes com distribuição original de centavos. Atualiza ao digitar início; início fora do intervalo exibe orientação. Sem mudanças no cálculo ou gravação do backend. Cache v123, implementação local.
+
+Validação de Novo/À vista: duas regressões novas; 976 testes aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado. Sem publicação remota ou alteração no backend financeiro; conferência visual no aparelho pendente.

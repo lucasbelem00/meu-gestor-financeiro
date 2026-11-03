@@ -119,3 +119,5 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Planejamento: Excluir à direita de Editar, com ícone de lixeira e cor de exclusão; confirmação identifica o item e distingue rascunho do item excluído de campos preservados.
 
 - Painel: aviso compacto âmbar de proteção somente para falhas registradas, sem popup; botão Conferir proteção abre detalhes. Estado normal não ocupa espaço.
+
+- Novo: ⚡ À vista abaixo de Início usa o estilo compacto dos atalhos de parcelas. Prévia discreta em duas linhas; Início e prévia ficam ocultos ao retornar a uma parcela.
