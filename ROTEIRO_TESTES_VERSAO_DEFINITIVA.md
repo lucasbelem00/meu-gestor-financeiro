@@ -1,6 +1,6 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
-Preparado em 30/10/2026; atualizado em 31/10/2026. Pacote local: protocolo 17, cache v71. A continuação está em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`; a correção das datas/pendência e a explicação das metas estão em `CORRECAO_DATAS_NOTAS_PLANEJAMENTO_20261031.md`.
+Preparado em 30/10/2026; orientação por módulos atualizada em 03/11/2026. Protocolo 17 e cache v71 identificavam o pacote original; para o estado atual, consultar CONTEXTO_COMPLETO_PARA_AUDITORIA_20261103.md. A continuação está em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`; a correção das datas/pendência e a explicação das metas estão em `CORRECAO_DATAS_NOTAS_PLANEJAMENTO_20261031.md`.
 
 Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os testes locais automatizados não substituem os passos na sua conta. Faça primeiro na **Cópia de Gestor de Gastos**; restauração e ensaio de virada usam uma cópia separada, descartável. Não precisa testar tudo de uma vez: siga a ordem e registre onde parou.
 
@@ -130,3 +130,23 @@ Módulo 8: excluir item com concluídos ocultos e outro rascunho aberto; somente
 
 
 Proteção: estado saudável/desativado/em ativação não exibe alerta. Falha registrada exibe um único aviso no Painel; Conferir proteção abre detalhes. Após execução resolver a falha e Atualizar situação confirmar estado saudável, aviso desaparece. Falha na consulta não deve apagar aviso anterior.
+
+
+## Matriz de validação por módulos
+
+Complementa os passos anteriores; não substitui suas instruções. A numeração é a do mapa de módulos, não a das seções deste roteiro. Registrar versão/ambiente, cenário, esperado, observado e evidência sem dados privados. Estados sugeridos: não testado, aprovado, falhou ou bloqueado. As caixas abaixo ficam vazias até execução prática.
+
+| Conferido | Módulo | Cenário mínimo na base de testes |
+| --- | --- | --- |
+| [ ] | 1 — Segurança/API | Pedido inválido é recusado sem gravação; conferir acesso e destino corretos, sem expor credenciais. |
+| [ ] | 2 — Offline/PWA | Criar offline, reconectar e repetir pedido sem duplicar; duas abas; revisar rejeitado e envio incerto. |
+| [ ] | 3 — Pessoais/recorrências | Parcelar com centavos, pagar parcialmente, editar/excluir abertos e conferir totais; pular e retomar recorrência. |
+| [ ] | 4 — Terceiros/divisão | Dividir R$ 100 em duas partes e três parcelas; conferir soma de cada fatura; receber parcialmente sem quitar banco. |
+| [ ] | 5 — Painel/Agenda | Limite abaixo/em/acima de 100%, datas de hoje/atrasadas e vencimento em dia não útil; separar registrado e previsto. |
+| [ ] | 6 — Relatórios/PDFs | Conferir Mensal/Anual/PDF com a mesma base; comparar meses equivalentes; mostrar metas zeradas sem filtro vazio. |
+| [ ] | 7 — Ferramentas | Percentual na calculadora e cópia; unidades equivalentes; extrato com diferença de dois e três dias; simulador sem gravar gasto. |
+| [ ] | 8 — Notas/Planejamento | Editar a mesma nota em dois aparelhos; proteger rascunho; excluir planejamento preservando concluídos ocultos e outro editor. |
+| [ ] | 9 — Configurações | Renomear cartão e categoria, arquivar, reordenar e conferir histórico/aliases; alterar padrão sem modificar classificações antigas. |
+| [ ] | 10 — Backup/anual | Em cópia descartável: exportar/restaurar e conferir totais, testar pendência anterior à restauração, retomada e virada anual; conferir aviso de falha e resolução. |
+
+Depois dos testes individuais, executar um fluxo integrado: cadastrar → parcelar/dividir → pagar banco/receber pessoa → consultar relatórios → exportar → restaurar em cópia descartável → conferir novamente. Repetir parte do fluxo em dois aparelhos e com interrupção de rede. Não provocar falhas de armazenamento nem mudar o ano da base definitiva para testar.

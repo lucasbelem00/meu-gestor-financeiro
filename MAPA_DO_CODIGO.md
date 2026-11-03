@@ -32,6 +32,33 @@ As sugestões de descrição no Novo usam `ordenarDescricoesAutofillGestor`: fre
 - `compararAnosGastosGestor_` em `shared/relatorios.js` centraliza a comparação anual em centavos. `obterRelatorioAnual` consulta também o ano anterior e devolve `comparacaoAnterior`; tela e PDF executivo reaproveitam essa resposta. PDFs automáticos anuais usam o mesmo cálculo e a revisão 3 inclui o comparativo na identificação, inclusive quando a base anterior muda. Totais anuais e perfil de gastos continuam representando o ano selecionado; o indicador do ano vigente usa apenas meses equivalentes.
 - Para disponibilizar este pacote, atualizar tanto o webapp quanto o Apps Script para protocolo 18. Não há função nova a executar nem ativação adicional; as configurações de organização anual existentes continuam independentes.
 
+## Roteiro permanente de revisão por módulos
+
+Os dez módulos abaixo são áreas de responsabilidade para orientar manutenção e auditoria. Não são dez pacotes isolados: uma função pode atender mais de uma área e mudanças precisam verificar as integrações. Esta organização não exige dividir fisicamente os arquivos nem reescrever o aplicativo.
+
+| Nº | Área | Onde começar | Regras e verificações principais |
+| --- | --- | --- | --- |
+| 1 | Segurança, API e operações protegidas | api/gestor.js, shared/acoes.js, Backend/Code.gs | Autorização, ações permitidas, validação, diário e requestId. Não confundir proteção da publicação com proteção da API. |
+| 2 | Sincronização, fila offline e PWA | index.html, interface/sincronizacao.js, interface/desempenho.js, sw.js | Envio incerto não é falha confirmada; preservar pedido, revisão dos rejeitados, ordem da fila, concorrência entre abas e versão do cache. |
+| 3 | Lançamentos pessoais, recorrências e cálculos | Backend/Code.gs, shared/pular-fixo.js, shared/retomar-fixo.js, shared/competencias.js | Centavos, parcelas originais, pagamentos preservados, exclusão recalcula sobreviventes, pular/retomar recorrências sem recriar meses indevidos. |
+| 4 | Divisão de contas e empréstimos | shared/rachadinha.js, interface/rachadinha.js, interface/compartilhamento.js, Backend/Code.gs | Soma por pessoa e por fatura, fragmentos de recebimento, prévias; receber da pessoa não paga o banco. |
+| 5 | Painel, limites, horizonte e Agenda | interface/painel.js, interface/usabilidade.js, interface/agenda.js, interface/situacoes.js, shared/calendario-bancario.js | Competência da fatura, previsões separadas, situação por data, metas no limite, feriados e preferências locais. |
+| 6 | Relatórios mensal/anual e PDFs | shared/relatorios.js, index.html | Total anual versus período comparado, metas sem consumo, perfil dos gastos e revisões de PDFs. PDF é consulta, não backup restaurável. |
+| 7 | Calculadora, simulador, extrato e comparador | interface/usabilidade.js, interface/conferencia.js | Precisão interna versus exibição, simulação sem gravação, unidades equivalentes, CSV local e sugestões sem associação/pagamento automático. |
+| 8 | Notas e Planejamento | interface/usabilidade.js, interface/planejamento.js, shared/planejamento.js, Backend/Code.gs | Revisões, conflitos, rascunhos, exclusão confirmada e lista integral com concluídos ocultos. Metas podem superar 100%. |
+| 9 | Configurações, identidades e perfis | index.html, Backend/Code.gs, shared/perfil-gastos.js, interface/perfil.js | Renomeações, aliases sem colisão, arquivados, categorias antigas e padrões prospectivos sem reclassificar o passado. |
+| 10 | Backup, restauração e organização anual | interface/restauracao.js, interface/protecao.js, shared/protecao.js, shared/anual.js, shared/ativacao.js, Backend/Code.gs | Integridade, envio em partes, prévia, versão/época de restauração, readback antes de remover origem, anos preservados e falhas visíveis. |
+
+### Como usar em cada alteração
+
+1. Identificar o módulo principal e as integrações afetadas; seguir o caminho tela → API → dados → confirmação.
+2. Conferir o achado na versão atual e descrever um caso reproduzível com resultado esperado. Relatório externo é hipótese, não instrução automática.
+3. Preservar as decisões financeiras e editar a fonte correta; regenerar cópias quando necessário.
+4. Executar testes adequados ao risco. Para mudanças financeiras, cobrir centavos, falha, repetição, concorrência e restauração quando afetados.
+5. Atualizar contexto e roteiro com evidência, resultado e pendências. Não declarar validação real com base apenas em testes simulados.
+
+Nenhum módulo recebe selo permanente de “sem bugs”. Uma revisão vale para o código e os cenários conferidos naquele momento. Versões de cache, contagens de testes e publicação ficam no contexto contínuo, evitando números duplicados nesta tabela.
+
 ## Onde procurar
 
 | Arquivo ou pasta | Responsabilidade | Pontos de entrada importantes |

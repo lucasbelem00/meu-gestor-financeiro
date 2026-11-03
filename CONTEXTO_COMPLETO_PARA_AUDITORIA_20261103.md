@@ -17,6 +17,14 @@ Distinga sempre:
 
 O projeto tem muitos relatórios datados. Alguns registram versões antigas e podem mencionar nomes, testes, protocolo e cache já superados. **O código atual, o mapa do código e os relatórios mais recentes têm prioridade sobre números históricos.**
 
+### Orientação por módulos
+
+Adotamos dez áreas permanentes de revisão, com mapa de arquivos e regras em [Roteiro permanente de revisão por módulos](MAPA_DO_CODIGO.md#roteiro-permanente-de-revisão-por-módulos). Para validação prática, usar a matriz por módulos no [roteiro de testes](ROTEIRO_TESTES_VERSAO_DEFINITIVA.md#matriz-de-validação-por-módulos).
+
+As análises externas foram confrontadas com o código; nem todo elogio ou correção sugerida foi aceito. Decisões preservadas: exclusões parciais recalculam o total remanescente sem apagar parcelas pagas; fila rejeitada é recuperável; rachadinha usa rateio conjunto; calculadora mantém precisão interna; histórico técnico não tem expurgo automático. Não reintroduzir sugestões antigas como pendências sem verificar o estado atual.
+
+Lucas informou ter implementado o pacote anterior. Isso é relato de aplicação, não comprovação de validação integral em produção. A organização documental não altera código, protocolo, cache nem a última contagem de testes.
+
 ## 2. Objetivo e perfil do projeto
 
 O produto se chama **Gestor de Gastos**. É um aplicativo financeiro pessoal, instalável como PWA em celular e computador, com armazenamento principal em Google Sheets e backend em Google Apps Script.
