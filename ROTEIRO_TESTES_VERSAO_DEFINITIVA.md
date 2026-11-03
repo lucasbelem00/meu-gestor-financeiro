@@ -45,6 +45,8 @@ Se uma gravação ficar sem confirmação, não cadastrar de novo com outra iden
 
 ## 4. Fixos, filtros, Painel e Agenda
 
+- [ ] Complemento de 03/11 (v118, 961 testes locais): com meta de categoria de R$ 1.000, conferir no formulário e termômetro valores de R$ 799,99, R$ 800, R$ 996, R$ 1.000 e R$ 1.000,01. Esperado: verde, âmbar, âmbar, âmbar e rosa, respectivamente. R$ 996 pode mostrar 100% por arredondamento, mas deve preservar a margem de R$ 4 e não indicar excesso. A ajuda do Painel deve explicar que os totais seguem a competência da fatura, incluindo pagos e em aberto. Não há alteração dos cálculos financeiros ou nova ativação de backend nesse complemento; conferir o frontend publicado.
+
 - [ ] Criar um fixo de teste no cartão e outro no Pix. Conferir competência, situação e valor pago conforme a forma. Recarregar duas vezes: não pode duplicar a ocorrência.
 - [ ] Conferir a próxima competência que já tenha outro registro: a ocorrência fixa deve respeitar a regra existente; não deve criar meses indefinidamente só por abrir a tela.
 - [ ] Programar alteração futura de valor e categoria. A legenda deve informar o período e somente o que mudou.

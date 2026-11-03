@@ -1,4 +1,12 @@
 // Classificação visual e preferências por lançamento; não altera pagamentos.
+// Meta de categoria é teto de gasto: atingir e ultrapassar são estados distintos.
+function estadoMetaCategoriaGestor(total,meta){
+  const centavos=v=>Math.round((Number(v)+Math.sign(Number(v))*Number.EPSILON)*100),gasto=centavos(total),limite=centavos(meta);
+  if(!Number.isSafeInteger(gasto)||gasto<0||!Number.isSafeInteger(limite)||limite<=0)return null;
+  const percentual=gasto/limite*100,estado=gasto>limite?'excedida':gasto===limite?'atingida':percentual>=80?'alerta':'normal';
+  const cores=estado==='excedida'?['bg-rose-500','text-rose-400']:estado==='normal'?['bg-emerald-500','text-emerald-400']:['bg-amber-400','text-amber-400'];
+  return {estado,restante:(limite-gasto)/100,percentual,percentualExibido:Math.round(percentual),largura:Math.max(0,Math.min(100,percentual)),corBg:cores[0],corTexto:cores[1],rotulo:{normal:'Dentro da meta',alerta:'Próximo do limite',atingida:'No limite da categoria',excedida:'Meta excedida'}[estado]};
+}
 function rotuloPerfilGastoGestor(valor){return {fixo:'Fixo',variavel:'Variável',essencial:'Essencial',ajustavel:'Ajustável',naoClassificado:'Não classificado'}[valor]||'Não definido';}
 function lerPerfilCategoriaEditorGestor(){return {tipoGasto:document.getElementById('inpCatTipoGasto')?.value||'',prioridadeGasto:document.getElementById('inpCatPrioridadeGasto')?.value||''};}
 function definirPerfilCategoriaEditorGestor(c){for(const [id,v]of [['inpCatTipoGasto',c.tipoGasto],['inpCatPrioridadeGasto',c.prioridadeGasto]]){const e=document.getElementById(id);if(e)e.value=v||'';}}

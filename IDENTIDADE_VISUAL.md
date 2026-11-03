@@ -40,6 +40,8 @@ As cores expressam o significado no contexto: verde para quitação, recebimento
 
 Na comparação mensal atual, variação menor ou igual a zero usa verde; aumento usa rosa; ausência de base usa cinza. O texto e a porcentagem acompanham o ícone.
 
+Metas de categorias usam a mesma regra no formulário Novo e no termômetro mensal: verde abaixo de 80%, âmbar de 80% até 100% inclusive e rosa somente acima da meta. Exatos 100% significam “No limite da categoria”, sem margem, não excesso nem celebração de aumento de gastos. O percentual arredondado é apenas apresentação; as cores usam valores em centavos e percentual não arredondado. A barra do limite pessoal respeita os mesmos limiares, mantendo seu azul de contexto abaixo do alerta. Essa regra não se aplica às metas de reserva/compra do Planejamento, que têm outro significado.
+
 Nas listas pessoais do Histórico, Mensal e Fixos, valores pendentes usam branco e quitados usam verde. Quando disponível, o saldo restante determina a quitação. Em um pagamento parcial, a parte paga usa verde e o restante segue a situação: âmbar dentro do prazo e laranja em atraso. Assinatura ativa usa selo violeta, distinto do estado de quitação. Os indicadores e gráficos mantêm suas cores próprias. A composição conserva ⚡ À vista/1x e 🔒 Parcelado/Fixo.
 
 As etiquetas do Histórico, da Mensal e de Empréstimos usam ⚡ À vista em compras 1/1, ➗ Parcela n/total e 📌 Fixo mensal. O infinito não aparece nessa etiqueta; `∞/∞` permanece como identificação técnica da recorrência nos dados. Esses símbolos descrevem a compra; o status indica se o pagamento está pendente ou quitado. ➖ Registrar recebimento parcial indica o abatimento por uma devolução efetivamente recebida, preservando o saldo restante.

@@ -46,7 +46,7 @@ As sugestões de descrição no Novo usam `ordenarDescricoesAutofillGestor`: fre
 | `interface/desempenho.js` | Leituras compartilhadas, cache transitório e gráficos visíveis | `criarCoordenadorLeiturasGestor`, `invalidarLeiturasDesempenhoGestor`, `obterMetricasDesempenhoGestor` |
 | `interface/faturas.js` | Consulta resumida, comparação com banco e confirmação do pagamento | `conferirPagamentoFaturaGestor`, `atualizarComparacaoFaturaGestor`, `confirmarPagamentoFaturaGestor` |
 | `interface/painel.js` | Ordem do Painel, lembretes pela data combinada e limite pessoal sem novas consultas | `organizarPainelDiarioGestor`, `listarDevolucoesPainelGestor`, `renderizarRotinaPainelGestor` |
-| `interface/perfil.js` | Padrões de classificação nas categorias, exceções por lançamento e Perfil dos gastos no Painel | `criarCamposPerfilLancamentoGestor`, `renderizarPerfilGastosPainelGestor`, `abrirPerfilHistoricoGestor` |
+| `interface/perfil.js` | Classificação, perfil dos gastos e estado visual comum das metas de categoria | `criarCamposPerfilLancamentoGestor`, `renderizarPerfilGastosPainelGestor`, `abrirPerfilHistoricoGestor`, `estadoMetaCategoriaGestor` |
 | `shared/perfil-gastos.js` | Validação, padrões por categoria, classificação registrada no lançamento, resumo em centavos e filtros | `perfilNovoLancamentoGestor_`, `definirPerfilGastoGestor_`, `resumoPerfilGastosGestor_`, `correspondePerfilGastoGestor_` |
 | `interface/agenda.js` | Calendário de consulta dos saldos bancários e devoluções com data; reaproveita os dados carregados | `compromissosAgendaGestor`, `renderizarAgendaGestor`, `moverMesAgendaGestor` |
 | `interface/planejamento.js` | Metas, compras planejadas, rascunho local, confirmação e envio ao simulador | `carregarPlanejamentoGestor`, `renderizarPlanejamentoGestor`, `selecionarItensPlanejamentoGestor`, `enviarPlanejamentoGestor` |
@@ -192,3 +192,9 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 `recebidosPorParcelaEmprestimoGestor_` e `resumoFragmentoEmprestimoGestor_` recompõem o recebido/total da parcela para a prévia, sem alterar os recebimentos. `textoPreviaValorEmprestimoGestor`, em `interface/compartilhamento.js`, apresenta o efeito da edição tanto individual quanto em lote. As proteções de pagamento e a regra de Pix foram preservadas.
 
 Última suíte completa: 949 testes aprovados; cache v117. Atualizar Apps Script e frontend. Protocolo 18, sem nova coluna nem ativação manual. Não há redistribuição retroativa de divisões já registradas. Nenhuma publicação remota executada nesta rodada.
+
+## Metas e competência do Painel — 03/11/2026
+
+`estadoMetaCategoriaGestor`, em `interface/perfil.js`, calcula o estado visual em centavos, sem usar o percentual arredondado para decidir alerta/excesso. `atualizarVisorMetaCategoria` e o termômetro mensal no HTML reaproveitam a função: verde abaixo de 80%, âmbar até 100% inclusive e rosa acima. O percentual arredondado permanece apenas na apresentação. `interface/painel.js` também usa o valor exato no alerta intermediário da barra de limite pessoal.
+
+`interface/rotina.js` explica a competência/mês da fatura nos indicadores, incluindo pagos e em aberto. As somas do backend e os critérios de período não mudaram. Cache v118; última suíte completa: 961 testes aprovados. Atualização de frontend, sem nova ativação no Apps Script e sem publicação remota nesta rodada.

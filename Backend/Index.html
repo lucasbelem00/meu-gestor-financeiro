@@ -3169,13 +3169,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
       const gastoAtual = (consumoCategoriasPorMesGlobal[mesFat] && consumoCategoriasPorMesGlobal[mesFat][catSel]) ? consumoCategoriasPorMesGlobal[mesFat][catSel] : 0;
       const meta = catConfig.meta;
-      const restante = meta - gastoAtual;
-      const pct = Math.round((gastoAtual / meta) * 100);
+      const situacao=estadoMetaCategoriaGestor(gastoAtual,meta);
+      if(!situacao){boxMeta.classList.add('hidden');return;}
+      const restante=situacao.restante,pct=situacao.percentualExibido;
 
       boxMeta.classList.remove('hidden');
       if (restante >= 0) {
-        const cor = pct >= 80 ? 'text-amber-400' : 'text-emerald-400';
-        boxMeta.innerHTML = `<span class="${cor}">🎯 Meta: ${formatBRL(gastoAtual)} / ${formatBRL(meta)} (${pct}%) • Restam <strong>${formatBRL(restante)}</strong></span>`;
+        const cor = situacao.corTexto;
+        boxMeta.innerHTML = `<span class="${cor}">🎯 Meta: ${formatBRL(gastoAtual)} / ${formatBRL(meta)} (${pct}%) • ${situacao.estado==='atingida'?'No limite da categoria • Sem margem':'Restam <strong>'+formatBRL(restante)+'</strong>'}</span>`;
       } else {
         boxMeta.innerHTML = `<span class="text-rose-400">⚠️ Meta excedida em ${formatBRL(Math.abs(restante))} • Total ${formatBRL(gastoAtual)}</span>`;
       }
@@ -4398,6 +4399,14 @@ document.addEventListener('DOMContentLoaded',iniciarPadraoBotoesGestor);
 
 // INICIO INTERFACE PERFIL GERADA
 // Classificação visual e preferências por lançamento; não altera pagamentos.
+// Meta de categoria é teto de gasto: atingir e ultrapassar são estados distintos.
+function estadoMetaCategoriaGestor(total,meta){
+  const centavos=v=>Math.round((Number(v)+Math.sign(Number(v))*Number.EPSILON)*100),gasto=centavos(total),limite=centavos(meta);
+  if(!Number.isSafeInteger(gasto)||gasto<0||!Number.isSafeInteger(limite)||limite<=0)return null;
+  const percentual=gasto/limite*100,estado=gasto>limite?'excedida':gasto===limite?'atingida':percentual>=80?'alerta':'normal';
+  const cores=estado==='excedida'?['bg-rose-500','text-rose-400']:estado==='normal'?['bg-emerald-500','text-emerald-400']:['bg-amber-400','text-amber-400'];
+  return {estado,restante:(limite-gasto)/100,percentual,percentualExibido:Math.round(percentual),largura:Math.max(0,Math.min(100,percentual)),corBg:cores[0],corTexto:cores[1],rotulo:{normal:'Dentro da meta',alerta:'Próximo do limite',atingida:'No limite da categoria',excedida:'Meta excedida'}[estado]};
+}
 function rotuloPerfilGastoGestor(valor){return {fixo:'Fixo',variavel:'Variável',essencial:'Essencial',ajustavel:'Ajustável',naoClassificado:'Não classificado'}[valor]||'Não definido';}
 function lerPerfilCategoriaEditorGestor(){return {tipoGasto:document.getElementById('inpCatTipoGasto')?.value||'',prioridadeGasto:document.getElementById('inpCatPrioridadeGasto')?.value||''};}
 function definirPerfilCategoriaEditorGestor(c){for(const [id,v]of [['inpCatTipoGasto',c.tipoGasto],['inpCatPrioridadeGasto',c.prioridadeGasto]]){const e=document.getElementById(id);if(e)e.value=v||'';}}
@@ -6257,13 +6266,10 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         let temMeta = false;
         categoriasTermometroMensalGestor(res).forEach(c => {
           if (c.meta > 0) {
+            const situacao=estadoMetaCategoriaGestor(c.total,c.meta);if(!situacao)return;
             temMeta = true;
-            const realPct = (c.total / c.meta) * 100;
-            const pct = Math.min(realPct, 100).toFixed(0);
-            let corBg = 'bg-emerald-500', corTexto = 'text-emerald-400';
-            if (realPct >= 75 && realPct < 100) { corBg = 'bg-amber-400'; corTexto = 'text-amber-400'; }
-            else if (realPct >= 100) { corBg = 'bg-rose-500'; corTexto = 'text-rose-400'; }
-            htmlMetas += `<button type="button" aria-pressed="false" data-filtro-mensal-tipo="categoria" data-filtro-mensal-valor="${escaparHTML(c.nome)}" ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="w-full rounded-xl border border-transparent p-2 text-left transition"><span class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-1 text-xs font-semibold mb-1"><span class="text-slate-300 break-words">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)} 🔍</span><span class="${corTexto} break-words sm:text-right">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></span><span class="block w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><span class="block ${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></span></span></button>`;
+            const realPct=situacao.percentual,pct=situacao.largura.toFixed(0),corBg=situacao.corBg,corTexto=situacao.corTexto;
+            htmlMetas += `<button type="button" aria-pressed="false" data-filtro-mensal-tipo="categoria" data-filtro-mensal-valor="${escaparHTML(c.nome)}" ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="w-full rounded-xl border border-transparent p-2 text-left transition"><span class="sr-only">${situacao.rotulo}. </span><span class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-1 text-xs font-semibold mb-1"><span class="text-slate-300 break-words">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)} 🔍</span><span class="${corTexto} break-words sm:text-right">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></span><span class="block w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><span class="block ${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></span></span></button>`;
           }
         });
         document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-400 text-center">Nenhuma categoria com meta e gasto neste mês.</p>';
@@ -8160,7 +8166,7 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
   principal.append(criar('h4',acima?'Acima do limite':atingido?'Limite atingido':'Restam no limite','text-sm font-bold '+cor),criar('p',formatBRL(Math.abs(r.margem)/100),'text-2xl font-bold '+cor));
   principal.append(criar('p',r.percentual+'% do limite utilizado'+(config.incluirPrevistos?' • inclui as previsões selecionadas.':'.'),'text-sm text-slate-200'));
   resumo.append(principal);
-  const barra=criar('div','','h-2.5 rounded-full bg-slate-800 overflow-hidden'),preenchido=criar('div','','h-full rounded-full '+(acima?'bg-rose-400':r.percentual>=80?'bg-amber-400':'bg-sky-400'));
+  const barra=criar('div','','h-2.5 rounded-full bg-slate-800 overflow-hidden'),preenchido=criar('div','','h-full rounded-full '+(acima?'bg-rose-400':r.total/r.limite>=0.8?'bg-amber-400':'bg-sky-400'));
   preenchido.style.width=Math.max(0,Math.min(100,r.percentual))+'%';barra.append(preenchido);barra.setAttribute('role','progressbar');barra.setAttribute('aria-label','Uso do limite pessoal mensal');barra.setAttribute('aria-valuemin','0');barra.setAttribute('aria-valuemax','100');barra.setAttribute('aria-valuenow',String(Math.max(0,Math.min(100,r.percentual))));barra.setAttribute('aria-valuetext',r.percentual+'% utilizado'+(acima?', acima do limite':''));resumo.append(barra);
   const grade=criar('div','','grid grid-cols-2 gap-3');
   for(const [titulo,valor]of [['Limite definido',r.limite],['Gastos registrados',r.registrado]]){const c=criar('div','','min-w-0 rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-1');c.append(criar('p',titulo,'text-xs text-slate-300'),criar('p',formatBRL(valor/100),'font-bold text-white break-words'));grade.append(c);}resumo.append(grade);
@@ -8981,7 +8987,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const painel=document.getElementById('painelDividirEmpCampos');if(painel){const resumo=document.createElement('p');resumo.id='previaRecebimentoRotina';resumo.className='text-xs text-amber-100 leading-relaxed';resumo.setAttribute('role','status');painel.prepend(resumo);document.getElementById('inpDividirEmpValor').setAttribute('aria-label','Valor recebido agora');}
   const form=document.getElementById('formEmprestimo');if(form){const nav=document.createElement('div');nav.className='flex gap-2 mb-3';nav.setAttribute('role','group');nav.setAttribute('aria-label','Modo de empréstimos');const consultar=document.createElement('button'),novo=document.createElement('button');for(const b of [consultar,novo]){b.type='button';b.className='flex-1 rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-sm font-bold text-slate-100';nav.append(b);}consultar.id='btnConsultarEmprestimos';novo.id='btnNovoEmprestimo';consultar.textContent='Consultar empréstimos';novo.textContent='Novo empréstimo';consultar.onclick=()=>alternarModoEmprestimosGestor('consulta');novo.onclick=()=>alternarModoEmprestimosGestor('novo',true);form.parentElement.before(nav);alternarModoEmprestimosGestor('consulta');}
   const explicacao=document.getElementById('horizonte-explicacao');if(explicacao){const d=document.createElement('details'),s=document.createElement('summary');d.className='text-xs text-slate-300 my-2';s.textContent='Entenda os valores';s.className='cursor-pointer py-2';explicacao.before(d);d.append(s,explicacao);const irma=d.nextElementSibling;if(irma?.tagName==='P')d.append(irma);}
-  const detalheKpi=document.createElement('details'),tituloKpi=document.createElement('summary'),regraKpi=document.createElement('p');detalheKpi.className='text-xs text-slate-300 mb-2';tituloKpi.id='escopoKpiRotina';tituloKpi.textContent='Seus gastos · Entenda os indicadores';tituloKpi.className='cursor-pointer py-2';regraKpi.textContent='Em aberto e Pago: registros pessoais deste mês. Total do mês: registros pessoais deste período, incluindo os já pagos. Total registrado: todos os meses e anos, incluindo parcelas futuras já gravadas. Exclui empréstimos, cancelamentos e valores apenas previstos.';regraKpi.className='mt-2';detalheKpi.append(tituloKpi,regraKpi);const kpi=document.getElementById('kpi-aberto')?.closest('section');if(kpi)kpi.before(detalheKpi);
+  const detalheKpi=document.createElement('details'),tituloKpi=document.createElement('summary'),regraKpi=document.createElement('p');detalheKpi.className='text-xs text-slate-300 mb-2';tituloKpi.id='escopoKpiRotina';tituloKpi.textContent='Seus gastos · Entenda os indicadores';tituloKpi.className='cursor-pointer py-2';regraKpi.textContent='Em aberto e Pago: valores pessoais da competência deste mês. Total do mês: seus gastos nessa competência (mês da fatura), incluindo valores pagos e em aberto. O mês da fatura pode ser diferente do mês da compra. Total registrado: todos os meses e anos, incluindo parcelas futuras já gravadas. Exclui empréstimos, cancelamentos e valores apenas previstos.';regraKpi.className='mt-2';detalheKpi.append(tituloKpi,regraKpi);const kpi=document.getElementById('kpi-aberto')?.closest('section');if(kpi)kpi.before(detalheKpi);
   const intervalo=document.createElement('p');intervalo.id='intervaloHorizonteRotina';intervalo.className='text-xs font-bold text-sky-200 mb-2';document.getElementById('rolagemHorizonteGestor')?.before(intervalo);
   const formas=document.getElementById('lista-formas');if(formas){const b=document.createElement('button');b.id='btnAlternarArquivadosGestor';b.type='button';b.hidden=!(formasGlobais||[]).some(f=>f.arquivado);b.className='rounded-xl border border-slate-600 px-3 py-2 mb-3 text-xs text-slate-200';b.textContent='Mostrar arquivados';b.setAttribute('aria-pressed','false');b.onclick=()=>{window.exibirArquivadosGestor=!window.exibirArquivadosGestor;renderListaFormas();};formas.before(b);}
   for(const [formId,id,texto]of [['formEmprestimo','inpEmpCombinada','Data combinada da primeira devolução (opcional; demais parcelas mensais)'],['modalEdicaoEmp','inpEdEmpCombinada','Data combinada de devolução (opcional)']]){const destino=document.getElementById(formId);if(!destino)continue;const l=document.createElement('label');l.className='block text-xs text-slate-300 mt-3';l.textContent=texto;const i=document.createElement('input');i.type='date';i.id=id;i.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';l.append(i);const f=destino.tagName==='FORM'?destino:destino.querySelector('form');const acao=f.querySelector('button[type="submit"]')?.parentElement;if(acao)acao.before(l);else f.append(l);i.onchange=()=>formId==='formEmprestimo'&&salvarRascunhoEmp();}

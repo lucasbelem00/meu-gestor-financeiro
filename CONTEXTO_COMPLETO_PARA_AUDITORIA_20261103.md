@@ -33,12 +33,12 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | --- | --- |
 | Repositório local | `C:\Users\lucas\OneDrive\Documentos\GitHub\meu-gestor-financeiro` |
 | Branch local | `New` |
-| Último commit observado | `6c0988d` — `Módulo 3 Gemini` (o ajuste seguinte de rachadinha ainda está no trabalho local) |
+| Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v117` |
-| Última suíte completa documentada | 949 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v118` |
+| Última suíte completa documentada | 961 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
-| Último pacote de correções | Parcelamento conjunto da rachadinha e prévia esclarecida de valores após recebimentos parciais |
+| Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
 Esses números representam o estado observado, não uma promessa para versões posteriores. Confira `git status`, `git log`, `sw.js` e os resultados dos comandos antes de continuar. Os testes não foram repetidos apenas para escrever este resumo.
 
@@ -356,7 +356,7 @@ A rodada mais recente analisou um relatório externo extenso e aplicou os achado
 
 Antes dessa rodada, foram corrigidos problemas de perfil nos rascunhos/backups, datas, classificação perdida em transferências, estados anuais indevidos (“Ano undefined”), ReferenceError na renderização do Histórico, layout do Painel/comparador, modais/Voltar, contraste e ordenação de sugestões por frequência. Consulte testes e relatórios, sem assumir que a lista de correções elimina toda possível regressão.
 
-Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. A revisão recuperável e ordenação da fila offline elevou a suíte a 926; o recálculo dos totais nas exclusões parciais, a 936. Com o parcelamento conjunto e a clareza dos fragmentos recebidos, a suíte completa passou a **949 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
+Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. A revisão recuperável e ordenação da fila offline elevou a suíte a 926; o recálculo dos totais nas exclusões parciais, a 936; o parcelamento conjunto e a clareza dos fragmentos, a 949. Com a padronização das metas e explicação do período, a suíte completa passou a **961 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
 
 **O próximo passo de liberação é atualizar/conferir a implantação de testes e executar os testes reais essenciais.** Não há autorização implícita para restaurar a planilha definitiva, remover proteção de produção ou apagar arquivos anuais.
 
@@ -395,6 +395,14 @@ Dez regressões novas cobrem exclusão individual, lote, exclusões sucessivas, 
 - A prévia de edição de empréstimo agora informa o valor já recebido preservado e o total recomposto da parcela, tanto no escopo individual quanto nas próximas a receber. No exemplo de R$ 40 recebidos e restante alterado de R$ 60 para R$ 70, mostra total de R$ 100 → R$ 110. A semântica do campo não mudou e os recebimentos continuam intactos. O plano em lote inclui os totais apresentados na assinatura; soma fragmentos pelo Compra ID, parcela e competência.
 - A regra de Pix não foi alterada: parte pessoal futura pode permanecer em aberto e o terceiro conserva banco pago, independentemente de A Receber. A adequação a financiamento/cheque especial continua uma discussão de produto separada; não confundir um Pix à vista com devolução parcelada e um financiamento real.
 - Validação: 13 regressões acrescentadas, incluindo 500 combinações num teste de conservação, 100 pessoas/600 parcelas, gravação/fatura, assinatura, reenvio após interrupção, desfazer, ano seguinte, recebimentos fragmentados e backend antigo. Suíte completa: 949 aprovados. Cache v117; protocolo 18 e colunas existentes preservados. Atualizar backend e frontend; sem função manual nova, sem publicação remota ou alteração das planilhas reais nesta rodada.
+
+### Metas e critério temporal do Painel — ajustes implementados localmente
+
+`estadoMetaCategoriaGestor`, em `interface/perfil.js`, centraliza o estado visual das metas de categoria, usando valores em centavos e percentual não arredondado. Formulário Novo e termômetro mensal usam verde abaixo de 80%, âmbar de 80% até 100% inclusive e rosa somente acima da meta. Exatos 100% mostram “No limite da categoria”; arredondar 99,6% para 100% não produz excesso nem elimina a margem real. A barra do limite pessoal também usa o percentual não arredondado no limiar de 80%, preservando sua identidade azul abaixo do alerta e a indicação de limite atingido.
+
+O Total do mês continua usando a competência da fatura e inclui registros pagos e em aberto; não é agrupado pela data efetiva do pagamento. A ajuda do Painel explica esse critério e que mês da compra e mês da fatura podem diferir. Não foi criado outro indicador nem alterada a agregação financeira. Uma regressão confirma que compra de dezembro com fatura em janeiro continua em janeiro mesmo depois de paga. Não chamar esse critério simplesmente de regime de caixa. Os alertas recalculados com correção manual continuam respeitando uma preferência local ao aparelho, não uma mudança sincronizada do contrato bancário.
+
+Validação: 12 regressões novas, suíte completa com 961 aprovados, zero falhas. Cache v118; mudanças de frontend e documentação, sem publicação remota nem função manual nova no Apps Script. A validação na implantação real continua pendente.
 
 Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
 

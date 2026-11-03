@@ -36,7 +36,7 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
   principal.append(criar('h4',acima?'Acima do limite':atingido?'Limite atingido':'Restam no limite','text-sm font-bold '+cor),criar('p',formatBRL(Math.abs(r.margem)/100),'text-2xl font-bold '+cor));
   principal.append(criar('p',r.percentual+'% do limite utilizado'+(config.incluirPrevistos?' • inclui as previsões selecionadas.':'.'),'text-sm text-slate-200'));
   resumo.append(principal);
-  const barra=criar('div','','h-2.5 rounded-full bg-slate-800 overflow-hidden'),preenchido=criar('div','','h-full rounded-full '+(acima?'bg-rose-400':r.percentual>=80?'bg-amber-400':'bg-sky-400'));
+  const barra=criar('div','','h-2.5 rounded-full bg-slate-800 overflow-hidden'),preenchido=criar('div','','h-full rounded-full '+(acima?'bg-rose-400':r.total/r.limite>=0.8?'bg-amber-400':'bg-sky-400'));
   preenchido.style.width=Math.max(0,Math.min(100,r.percentual))+'%';barra.append(preenchido);barra.setAttribute('role','progressbar');barra.setAttribute('aria-label','Uso do limite pessoal mensal');barra.setAttribute('aria-valuemin','0');barra.setAttribute('aria-valuemax','100');barra.setAttribute('aria-valuenow',String(Math.max(0,Math.min(100,r.percentual))));barra.setAttribute('aria-valuetext',r.percentual+'% utilizado'+(acima?', acima do limite':''));resumo.append(barra);
   const grade=criar('div','','grid grid-cols-2 gap-3');
   for(const [titulo,valor]of [['Limite definido',r.limite],['Gastos registrados',r.registrado]]){const c=criar('div','','min-w-0 rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-1');c.append(criar('p',titulo,'text-xs text-slate-300'),criar('p',formatBRL(valor/100),'font-bold text-white break-words'));grade.append(c);}resumo.append(grade);
