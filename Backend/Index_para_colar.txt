@@ -3161,6 +3161,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       }
     }
 
+    function ordenarDescricoesAutofillGestor(mapa) {
+      const numero=valor=>Number.isFinite(Number(valor))?Math.max(0,Number(valor)):0;
+      return Object.values(mapa||{}).filter(item=>item&&typeof item.original==='string'&&item.original.trim()).sort((a,b)=>numero(b.frequencia)-numero(a.frequencia)||numero(b.ultimaCompraEm)-numero(a.ultimaCompraEm)||a.original.localeCompare(b.original,'pt-BR',{sensitivity:'base'})||a.original.localeCompare(b.original,'pt-BR'));
+    }
     function checarAutopreenchimento() {
       atualizarSugestaoTagsFrequentes('');
       const descRaw = document.getElementById('inpDesc')?.value || '';
@@ -6591,7 +6595,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       const dl = document.getElementById('listaDescricoes');
       if (dl) {
         dl.innerHTML = '';
-        Object.values(dicionarioAutofill).forEach(item => { const option = document.createElement('option'); option.value = String(item.original || ''); dl.appendChild(option); });
+        ordenarDescricoesAutofillGestor(dicionarioAutofill).forEach(item => { const option = document.createElement('option'); option.value = String(item.original || ''); dl.appendChild(option); });
       }
 
       const dlTags = document.getElementById('listaTagsUI');

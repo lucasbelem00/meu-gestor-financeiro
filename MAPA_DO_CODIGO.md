@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Atualizado em 02/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
+Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -14,6 +14,8 @@ Atualizado em 02/11/2026. Este mapa descreve o pacote local de continuidade, pro
 `Tela → apiCall → proxy /api/gestor → doPost no Apps Script → regra financeira → planilha → confirmação → atualização da tela`.
 
 O diário da operação permite reconhecer um reenvio. Falta de resposta não significa que a gravação falhou: a operação pode estar na planilha e ainda precisar de confirmação.
+
+As sugestões de descrição no Novo usam `ordenarDescricoesAutofillGestor`: frequência de compras distintas, data da compra mais recente e ordem alfabética em português para desempate. `getDadosCompletos` acrescenta `frequencia` e `ultimaCompraEm` aos itens de `autofill`, sem mudar os campos usados para sugerir forma, categoria, valor ou tags. As parcelas de uma compra não multiplicam sua frequência. São reaproveitados os registros já usados pela memória de sugestões, sem consulta adicional ao servidor. Uma resposta antiga sem essas métricas continua utilizável, com ordenação alfabética.
 
 ## Perfil dos gastos (protocolo 18)
 

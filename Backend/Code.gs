@@ -1572,8 +1572,9 @@ function getDadosCompletos() {
           const dataMemoria = parseDataBR(dtLimpa);
           const tempoMemoria = dataMemoria ? dataMemoria.getTime() : 0;
           if (!statsDesc[descNorm]) {
-            statsDesc[descNorm] = { original: descStr, formas: Object.create(null), cats: Object.create(null), ultForma: chaveForma, ultCat: catStr, ultValor: valorCompraMemoria, ultTags: tagsDaLinha, tempo: -1 };
+            statsDesc[descNorm] = { compras: new Set(), original: descStr, formas: Object.create(null), cats: Object.create(null), ultForma: chaveForma, ultCat: catStr, ultValor: valorCompraMemoria, ultTags: tagsDaLinha, tempo: -1 };
           }
+          statsDesc[descNorm].compras.add(chaveCompraUnica);
           if (tempoMemoria >= statsDesc[descNorm].tempo) {
             statsDesc[descNorm].original = descStr;
             statsDesc[descNorm].ultValor = valorCompraMemoria;
@@ -1682,6 +1683,8 @@ function getDadosCompletos() {
         const st = statsDesc[k];
         mapAutofill[k] = {
           original: st.original,
+          frequencia: st.compras.size,
+          ultimaCompraEm: Math.max(0,st.tempo),
           forma: obterMaisFrequente(st.formas, st.ultForma),
           categoria: obterMaisFrequente(st.cats, st.ultCat),
           ultimoValor: st.ultValor || 0,
