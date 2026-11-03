@@ -43,8 +43,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v128` |
-| Última suíte completa documentada | 990 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v130` |
+| Última suíte completa documentada | 1.018 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -294,7 +294,7 @@ Regras para novas revisões:
 - Preservar os testes de domingo seguido de Finados, fim de mês, virada de ano e conversões de texto/data.
 - O calendário bancário compartilhado não é uma garantia de todas as exceções locais ou das condições específicas de cada contrato bancário.
 
-Uma fonte única de data de servidor para todos os modos, inclusive offline, ainda merece uma mudança própria com testes. Não foi implementada integralmente na última revisão.
+A referência de calendário foi implementada no pacote v130: horário e fuso do servidor, com avanço local e retomada offline estimados. Os limites e testes estão na seção Relógio civil abaixo. Datas digitadas e históricas não são convertidas.
 
 ## 13. Segurança e publicação
 
@@ -423,7 +423,7 @@ Estes pontos continuam úteis para investigação ou discussão, sem tratá-los 
 
 - Reconciliação assistida de uma pendência PRONTO quando a planilha sofreu alteração externa incompatível. Não basta marcar o plano como abandonado: pode haver efeitos parciais a conferir.
 - Prévia de quantidade exata de recorrências retroativas. Deve vir das mesmas regras do servidor, considerando períodos existentes e pulados.
-- Fonte de data autoritativa para os modos online/offline, com testes de fuso e viradas.
+- Fonte de calendário implementada no pacote v130; conferir comportamento na implantação após atualizar ambos os lados. Offline usa estimativa, não uma consulta autoritativa ao servidor.
 - Mostrar melhor diferença entre parcelas originalmente contratadas e registros remanescentes após exclusões.
 - Fusão explícita de categorias/pessoas, busca global, atalhos de teclado, política de privacidade local e limites uniformes de campos: evoluções próprias, não reparos a aplicar sem desenho.
 - Desempenho de travas, leituras anuais, snapshots, ordenação física e paginação: medir antes de refatorar. Não retirar travas de consultas que fazem manutenção.
@@ -550,7 +550,35 @@ Validação de À vista no campo: duas regressões novas; 978 testes aprovados, 
 - Backup: mensagens esclarecem que recuperação assistida exige análise técnica; não existe assistente automático para volume ou personalizações fora do limite.
 - Dicionário de títulos centralizado em shared/portugues.js, incorporado pelo gerador nos dois ambientes. Mantida fonte do backend, acrescentando à apresentação nove entradas que só existiam no servidor; sem reescrever descrições antigas.
 - Segurança: consulta somente de leitura à configuração da Vercel confirmou proteção SSO ativada com escopo all_except_custom_domains. Proxy local continua bloqueando produção. Tentativas HTTP sem autenticação com ação inválida (sem consultar dados) não completaram conexão; acesso real não foi validado. Nenhuma configuração remota foi alterada.
-- Permanecem etapas próprias: autenticação definitiva e teste anônimo real; medições em base fictícia ampliada; diagnóstico/otimização de armazenamento; fonte de data/fuso para uso offline. Sem retirada de travas, expurgo por idade, índices novos ou migração para IndexedDB neste pacote.
+- Permanecem etapas próprias: autenticação definitiva e teste anônimo real; medições em base fictícia ampliada; diagnóstico/otimização de armazenamento (tratados no v129); fonte de data/fuso para uso offline (tratada no v130). Sem retirada de travas, expurgo por idade, índices novos ou migração para IndexedDB neste pacote.
 Cache v128; frontend e Apps Script precisam ser atualizados juntos. Código local, sem publicação remota e sem função manual de ativação.
 
 Validação da auditoria em três partes: 12 regressões novas; suíte completa com 990 aprovados, zero falhas. Atualizado teste anterior de recorrência para a decisão de herança do perfil registrado. CSS compilado, interfaces espelhadas sincronizadas e dist preparado. Conferência visual e fluxos reais nos dois aparelhos pendentes.
+
+
+### Desempenho conservador — 03/11/2026
+Lucas já realizou vários testes manuais anteriores; este pacote acrescenta verificações específicas de desempenho/recuperação, sem reiniciar todo o roteiro. Não altera cálculos financeiros, locks, requestIds, prazo do cache de consultas, exclusões ou política de retenção.
+
+- Pendências locais: agruparLeiturasLocaisGestor reutiliza somente a lista de chaves durante uma coleta síncrona; valores continuam sendo lidos no momento do uso e nada é reaproveitado na próxima coleta. Migração da fila legada ocorre antes da primeira enumeração. Proteção por finally libera o agrupamento após erro. Não é um cache persistente nem um índice de envios. Badge só altera DOM quando texto/visibilidade mudam.
+- Atividade: mapa financeiro passa a ser construído somente se a página contém uma ação reversível ainda não desfeita. Se necessário, monta uma vez por consulta. Desfazer continua revalidando o estado atual no servidor. Busca, paginação e proteções permanecem.
+- Competências: parseMesFat reutiliza resultados escalares apenas dentro da execução corrente, até 240 entradas, devolvendo cópia. Não guarda registros financeiros, não compartilha objetos mutáveis e não sobrevive à próxima operação. Datas recebidas como Date continuam convertidas no fuso existente antes da leitura.
+- Diagnóstico copiado inclui contagem de chaves e estimativa UTF-16 por grupo, sem nomes de chaves, textos, valores financeiros ou remoção de conteúdo; não representa cota nem espaço livre. Inclui métricas já existentes do coordenador de consultas. A medição de armazenamento só ocorre ao montar diagnóstico.
+- Ensaio scripts/medir-desempenho-local.cjs usa exclusivamente dados fictícios e planilha simulada. Em três rodadas após preparação, medianas observadas do getDadosCompletos: 300 pessoais + 50 terceiros, 305 ms antes / 154 ms depois; 1.500 pessoais + 50 terceiros, 929 ms antes / 720 ms depois. São medições locais sujeitas à variação, sem latência de Google/Drive e sem garantia de igual ganho no aparelho. Chamadas de hash mantidas; não se removeu validação para obter esses resultados.
+- Ensaio determinístico de armazenamento: seis listas com 1.200 chaves passaram de 7.200 chamadas key() para 1.200, com resultados iguais. Teste de 1.000 consultas da mesma competência fez uma construção de data, preservando isolamento; histórico não reversível dispensou mapa financeiro sem afetar conferência de ações reversíveis.
+Cache v129. Frontend e Apps Script devem ser atualizados juntos; não há função nova a executar manualmente. Código local, sem publicação e sem acesso às planilhas reais. A inferência de desempenho real exige observação após atualização; não é necessário repetir toda a bateria manual anterior.
+
+Validação do pacote de desempenho conservador: dez regressões novas; suíte completa com 1.000 aprovados, zero falhas. CSS e interfaces sincronizados, dist preparado. Não houve publicação ou alteração nas planilhas reais. Conferência manual limitada aos fluxos afetados após atualizar frontend e backend.
+
+
+### Relógio civil e fusos — pacote v130
+- shared/relogio-civil.js centraliza o cálculo do dia no fuso do projeto por Intl, com fábrica testável. interface/relogio.js guarda uma única referência técnica local (gestorRelogioCivilV1) e expõe hojeCivilGestor, instanteCivilGestor e dataCivilISOGestor antes da inicialização das telas. Gerador incorpora as duas fontes em bloco próprio no início do HTML, incluindo a cópia do Apps Script. Não depende de biblioteca ou consulta adicional.
+- doPost e apiCallServidor acrescentam relogioGestor opcional ao envelope de sucesso, com versão, instante, fuso e dia. Os dois transportes atualizam o relógio antes de entregar os dados à interface. Respostas antigas/invalidas são ignoradas; uma falha no acessório de horário não transforma uma gravação confirmada em erro. Leituras atendidas pelo cache financeiro não são uma nova sincronização do relógio. Backend antigo permanece compatível com o fallback.
+- Agenda, situações de banco/devolução, alertas, mês atual da Mensal, seletores, Hoje/Ontem, padrões de Novo/Empréstimo/Simulador, notas novas, competência inicial de recorrências e nomes de exportação usam calendário civil. Cronômetros, identificadores e instantes ISO de operações conservam suas funções; fechamento/vencimento e datas escolhidas não são recalculados por fuso. Atualizar relógio não reescreve datas escolhidas, rascunhos, histórico ou preferência de mês explícito. Se o dia mudar na sincronização, corrige apenas o padrão de data de Novo/Empréstimo inteiramente vazios, sem foco nem envio; datas digitadas têm marcação manual preservada.
+- Online, referência vem do fuso do Apps Script. Na sessão, tempo monotônico avança a referência recebida. Ao retomar após suspensão ou reabrir offline, a passagem do tempo é estimada pelo relógio do aparelho. Referência salva tem janela de 30 dias e exige tempo decorrido não negativo; fora disso, usa relógio do aparelho no último fuso válido. Sem sincronização anterior, padrão America/Sao_Paulo. O diagnóstico identifica fuso, origem e uso de estimativa. Não é possível garantir hora real offline se o relógio do aparelho for alterado; isso exige nova sincronização.
+- Revalidação diária compara o dia civil do projeto e mantém os intervalos de tentativa baseados em instantes. Detecta virada mesmo quando UTC ainda está no mesmo dia, sem recarregar formulários em edição.
+- Testes cobrem virada de ano, fusos UTC/Auckland/Los Angeles/Tokyo, aparelho adiantado, retomada offline/suspensão, resposta fora de ordem, metadados inválidos, armazenamento indisponível, integração de transportes, mês manual preservado e campos já preenchidos.
+Implementação local; requer frontend e Apps Script atualizados juntos, sem função manual nova. Publicação e observação no aparelho continuam separadas da validação automatizada.
+
+Refinamento: uma referência salva futura não bloqueia a primeira resposta online válida. A proteção contra respostas fora de ordem compara somente referências recebidas na sessão. A correção automática de formulários vazios foi testada com foco, rascunho e trava de envio.
+
+Validação do relógio civil: 18 regressões novas; suíte completa com 1.018 aprovados, zero falhas. Conversão de fuso reutilizada por segundo (saídas copiadas), sem atrasar a virada do dia; CSS e interfaces sincronizados, dist preparado. Cache v130, protocolo 18 mantido pois metadado é opcional. Sem publicação remota ou alteração em dados reais. Conferência necessária após atualizar ambos os lados: Hoje/Ontem, mês vigente e origem/fuso no Diagnóstico, sem repetir toda a bateria anterior.

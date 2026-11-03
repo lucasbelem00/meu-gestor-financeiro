@@ -49,7 +49,7 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
   const select = document.getElementById('cartaoPagamentoFaturaGestor'); select.replaceChildren();
   formasGlobais.filter(f => { const n = typeof f === 'string' ? f : f.nome; return n && formaEhCartaoGestor(f); }).forEach(f => { const n = typeof f === 'string' ? f : f.nome; select.add(new Option(n, n)); });
   if (forma) select.value = forma;
-  const hoje = new Date(); document.getElementById('mesPagamentoFaturaGestor').value = mes || String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+  const hoje = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()); document.getElementById('mesPagamentoFaturaGestor').value = mes || String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
   document.getElementById('valorPagamentoFaturaGestor').value = ''; modal.classList.remove('hidden');
   select.focus(); await conferirPagamentoFaturaGestor();
 }

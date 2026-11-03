@@ -22,6 +22,9 @@ function getTimezone() {
   return Session.getScriptTimeZone() || 'America/Sao_Paulo';
 }
 
+// Campo opcional do envelope: nunca faz uma gravação confirmada falhar.
+function referenciaRelogioServidorGestor_(){try{const agora=new Date(),fuso=getTimezone();return {versao:1,instante:agora.getTime(),fuso:fuso,dia:Utilities.formatDate(agora,fuso,'yyyy-MM-dd')};}catch(_){return null;}}
+
 function getHojeSeguro() {
   const agoraStr = Utilities.formatDate(new Date(), getTimezone(), 'yyyy-MM-dd');
   const [a, m, d] = agoraStr.split('-').map(Number);
@@ -73,10 +76,13 @@ function parseMesFat(str) {
     str = Utilities.formatDate(str, getTimezone(), 'MM/yyyy');
   }
   const limpa = String(str || '').replace(/^'/, '').trim();
+  const ctx=typeof CONTEXTO_GESTOR_!=='undefined'?CONTEXTO_GESTOR_:null;
+  const cache=ctx?(ctx.cacheCompetenciasLeitura||(ctx.cacheCompetenciasLeitura=new Map())):null;
+  if(cache?.has(limpa))return {...cache.get(limpa)};
   const p = /^(\d{1,2})\/(\d{4})$/.exec(limpa);
   if (p) {
     const m = Number(p[1]), a = Number(p[2]);
-    if (m >= 1 && m <= 12 && anoCompetenciaValidoGestor_(a)) return { m, a, time: new Date(a, m - 1, 1).getTime() };
+    if (m >= 1 && m <= 12 && anoCompetenciaValidoGestor_(a)){const resultado={m,a,time:new Date(a,m-1,1).getTime()};if(cache&&cache.size<240)cache.set(limpa,resultado);return {...resultado};}
   }
   return { m: 0, a: 0, time: 0 };
 }
@@ -2160,7 +2166,7 @@ function doPost(e) {
       return output.setContent(JSON.stringify({ sucesso: false, erro: 'Acesso não autorizado.' }));
     }
     const result = executarAcaoApi_(payload.action, payload.param);
-    return output.setContent(JSON.stringify({ sucesso: true, dados: result }));
+    return output.setContent(JSON.stringify({ sucesso: true, dados: result, relogioGestor: referenciaRelogioServidorGestor_() }));
   } catch (err) {
     return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true, codigo: err.codigo || 'FALHA_OPERACAO' }));
   }
@@ -2173,7 +2179,7 @@ function apiCallServidor(action, param) {
     if (!acessoPreviaDiretaGestor_()) {
       throw new Error('A prévia direta do Apps Script está desativada. Use o endereço protegido do app.');
     }
-    return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param) });
+    return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param), relogioGestor: referenciaRelogioServidorGestor_() });
   } catch (err) {
     return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err), resultadoIncerto: !!(err && err.resultadoIncerto), codigo: err && err.codigo || 'FALHA_OPERACAO' });
   }
@@ -4786,7 +4792,8 @@ function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
 }
 
 function obterAtividadeWeb(param) {
-  const p = param || {}, indice=indiceEventosAtividadeGestor_(), mapa = mapaRegistrosAtividadeGestor_();
+  const p = param || {}, indice=indiceEventosAtividadeGestor_();
+  let mapa=null;
   const termo = normalizarTexto(String(p.termo || '').slice(0, 200)), tipo = String(p.tipo || '');
   const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
   const cabecalhos=new Set(indice.linhas),linhasReversoes=indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,'desfazerAtividadeWeb').filter(function(l){return cabecalhos.has(l);}) : [];
@@ -4800,6 +4807,8 @@ function obterAtividadeWeb(param) {
   }
   const revertidos=new Set(reversoes.filter(function(e){return e.reverte;}).map(function(e){return e.reverte;}));
   return { total: total, temMais: offset + limite < total, itens: pagina.map(function (e) {
+    // Ações não reversíveis/desfeitas não precisam consultar os registros financeiros.
+    if(e.reversivel&&!revertidos.has(e.id)&&!mapa)mapa=mapaRegistrosAtividadeGestor_();
     const motivo = motivoBloqueioDesfazerGestor_(e, mapa, revertidos);
     const principal=e.alteracoes.find(function(a){return a.depois || a.antes;});
     const resumoExibido=principal?resumirRegistroAtividade_(principal.depois || principal.antes,principal.aba):copiarGestor_(e.resumo);

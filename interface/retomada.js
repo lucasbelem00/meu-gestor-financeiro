@@ -5,7 +5,7 @@ function configurarModoAssinaturaGestor(retomar){
   document.getElementById('ajudaEdicaoAssGestor').textContent=retomar?'Revise os dados para iniciar um novo período. Não cria cobranças nos meses da pausa nem registra pagamento. O histórico anterior fica preservado.':'Altera o mês atual e futuros. O histórico de meses passados fica protegido.';
   const box=document.getElementById('boxDiaRetomadaAssGestor'),dia=document.getElementById('diaRetomadaAssGestor');box.hidden=!retomar;box.classList.toggle('hidden',!retomar);dia.disabled=!retomar;dia.required=retomar;
   const rotulo=document.getElementById('rotuloInicioAssGestor');if(rotulo)rotulo.textContent=retomar?'Mês de retorno (MM/AAAA)':'Novas condições a partir de (MM/AAAA)';
-  const inicio=document.getElementById('inpAssInicio');if(inicio){inicio.required=retomar;inicio.setAttribute('aria-label',retomar?'Mês de retorno':'Novas condições a partir do mês');if(!retomar){const hoje=new Date();inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}}
+  const inicio=document.getElementById('inpAssInicio');if(inicio){inicio.required=retomar;inicio.setAttribute('aria-label',retomar?'Mês de retorno':'Novas condições a partir do mês');if(!retomar){const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}}
   const btn=document.getElementById('btnSalvarEdAss');btn.disabled=false;btn.textContent=retomar?'▶️ Retomar':'↻ Atualizar recorrência';
 }
 function abrirRetomadaAssinaturaGestor(assinatura){

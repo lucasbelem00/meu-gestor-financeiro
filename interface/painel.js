@@ -6,7 +6,7 @@ function abrirDevolucaoPainelGestor(item){
   for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp',item.status==='Recebido'?'Recebido':'A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
   renderizarPainelEmprestimos();
 }
-function listarDevolucoesPainelGestor(itens,hoje=new Date()){
+function listarDevolucoesPainelGestor(itens,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  const atual=hojeSituacaoVisualGestor(hoje);
  return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>{const situacao=situacaoRecebimentoVisualGestor(i,hoje),dia=diaSituacaoVisualGestor(i.dataCombinada)??(situacao.codigo==='mesEncerrado'?fimMesSituacaoVisualGestor(i.mesFatura):null);return {...i,situacao,dias:dia===null?null:dia-atual};}).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
 }

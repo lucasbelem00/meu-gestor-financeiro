@@ -261,7 +261,7 @@ document.addEventListener('visibilitychange', () => {
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo
 // nem interromper formulários e modais em edição. Falhas permitem nova tentativa.
 function criarRevalidadorDiaGestor(opcoes){
-  const agora=opcoes.agora||(()=>new Date()),dia=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  const agora=opcoes.agora||(()=>new Date()),dia=opcoes.dia||(d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate());
   let conferido=dia(agora()),pendente=null,proximaTentativa=0;
   function verificar(forcar=false){
     const hoje=agora(),chave=dia(hoje);
@@ -279,6 +279,8 @@ function criarRevalidadorDiaGestor(opcoes){
   return {verificar};
 }
 const revalidadorDiaGestor=criarRevalidadorDiaGestor({
+  agora:()=>new Date(typeof instanteCivilGestor==='function'?instanteCivilGestor():Date.now()),
+  dia:d=>typeof dataCivilISOGestor==='function'?dataCivilISOGestor():d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
   permitir:()=>document.visibilityState==='visible'&&typeof abaAtivaAtual!=='undefined'&&['dashboard','agenda'].includes(abaAtivaAtual)&&!document.querySelector('[role="dialog"]:not(.hidden):not([hidden])'),
   online:()=>navigator.onLine,
   carregar:()=>carregarDados(),
@@ -292,3 +294,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   setInterval(()=>revalidadorDiaGestor.verificar(),60000);
 });
+
+// Chamado somente ao montar diagnóstico, sem copiar conteúdo ou nomes de chaves.
+function diagnosticoArmazenamentoGestor(){
+ try{
+  const grupos={fila:{chaves:0,bytesEstimados:0},revisoes:{chaves:0,bytesEstimados:0},rascunhos:{chaves:0,bytesEstimados:0},notas:{chaves:0,bytesEstimados:0},envios:{chaves:0,bytesEstimados:0},caches:{chaves:0,bytesEstimados:0},outros:{chaves:0,bytesEstimados:0}};
+  let bytesEstimados=0,chaves=0;
+  for(let i=0;i<localStorage.length;i++){
+   const chave=localStorage.key(i);if(chave===null)continue;const valor=localStorage.getItem(chave);if(valor===null)continue;
+   const grupo=/^(gestorFilaItemV2:|gestorFilaOrdemV1:|filaOfflineGestor$)/.test(chave)?'fila':/^gestorFilaRevisaoV1:/.test(chave)?'revisoes':/^gestorRascunho/.test(chave)?'rascunhos':/^(gestorNota|notasLocais)/.test(chave)?'notas':/^gestor(Mutacao|EmprestimoPendente|Cancelamento)/.test(chave)?'envios':/^(cacheDadosGestorV11$|gestorHistoricoCacheV1$)/.test(chave)?'caches':'outros';
+   const bytes=2*(chave.length+valor.length);grupos[grupo].chaves++;grupos[grupo].bytesEstimados+=bytes;bytesEstimados+=bytes;chaves++;
+  }
+  return {disponivel:true,criterio:'Estimativa UTF-16; não mede a cota nem o espaço livre do navegador',chaves,bytesEstimados,grupos};
+ }catch(_){return {disponivel:false};}
+}

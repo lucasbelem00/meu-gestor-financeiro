@@ -3,7 +3,7 @@
 // A cache é descartada em renderizarDados; nenhuma ação aqui confirma pagamentos.
 let dadosAgendaGestor=null,diaAgendaGestor=null,eventosAgendaGestor=null;
 function mesAgendaValidoGestor(texto){const p=/^(\d{4})-(\d{2})$/.exec(String(texto));return Boolean(p&&anoCompetenciaValidoGestor_(Number(p[1]))&&Number(p[2])>=1&&Number(p[2])<=12);}
-function compromissosAgendaGestor(dados,hoje=new Date()){
+function compromissosAgendaGestor(dados,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  const eventos=[],h=dados?.faturas?.horizonte;
  for(const f of dados?.formasPagamento||[]){
   const vencimento=Number(f.vencimento);if(f.tipo!=='cartao'||!Number.isInteger(vencimento)||vencimento<1||vencimento>31)continue;
@@ -30,7 +30,7 @@ function moverMesAgendaGestor(passo){
 function mostrarMesCompletoAgendaGestor(){diaAgendaGestor=null;renderizarAgendaGestor();}
 function renderizarAgendaGestor(){
   const campo=document.getElementById('mesAgendaGestor'),grade=document.getElementById('calendarioAgendaGestor'),lista=document.getElementById('listaAgendaGestor');if(!campo||!grade||!lista)return;
-  if(!campo.value){const h=new Date();campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
+  if(!campo.value){const h=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
   if(!mesAgendaValidoGestor(campo.value)){grade.replaceChildren();lista.replaceChildren();diaAgendaGestor=null;document.getElementById('verMesAgendaGestor').hidden=true;document.getElementById('agendaAnteriorGestor').disabled=true;document.getElementById('agendaProximoGestor').disabled=true;document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
   const [ano,mes]=campo.value.split('-').map(Number),inicio=Date.UTC(ano,mes-1,1)/86400000,fim=Date.UTC(ano,mes,1)/86400000,tipo=document.getElementById('tipoAgendaGestor').value;
   if(diaAgendaGestor!==null&&(diaAgendaGestor<inicio||diaAgendaGestor>=fim))diaAgendaGestor=null;
@@ -63,7 +63,7 @@ const abaAntesAgendaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
 
 // Recalcula os avisos com a mesma data usada no calendário, inclusive virada de mês/ano.
-function alertasBancariosGestor(dados,hoje=new Date()){
+function alertasBancariosGestor(dados,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  if(!dados?.faturas?.horizonte)return dados?.alertasVencimento||[];
  const atual=hojeSituacaoVisualGestor(hoje);
  return compromissosAgendaGestor(dados,hoje).filter(i=>i.tipo==='cartao'&&i.saldo>0.004&&i.dia-atual<=7).map(i=>({forma:i.forma,mes:i.mesFatura,data:i.data,valor:formatBRL(i.saldo),dias:i.dia-atual}));

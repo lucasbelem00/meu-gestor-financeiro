@@ -26,12 +26,12 @@ function vencimentoFaturaBaseBancarioGestor(mes,vencimento){
  return {dia,original,data:dataDiaBancarioGestor(dia),dataOriginal:dataDiaBancarioGestor(original),motivo:Array.from(new Set(motivos)).join(' e ')};
 }
 // FIM CALENDARIO BANCARIO GERADO
-function hojeSituacaoVisualGestor(hoje=new Date()){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
+function hojeSituacaoVisualGestor(hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
 function estiloSituacaoVisualGestor(codigo,texto){
   const concluido=['recebido','pago'].includes(codigo),atencao=['vencido','mesEncerrado'].includes(codigo),neutro=codigo==='vazio',hoje=codigo==='hoje';
   return {codigo,texto,prioridade:atencao?3:hoje?2.5:concluido?1:neutro?0:2,cor:hoje?'text-yellow-300':atencao?'text-[#ff9570]':concluido?'text-emerald-300':neutro?'text-slate-300':'text-amber-200',fundo:hoje?'bg-yellow-500/20 border-yellow-300 text-yellow-100':atencao?'bg-[#7c2d20]/80 border-[#f97350] text-[#ffdfd4]':concluido?'bg-emerald-900/60 border-emerald-500 text-emerald-100':neutro?'bg-slate-900 border-slate-700 text-slate-200':'bg-amber-900/60 border-amber-500 text-amber-100'};
 }
-function situacaoRecebimentoVisualGestor(item,hoje=new Date()){
+function situacaoRecebimentoVisualGestor(item,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
   if(item.status==='Recebido')return estiloSituacaoVisualGestor('recebido','Recebido');
   if(/^cancelad/i.test(String(item.status||'')))return estiloSituacaoVisualGestor('vazio','Cancelado');
   const dia=diaSituacaoVisualGestor(item.dataCombinada),atual=hojeSituacaoVisualGestor(hoje);
@@ -46,7 +46,7 @@ function vencimentoFaturaBancarioGestor(forma,mes,vencimento,usarCorrecao=true){
  if(usarCorrecao&&forma){try{const mapa=JSON.parse(localStorage.getItem('gestorVencimentosFaturasV1')||'{}'),data=mapa[JSON.stringify([forma,mes])],manual=diaSituacaoVisualGestor(data);if(manual!==null)dia=manual;}catch(e){/* Preferência ausente ou inválida: usa o calendário. */}}
  return {...base,dia,automatico,data:dataDiaBancarioGestor(dia),manual:dia!==automatico,motivo:dia!==automatico?'Data informada pelo banco':base.motivo};
 }
-function situacaoBancoVisualGestor(item,hoje=new Date()){
+function situacaoBancoVisualGestor(item,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
   const total=Number(item.total)||0,pago=Number(item.pago)||0,saldo=Number.isFinite(item.saldo)?item.saldo:Math.max(0,total-pago);
   if(total<=0)return estiloSituacaoVisualGestor('vazio','Sem lançamento');
   if(saldo<0.005)return estiloSituacaoVisualGestor('pago',item.imediato?'Pagamento realizado':'Pago ao banco');

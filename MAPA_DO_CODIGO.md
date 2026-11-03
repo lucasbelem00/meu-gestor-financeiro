@@ -243,3 +243,18 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Backend/Code.gs: validarTransicaoStatusEdicaoGestor_ protege editores pessoais e de terceiros; processarAssinaturasAutomaticas e editarAssinaturaWebInterno_ preservam perfil do modelo.
 - reordenarFormasPagamentoWebInterno_: preserva posições de resumo/fórmulas e recusa fórmulas nos cadastros móveis, sem tentar traduzir referências.
 - shared/portugues.js: fonte única de DICIONARIO_ACENTOS_PT; scripts/sincronizar-rachadinha.cjs incorpora no HTML e Apps Script. Editar a fonte, não as cópias geradas.
+
+## Desempenho conservador — 03/11/2026
+
+- index.html: agruparLeiturasLocaisGestor limita o reaproveitamento de chaves à coleta síncrona de listarPendenciasAtividadeGestor; lerEntradasLocaisGestor continua lendo os valores atuais. atualizarBadgeAtividadeGestor evita alterações repetidas do DOM.
+- Backend/Code.gs: parseMesFat tem cache limitado ao contexto da execução e resultados copiados; obterAtividadeWeb só monta mapaRegistrosAtividadeGestor_ quando a página precisa avaliar ação reversível.
+- interface/desempenho.js: diagnosticoArmazenamentoGestor agrega estimativas de volume sem conteúdo; montarDiagnosticoGestor integra esse resumo e as métricas das consultas.
+- scripts/medir-desempenho-local.cjs: ensaio com 300/1.500 gastos e 50 terceiros em mocks, três rodadas, sem acesso remoto. Testes de redução de trabalho e recuperação em tests/desempenho-conservador-20261103.test.cjs, atividade-paginada e fila-revisao-ordem.
+
+## Relógio civil — v130
+
+- shared/relogio-civil.js: criarRelogioCivilGestor, núcleo puro com instante/fuso, referência salva estimada e fonte de tempo injetável para testes.
+- interface/relogio.js: integração com armazenamento e retomada; hojeCivilGestor fornece Date de calendário local ao meio-dia representando o dia do projeto, não o instante real; instanteCivilGestor fornece o instante estimado. Não usar hojeCivilGestor como cronômetro. dataCivilISOGestor devolve YYYY-MM-DD no fuso configurado.
+- Backend/Code.gs: referenciaRelogioServidorGestor_ acrescenta metadados opcionais aos envelopes de doPost/apiCallServidor, sem alterar dados nem autenticação.
+- scripts/sincronizar-rachadinha.cjs: gera bloco do relógio no início do HTML a partir das duas fontes, antes dos consumidores. interface/desempenho.js aceita função dia no revalidador para separar dia civil de passagem de tempo.
+- tests/relogio-civil-20261103.test.cjs: cenários de fuso, viradas, offline e compatibilidade.

@@ -23,6 +23,9 @@ function sincronizarMotor(){
   if(situacoes.split(inicioCalendario).length!==2||situacoes.split(fimCalendario).length!==2)throw Error('Calendário bancário ausente ou duplicado.');
   fs.writeFileSync(arquivoSituacoes,situacoes.slice(0,situacoes.indexOf(inicioCalendario))+inicioCalendario+'\n'+fs.readFileSync(path.join(raiz,'shared/calendario-bancario.js'),'utf8').trim()+'\n'+situacoes.slice(situacoes.indexOf(fimCalendario)));
   const arquivo=path.join(raiz,'index.html');let html=fs.readFileSync(arquivo,'utf8');
+  const relIni='// INICIO RELOGIO CIVIL GERADO',relFim='// FIM RELOGIO CIVIL GERADO';
+  if(html.split(relIni).length!==2||html.split(relFim).length!==2)throw Error('Relógio civil ausente ou repetido.');
+  html=html.slice(0,html.indexOf(relIni))+relIni+'\n'+fs.readFileSync(path.join(raiz,'shared/relogio-civil.js'),'utf8').trim()+'\n'+fs.readFileSync(path.join(raiz,'interface/relogio.js'),'utf8').trim()+'\n'+html.slice(html.indexOf(relFim));
   const logoInicio='<!-- INICIO ICONE GESTOR GERADO -->',logoFim='<!-- FIM ICONE GESTOR GERADO -->';
   if(html.includes(logoInicio)){
     const logo=fs.readFileSync(path.join(raiz,'icons/gestor.svg'),'utf8').trim().replace('<svg ','<svg aria-hidden="true" focusable="false" class="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/20 shrink-0" ');

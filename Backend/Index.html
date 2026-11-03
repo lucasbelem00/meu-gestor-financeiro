@@ -19,6 +19,44 @@
   <meta http-equiv="Expires" content="0">
 
   <script>
+// INICIO RELOGIO CIVIL GERADO
+// Calendário civil no fuso do projeto. Não converte nem reescreve datas informadas.
+function criarRelogioCivilGestor(opcoes={}){
+ const agora=opcoes.agora||Date.now,monotono=opcoes.monotono||(()=>null),limite=30*86400000;
+ let referencia=null,fuso='America/Sao_Paulo',base=0,parede=0,mono=null,origem='aparelho',ultimaSincronizacao=0,ultimoServidorEmSessao=0;
+ const formatadores=new Map();let cacheCivil=null;
+ function formatador(z){if(!formatadores.has(z))formatadores.set(z,new Intl.DateTimeFormat('en-CA',{timeZone:z,year:'numeric',month:'2-digit',day:'2-digit'}));return formatadores.get(z);}
+ function partes(instante,z){const p=Object.fromEntries(formatador(z).formatToParts(new Date(instante)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));return {ano:Number(p.year),mes:Number(p.month),dia:Number(p.day),iso:p.year+'-'+p.month+'-'+p.day};}
+ function validar(r){try{if(!r||r.versao!==1||!Number.isSafeInteger(r.instante)||!Number.isFinite(new Date(r.instante).getTime())||typeof r.fuso!=='string'||r.fuso.length>80)return null;const p=partes(r.instante,r.fuso);if(r.dia!==undefined&&r.dia!==p.iso)return null;return {versao:1,instante:r.instante,fuso:r.fuso,dia:p.iso};}catch(_){return null;}}
+ function ancorar(instante,fonte){base=instante;parede=agora();const m=monotono();mono=Number.isFinite(m)?m:null;origem=fonte;}
+ function instante(){if(!referencia)return agora();const m=monotono(),delta=mono!==null&&Number.isFinite(m)&&m>=mono?m-mono:Math.max(0,agora()-parede);return base+delta;}
+ function sincronizar(r){const valida=validar(r);if(!valida||valida.instante<ultimoServidorEmSessao)return false;referencia=valida;fuso=valida.fuso;ultimaSincronizacao=valida.instante;ultimoServidorEmSessao=valida.instante;ancorar(valida.instante,'servidor');try{opcoes.salvar?.({...valida,recebidoEm:parede});}catch(_){}return true;}
+ // Na reabertura, só é possível estimar o tempo decorrido pelo relógio do aparelho.
+ try{const salva=opcoes.ler?.(),r=validar(salva);if(r){fuso=r.fuso;const delta=agora()-salva.recebidoEm;if(Number.isFinite(salva.recebidoEm)&&delta>=0&&delta<=limite){referencia=r;ultimaSincronizacao=r.instante;ancorar(r.instante+delta,'referencia-salva-estimada');}}}catch(_){}
+ function retomar(){if(!referencia)return;const delta=agora()-parede;if(delta>=0&&delta<=limite){const estimado=base+delta;if(estimado>instante()+60000)ancorar(estimado,'referencia-salva-estimada');}}
+ function data(){const t=instante(),chave=fuso+'|'+Math.floor(t/1000);if(cacheCivil?.chave===chave)return {...cacheCivil.valor};let valor;try{valor=partes(t,fuso);}catch(_){const d=new Date(t);valor={ano:d.getFullYear(),mes:d.getMonth()+1,dia:d.getDate(),iso:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};}cacheCivil={chave,valor};return {...valor};}
+ function hoje(){const p=data();return new Date(p.ano,p.mes-1,p.dia,12,0,0,0);}
+ function diagnostico(){return {fuso,origem,dataCivil:data().iso,referenciaServidor:referencia!==null,ultimaSincronizacao:ultimaSincronizacao||null,avancoLocalEstimado:true};}
+ return {sincronizar,instante,data,hoje,retomar,diagnostico};
+}
+if(typeof module!=='undefined'&&module.exports)module.exports={criarRelogioCivilGestor};
+// Referência técnica local: não contém dados financeiros e não participa do backup.
+const relogioCivilGestor=criarRelogioCivilGestor({
+ agora:()=>Date.now(),monotono:()=>typeof performance!=='undefined'&&typeof performance.now==='function'?performance.now():null,
+ ler:()=>{try{return JSON.parse(localStorage.getItem('gestorRelogioCivilV1')||'null');}catch(_){return null;}},
+ salvar:r=>{try{localStorage.setItem('gestorRelogioCivilV1',JSON.stringify(r));}catch(_){}}
+});
+function hojeCivilGestor(){return relogioCivilGestor.hoje();}
+function instanteCivilGestor(){return relogioCivilGestor.instante();}
+function dataCivilISOGestor(){return relogioCivilGestor.data().iso;}
+function sincronizarRelogioCivilGestor(r){
+ try{const antes=dataCivilISOGestor(),ok=relogioCivilGestor.sincronizar(r);if(ok&&antes!==dataCivilISOGestor()&&typeof atualizarDatasAutomaticasRelogioGestor==='function'){try{atualizarDatasAutomaticasRelogioGestor();}catch(_){}}return ok;}catch(_){return false;}
+}
+function diagnosticoRelogioCivilGestor(){return relogioCivilGestor.diagnostico();}
+if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')relogioCivilGestor.retomar();});
+// FIM RELOGIO CIVIL GERADO
+</script>
+<script>
 // INICIO CATALOGO ACOES GERADO
 // Catálogo único do contrato de rede. Uma consulta, uma preparação de arquivo
 // e uma alteração financeira têm efeitos diferentes e não compartilham diário.
@@ -1769,6 +1807,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 falha.resultadoIncerto = resultado.resultadoIncerto === true;
                 throw falha;
               }
+              if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(resultado.relogioGestor);
               resolve(resultado.dados);
             } catch (erro) {
               reject(erro);
@@ -2204,7 +2243,7 @@ const DICIONARIO_ACENTOS_PT = {
     }
 
     function definirDataOffset(diasOffset = 0) {
-      const dt = new Date();
+      const dt = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
       dt.setDate(dt.getDate() + diasOffset);
       const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
       preencherDataTripla('novo', str);
@@ -2214,7 +2253,7 @@ const DICIONARIO_ACENTOS_PT = {
     function definirDataHoje() { definirDataOffset(0); }
 
     function definirDataHojeEmprestimo() {
-      const dt = new Date();
+      const dt = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
       const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
       preencherDataTripla('emp', str);
       atualizarFaturaEmprestimo();
@@ -2310,10 +2349,22 @@ const DICIONARIO_ACENTOS_PT = {
       catch (erro) { return padrao; }
     }
 
+    // Agrupamento só durante uma leitura síncrona da interface, nunca entre envios.
+    let leituraChavesLocaisGestor = null;
+    function agruparLeiturasLocaisGestor(ler){
+      if(leituraChavesLocaisGestor)return ler();
+      leituraChavesLocaisGestor={chaves:null};
+      try{return ler();}finally{leituraChavesLocaisGestor=null;}
+    }
     function lerEntradasLocaisGestor(prefixo) {
       const entradas = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const chave = localStorage.key(i);
+      let chaves;
+      if(typeof leituraChavesLocaisGestor!=='undefined'&&leituraChavesLocaisGestor){
+        // A fila legada migra antes da primeira enumeração. Valores continuam lidos frescos.
+        if(!leituraChavesLocaisGestor.chaves)leituraChavesLocaisGestor.chaves=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i));
+        chaves=leituraChavesLocaisGestor.chaves;
+      }else chaves=Array.from({length:localStorage.length},(_,i)=>localStorage.key(i));
+      for (const chave of chaves) {
         if (chave?.startsWith(prefixo)) {
           const valor = lerJSONLocalGestor(chave, null);
           if (valor) entradas.push({ chave, valor });
@@ -5012,12 +5063,12 @@ function vencimentoFaturaBaseBancarioGestor(mes,vencimento){
  return {dia,original,data:dataDiaBancarioGestor(dia),dataOriginal:dataDiaBancarioGestor(original),motivo:Array.from(new Set(motivos)).join(' e ')};
 }
 // FIM CALENDARIO BANCARIO GERADO
-function hojeSituacaoVisualGestor(hoje=new Date()){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
+function hojeSituacaoVisualGestor(hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){return Date.UTC(hoje.getFullYear(),hoje.getMonth(),hoje.getDate())/86400000;}
 function estiloSituacaoVisualGestor(codigo,texto){
   const concluido=['recebido','pago'].includes(codigo),atencao=['vencido','mesEncerrado'].includes(codigo),neutro=codigo==='vazio',hoje=codigo==='hoje';
   return {codigo,texto,prioridade:atencao?3:hoje?2.5:concluido?1:neutro?0:2,cor:hoje?'text-yellow-300':atencao?'text-[#ff9570]':concluido?'text-emerald-300':neutro?'text-slate-300':'text-amber-200',fundo:hoje?'bg-yellow-500/20 border-yellow-300 text-yellow-100':atencao?'bg-[#7c2d20]/80 border-[#f97350] text-[#ffdfd4]':concluido?'bg-emerald-900/60 border-emerald-500 text-emerald-100':neutro?'bg-slate-900 border-slate-700 text-slate-200':'bg-amber-900/60 border-amber-500 text-amber-100'};
 }
-function situacaoRecebimentoVisualGestor(item,hoje=new Date()){
+function situacaoRecebimentoVisualGestor(item,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
   if(item.status==='Recebido')return estiloSituacaoVisualGestor('recebido','Recebido');
   if(/^cancelad/i.test(String(item.status||'')))return estiloSituacaoVisualGestor('vazio','Cancelado');
   const dia=diaSituacaoVisualGestor(item.dataCombinada),atual=hojeSituacaoVisualGestor(hoje);
@@ -5032,7 +5083,7 @@ function vencimentoFaturaBancarioGestor(forma,mes,vencimento,usarCorrecao=true){
  if(usarCorrecao&&forma){try{const mapa=JSON.parse(localStorage.getItem('gestorVencimentosFaturasV1')||'{}'),data=mapa[JSON.stringify([forma,mes])],manual=diaSituacaoVisualGestor(data);if(manual!==null)dia=manual;}catch(e){/* Preferência ausente ou inválida: usa o calendário. */}}
  return {...base,dia,automatico,data:dataDiaBancarioGestor(dia),manual:dia!==automatico,motivo:dia!==automatico?'Data informada pelo banco':base.motivo};
 }
-function situacaoBancoVisualGestor(item,hoje=new Date()){
+function situacaoBancoVisualGestor(item,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
   const total=Number(item.total)||0,pago=Number(item.pago)||0,saldo=Number.isFinite(item.saldo)?item.saldo:Math.max(0,total-pago);
   if(total<=0)return estiloSituacaoVisualGestor('vazio','Sem lançamento');
   if(saldo<0.005)return estiloSituacaoVisualGestor('pago',item.imediato?'Pagamento realizado':'Pago ao banco');
@@ -5443,7 +5494,7 @@ async function adicionarNotaRapida(){
       if(rascunhoNotaConcluidoGestor(rascunho)||['guardado','confirmado'].includes(reserva?.estado))return 'existente';
       inicializarNotasLocaisGestor();let nota;
       if(rascunho.edicao){const base=rascunho.edicao,atual=notasGlobais.find(n=>String(n.id)===String(base.id));if((base.baseRestauracao||'')!==epoca||!atual||Number(atual.revision||0)!==base.revision||atual.texto!==base.texto){const e=Error('Seu rascunho permanece no campo; confira a versão atual antes de editar novamente.');e.codigo='NOTA_DESATUALIZADA';throw e;}nota={...atual,texto:texto.trim()};}
-      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:new Date().toLocaleDateString('pt-BR')};
+      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()).toLocaleDateString('pt-BR')};
       const opId='nota-op-'+hash,preparada=reserva?.operacao||{opId,id:nota.id,tipo:'upsert',baseRestauracao:epoca,criadoEm:Date.now(),revision:Number(nota.revision||0),nota};
       gravarArmazenamentoGestor(chave,JSON.stringify({estado:'preparado',operacao:preparada}));
       registrarOperacaoNotaGestor('upsert',nota,preparada);
@@ -5471,7 +5522,7 @@ function excluirNotaRapida(id){
 // A entrada normal sempre usa o calendário. Atalhos com período explícito
 // continuam sendo consultas manuais, sem ativar acompanhamento de faturas.
 function aoEntrarMensalGestor(periodoExplicito=null){
-  const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+  const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
   const valido=/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(periodoExplicito||''));
   const [mes,ano]=valido?periodoExplicito.split('/'):[mesAtual,anoAtual];
   const anoAnual=document.getElementById('selFiltroAnoSimples')?.value;
@@ -5483,7 +5534,7 @@ function inicializarUsabilidadeGestor(){
   const partes=[
     compactarComprovantesNotasGestor,
     ()=>{modoHorizonteGestor=localStorage.getItem('gestorHorizonteModoV1')==='saldo'?'saldo':'total';},
-    ()=>{const hoje=new Date();document.getElementById('simData').value=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');},
+    ()=>{const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());document.getElementById('simData').value=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');},
     ()=>{const hist=lerJSONLocalGestor('gestorCalculadoraHistoricoV1',[]);historicoCalcGestor=Array.isArray(hist)?hist.filter(h=>h&&typeof h==='object'&&typeof h.expressao==='string'&&h.expressao.length<=256&&Number.isFinite(h.resultado)).slice(0,20):[];renderizarHistoricoCalcGestor();},
     ()=>{const pins=lerJSONLocalGestor('gestorNotasFixadasV1',[]);notasFixadasGestor=Array.isArray(pins)?pins.filter(p=>typeof p==='string').slice(0,200):[];},
     ()=>document.getElementById('inpNovaNotaTexto').addEventListener('input',guardarTextoNotaGestor),
@@ -5999,7 +6050,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       const mesSelecionado = document.getElementById('selFiltroRelMes')?.value;
       const anoAnual = document.getElementById('selFiltroAnoSimples')?.value;
       const disponivel = (arvoreMesesAno[anoSelecionado] || []).some(m => String(m).split('/')[0] === mesSelecionado);
-      const hoje = new Date();
+      const hoje = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
       preencherSeletoresInteligentes(disponivel ? anoSelecionado : String(hoje.getFullYear()), disponivel ? mesSelecionado : String(hoje.getMonth()+1).padStart(2,'0'), false);
       if (anoAnual && Object.prototype.hasOwnProperty.call(arvoreMesesAno, anoAnual)) document.getElementById('selFiltroAnoSimples').value = anoAnual;
       atualizarEstadoSetasAnual();
@@ -6007,7 +6058,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
 
     function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
       // O mês vigente é consultável mesmo vazio; isso não cria lançamentos.
-      const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0')+'/'+anoAtual;
+      const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0')+'/'+anoAtual;
       if(!Array.isArray(arvoreMesesAno[anoAtual]))arvoreMesesAno[anoAtual]=[];
       if(!arvoreMesesAno[anoAtual].includes(mesAtual))arvoreMesesAno[anoAtual].push(mesAtual);
       const selAno = document.getElementById('selFiltroRelAno');
@@ -6936,7 +6987,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
     }
 
     function definirDataOffsetEmprestimo(offset) {
-      const dt = new Date();
+      const dt = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
       dt.setDate(dt.getDate() + offset);
       const str = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
       preencherDataTripla('emp', str);
@@ -6963,7 +7014,7 @@ function limparSimuladorTudo() {
       if (inpVal) inpVal.value = '';
       document.getElementById('simParcelas').value = '1';
       document.getElementById('simAVista').value = '';
-      const dataSim = new Date(); document.getElementById('simData').value = dataSim.getFullYear()+'-'+String(dataSim.getMonth()+1).padStart(2,'0')+'-'+String(dataSim.getDate()).padStart(2,'0');
+      const dataSim = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()); document.getElementById('simData').value = dataSim.getFullYear()+'-'+String(dataSim.getMonth()+1).padStart(2,'0')+'-'+String(dataSim.getDate()).padStart(2,'0');
       simuladorExpandidoGestor = false;
       document.getElementById('simCartao').value = '';
       toggleBotaoLimpar('simValor', 'btnLimparSimValor');
@@ -6977,7 +7028,7 @@ function limparSimuladorTudo() {
       if (!inp) return;
       let val = inp.value.trim();
       if (!val || !val.includes('/')) {
-         const hj = new Date();
+         const hj = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
          val = `${String(hj.getMonth() + 1).padStart(2, '0')}/${hj.getFullYear()}`;
       }
       let [m, a] = val.split('/').map(Number);
@@ -7313,6 +7364,7 @@ try {
           var data = await response.json();
           clearTimeout(timer);
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.codigo = data.codigo; e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
+          if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(data.relogioGestor);
           registrarIdentidadesGestor(action, data.dados, true);
           return data.dados;
         } catch (err) {
@@ -7846,6 +7898,7 @@ function referenciaPendenciaServidorGestor(p) {
   return /^[A-Za-z][A-Za-z0-9_]{2,80}$/.test(action) && /^[A-Za-z0-9_.:-]{8,160}$/.test(requestId) ? { action, requestId } : null;
 }
 function listarPendenciasAtividadeGestor() {
+  const coletar=()=>{
   const mapa = new Map();
   lerFilaOfflineGestor().forEach(p => mapa.set(p.requestId, { id: p.requestId, tipo: 'fila', action: 'salvarLancamentoWeb', payload: p, estado: 'Aguardando envio', descricao: p.descricao }));
   lerEntradasLocaisGestor('gestorMutacaoV3:').forEach(({ valor: p }) => {
@@ -7871,13 +7924,15 @@ function listarPendenciasAtividadeGestor() {
   });
   (integridadeServidorGestor.series || []).forEach(p=>mapa.set('serie:'+p.compraId,{id:'serie:'+p.compraId,tipo:'serie',action:'editarAssinaturaWeb',estado:'Despesa fixa precisa de conferência',descricao:p.descricao}));
   return Array.from(mapa.values());
+  };
+  return typeof agruparLeiturasLocaisGestor==='function'?agruparLeiturasLocaisGestor(coletar):coletar();
 }
 function atualizarBadgeAtividadeGestor() {
   try {
     const n = listarPendenciasAtividadeGestor().length;
     let badge = document.getElementById('badgeAtividadeGestor');
     if (!badge) { const titulo = document.querySelector('header h1'); if (titulo) { badge = botaoAtividadeGestor('', abrirAtividadeGestor); badge.id = 'badgeAtividadeGestor'; badge.className = 'ml-2 rounded-md border border-amber-400/40 bg-amber-500/15 text-amber-200 px-2 py-1 text-[10px] font-bold'; titulo.appendChild(badge); } }
-    if (badge) { badge.textContent = n + (n === 1 ? ' pendência' : ' pendências'); badge.classList.toggle('hidden', !n); }
+    if (badge) { const texto=n + (n === 1 ? ' pendência' : ' pendências');if(badge.textContent!==texto)badge.textContent=texto;if(!badge.classList.contains||badge.classList.contains('hidden')!==!n)badge.classList.toggle('hidden', !n); }
   } catch (_) { /* A indicação não altera nem apaga as pendências. */ }
 }
 function abrirAtividadeGestor() {
@@ -8026,7 +8081,7 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
 }
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
-  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();
@@ -8086,7 +8141,7 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
   const select = document.getElementById('cartaoPagamentoFaturaGestor'); select.replaceChildren();
   formasGlobais.filter(f => { const n = typeof f === 'string' ? f : f.nome; return n && formaEhCartaoGestor(f); }).forEach(f => { const n = typeof f === 'string' ? f : f.nome; select.add(new Option(n, n)); });
   if (forma) select.value = forma;
-  const hoje = new Date(); document.getElementById('mesPagamentoFaturaGestor').value = mes || String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
+  const hoje = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()); document.getElementById('mesPagamentoFaturaGestor').value = mes || String(hoje.getMonth() + 1).padStart(2, '0') + '/' + hoje.getFullYear();
   document.getElementById('valorPagamentoFaturaGestor').value = ''; modal.classList.remove('hidden');
   select.focus(); await conferirPagamentoFaturaGestor();
 }
@@ -8185,7 +8240,7 @@ function abrirDevolucaoPainelGestor(item){
   for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp',item.status==='Recebido'?'Recebido':'A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
   renderizarPainelEmprestimos();
 }
-function listarDevolucoesPainelGestor(itens,hoje=new Date()){
+function listarDevolucoesPainelGestor(itens,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  const atual=hojeSituacaoVisualGestor(hoje);
  return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>{const situacao=situacaoRecebimentoVisualGestor(i,hoje),dia=diaSituacaoVisualGestor(i.dataCombinada)??(situacao.codigo==='mesEncerrado'?fimMesSituacaoVisualGestor(i.mesFatura):null);return {...i,situacao,dias:dia===null?null:dia-atual};}).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
 }
@@ -8664,7 +8719,7 @@ function configurarModoAssinaturaGestor(retomar){
   document.getElementById('ajudaEdicaoAssGestor').textContent=retomar?'Revise os dados para iniciar um novo período. Não cria cobranças nos meses da pausa nem registra pagamento. O histórico anterior fica preservado.':'Altera o mês atual e futuros. O histórico de meses passados fica protegido.';
   const box=document.getElementById('boxDiaRetomadaAssGestor'),dia=document.getElementById('diaRetomadaAssGestor');box.hidden=!retomar;box.classList.toggle('hidden',!retomar);dia.disabled=!retomar;dia.required=retomar;
   const rotulo=document.getElementById('rotuloInicioAssGestor');if(rotulo)rotulo.textContent=retomar?'Mês de retorno (MM/AAAA)':'Novas condições a partir de (MM/AAAA)';
-  const inicio=document.getElementById('inpAssInicio');if(inicio){inicio.required=retomar;inicio.setAttribute('aria-label',retomar?'Mês de retorno':'Novas condições a partir do mês');if(!retomar){const hoje=new Date();inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}}
+  const inicio=document.getElementById('inpAssInicio');if(inicio){inicio.required=retomar;inicio.setAttribute('aria-label',retomar?'Mês de retorno':'Novas condições a partir do mês');if(!retomar){const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}}
   const btn=document.getElementById('btnSalvarEdAss');btn.disabled=false;btn.textContent=retomar?'▶️ Retomar':'↻ Atualizar recorrência';
 }
 function abrirRetomadaAssinaturaGestor(assinatura){
@@ -8764,7 +8819,7 @@ function exibirRascunhoJaEnviadoGestor(tipo,estado){
   const texto=document.createElement('p');texto.textContent=fila?'Já está na fila de sincronização.':'Enviado em outra aba — confira seus registros.';painel.append(texto);
   for(const [rotulo,acao]of [[fila?'Conferir em Atividade':tipo==='emp'?'Conferir empréstimos':'Conferir no Histórico',()=>fila?setAba('atividade'):tipo==='emp'?abrirFerramenta('emprestimos','consulta'):setAba('lancamentos')],['Limpar e iniciar outro',()=>pedirLimpezaFormularioGestor(tipo==='emp')]]){const b=document.createElement('button');b.type='button';b.className='mr-2 rounded-lg border border-slate-500 px-3 py-2 text-white';b.textContent=rotulo;b.onclick=acao;painel.append(b);}
 }
-function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
+function dataPadraoRascunhoGestor(){const d=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
   const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','chkPixParcelado'];
@@ -9033,7 +9088,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('selFiltroRelMes')?.setAttribute('aria-label','Mês da fatura');document.getElementById('selFiltroRelAno')?.setAttribute('aria-label','Ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
   document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat','selEmpForma'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(['selForma','selEmpForma'].includes(e.target.id))delete document.getElementById(e.target.id==='selForma'?'inpMesFat':'inpEmpMesFat').dataset.escolhaManual;}},true);
-  document.addEventListener('input',e=>{if(e.target.id==='inpMesFat')e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
+  document.addEventListener('input',e=>{if(['inpMesFat','inpDataDia','inpDataMes','inpDataAno','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno'].includes(e.target.id))e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
   const painel=document.getElementById('painelDividirEmpCampos');if(painel){const resumo=document.createElement('p');resumo.id='previaRecebimentoRotina';resumo.className='text-xs text-amber-100 leading-relaxed';resumo.setAttribute('role','status');painel.prepend(resumo);document.getElementById('inpDividirEmpValor').setAttribute('aria-label','Valor recebido agora');}
   const form=document.getElementById('formEmprestimo');if(form){const nav=document.createElement('div');nav.className='flex gap-2 mb-3';nav.setAttribute('role','group');nav.setAttribute('aria-label','Modo de empréstimos');const consultar=document.createElement('button'),novo=document.createElement('button');for(const b of [consultar,novo]){b.type='button';b.className='flex-1 rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-sm font-bold text-slate-100';nav.append(b);}consultar.id='btnConsultarEmprestimos';novo.id='btnNovoEmprestimo';consultar.textContent='Consultar empréstimos';novo.textContent='Novo empréstimo';consultar.onclick=()=>alternarModoEmprestimosGestor('consulta');novo.onclick=()=>alternarModoEmprestimosGestor('novo',true);form.parentElement.before(nav);alternarModoEmprestimosGestor('consulta');}
   const explicacao=document.getElementById('horizonte-explicacao');if(explicacao){const d=document.createElement('details'),s=document.createElement('summary');d.className='text-xs text-slate-300 my-2';s.textContent='Entenda os valores';s.className='cursor-pointer py-2';explicacao.before(d);d.append(s,explicacao);const irma=d.nextElementSibling;if(irma?.tagName==='P')d.append(irma);}
@@ -9041,7 +9096,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const intervalo=document.createElement('p');intervalo.id='intervaloHorizonteRotina';intervalo.className='text-xs font-bold text-sky-200 mb-2';document.getElementById('rolagemHorizonteGestor')?.before(intervalo);
   const formas=document.getElementById('lista-formas');if(formas){const b=document.createElement('button');b.id='btnAlternarArquivadosGestor';b.type='button';b.hidden=!(formasGlobais||[]).some(f=>f.arquivado);b.className='rounded-xl border border-slate-600 px-3 py-2 mb-3 text-xs text-slate-200';b.textContent='Mostrar arquivados';b.setAttribute('aria-pressed','false');b.onclick=()=>{window.exibirArquivadosGestor=!window.exibirArquivadosGestor;renderListaFormas();};formas.before(b);}
   for(const [formId,id,texto]of [['formEmprestimo','inpEmpCombinada','Data combinada da primeira devolução (opcional; demais parcelas mensais)'],['modalEdicaoEmp','inpEdEmpCombinada','Data combinada de devolução (opcional)']]){const destino=document.getElementById(formId);if(!destino)continue;const l=document.createElement('label');l.className='block text-xs text-slate-300 mt-3';l.textContent=texto;const i=document.createElement('input');i.type='date';i.id=id;i.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';l.append(i);const f=destino.tagName==='FORM'?destino:destino.querySelector('form');const acao=f.querySelector('button[type="submit"]')?.parentElement;if(acao)acao.before(l);else f.append(l);i.onchange=()=>formId==='formEmprestimo'&&salvarRascunhoEmp();}
-  const inicio=document.createElement('input');inicio.id='inpAssInicio';inicio.placeholder='MM/AAAA';inicio.maxLength=7;inicio.inputMode='numeric';inicio.className='w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white';inicio.setAttribute('aria-label','Novas condições a partir do mês');const fAss=document.getElementById('modalEdicaoAss')?.querySelector('form');if(fAss){const l=document.createElement('label');l.className='block text-xs text-slate-300';const titulo=document.createElement('span');titulo.id='rotuloInicioAssGestor';titulo.textContent='Novas condições a partir de (MM/AAAA)';l.append(titulo,inicio);fAss.prepend(l);const hoje=new Date();inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}
+  const inicio=document.createElement('input');inicio.id='inpAssInicio';inicio.placeholder='MM/AAAA';inicio.maxLength=7;inicio.inputMode='numeric';inicio.className='w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white';inicio.setAttribute('aria-label','Novas condições a partir do mês');const fAss=document.getElementById('modalEdicaoAss')?.querySelector('form');if(fAss){const l=document.createElement('label');l.className='block text-xs text-slate-300';const titulo=document.createElement('span');titulo.id='rotuloInicioAssGestor';titulo.textContent='Novas condições a partir de (MM/AAAA)';l.append(titulo,inicio);fAss.prepend(l);const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}
   renderizarRecuperacaoRascunhosGestor();
 });
 for(const tipo of ['input','change'])document.addEventListener(tipo,event=>{
@@ -9055,6 +9110,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   for(const [v,t]of [['parcela','Somente esta parcela'],['proximas','Esta e próximas a receber']]){const o=document.createElement('option');o.value=v;o.textContent=t;s.append(o);}l.append(s);dataEd.after(l);
   const p=document.createElement('p');p.id='ajudaEscopoDataEmpGestor';p.className='mt-1 text-xs text-slate-300';p.textContent='Repete o dia nos meses seguintes. Você confere as datas antes de salvar; parcelas anteriores e recebidas são preservadas.';p.hidden=true;l.after(p);s.setAttribute('aria-describedby',p.id);s.onchange=()=>{p.hidden=s.value!=='proximas';};
 });
+
+// Só corrige padrões automáticos de formulários inteiramente vazios e sem envio.
+function atualizarDatasAutomaticasRelogioGestor(){
+ for(const emp of [false,true]){
+  const tipo=emp?'emp':'novo',form=document.getElementById(emp?'formEmprestimo':'formLancamento');
+  if(!form||form.contains?.(document.activeElement)||bloqueioFormularioRotinaGestor(emp))continue;
+  const dados=dadosFormularioRascunhoGestor(emp);if(!rascunhoFormularioVazioRotinaGestor(tipo,dados))continue;
+  const data=dataPadraoRascunhoGestor();preencherDataTripla(emp?'emp':'novo',data);padroesDatasRascunhoGestor[tipo]=data;
+  if(emp)atualizarFaturaEmprestimo();else atualizarRegrasForma();
+ }
+}
 // FIM INTERFACE ROTINA GERADA
 </script>
 <script>
@@ -9064,7 +9130,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // A cache é descartada em renderizarDados; nenhuma ação aqui confirma pagamentos.
 let dadosAgendaGestor=null,diaAgendaGestor=null,eventosAgendaGestor=null;
 function mesAgendaValidoGestor(texto){const p=/^(\d{4})-(\d{2})$/.exec(String(texto));return Boolean(p&&anoCompetenciaValidoGestor_(Number(p[1]))&&Number(p[2])>=1&&Number(p[2])<=12);}
-function compromissosAgendaGestor(dados,hoje=new Date()){
+function compromissosAgendaGestor(dados,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  const eventos=[],h=dados?.faturas?.horizonte;
  for(const f of dados?.formasPagamento||[]){
   const vencimento=Number(f.vencimento);if(f.tipo!=='cartao'||!Number.isInteger(vencimento)||vencimento<1||vencimento>31)continue;
@@ -9091,7 +9157,7 @@ function moverMesAgendaGestor(passo){
 function mostrarMesCompletoAgendaGestor(){diaAgendaGestor=null;renderizarAgendaGestor();}
 function renderizarAgendaGestor(){
   const campo=document.getElementById('mesAgendaGestor'),grade=document.getElementById('calendarioAgendaGestor'),lista=document.getElementById('listaAgendaGestor');if(!campo||!grade||!lista)return;
-  if(!campo.value){const h=new Date();campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
+  if(!campo.value){const h=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
   if(!mesAgendaValidoGestor(campo.value)){grade.replaceChildren();lista.replaceChildren();diaAgendaGestor=null;document.getElementById('verMesAgendaGestor').hidden=true;document.getElementById('agendaAnteriorGestor').disabled=true;document.getElementById('agendaProximoGestor').disabled=true;document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
   const [ano,mes]=campo.value.split('-').map(Number),inicio=Date.UTC(ano,mes-1,1)/86400000,fim=Date.UTC(ano,mes,1)/86400000,tipo=document.getElementById('tipoAgendaGestor').value;
   if(diaAgendaGestor!==null&&(diaAgendaGestor<inicio||diaAgendaGestor>=fim))diaAgendaGestor=null;
@@ -9124,7 +9190,7 @@ const abaAntesAgendaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
 
 // Recalcula os avisos com a mesma data usada no calendário, inclusive virada de mês/ano.
-function alertasBancariosGestor(dados,hoje=new Date()){
+function alertasBancariosGestor(dados,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){
  if(!dados?.faturas?.horizonte)return dados?.alertasVencimento||[];
  const atual=hojeSituacaoVisualGestor(hoje);
  return compromissosAgendaGestor(dados,hoje).filter(i=>i.tipo==='cartao'&&i.saldo>0.004&&i.dia-atual<=7).map(i=>({forma:i.forma,mes:i.mesFatura,data:i.data,valor:formatBRL(i.saldo),dias:i.dia-atual}));
@@ -9473,7 +9539,7 @@ document.addEventListener('visibilitychange', () => {
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo
 // nem interromper formulários e modais em edição. Falhas permitem nova tentativa.
 function criarRevalidadorDiaGestor(opcoes){
-  const agora=opcoes.agora||(()=>new Date()),dia=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  const agora=opcoes.agora||(()=>new Date()),dia=opcoes.dia||(d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate());
   let conferido=dia(agora()),pendente=null,proximaTentativa=0;
   function verificar(forcar=false){
     const hoje=agora(),chave=dia(hoje);
@@ -9491,6 +9557,8 @@ function criarRevalidadorDiaGestor(opcoes){
   return {verificar};
 }
 const revalidadorDiaGestor=criarRevalidadorDiaGestor({
+  agora:()=>new Date(typeof instanteCivilGestor==='function'?instanteCivilGestor():Date.now()),
+  dia:d=>typeof dataCivilISOGestor==='function'?dataCivilISOGestor():d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),
   permitir:()=>document.visibilityState==='visible'&&typeof abaAtivaAtual!=='undefined'&&['dashboard','agenda'].includes(abaAtivaAtual)&&!document.querySelector('[role="dialog"]:not(.hidden):not([hidden])'),
   online:()=>navigator.onLine,
   carregar:()=>carregarDados(),
@@ -9504,6 +9572,20 @@ document.addEventListener('DOMContentLoaded',()=>{
   }
   setInterval(()=>revalidadorDiaGestor.verificar(),60000);
 });
+
+// Chamado somente ao montar diagnóstico, sem copiar conteúdo ou nomes de chaves.
+function diagnosticoArmazenamentoGestor(){
+ try{
+  const grupos={fila:{chaves:0,bytesEstimados:0},revisoes:{chaves:0,bytesEstimados:0},rascunhos:{chaves:0,bytesEstimados:0},notas:{chaves:0,bytesEstimados:0},envios:{chaves:0,bytesEstimados:0},caches:{chaves:0,bytesEstimados:0},outros:{chaves:0,bytesEstimados:0}};
+  let bytesEstimados=0,chaves=0;
+  for(let i=0;i<localStorage.length;i++){
+   const chave=localStorage.key(i);if(chave===null)continue;const valor=localStorage.getItem(chave);if(valor===null)continue;
+   const grupo=/^(gestorFilaItemV2:|gestorFilaOrdemV1:|filaOfflineGestor$)/.test(chave)?'fila':/^gestorFilaRevisaoV1:/.test(chave)?'revisoes':/^gestorRascunho/.test(chave)?'rascunhos':/^(gestorNota|notasLocais)/.test(chave)?'notas':/^gestor(Mutacao|EmprestimoPendente|Cancelamento)/.test(chave)?'envios':/^(cacheDadosGestorV11$|gestorHistoricoCacheV1$)/.test(chave)?'caches':'outros';
+   const bytes=2*(chave.length+valor.length);grupos[grupo].chaves++;grupos[grupo].bytesEstimados+=bytes;bytesEstimados+=bytes;chaves++;
+  }
+  return {disponivel:true,criterio:'Estimativa UTF-16; não mede a cota nem o espaço livre do navegador',chaves,bytesEstimados,grupos};
+ }catch(_){return {disponivel:false};}
+}
 // FIM INTERFACE DESEMPENHO GERADA
 </script>
 <script>
@@ -9536,7 +9618,7 @@ window.exportarBackupDados=async function(formato='json') {
     ref=await apiCall('prepararExportacaoBackupWeb',{importacaoId:novoRequestIdGestor(),formato},1);
     const dados=await lerExportacaoPreparadaGestor(ref,(...a)=>apiCall(...a),(valor,total)=>{if(status)status.textContent='Conferindo backup: '+Math.round(valor/total*100)+'%';});
     if(formato==='json'){
-      baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+new Date().toISOString().slice(0,10)+'.json');
+      baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+(typeof dataCivilISOGestor==='function'?dataCivilISOGestor():new Date().toISOString().slice(0,10))+'.json');
       if(status)status.textContent='Backup conferido e preparado para baixar. O histórico técnico continua preservado na planilha.';
       mostrarAviso('Backup pronto','O arquivo JSON contém os dados restauráveis do app. Guarde-o em um local de confiança.');
     }else{
@@ -9544,7 +9626,7 @@ window.exportarBackupDados=async function(formato='json') {
       const nome=formato==='emprestimos'?'Empréstimos':'Lançamentos',aba=abaCompletaCSVProtecaoGestor(dados,nome);
       if(!aba)throw Error('A preparação não contém a aba solicitada.');
       const url=URL.createObjectURL(new Blob([converterAbaCSV(aba.exibidos)],{type:'text/csv;charset=utf-8'}));
-      const link=document.createElement('a');link.href=url;link.download=(formato==='emprestimos'?'Emprestimos_':'Lancamentos_')+new Date().toISOString().slice(0,10)+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      const link=document.createElement('a');link.href=url;link.download=(formato==='emprestimos'?'Emprestimos_':'Lancamentos_')+(typeof dataCivilISOGestor==='function'?dataCivilISOGestor():new Date().toISOString().slice(0,10))+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
       if(status)status.textContent='CSV conferido e preparado para baixar. Os registros permanecem na planilha.';
       mostrarAviso('CSV pronto','Arquivo de consulta. Use o backup JSON para restauração.');
     }

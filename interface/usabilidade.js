@@ -392,7 +392,7 @@ async function adicionarNotaRapida(){
       if(rascunhoNotaConcluidoGestor(rascunho)||['guardado','confirmado'].includes(reserva?.estado))return 'existente';
       inicializarNotasLocaisGestor();let nota;
       if(rascunho.edicao){const base=rascunho.edicao,atual=notasGlobais.find(n=>String(n.id)===String(base.id));if((base.baseRestauracao||'')!==epoca||!atual||Number(atual.revision||0)!==base.revision||atual.texto!==base.texto){const e=Error('Seu rascunho permanece no campo; confira a versão atual antes de editar novamente.');e.codigo='NOTA_DESATUALIZADA';throw e;}nota={...atual,texto:texto.trim()};}
-      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:new Date().toLocaleDateString('pt-BR')};
+      else nota={id:'nota-'+hash,texto:texto.trim(),concluida:false,data:(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()).toLocaleDateString('pt-BR')};
       const opId='nota-op-'+hash,preparada=reserva?.operacao||{opId,id:nota.id,tipo:'upsert',baseRestauracao:epoca,criadoEm:Date.now(),revision:Number(nota.revision||0),nota};
       gravarArmazenamentoGestor(chave,JSON.stringify({estado:'preparado',operacao:preparada}));
       registrarOperacaoNotaGestor('upsert',nota,preparada);
@@ -420,7 +420,7 @@ function excluirNotaRapida(id){
 // A entrada normal sempre usa o calendário. Atalhos com período explícito
 // continuam sendo consultas manuais, sem ativar acompanhamento de faturas.
 function aoEntrarMensalGestor(periodoExplicito=null){
-  const hoje=new Date(),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
+  const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0');
   const valido=/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(periodoExplicito||''));
   const [mes,ano]=valido?periodoExplicito.split('/'):[mesAtual,anoAtual];
   const anoAnual=document.getElementById('selFiltroAnoSimples')?.value;
@@ -432,7 +432,7 @@ function inicializarUsabilidadeGestor(){
   const partes=[
     compactarComprovantesNotasGestor,
     ()=>{modoHorizonteGestor=localStorage.getItem('gestorHorizonteModoV1')==='saldo'?'saldo':'total';},
-    ()=>{const hoje=new Date();document.getElementById('simData').value=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');},
+    ()=>{const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());document.getElementById('simData').value=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');},
     ()=>{const hist=lerJSONLocalGestor('gestorCalculadoraHistoricoV1',[]);historicoCalcGestor=Array.isArray(hist)?hist.filter(h=>h&&typeof h==='object'&&typeof h.expressao==='string'&&h.expressao.length<=256&&Number.isFinite(h.resultado)).slice(0,20):[];renderizarHistoricoCalcGestor();},
     ()=>{const pins=lerJSONLocalGestor('gestorNotasFixadasV1',[]);notasFixadasGestor=Array.isArray(pins)?pins.filter(p=>typeof p==='string').slice(0,200):[];},
     ()=>document.getElementById('inpNovaNotaTexto').addEventListener('input',guardarTextoNotaGestor),

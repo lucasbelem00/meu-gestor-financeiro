@@ -26,7 +26,7 @@ window.exportarBackupDados=async function(formato='json') {
     ref=await apiCall('prepararExportacaoBackupWeb',{importacaoId:novoRequestIdGestor(),formato},1);
     const dados=await lerExportacaoPreparadaGestor(ref,(...a)=>apiCall(...a),(valor,total)=>{if(status)status.textContent='Conferindo backup: '+Math.round(valor/total*100)+'%';});
     if(formato==='json'){
-      baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+new Date().toISOString().slice(0,10)+'.json');
+      baixarJSONRestauracaoGestor(dados,'Backup_Gestor_'+(typeof dataCivilISOGestor==='function'?dataCivilISOGestor():new Date().toISOString().slice(0,10))+'.json');
       if(status)status.textContent='Backup conferido e preparado para baixar. O histórico técnico continua preservado na planilha.';
       mostrarAviso('Backup pronto','O arquivo JSON contém os dados restauráveis do app. Guarde-o em um local de confiança.');
     }else{
@@ -34,7 +34,7 @@ window.exportarBackupDados=async function(formato='json') {
       const nome=formato==='emprestimos'?'Empréstimos':'Lançamentos',aba=abaCompletaCSVProtecaoGestor(dados,nome);
       if(!aba)throw Error('A preparação não contém a aba solicitada.');
       const url=URL.createObjectURL(new Blob([converterAbaCSV(aba.exibidos)],{type:'text/csv;charset=utf-8'}));
-      const link=document.createElement('a');link.href=url;link.download=(formato==='emprestimos'?'Emprestimos_':'Lancamentos_')+new Date().toISOString().slice(0,10)+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      const link=document.createElement('a');link.href=url;link.download=(formato==='emprestimos'?'Emprestimos_':'Lancamentos_')+(typeof dataCivilISOGestor==='function'?dataCivilISOGestor():new Date().toISOString().slice(0,10))+'.csv';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
       if(status)status.textContent='CSV conferido e preparado para baixar. Os registros permanecem na planilha.';
       mostrarAviso('CSV pronto','Arquivo de consulta. Use o backup JSON para restauração.');
     }

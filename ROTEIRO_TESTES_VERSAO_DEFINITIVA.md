@@ -157,3 +157,9 @@ Novo/Parcelas: em 1, deve mostrar À vista. Tocar limpa a quantidade e permite t
 
 
 Auditoria em três partes: criar recorrência com perfil diferente da categoria, gerar próximo mês e editar condição para mês ainda inexistente; perfil deve persistir. Trocar padrão da categoria não muda essa série. Criar fatura R$ 300, pagar R$ 100 e editar descrição: pago permanece R$ 100; editor não altera situação financeira. Registrar recebimento e desfazer por Atividade continuam separados do banco. Reordenar cartões: resumo/formulas ficam na posição e fórmulas de cadastro móvel geram bloqueio sem gravação. Conferir dia anterior/exato/posterior ao fechamento e virada anual; não deslocar fechamento por feriado. Verificar proteção da API sem credencial em ambiente controlado e confirmar regra de fechamento com cartão real.
+
+
+Pacote de desempenho conservador: após atualizar frontend e Apps Script, conferir apenas os fluxos afetados: abrir Painel e Mensal, consultar Histórico da Atividade, conferir uma ação reversível e copiar Diagnóstico. Se houver pendência real, confirmar que continua visível e preservada. Não criar uma pendência incerta artificial na base definitiva. Diagnóstico de armazenamento mostra contagens/estimativas sem textos de gastos; não mede espaço livre. Os testes manuais anteriores continuam válidos, sem necessidade de repetir tudo por este pacote.
+
+
+Relógio civil (v130): após atualizar frontend e Apps Script, copiar Diagnóstico e conferir fuso/origem da referência. Verificar Hoje/Ontem, mês atual da Mensal e destaque de hoje na Agenda. Reabrir offline depois de uma consulta online e conferir o calendário; manter uma data manual preenchida e verificar que sincronizar não a altera. Não precisa mudar o relógio do aparelho real: viradas e fusos diferentes já têm testes automatizados. Se mudar horário do dispositivo enquanto estiver offline, reconectar para obter referência confiável.
