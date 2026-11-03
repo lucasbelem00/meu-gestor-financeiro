@@ -3641,7 +3641,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
       mostrarConfirmacao(
         'Excluir Lançamento',
-        `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?`,
+        `Tem certeza que deseja excluir "${descricao}"${ehParcelado ? ` (Parcela ${pLimpa})` : ''}?${ehParcelado?' O total registrado será recalculado pelas parcelas restantes; a numeração original será preservada.':''}`,
         (excluirTodasParcelas) => {
           apiCall('excluirLancamentoWeb', {
             linha: linha,
@@ -3650,7 +3650,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
             mesFatura: mesFat,
             excluirTodasParcelas: Boolean(excluirTodasParcelas)
           })
-            .then(res => { mostrarAviso('Sucesso',res.pulada?'Ocorrência pulada. Você pode desfazer em Atividade.':'Lançamento excluído!'); carregarDados(); })
+            .then(res => { mostrarAviso('Sucesso',res.pulada?'Ocorrência pulada. Você pode desfazer em Atividade.':ehParcelado&&res.compra?.parcelasRestantes>0?'Parcela(s) excluída(s). Total das parcelas restantes: '+formatBRL(res.compra.totalDepois)+'. A numeração original foi preservada.':'Lançamento excluído!'); carregarDados(); })
             .catch(err => mostrarAviso('Erro', 'Erro ao excluir: ' + err.message));
         },
         ehParcelado

@@ -175,4 +175,10 @@ No HTML principal, `entradasFilaOrdenadasGestor` ordena pelos metadados locais `
 
 `interface/sincronizacao.js` apresenta a revisão em Atividade, com consulta, reenvio do original, cancelamento e preparação de correção. `criarCopiaCorrecaoFilaGestor` só é chamado após cancelamento confirmado; guarda rascunho separado, não substitui o formulário e não reutiliza o requestId cancelado para novo conteúdo. Originais resolvidos continuam acessíveis em uma seção recolhida local. `interface/rotina.js` restaura também o estado de metade ao recuperar rascunhos manualmente.
 
-Cache v115; última suíte completa: 926 testes aprovados. O recurso depende do backend já existente que retorna rejeições por item e oferece consulta/cancelamento seguros. Atualização local de frontend, sem função manual nova e sem publicação remota realizada nesta rodada.
+Na rodada da fila, cache v115 e 926 testes aprovados. O recurso depende do backend já existente que retorna rejeições por item e oferece consulta/cancelamento seguros. Atualização local de frontend, sem função manual nova e sem publicação remota realizada nessa rodada.
+
+## Exclusão parcial e total da compra — 03/11/2026
+
+`Backend/Code.gs`: `prepararTotaisExclusaoPessoalGestor_` calcula o grupo por Compra ID e os totais em centavos antes/depois da exclusão. `excluirLancamentoWebInterno_` verifica os pagamentos dos alvos, atualiza somente a coluna E dos sobreviventes antes de remover linhas e mantém quantidade/posição original das parcelas. O resultado traz `compra` com totais e contagens; o diário existente preserva o estado anterior para conferência e desfazer. Não há novo formato de metadados nem migração automática de exclusões antigas.
+
+O plano anual existente transforma alterações em registros fechados em ajustes de continuidade, sem reescrever o retrato. As mensagens de `excluirLancamentoLocal` no HTML explicam o total das parcelas restantes. Cache v116; última suíte completa: 936 testes aprovados. Atualizar backend e frontend; sem nova função manual de ativação. Nenhuma publicação remota executada nesta rodada.

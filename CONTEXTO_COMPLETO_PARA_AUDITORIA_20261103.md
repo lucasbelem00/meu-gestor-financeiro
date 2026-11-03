@@ -33,12 +33,12 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | --- | --- |
 | Repositório local | `C:\Users\lucas\OneDrive\Documentos\GitHub\meu-gestor-financeiro` |
 | Branch local | `New` |
-| Último commit observado | `1d4de98` — `Revisão Claude` |
+| Último commit observado | `d9bd88a` — `Revisão Gemini Módulo 2` (a correção seguinte de exclusões ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v115` |
-| Última suíte completa documentada | 926 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v116` |
+| Última suíte completa documentada | 936 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
-| Último pacote de correções | Revisão recuperável dos rejeitados da fila offline e ordenação por inclusão; ajustes anteriores de moeda e ÷2/×2 preservados |
+| Último pacote de correções | Recálculo do total após exclusão parcial de compras, com preservação dos pagamentos, numeração e retratos anuais |
 
 Esses números representam o estado observado, não uma promessa para versões posteriores. Confira `git status`, `git log`, `sw.js` e os resultados dos comandos antes de continuar. Os testes não foram repetidos apenas para escrever este resumo.
 
@@ -178,7 +178,9 @@ A função consulta totais e permite registrar pagamento ao banco com prévia. A
 
 ### Exclusões e movimentos
 
-Na revisão de 03/11, exclusões de gastos com pagamento, inclusive parcial, e de parcelas de terceiros com recebimento ou pagamento bancário passaram a ser bloqueadas. Conferir/desfazer o movimento é necessário antes de excluir. Isso também afeta Pix já registrado como pago. Não retirar o bloqueio para fazer um teste antigo “passar” sem discutir a regra.
+Na revisão de 03/11, exclusões de parcelas selecionadas com pagamento, inclusive parcial, e de parcelas de terceiros com recebimento ou pagamento bancário passaram a ser bloqueadas. Conferir/desfazer o movimento é necessário antes de excluir o registro pago. Isso também afeta Pix já registrado como pago. O lote de “outras parcelas em aberto” pode preservar as pagas e excluir as abertas sem pagamento, recalculando o total das sobreviventes. Não retirar o bloqueio para fazer um teste antigo “passar” sem discutir a regra.
+
+Depois de uma exclusão parcial pessoal, o campo de total da compra representa a soma em centavos das parcelas remanescentes em Lançamentos, como já ocorre na edição e antecipação. A quantidade e a posição original (por exemplo, 1/5) não são renumeradas. O diário preserva o estado anterior e o resultado traz totais e quantidades antes/depois; isso não equivale a armazenar um novo contrato original em cada linha. Não há reescrita automática do passado ou inferência das parcelas ausentes em bases legadas.
 
 Mover entre pessoal e empréstimos não pode perder pagamento, criar recebimento implícito nem apagar metadados. Alterar descrição/categoria não pode mudar competência ou quitação por efeito colateral.
 
@@ -353,7 +355,7 @@ A rodada mais recente analisou um relatório externo extenso e aplicou os achado
 
 Antes dessa rodada, foram corrigidos problemas de perfil nos rascunhos/backups, datas, classificação perdida em transferências, estados anuais indevidos (“Ano undefined”), ReferenceError na renderização do Histórico, layout do Painel/comparador, modais/Voltar, contraste e ordenação de sugestões por frequência. Consulte testes e relatórios, sem assumir que a lista de correções elimina toda possível regressão.
 
-Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. Com a revisão recuperável e ordenação da fila offline, a suíte completa passou a **926 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
+Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. A revisão recuperável e ordenação da fila offline elevou a suíte a 926. Com o recálculo dos totais nas exclusões parciais, a suíte completa passou a **936 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
 
 **O próximo passo de liberação é atualizar/conferir a implantação de testes e executar os testes reais essenciais.** Não há autorização implícita para restaurar a planilha definitiva, remover proteção de produção ou apagar arquivos anuais.
 
@@ -375,6 +377,14 @@ Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 teste
 - Web Locks coordena abas na mesma origem quando disponível; há fallback local, e a proteção financeira principal contra duplicação continua no backend. Não prometer exclusão perfeita entre aparelhos.
 - Notas têm mecanismo próprio e tentativas automáticas de sincronização; não afirmar que todas as falhas de Notas exigem reenvio manual. O fluxo de empréstimos pendentes não é igual ao lote dos gastos pessoais. A recuperação por requestId/diário não é upload de arquivo resumível.
 - Validação local: 926 testes aprovados, incluindo armazenamento insuficiente, queda entre cópia e retirada, cinquenta rejeitados, confirmação anterior, bloqueio de correção sob incerteza e preservação do pedido no reenvio. Cache v115. Não houve publicação nem teste desta interface na conta real.
+
+### Exclusão parcial de compra parcelada — correção implementada localmente
+
+Foi reproduzida inconsistência no campo de total: compra de R$ 100 em 5x, primeira de R$ 20 paga e exclusão das quatro abertas deixava o total antigo. A correção adicionou `prepararTotaisExclusaoPessoalGestor_`, que usa Compra ID e soma em centavos, recalculando sobreviventes tanto na exclusão individual quanto em lote. Só a coluna de total é ajustada antes da remoção e ordenação das linhas, dentro do plano transacional existente.
+
+Agora o caso resulta numa parcela paga de R$ 20, total registrado de R$ 20 e numeração histórica 1/5, preservando quantidade original, IDs, classificação, datas e pagamento. O resultado registra `compra` com totais e contagens antes/depois. O diário conserva o estado anterior e permite desfazer. O recálculo de uma parcela de ano fechado segue os ajustes de continuidade; o arquivo fechado permanece intacto. As mensagens de confirmação e conclusão explicam o alcance. Recorrências continuam no fluxo próprio de pular mês.
+
+Dez regressões novas cobrem exclusão individual, lote, exclusões sucessivas, centavos, compra homônima, bloqueio de pagamento parcial, exclusão integral sem órfãos, desfazer, interrupção/reenvio e ano fechado. Suíte completa: 936 aprovados. Cache v116. Atualizar o Apps Script e o frontend correspondentes para disponibilizar o pacote; não há função nova de ativação. Não houve publicação nem alteração dos dados reais nesta rodada. Não foi acrescentada uma migração que tente reconstruir exclusões antigas sem evidência.
 
 Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
 

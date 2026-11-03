@@ -26,6 +26,8 @@ Anote um cartão e uma categoria usados apenas no teste. Se usar um cartão que 
 
 Recarregue o app e confira esses registros também na planilha. Não deve existir um segundo registro só por atualizar a página.
 
+Complemento de 03/11/2026 (cache v116; última suíte local: 936 testes): na cópia de testes, criar compra de R$ 100 em 5x e pagar somente a primeira parcela de R$ 20. Excluir as outras abertas: deve restar a paga, mantendo 1/5 e o pagamento, com total da compra recalculado para R$ 20. Conferir também exclusão individual de uma parcela aberta e desfazer da exclusão em Atividade. Não excluir o registro pago para testar esse recálculo. O caso entre ano aberto/fechado e recuperação após interrupção foi ensaiado automaticamente com dados fictícios; falta conferir a implantação real. A correção exige a nova versão do backend e o frontend correspondente.
+
 ## 3. Pagamento ao banco e recebimento de terceiros — teste principal
 
 Use uma competência de teste sem outros gastos, ou compare sempre a diferença em relação aos valores anteriores. A compra parcelada do passo anterior deve ficar em outro cartão/período para não entrar nesta conta.

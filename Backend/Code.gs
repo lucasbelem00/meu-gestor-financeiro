@@ -2427,6 +2427,16 @@ function editarLancamentoLinhaWebInterno_(dados) {
   }
 }
 
+// A numeração contratada permanece histórica; o total acompanha as linhas atuais.
+// O diário da exclusão preserva o estado anterior, sem criar outro formato técnico.
+function prepararTotaisExclusaoPessoalGestor_(lido,idx,alvos) {
+  const id=String(lido.raw[idx][12]||''),removidos=new Set(alvos);
+  const grupo=id?lido.raw.map(function(r,i){return String(r[12]||'')===id?i:-1;}).filter(function(i){return i>=0;}):[idx];
+  const restantes=grupo.filter(function(i){return !removidos.has(i);});
+  const somar=function(indices){return indices.reduce(function(s,i){const valor=centavosGestor_(lido.raw[i][7]),total=s+valor;if(valor<0||!Number.isSafeInteger(total))throw Error('O total desta compra precisa de conferência antes de excluir.');return total;},0);};
+  return {restantes:restantes,totalAntes:somar(grupo)/100,totalDepois:somar(restantes)/100,parcelasAntes:grupo.length,parcelasRestantes:restantes.length,quantidadeOriginal:parseNumParcela(lido.disp[idx][6]).total};
+}
+
 function excluirLancamentoWebInterno_(dados) {
   const lock = obterLockGestor_();
   try {
@@ -2456,11 +2466,15 @@ function excluirLancamentoWebInterno_(dados) {
       });
     }
     if(alvos.some(function(i){return valorPagoBancoGestor_(lido.raw[i],false)>0;}))throw new Error('Há pagamento registrado neste lançamento. Confira ou desfaça o pagamento em Atividade antes de excluir.');
+    const compra=prepararTotaisExclusaoPessoalGestor_(lido,idx,alvos);
+    // Antes de remover linhas, seus índices ainda são os da leitura original.
+    // Em ano fechado o plano anual produzirá ajustes, preservando o retrato.
+    compra.restantes.forEach(function(i){if(centavosGestor_(lido.raw[i][4])!==centavosGestor_(compra.totalDepois))lancSheet.getRange(i+2,5).setValue(compra.totalDepois);});
     alvos.map(function (i) { return i + 2; }).sort(function (a, b) { return b - a; }).forEach(function (n) {
       lancSheet.deleteRow(n);
     });
     organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
-    return { sucesso: true, qtd: alvos.length };
+    return { sucesso: true, qtd: alvos.length, compra:{totalAntes:compra.totalAntes,totalDepois:compra.totalDepois,parcelasAntes:compra.parcelasAntes,parcelasRestantes:compra.parcelasRestantes,quantidadeOriginal:compra.quantidadeOriginal} };
   } catch (e) {
     throw new Error('Falha ao excluir: ' + e.message);
   } finally {
