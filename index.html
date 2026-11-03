@@ -1808,6 +1808,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 throw falha;
               }
               if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(resultado.relogioGestor);
+              if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, resultado.temposGestor);
               resolve(resultado.dados);
             } catch (erro) {
               reject(erro);
@@ -7365,6 +7366,7 @@ try {
           clearTimeout(timer);
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.codigo = data.codigo; e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
           if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(data.relogioGestor);
+          if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, data.temposGestor);
           registrarIdentidadesGestor(action, data.dados, true);
           return data.dados;
         } catch (err) {
@@ -8068,6 +8070,33 @@ function renderizarHistoricoAtividadeGestor() {
     box.appendChild(card);
   });
 }
+function normalizarTemposServidorGestor(action, meta) {
+  if (!meta || meta.versao !== 1 || meta.acao !== action || !/^[A-Za-z]{1,80}$/.test(action)) return null;
+  const tempos = { versao: 1, acao: action };
+  for (const campo of ['totalMs','esperaLockMs','preparacaoMs','execucaoMs','planoMs','gravacaoMs','outrosMs']) {
+    if (typeof meta[campo] !== 'number' || !Number.isFinite(meta[campo]) || meta[campo] < 0 || meta[campo] > 3600000) return null;
+    tempos[campo] = Math.round(meta[campo]);
+  }
+  return tempos;
+}
+function registrarTemposServidorGestor(action, meta) {
+  try {
+    const tempos = normalizarTemposServidorGestor(action, meta);
+    if (!tempos) return;
+    const anteriores = lerTemposServidorGestor();
+    anteriores.push({data:new Date().toISOString(), ...tempos});
+    gravarArmazenamentoGestor('gestorTemposServidorV1', JSON.stringify(anteriores.slice(-30)));
+  } catch (_) { /* Diagnóstico opcional não interfere na resposta. */ }
+}
+function lerTemposServidorGestor() {
+  try {
+    const itens = lerJSONLocalGestor('gestorTemposServidorV1', []);
+    return (Array.isArray(itens) ? itens : []).slice(-30).flatMap(item => {
+      const tempos = normalizarTemposServidorGestor(item?.acao, item);
+      return tempos && typeof item.data === 'string' && /^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(item.data) ? [{data:item.data,...tempos}] : [];
+    });
+  } catch (_) { return []; }
+}
 function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) {
   try {
     const eventos = lerJSONLocalGestor('gestorDiagnosticoV1', []);
@@ -8081,7 +8110,7 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
 }
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
-  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', temposServidor: lerTemposServidorGestor(), geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();

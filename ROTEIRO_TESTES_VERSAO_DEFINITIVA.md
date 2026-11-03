@@ -95,6 +95,8 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+Diagnóstico v131: publicar Backend/Code.gs na mesma implantação Apps Script e frontend sincronizado na Vercel, mantendo destino/token/permissões. Usar um lançamento real necessário, abrir Mensal/Anual e copiar Diagnóstico. Conferir temposServidor com ação e durações (ms) correspondentes, separado de eventos.duracaoMs. Não repetir lançamento só para medir. Cache não produz nova medição de servidor; ações fora do executor transacional podem não fornecer etapas. Verificar resultado financeiro normal e preservação de pendências; nenhuma trava foi removida. Falta de medição não significa duração zero.
+
 Evidência posterior do usuário em 03/11/2026: preparação de permissões executada com sucesso e nova versão Apps Script publicada; app exibe base Gestor de Gastos e os três recursos ativos, com backup confirmado às 19:28. Consultas declaradas corretas pelo usuário. Restam observar primeiro lançamento real sem duplicação, atualização em outro aparelho e rotinas futuras. Não marcar restauração real ou todos os PDFs como testados somente com essa captura.
 
 Preparação de permissões (opcional em base já autorizada): seguir Backend/AUTORIZACAO_INICIAL.md e executar prepararAutorizacaoInicialGestor no editor pela conta da implantação. Conferir consentimento dos quatro escopos e ausência de mudança nos estados de proteção/organização/PDF; a função não cria backup nem gatilho. Não revogar acessos na definitiva para simular recusa. Testar consentimento inicial em projeto de testes, preservando fuso e dependências do manifesto. Google pode exigir nova autorização se permissões/conta mudarem; o teste local não comprova consentimento real.

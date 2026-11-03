@@ -11,6 +11,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Diagnóstico de duração (v131): executarOperacaoGestor_ registra medição opcional em memória da requisição; doPost/apiCallServidor reiniciam essa memória e incluem temposGestor no envelope de sucesso, sem alterar dados financeiros. Ambos os transportes coletam somente respostas reais, validam ação/campos numéricos e guardam até 30 entradas em gestorTemposServidorV1. montarDiagnosticoGestor exporta temposServidor com lista branca. Ausência de metadado permanece compatível; sem consultas novas, sem registro de parâmetros/IDs/valores. Módulos de sincronização, relatórios e operações financeiras afetados apenas pela instrumentação.
+
 Configuração/autorização: Backend/appsscript.json é modelo de manifesto Apps Script com quatro escopos explícitos; não é o manifesto PWA. prepararAutorizacaoInicialGestor, em Backend/Code.gs, exige consentimento desses escopos por ScriptApp.requireScopes no editor, sem gravação ou ativação. Não integra o catálogo da API. Backend/AUTORIZACAO_INICIAL.md orienta preservar configurações do manifesto existente. Afeta módulos de configurações/identidades e backup/anual, sem mudar suas regras financeiras.
 
 Liberação definitiva preparada em 03/11/2026: api/gestor.js atende também Production usando as variáveis próprias desse ambiente. Vercel Authentication em All Deployments é a barreira de login externa obrigatória; o proxy não autentica o usuário por conta própria. Validações de token, destino, método, tamanho e ações permanecem. Remoção do bloqueio absoluto é mudança local até publicação e conferência real.

@@ -7,6 +7,16 @@
 // O ID fica nas propriedades de cada projeto Apps Script. Assim, o projeto de
 // teste pode apontar para a planilha de teste e o projeto de produção para a real.
 const CHAVE_ID_PLANILHA_GESTOR = 'GESTOR_PLANILHA_ID';
+let TEMPOS_RESPOSTA_GESTOR_ = null;
+
+function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execucao, plano, gravacaoInicio) {
+  try {
+    const total = Math.max(0, Date.now() - inicio);
+    const etapas = [espera, preparacao, execucao, plano, gravacaoInicio ? Date.now() - gravacaoInicio : 0].map(n => Math.max(0, Math.round(Number(n) || 0)));
+    TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
+    console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
+  } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
+}
 
 // Executar manualmente no editor, pela conta responsável pela implantação.
 // Não expor no catálogo da API: consentimento exige interação no Google.
@@ -2171,6 +2181,7 @@ function getDadosCompletos() {
 // ============================================================================
 
 function doPost(e) {
+  TEMPOS_RESPOSTA_GESTOR_ = null;
   const output = ContentService.createTextOutput();
   output.setMimeType(ContentService.MimeType.JSON);
   try {
@@ -2180,7 +2191,7 @@ function doPost(e) {
       return output.setContent(JSON.stringify({ sucesso: false, erro: 'Acesso não autorizado.' }));
     }
     const result = executarAcaoApi_(payload.action, payload.param);
-    return output.setContent(JSON.stringify({ sucesso: true, dados: result, relogioGestor: referenciaRelogioServidorGestor_() }));
+    return output.setContent(JSON.stringify({ sucesso: true, dados: result, relogioGestor: referenciaRelogioServidorGestor_(), temposGestor: TEMPOS_RESPOSTA_GESTOR_ }));
   } catch (err) {
     return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true, codigo: err.codigo || 'FALHA_OPERACAO' }));
   }
@@ -2189,11 +2200,12 @@ function doPost(e) {
 // Função chamada pela interface hospedada no Apps Script.
 // Retorna texto JSON para converter datas e objetos complexos com segurança.
 function apiCallServidor(action, param) {
+  TEMPOS_RESPOSTA_GESTOR_ = null;
   try {
     if (!acessoPreviaDiretaGestor_()) {
       throw new Error('A prévia direta do Apps Script está desativada. Use o endereço protegido do app.');
     }
-    return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param), relogioGestor: referenciaRelogioServidorGestor_() });
+    return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param), relogioGestor: referenciaRelogioServidorGestor_(), temposGestor: TEMPOS_RESPOSTA_GESTOR_ });
   } catch (err) {
     return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err), resultadoIncerto: !!(err && err.resultadoIncerto), codigo: err && err.codigo || 'FALHA_OPERACAO' });
   }
@@ -4359,10 +4371,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       resultado.integridade={bloqueada:ctx.somenteLeitura,pendencias:pendenciasIntegridade};
       if(ctx.ss.abas['Lançamentos']) resultado.integridade.series=pendenciasSeriesGestor_(ctx);
     }
-    if(ctx.somenteLeitura) return resultado;
+    if(ctx.somenteLeitura) { planoMsGestor=Date.now()-inicioPlanoGestor; return resultado; }
     const mudancas = finalizarPlanoGestor_(ctx);
     if (acao === 'restaurarBackupDadosWeb') mudancas.sort(function (a,b) { return (a.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0) - (b.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0); });
-    if (leitura && mudancas.length === 0) { confirmarManutencaoLeituraGestor_(ctx); return resultado; }
+    if (leitura && mudancas.length === 0) { confirmarManutencaoLeituraGestor_(ctx); planoMsGestor=Date.now()-inicioPlanoGestor; return resultado; }
     planoMsGestor=Date.now()-inicioPlanoGestor;gravacaoInicioGestor=Date.now();
     const plano = { mudancas: mudancas, resultado: resultado };
     if(ctx.destinosAnuaisRestauracao)plano.destinosAnuaisRestauracao=ctx.destinosAnuaisRestauracao;
@@ -4383,7 +4395,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
     throw e;
-  } finally { CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); console.log(JSON.stringify({tipo:'gestor_tempo',acao:acao,totalMs:Date.now()-inicioTempoGestor,esperaLockMs:esperaLockMsGestor,preparacaoMs:preparacaoMsGestor,execucaoMs:execucaoMsGestor,planoMs:planoMsGestor,gravacaoMs:gravacaoInicioGestor?Date.now()-gravacaoInicioGestor:0})); }
+  } finally { CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor); }
 }
 
 function assinaturaManutencaoLeituraGestor_(ss) {
