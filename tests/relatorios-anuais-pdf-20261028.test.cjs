@@ -8,6 +8,21 @@ function ambiente(dados=fixture()){
  const c=a.ctx.configProtecaoGestor_();c.pdfAutomatico=true;a.ctx.salvarConfigProtecaoGestor_(c);return a;
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
+
+test('resumo lê fórmulas em lote e não regrava fórmulas já atualizadas',()=>{
+ const a=ambiente(fixture([personal()])),dash=a.db.sheets['Dashboard & Resumo'];
+ formulaIndicador(a,'C17',"=SUMIFS('Lançamentos'!H:H;'Lançamentos'!D:D;B17;'Lançamentos'!I:I;TEXT(TODAY();\"mm/yyyy\");'Lançamentos'!J:J;\"<>Assinatura Cancelada\")");
+ a.ctx.atualizarResumoNativoGestor_(a.db);
+ const getRange=dash.getRange;let escritas=0,leiturasIndividuais=0;const alteradas=[];
+ dash.getRange=function(...args){const r=getRange.apply(this,args),set=r.setValue,formulas=r.getFormulas;r.setValue=function(...v){escritas++;alteradas.push({args,v});return set.apply(this,v);};r.getFormulas=function(){leiturasIndividuais++;return formulas.apply(this,arguments);};return r;};
+ a.ctx.atualizarResumoNativoGestor_(a.db);
+ // O mock implementa getDataRange via getRange: duas leituras de matriz,
+ // independentemente de quantas fórmulas já foram migradas.
+ assert.equal(escritas,0,JSON.stringify(alteradas));assert.equal(leiturasIndividuais,2);
+ dash.getRange=getRange;
+ dash.getRange('C17').setValue('=1+2');a.ctx.atualizarResumoNativoGestor_(a.db);
+ assert.equal(dash.getRange('C17').getFormulas()[0][0],'=1+2');
+});
 test('classificação gera nova revisão mensal e anual sem substituir PDFs anteriores',()=>{
  const a=ambiente(fixture([personal('Antiga',100,'1/1','12/2025','Pago')]));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,2);const ids=pdfs(a).map(f=>f.id);
  const r=a.db.sheets['Lançamentos'].rows[1];a.ctx.definirPerfilGastoGestor_(r,{tipo:'fixo',prioridade:'essencial'});r[16]=a.ctx.hashRegistroGestor_(r);

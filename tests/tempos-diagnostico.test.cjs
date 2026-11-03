@@ -9,6 +9,17 @@ test('tempos incluem apenas ação e durações e sobrevivem a falha do log',()=
   const r=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
   assert.equal(r.totalMs,1000);assert.equal(r.gravacaoMs,200);assert.equal(r.outrosMs,100);
 });
+test('subetapas preservam retorno e erro e expõem somente durações permitidas',()=>{
+ let agora=0;const c=vm.createContext({Date:{now:()=>agora},console:{log(){}}});vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null;'+helper,c);
+ const d={};assert.equal(c.medirEtapaGravacaoGestor_(d,'resumoMs',()=>{agora=50;return 7;}),7);
+ assert.throws(()=>c.medirEtapaGravacaoGestor_(d,'aplicacaoMs',()=>{agora=100;throw Error('interrompido');}),/interrompido/);
+ assert.equal(d.resumoMs,50);assert.equal(d.aplicacaoMs,50);
+ c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,1,{...d,senha:'privada'});
+ const m=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
+ vm.runInContext(front,c);const v=c.normalizarTemposServidorGestor(m.acao,m);
+ assert.equal(v.detalhesGravacao.resumoMs,50);assert(!JSON.stringify(v).includes('privada'));
+ assert.equal(c.normalizarTemposServidorGestor(m.acao,{...m,detalhesGravacao:{resumoMs:NaN}}).detalhesGravacao,undefined);
+});
 test('cada chamada reseta tempos e envelope não modifica dados',()=>{
   const post=backend.slice(backend.indexOf('function doPost(e)'),backend.indexOf('// Função chamada pela interface hospedada'));
   let medir=true;

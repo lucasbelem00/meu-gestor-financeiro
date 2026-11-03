@@ -11,6 +11,10 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Fonte da otimização do resumo: shared/relatorios.js. O gerador incorpora esse módulo em Backend/Code.gs; editar o bloco gerado sozinho não preserva a alteração no próximo build.
+
+Otimização v132: atualizarResumoNativoGestor_ lê valores/categorias em matriz, relê fórmulas em matriz após persistir metadados e não reescreve fórmula já igual à gerada. Somente templates reconhecidos/aceitos são substituídos; nenhuma escrita sobre intervalo amplo do Dashboard. reconhecerFormulaPadraoResumoGestor_ aceita snapshot opcional de valores, mantendo comportamento para outros chamadores. Diagnóstico opcional detalhesGravacao inclui diarioMs, aplicacaoMs, confirmacaoMs, resumoMs e manutencaoMs; são subetapas de gravacaoMs, não tempos a somar novamente ao total.
+
 Diagnóstico de duração (v131): executarOperacaoGestor_ registra medição opcional em memória da requisição; doPost/apiCallServidor reiniciam essa memória e incluem temposGestor no envelope de sucesso, sem alterar dados financeiros. Ambos os transportes coletam somente respostas reais, validam ação/campos numéricos e guardam até 30 entradas em gestorTemposServidorV1. montarDiagnosticoGestor exporta temposServidor com lista branca. Ausência de metadado permanece compatível; sem consultas novas, sem registro de parâmetros/IDs/valores. Módulos de sincronização, relatórios e operações financeiras afetados apenas pela instrumentação.
 
 Configuração/autorização: Backend/appsscript.json é modelo de manifesto Apps Script com quatro escopos explícitos; não é o manifesto PWA. prepararAutorizacaoInicialGestor, em Backend/Code.gs, exige consentimento desses escopos por ScriptApp.requireScopes no editor, sem gravação ou ativação. Não integra o catálogo da API. Backend/AUTORIZACAO_INICIAL.md orienta preservar configurações do manifesto existente. Afeta módulos de configurações/identidades e backup/anual, sem mudar suas regras financeiras.

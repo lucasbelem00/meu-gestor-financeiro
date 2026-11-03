@@ -8077,6 +8077,14 @@ function normalizarTemposServidorGestor(action, meta) {
     if (typeof meta[campo] !== 'number' || !Number.isFinite(meta[campo]) || meta[campo] < 0 || meta[campo] > 3600000) return null;
     tempos[campo] = Math.round(meta[campo]);
   }
+  if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
+    const detalhes={};
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs']){
+      const valor=meta.detalhesGravacao[campo];
+      if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
+    }
+    if(Object.keys(detalhes).length)tempos.detalhesGravacao=detalhes;
+  }
   return tempos;
 }
 function registrarTemposServidorGestor(action, meta) {
