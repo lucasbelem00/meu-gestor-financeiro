@@ -4244,7 +4244,8 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       const ref=detalhesReferenciaGestor(dadosEdicao.linha),alvo=(emprestimosGlobal.itens||[]).find(i=>String(i.registroId)===String(ref?.registroId));
       const trocaParaPix=formaEhPixGestor(dadosEdicao.formaPagto)&&((modal._dadosOriginaisEdicao?.formaPagto||'')!==dadosEdicao.formaPagto||(emprestimosGlobal.itens||[]).some(i=>i.compraId===alvo?.compraId&&i.status!=='Recebido'&&i.forma!==dadosEdicao.formaPagto));
       const corrigirPix=formaEhCartaoGestor(dadosEdicao.formaPagto)&&(formaEhPixGestor(modal._dadosOriginaisEdicao?.formaPagto)||(emprestimosGlobal.itens||[]).some(i=>i.compraId===alvo?.compraId&&i.status!=='Recebido'&&formaEhPixGestor(i.forma)));
-      if(dadosEdicao.escopoValorParcelas==='proximas'||dadosEdicao.escopoDataCombinada==='proximas'||trocaParaPix||corrigirPix){
+      const mudaValorAReceber=alvo?.status==='A Receber'&&Math.round(Number(dadosEdicao.valorParcela)*100)!==Math.round(Number(alvo.valorRaw)*100);
+      if(dadosEdicao.escopoValorParcelas==='proximas'||dadosEdicao.escopoDataCombinada==='proximas'||trocaParaPix||corrigirPix||mudaValorAReceber){
         btn.disabled=true;btn.textContent='Conferindo alterações…';
         try{
           if(!ref)throw Error('Atualize a lista para conferir as parcelas.');
@@ -4252,7 +4253,8 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           if(modal._sessaoEdicao!==sessaoEdicao||assinatura!==assinaturaFormularioRotinaGestor(modal.querySelector('form'))||modal.classList.contains('hidden'))throw Error('O formulário mudou. Confira novamente as datas.');
           if(previa.datas){dadosEdicao.assinaturaDatas=previa.datas.assinatura;dadosEdicao.previaDatasTexto=previa.datas.itens.length+' data(s) de devolução:\n\n'+previa.datas.itens.map(i=>'Parcela '+i.parcela+' · fatura '+i.mes+'\nDevolução: '+(i.antes||'Sem data')+' → '+(i.depois||'Sem data')).join('\n\n')+'\n\n';}
           if(dadosEdicao.escopoValorParcelas==='proximas'&&!previa.valores)throw Error('Atualize a implantação do Apps Script para conferir o alcance dos valores. Seus campos foram preservados.');
-          if(previa.valores){dadosEdicao.assinaturaValores=previa.valores.assinatura;dadosEdicao.previaValoresTexto=previa.valores.itens.length+' valor(es) de parcela:\n\n'+previa.valores.itens.map(i=>'Parcela '+i.parcela+' · fatura '+i.mes+'\nValor: '+formatBRL(i.antes)+' → '+formatBRL(i.depois)).join('\n\n')+'\n\n';}
+          if(previa.valores){dadosEdicao.assinaturaValores=previa.valores.assinatura;dadosEdicao.previaValoresTexto=previa.valores.itens.length+' valor(es) de parcela:\n\n'+previa.valores.itens.map(textoPreviaValorEmprestimoGestor).join('\n\n')+'\n\n';}
+          if(!previa.valores&&previa.fragmento)dadosEdicao.previaValoresTexto=textoPreviaValorEmprestimoGestor(previa.fragmento)+'\n\nSomente o restante selecionado muda; o valor já recebido é preservado.\n\n';
           if(previa.pagamentoPix){dadosEdicao.assinaturaPix=previa.pagamentoPix.assinatura;dadosEdicao.previaPixTexto='Pagamento realizado via Pix: '+formatBRL(previa.pagamentoPix.total)+' em '+previa.pagamentoPix.quantidade+' registro(s).';}
           if(previa.correcaoPix){dadosEdicao.assinaturaCorrecaoPix=previa.correcaoPix.assinatura;dadosEdicao.previaCorrecaoPixTexto='Retirar a marcação de Pix de '+formatBRL(previa.correcaoPix.total)+' em '+previa.correcaoPix.quantidade+' registro(s) e corrigir para '+dadosEdicao.formaPagto+'.';}
         }catch(erro){mostrarAviso('Alterações não enviadas',erro.message);return;}
@@ -4459,6 +4461,12 @@ function rotuloStatusRecorrenciaGestor(status) {
       const texto=String(status??'');return {'Assinatura Ativa':'Recorrência ativa','Assinatura Paga':'Recorrência paga','Assinatura Cancelada':'Recorrência desativada'}[texto.trim()]||texto;
     }
 // Mensagens de texto para celular. Formatação não altera registros ou pagamentos.
+function textoPreviaValorEmprestimoGestor(i){
+  const linhas=['Parcela '+i.parcela+' · fatura '+i.mes];
+  if(Number(i.recebidoAntes)>0)linhas.push('Valor deste registro a receber: '+formatBRL(i.antes)+' → '+formatBRL(i.depois),'Já recebido preservado: '+formatBRL(i.recebidoAntes),'Total desta parcela: '+formatBRL(i.totalParcelaAntes)+' → '+formatBRL(i.totalParcelaDepois));
+  else linhas.push('Valor: '+formatBRL(i.antes)+' → '+formatBRL(i.depois));
+  return linhas.join('\n');
+}
 function textoLinhaMensagemGestor(valor){return String(valor??'').replace(/[\r\n]+/g,' ').trim();}
 function tipoCompraMensagemGestor(parcela){
   const p=textoLinhaMensagemGestor(parcela).replace(/^'/,'');
@@ -4812,6 +4820,12 @@ function abrirRegistroRachadinhaGestor(){
 }
 function atualizarParcelasRegistroRachaGestor(){const nome=document.getElementById('rachaRegistroForma').value,cartao=formaEhCartaoGestor(nome);document.getElementById('rachaRegistroBoxParcelas').classList.toggle('hidden',!cartao);if(!cartao)document.getElementById('rachaRegistroParcelas').value=1;const data=document.getElementById('rachaRegistroData').value,forma=buscarFormaPagamentoGestor(nome);if(/^\d{2}\/\d{2}\/\d{4}$/.test(data)&&forma){const calculo=calcularMesFaturaCartao(forma,data);if(calculo.mesFat)document.getElementById('rachaRegistroMes').value=calculo.mesFat;}}
 function fecharRegistroRachaGestor(){const m=document.getElementById('modalRegistroRachaGestor');m.classList.add('hidden');m._focoAnterior?.focus();}
+// Agrupa apenas períodos consecutivos com o mesmo valor, sem ocultar centavos.
+function textoParcelamentoRachadinhaGestor(plano){
+  if(!plano||plano.quantidade<=1)return '';
+  function serie(valores){const linhas=[];for(let i=0;i<valores.length;){let fim=i;while(fim+1<valores.length&&valores[fim+1]===valores[i])fim++;linhas.push((i===fim?plano.meses[i]:plano.meses[i]+' a '+plano.meses[fim])+': '+formatBRL(valores[i]/100)+(fim>i?' por fatura':''));i=fim+1;}return linhas.join('\n');}
+  return '\n\nParcelamento desta gravação:\n'+serie(plano.totaisCentavos)+'\n\n'+plano.partes.map(p=>p.nome+':\n'+serie(p.valoresCentavos)).join('\n\n')+'\n\nDistribuição de centavos pela regra do app; confira os valores efetivos do banco.';
+}
 async function conferirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Confira o envio existente','Consulte Atividade antes de preparar outra gravação desta divisão.');abrirAtividadeGestor();return;}
   const botao=document.getElementById('btnPreviaRegistroRacha');if(botao.disabled)return;botao.disabled=true;
@@ -4822,8 +4836,9 @@ async function conferirRegistroRachadinhaGestor(){
     const versao=assinar();
     const previa=await apiCall('previaRachadinhaWeb',dados,1);
     if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden'))throw Error('A divisão ou os campos mudaram. Confira a prévia novamente antes de registrar.');
+    if(dados.numParcelas>1&&previa.parcelamento?.regra!=='restos-ciclicos-v1')throw Error('Atualize o Apps Script para conferir o parcelamento conjunto antes de registrar.');
     if(rachaEnvioGuardado?.estado==='confirmado')throw Error('Esta divisão já foi registrada neste aparelho. Confira o Histórico e os Empréstimos antes de lançar novamente.');
-    const texto='Sua parte: '+formatBRL(previa.minhaParteCentavos/100)+(dados.incluirMinhaParte?' (Novo Registro)':' (não será registrada)')+'\n'+previa.emprestimos.map(e=>e.pessoa+': '+formatBRL(e.valorCentavos/100)+(e.recebido?' — já recebido':' — a receber')).join('\n')+'\nTotal desta gravação: '+formatBRL(previa.totalCentavos/100)+'\n\nForma: '+dados.formaPagto+' • Fatura: '+dados.mesPrimeiraFatura+'\nPagar a fatura e receber da pessoa são controles separados.';
+    const texto='Sua parte: '+formatBRL(previa.minhaParteCentavos/100)+(dados.incluirMinhaParte?' (Novo Registro)':' (não será registrada)')+'\n'+previa.emprestimos.map(e=>e.pessoa+': '+formatBRL(e.valorCentavos/100)+(e.recebido?' — já recebido':' — a receber')).join('\n')+'\nTotal desta gravação: '+formatBRL(previa.totalCentavos/100)+textoParcelamentoRachadinhaGestor(previa.parcelamento)+'\n\nForma: '+dados.formaPagto+' • Fatura: '+dados.mesPrimeiraFatura+'\nPagar a fatura e receber da pessoa são controles separados.';
     mostrarConfirmacao('Registrar esta divisão?',texto,async()=>{
       if(divisaoRachaEnviadaGestor())return;
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}
@@ -7689,6 +7704,21 @@ function validarPeriodoParcelasGestor_(valor,quantidade=1,inicial=1){
 
 // INICIO MOTOR RACHADINHA GERADO
 // Fonte única do cálculo, incorporada no navegador e no Apps Script pelo build.
+// Restos consecutivos em um ciclo: fecha cada pessoa e cada fatura sem
+// multiplicar restos, nem deslocar o total devido de uma pessoa para outra.
+function parcelarDivisaoConjuntaGestor(valoresCentavos,quantidade){
+  if(!Array.isArray(valoresCentavos)||!valoresCentavos.length||valoresCentavos.length>100||!Number.isInteger(quantidade)||quantidade<1||quantidade>600)throw Error('Parcelamento da divisão inválido.');
+  let total=0,cursor=0;
+  const partes=valoresCentavos.map(function(valor){
+    if(!Number.isSafeInteger(valor)||valor<quantidade)throw Error('Cada parcela precisa ter pelo menos um centavo. Reduza as parcelas.');
+    total+=valor;if(!Number.isSafeInteger(total))throw Error('Total da divisão fora do limite.');
+    const base=Math.floor(valor/quantidade),resto=valor%quantidade,parcelas=Array(quantidade).fill(base);
+    for(let i=0;i<resto;i++)parcelas[(cursor+i)%quantidade]++;
+    cursor=(cursor+resto)%quantidade;return parcelas;
+  });
+  const base=Math.floor(total/quantidade),resto=total%quantidade;
+  return {regra:'restos-ciclicos-v1',quantidade:quantidade,totalCentavos:total,totaisCentavos:Array.from({length:quantidade},(_,i)=>base+(i<resto?1:0)),partes:partes};
+}
 function calcularDivisaoContaGestor(dados) {
   const d=dados || {}, pessoas=d.pessoas || [], itens=d.itens || [];
   const inteiro=(v,rotulo)=>{if(!Number.isSafeInteger(v)||v<0||v>100000000000) throw new Error(rotulo+' inválido.');return v;};

@@ -33,12 +33,12 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | --- | --- |
 | Repositório local | `C:\Users\lucas\OneDrive\Documentos\GitHub\meu-gestor-financeiro` |
 | Branch local | `New` |
-| Último commit observado | `d9bd88a` — `Revisão Gemini Módulo 2` (a correção seguinte de exclusões ainda está no trabalho local) |
+| Último commit observado | `6c0988d` — `Módulo 3 Gemini` (o ajuste seguinte de rachadinha ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v116` |
-| Última suíte completa documentada | 936 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v117` |
+| Última suíte completa documentada | 949 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
-| Último pacote de correções | Recálculo do total após exclusão parcial de compras, com preservação dos pagamentos, numeração e retratos anuais |
+| Último pacote de correções | Parcelamento conjunto da rachadinha e prévia esclarecida de valores após recebimentos parciais |
 
 Esses números representam o estado observado, não uma promessa para versões posteriores. Confira `git status`, `git log`, `sw.js` e os resultados dos comandos antes de continuar. Os testes não foram repetidos apenas para escrever este resumo.
 
@@ -171,6 +171,7 @@ Um pagamento bancário parcial não torna todos os itens quitados. Sua distribui
 - Compra `1/1` é exibida como **⚡ À vista**; isso descreve parcelamento, não significa que o banco já foi pago.
 - `∞/∞` permanece como identificação técnica de recorrência, embora o infinito tenha sido retirado dos rótulos visuais.
 - Comparar gasto pessoal com total bancário sem considerar terceiros gera falsas divergências.
+- No registro conjunto da rachadinha, `parcelarDivisaoConjuntaGestor` conserva tanto o total de cada parte quanto o total por competência. Os restos são distribuídos em ciclo entre as partes; não parcelar cada pessoa isoladamente, nem repartir cada mês sem conferir os totais individuais. O alvo global é somente o montante registrado nessa operação, não os pagamentos de outras pessoas nem uma parte própria explicitamente omitida.
 
 ### Conferir fatura
 
@@ -355,7 +356,7 @@ A rodada mais recente analisou um relatório externo extenso e aplicou os achado
 
 Antes dessa rodada, foram corrigidos problemas de perfil nos rascunhos/backups, datas, classificação perdida em transferências, estados anuais indevidos (“Ano undefined”), ReferenceError na renderização do Histórico, layout do Painel/comparador, modais/Voltar, contraste e ordenação de sugestões por frequência. Consulte testes e relatórios, sem assumir que a lista de correções elimina toda possível regressão.
 
-Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. A revisão recuperável e ordenação da fila offline elevou a suíte a 926. Com o recálculo dos totais nas exclusões parciais, a suíte completa passou a **936 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
+Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. A revisão recuperável e ordenação da fila offline elevou a suíte a 926; o recálculo dos totais nas exclusões parciais, a 936. Com o parcelamento conjunto e a clareza dos fragmentos recebidos, a suíte completa passou a **949 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
 
 **O próximo passo de liberação é atualizar/conferir a implantação de testes e executar os testes reais essenciais.** Não há autorização implícita para restaurar a planilha definitiva, remover proteção de produção ou apagar arquivos anuais.
 
@@ -385,6 +386,15 @@ Foi reproduzida inconsistência no campo de total: compra de R$ 100 em 5x, prime
 Agora o caso resulta numa parcela paga de R$ 20, total registrado de R$ 20 e numeração histórica 1/5, preservando quantidade original, IDs, classificação, datas e pagamento. O resultado registra `compra` com totais e contagens antes/depois. O diário conserva o estado anterior e permite desfazer. O recálculo de uma parcela de ano fechado segue os ajustes de continuidade; o arquivo fechado permanece intacto. As mensagens de confirmação e conclusão explicam o alcance. Recorrências continuam no fluxo próprio de pular mês.
 
 Dez regressões novas cobrem exclusão individual, lote, exclusões sucessivas, centavos, compra homônima, bloqueio de pagamento parcial, exclusão integral sem órfãos, desfazer, interrupção/reenvio e ano fechado. Suíte completa: 936 aprovados. Cache v116. Atualizar o Apps Script e o frontend correspondentes para disponibilizar o pacote; não há função nova de ativação. Não houve publicação nem alteração dos dados reais nesta rodada. Não foi acrescentada uma migração que tente reconstruir exclusões antigas sem evidência.
+
+### Rachadinha parcelada e edição de fragmentos — correções implementadas localmente
+
+- Corrigido o desvio mensal: R$ 100 divididos em duas partes de R$ 50 e parcelados em 3x agora geram R$ 33,34 / R$ 33,33 / R$ 33,33 por fatura, preservando R$ 50 para cada pessoa. `parcelarDivisaoConjuntaGestor`, em `shared/rachadinha.js`, distribui os restos ciclicamente, com custo limitado a pessoas × parcelas e sem multiplicação de valores monetários grandes. Cada parte mantém seu total e cada coluna segue a convenção global de centavos do app.
+- `previaRachadinhaWeb` devolve o plano por competência/parte e o inclui na assinatura. `registrarRachadinhaWeb` recalcula o plano no servidor e o passa por argumento interno aos gravadores pessoal/terceiros. O plano não é aceito de um campo arbitrário do pedido público. `valoresParcelasInternasGestor_` confere quantidade, positividade e soma; cadastros independentes conservam o parcelamento padrão anterior.
+- A confirmação mostra totais por fatura e distribuição de cada parte, agrupando somente períodos consecutivos com o mesmo valor. A regra usa o montante desta gravação, respeitando múltiplos pagadores e a parte própria omitida. O frontend recusa registro parcelado se o backend não devolver o plano compatível. A distribuição real do banco pode diferir; a mensagem não promete correspondência universal. Não foi feita redistribuição retroativa de compras antigas.
+- A prévia de edição de empréstimo agora informa o valor já recebido preservado e o total recomposto da parcela, tanto no escopo individual quanto nas próximas a receber. No exemplo de R$ 40 recebidos e restante alterado de R$ 60 para R$ 70, mostra total de R$ 100 → R$ 110. A semântica do campo não mudou e os recebimentos continuam intactos. O plano em lote inclui os totais apresentados na assinatura; soma fragmentos pelo Compra ID, parcela e competência.
+- A regra de Pix não foi alterada: parte pessoal futura pode permanecer em aberto e o terceiro conserva banco pago, independentemente de A Receber. A adequação a financiamento/cheque especial continua uma discussão de produto separada; não confundir um Pix à vista com devolução parcelada e um financiamento real.
+- Validação: 13 regressões acrescentadas, incluindo 500 combinações num teste de conservação, 100 pessoas/600 parcelas, gravação/fatura, assinatura, reenvio após interrupção, desfazer, ano seguinte, recebimentos fragmentados e backend antigo. Suíte completa: 949 aprovados. Cache v117; protocolo 18 e colunas existentes preservados. Atualizar backend e frontend; sem função manual nova, sem publicação remota ou alteração das planilhas reais nesta rodada.
 
 Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
 

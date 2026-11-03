@@ -1,4 +1,19 @@
 // Fonte única do cálculo, incorporada no navegador e no Apps Script pelo build.
+// Restos consecutivos em um ciclo: fecha cada pessoa e cada fatura sem
+// multiplicar restos, nem deslocar o total devido de uma pessoa para outra.
+function parcelarDivisaoConjuntaGestor(valoresCentavos,quantidade){
+  if(!Array.isArray(valoresCentavos)||!valoresCentavos.length||valoresCentavos.length>100||!Number.isInteger(quantidade)||quantidade<1||quantidade>600)throw Error('Parcelamento da divisão inválido.');
+  let total=0,cursor=0;
+  const partes=valoresCentavos.map(function(valor){
+    if(!Number.isSafeInteger(valor)||valor<quantidade)throw Error('Cada parcela precisa ter pelo menos um centavo. Reduza as parcelas.');
+    total+=valor;if(!Number.isSafeInteger(total))throw Error('Total da divisão fora do limite.');
+    const base=Math.floor(valor/quantidade),resto=valor%quantidade,parcelas=Array(quantidade).fill(base);
+    for(let i=0;i<resto;i++)parcelas[(cursor+i)%quantidade]++;
+    cursor=(cursor+resto)%quantidade;return parcelas;
+  });
+  const base=Math.floor(total/quantidade),resto=total%quantidade;
+  return {regra:'restos-ciclicos-v1',quantidade:quantidade,totalCentavos:total,totaisCentavos:Array.from({length:quantidade},(_,i)=>base+(i<resto?1:0)),partes:partes};
+}
 function calcularDivisaoContaGestor(dados) {
   const d=dados || {}, pessoas=d.pessoas || [], itens=d.itens || [];
   const inteiro=(v,rotulo)=>{if(!Number.isSafeInteger(v)||v<0||v>100000000000) throw new Error(rotulo+' inválido.');return v;};

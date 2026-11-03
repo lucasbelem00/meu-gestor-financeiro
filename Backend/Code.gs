@@ -339,14 +339,26 @@ function indicesValorEmprestimoGestor_(dados,lido,idx){
   const base=parseNumParcela(limparApostrofo(lido.disp[idx][6]));
   return indicesMesmaCompra(lido.disp,idx).filter(function(i){const p=parseNumParcela(limparApostrofo(lido.disp[i][6]));return lido.raw[i][9]==='A Receber'&&p.total===base.total&&p.atual>=base.atual;});
 }
+function recebidosPorParcelaEmprestimoGestor_(lido){
+  const mapa=new Map();
+  lido.raw.forEach(function(r,i){if(r[9]!=='Recebido'||!r[12])return;const chave=JSON.stringify([String(r[12]),limparApostrofo(lido.disp[i][6]),parseMesFat(r[8]).time]),valor=(mapa.get(chave)||0)+centavosGestor_(r[7]);if(!Number.isSafeInteger(valor))throw Error('Recebimentos desta parcela precisam de conferência.');mapa.set(chave,valor);});
+  return mapa;
+}
+function resumoFragmentoEmprestimoGestor_(lido,i,depois,recebidos){
+  const r=lido.raw[i],chave=JSON.stringify([String(r[12]||''),limparApostrofo(lido.disp[i][6]),parseMesFat(r[8]).time]),recebido=r[12]?(recebidos.get(chave)||0):0;
+  const antesTotal=recebido+centavosGestor_(r[7]),depoisTotal=recebido+depois;
+  if(!Number.isSafeInteger(antesTotal)||!Number.isSafeInteger(depoisTotal))throw Error('Total desta parcela fora do limite.');
+  return {recebidoAntes:recebido/100,totalParcelaAntes:antesTotal/100,totalParcelaDepois:depoisTotal/100};
+}
 function planoValoresEmprestimoGestor_(dados,lido,idx){
   const valor=centavosGestor_(dados.valorParcela);
+  const recebidos=recebidosPorParcelaEmprestimoGestor_(lido);
   const itens=indicesValorEmprestimoGestor_(dados,lido,idx).map(function(i){
     const pago=centavosGestor_(valorPagoBancoGestor_(lido.raw[i],true));
     if(valor<pago)throw Error('O novo valor é menor que o pagamento registrado ao banco em uma das parcelas. Confira o pagamento antes de alterar.');
-    return {indice:i,id:String(lido.raw[i][11]),versao:Number(lido.raw[i][13]),parcela:lido.disp[i][6],mes:lido.disp[i][8],antes:Number(lido.raw[i][7]),depois:valor/100,pago:pago};
+    return Object.assign({indice:i,id:String(lido.raw[i][11]),versao:Number(lido.raw[i][13]),parcela:lido.disp[i][6],mes:lido.disp[i][8],antes:Number(lido.raw[i][7]),depois:valor/100,pago:pago},resumoFragmentoEmprestimoGestor_(lido,i,valor,recebidos));
   }).sort(function(a,b){return parseNumParcela(a.parcela).atual-parseNumParcela(b.parcela).atual||a.id.localeCompare(b.id);});
-  return {itens:itens,assinatura:hashGestor_({alvo:String(lido.raw[idx][11]),escopo:dados.escopoValorParcelas,itens:itens.map(function(i){return [i.id,i.versao,i.parcela,i.mes,i.antes,i.depois,i.pago];})})};
+  return {itens:itens,assinatura:hashGestor_({alvo:String(lido.raw[idx][11]),escopo:dados.escopoValorParcelas,itens:itens.map(function(i){return [i.id,i.versao,i.parcela,i.mes,i.antes,i.depois,i.pago,i.recebidoAntes,i.totalParcelaAntes,i.totalParcelaDepois];})})};
 }
 function planoPagamentoPixEdicaoGestor_(dados,lido,idx){
   if(formaEmprestimoConsomeLimite_(dados.formaPagto))return null;
@@ -374,7 +386,8 @@ function previaEdicaoEmprestimoWeb(param){
   const forma=validarFormaAtualGestor_(param.formaPagto,{formaAnterior:lido.disp[idx][3]}),pix=planoPagamentoPixEdicaoGestor_(Object.assign({},param,{formaPagto:forma}),lido,idx);
   const correcao=planoCorrecaoPixEmprestimoGestor_(Object.assign({},param,{formaPagto:forma}),lido,idx);
   const valores=param.escopoValorParcelas==='proximas'?planoValoresEmprestimoGestor_(param,lido,idx):null;
-  return {valores:valores?{assinatura:valores.assinatura,itens:valores.itens.map(function(i){return {id:i.id,parcela:i.parcela,mes:i.mes,antes:i.antes,depois:i.depois};})}:null,datas:param.escopoDataCombinada==='proximas'?previaDatasDevolucaoWeb(param):null,pagamentoPix:pix?{assinatura:pix.assinatura,total:pix.total,quantidade:pix.itens.length}:null,correcaoPix:correcao?{assinatura:correcao.assinatura,total:correcao.total,quantidade:correcao.itens.length}:null};
+  const fragmento=lido.raw[idx][9]==='A Receber'?resumoFragmentoEmprestimoGestor_(lido,idx,centavosGestor_(param.valorParcela),recebidosPorParcelaEmprestimoGestor_(lido)):null;
+  return {fragmento:fragmento&&fragmento.recebidoAntes>0?Object.assign({parcela:lido.disp[idx][6],mes:lido.disp[idx][8],antes:extractNum(lido.raw[idx][7]),depois:centavosGestor_(param.valorParcela)/100},fragmento):null,valores:valores?{assinatura:valores.assinatura,itens:valores.itens.map(function(i){return {id:i.id,parcela:i.parcela,mes:i.mes,antes:i.antes,depois:i.depois,recebidoAntes:i.recebidoAntes,totalParcelaAntes:i.totalParcelaAntes,totalParcelaDepois:i.totalParcelaDepois};})}:null,datas:param.escopoDataCombinada==='proximas'?previaDatasDevolucaoWeb(param):null,pagamentoPix:pix?{assinatura:pix.assinatura,total:pix.total,quantidade:pix.itens.length}:null,correcaoPix:correcao?{assinatura:correcao.assinatura,total:correcao.total,quantidade:correcao.itens.length}:null};
 }
 
 function referenciaRecorrenteNoMesGestor_(linhas, mes) {
@@ -1248,7 +1261,7 @@ function limparFormulario() {
   formSheet.getRange('D12').setValue(1);
 }
 
-function sincronizarLoteWebInterno_(loteOffline) {
+function sincronizarLoteWebInterno_(loteOffline,parcelasInternasCentavos) {
   const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
@@ -1258,6 +1271,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
     // Validar o lote inteiro antes de escrever qualquer linha evita sincronização parcial
     // causada por um item com data, valor ou parcelas inválidos.
     loteOffline.forEach((dados, i) => validarLancamentoWeb_(dados, i + 1));
+    if(parcelasInternasCentavos!==undefined&&loteOffline.length!==1)throw Error('Plano interno de parcelas incompatível com o lote.');
 
     const ss = obterPlanilhaGestor_();
     const lancSheet = ss.getSheetByName('Lançamentos');
@@ -1280,7 +1294,7 @@ function sincronizarLoteWebInterno_(loteOffline) {
         if (parcelaInicial > numParcelas) parcelaInicial = 1;
       }
 
-      const valoresParcelas = parcelasCentavosGestor_(valorTotal, numParcelas);
+      const valoresParcelas = valoresParcelasInternasGestor_(valorTotal,numParcelas,parcelasInternasCentavos);
       if (valoresParcelas.some(function (v) { return v <= 0; })) throw new Error('Cada parcela deve ter pelo menos um centavo.');
       if (isAssinatura) { const existentes = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_).disp; if (existentes.some(function (r) { return limparApostrofo(r[6]) === '∞/∞' && !serieRecorrenteGestor_(r).encerrada && r[9] !== 'Assinatura Cancelada' && r[9] !== 'Pago (Cancelada)' && normalizarTexto(r[1]) === normalizarTexto(descFormatada) && chaveFormaGestor_(r[2]) === chaveFormaGestor_(formaAtual); })) throw new Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento. Edite a assinatura existente.'); }
       let mesFat = hoje.getMonth() + 1, anoFat = hoje.getFullYear();
@@ -2686,7 +2700,7 @@ function formaEmprestimoConsomeLimite_(forma) {
 // EMPRÉSTIMOS: NOVO REGISTRO
 // ============================================================================
 
-function salvarEmprestimoWebInterno_(dados) {
+function salvarEmprestimoWebInterno_(dados,parcelasInternasCentavos) {
   const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
@@ -2720,8 +2734,7 @@ function salvarEmprestimoWebInterno_(dados) {
     validarPeriodoParcelasGestor_(mesPrimeiraFatura,numParcelas,parcelaInicial);
     const totalCentavos = Math.round(valorTotal * 100);
     if (totalCentavos < numParcelas) throw new Error('Cada parcela deve ter pelo menos um centavo.');
-    const centavosBase = Math.floor(totalCentavos / numParcelas);
-    const sobraCentavos = totalCentavos % numParcelas;
+    const valoresParcelas=valoresParcelasInternasGestor_(valorTotal,numParcelas,parcelasInternasCentavos);
 
     const hoje = getHojeSeguro();
     const pm = mesPrimeiraFatura.split('/');
@@ -2737,7 +2750,7 @@ function salvarEmprestimoWebInterno_(dados) {
     const linhas = [];
     for (let p = parcelaInicial; p <= numParcelas; p++) {
       const dRef = new Date(anoFat, (mesFat - 1) + (p - parcelaInicial), 1);
-      const valorParcela = (centavosBase + (p <= sobraCentavos ? 1 : 0)) / 100;
+      const valorParcela = valoresParcelas[p-1];
       linhas.push([
         "'" + dtStr, pessoa, desc, formaPagto, valorTotal, numParcelas,
         "'" + p + '/' + numParcelas, valorParcela,
@@ -3618,6 +3631,12 @@ function parcelasCentavosGestor_(valor, quantidade) {
   const total = centavosGestor_(valor);
   const base = Math.floor(total / quantidade), sobra = total % quantidade;
   return Array.from({ length: quantidade }, function (_, i) { return (base + (i < sobra ? 1 : 0)) / 100; });
+}
+// Somente o registrador conjunto passa este argumento interno, nunca o payload público.
+function valoresParcelasInternasGestor_(valor,quantidade,plano){
+  if(plano===undefined)return parcelasCentavosGestor_(valor,quantidade);
+  if(!Array.isArray(plano)||plano.length!==quantidade||plano.some(v=>!Number.isSafeInteger(v)||v<1)||plano.reduce((s,v)=>s+v,0)!==centavosGestor_(valor))throw Error('Plano interno de parcelas não confere com o total.');
+  return plano.map(v=>v/100);
 }
 function validarEdicaoGestor_(dados, emprestimo) {
   validarDataCalendarioWeb_(dados.dataCompra, 'Data da compra');
@@ -5394,6 +5413,21 @@ function normalizarTagsGestor_(texto) {
 
 // INICIO MOTOR RACHADINHA GERADO
 // Fonte única do cálculo, incorporada no navegador e no Apps Script pelo build.
+// Restos consecutivos em um ciclo: fecha cada pessoa e cada fatura sem
+// multiplicar restos, nem deslocar o total devido de uma pessoa para outra.
+function parcelarDivisaoConjuntaGestor(valoresCentavos,quantidade){
+  if(!Array.isArray(valoresCentavos)||!valoresCentavos.length||valoresCentavos.length>100||!Number.isInteger(quantidade)||quantidade<1||quantidade>600)throw Error('Parcelamento da divisão inválido.');
+  let total=0,cursor=0;
+  const partes=valoresCentavos.map(function(valor){
+    if(!Number.isSafeInteger(valor)||valor<quantidade)throw Error('Cada parcela precisa ter pelo menos um centavo. Reduza as parcelas.');
+    total+=valor;if(!Number.isSafeInteger(total))throw Error('Total da divisão fora do limite.');
+    const base=Math.floor(valor/quantidade),resto=valor%quantidade,parcelas=Array(quantidade).fill(base);
+    for(let i=0;i<resto;i++)parcelas[(cursor+i)%quantidade]++;
+    cursor=(cursor+resto)%quantidade;return parcelas;
+  });
+  const base=Math.floor(total/quantidade),resto=total%quantidade;
+  return {regra:'restos-ciclicos-v1',quantidade:quantidade,totalCentavos:total,totaisCentavos:Array.from({length:quantidade},(_,i)=>base+(i<resto?1:0)),partes:partes};
+}
 function calcularDivisaoContaGestor(dados) {
   const d=dados || {}, pessoas=d.pessoas || [], itens=d.itens || [];
   const inteiro=(v,rotulo)=>{if(!Number.isSafeInteger(v)||v<0||v>100000000000) throw new Error(rotulo+' inválido.');return v;};
@@ -5453,6 +5487,7 @@ function previaRachadinhaWeb(param) {
   validarDataCalendarioWeb_(p.dataCompra,'Data do pagamento');validarMesFaturaWeb_(p.mesPrimeiraFatura);
   const parcelas=permiteParcelamentoFormaGestor_(forma,p.pixParcelado)?Number(p.numParcelas || 1):1;
   if(!Number.isInteger(parcelas)||parcelas<1||parcelas>600) throw new Error('Confira a quantidade de parcelas.');
+  validarPeriodoParcelasGestor_(p.mesPrimeiraFatura,parcelas,1);
   const incluirMinhaParte=p.incluirMinhaParte===true;
   if(incluirMinhaParte) validarCategoriaAtualGestor_(p.categoria);
   const recebidos=Array.isArray(p.recebidos)?p.recebidos:[];
@@ -5462,19 +5497,23 @@ function previaRachadinhaWeb(param) {
   if(!minhaParte&&!emprestimos.length) throw new Error('Não há valores para registrar nesta divisão.');
   if((minhaParte>0&&minhaParte<parcelas)||emprestimos.some(e=>e.valorCentavos<parcelas)) throw new Error('Cada parcela precisa ter pelo menos um centavo. Reduza as parcelas.');
   const total=minhaParte+emprestimos.reduce((s,e)=>s+e.valorCentavos,0);
+  const partes=(minhaParte?[{tipo:'pessoal',pessoaId:eu.id,nome:'Sua parte',totalCentavos:minhaParte}]:[]).concat(emprestimos.map(e=>({tipo:'terceiro',pessoaId:e.pessoaId,nome:e.pessoa,totalCentavos:e.valorCentavos})));
+  const plano=parcelarDivisaoConjuntaGestor(partes.map(p=>p.totalCentavos),parcelas),primeiro=parseMesFat(p.mesPrimeiraFatura);
+  const parcelamento={regra:plano.regra,quantidade:parcelas,totaisCentavos:plano.totaisCentavos,meses:Array.from({length:parcelas},(_,i)=>{const d=new Date(primeiro.a,primeiro.m-1+i,1);return pad2(d.getMonth()+1)+'/'+d.getFullYear();}),partes:partes.map((parte,i)=>Object.assign({},parte,{valoresCentavos:plano.partes[i]}))};
   const base={conta:p.conta,euId:p.euId,formaPagto:forma,dataCompra:p.dataCompra,mesPrimeiraFatura:p.mesPrimeiraFatura,numParcelas:parcelas,pixParcelado:p.pixParcelado===true,categoria:incluirMinhaParte?p.categoria:'',incluirMinhaParte:incluirMinhaParte,recebidos:recebidos,descricao:String(p.descricao || 'Divisão de conta').trim()};
   if(!base.descricao||base.descricao.length>300) throw new Error('Confira a descrição da conta.');
   const ss=obterPlanilhaGestor_();
-  const assinatura=hashGestor_({dados:base,formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:incluirMinhaParte?versaoConfiguracaoGestor_(ss,'categorias'):''});
-  return {assinatura:assinatura,minhaParteCentavos:minhaParte,emprestimos:emprestimos,totalCentavos:total,dados:base};
+  const assinatura=hashGestor_({dados:base,parcelamento:parcelamento,formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:incluirMinhaParte?versaoConfiguracaoGestor_(ss,'categorias'):''});
+  return {assinatura:assinatura,minhaParteCentavos:minhaParte,emprestimos:emprestimos,totalCentavos:total,parcelamento:parcelamento,dados:base};
 }
 function registrarRachadinhaWeb(param) {
   return executarOperacaoGestor_('registrarRachadinhaWeb',param,function(){
     const previa=previaRachadinhaWeb(param);
     if(!param.assinatura||previa.assinatura!==param.assinatura) throw new Error('Confira novamente a prévia: a divisão ou os cadastros mudaram.');
     const d=previa.dados,base={dataCompra:d.dataCompra,formaPagto:d.formaPagto,mesPrimeiraFatura:d.mesPrimeiraFatura,numParcelas:d.numParcelas,parcelaInicial:1,pixParcelado:d.pixParcelado,descricao:d.descricao};
-    if(previa.minhaParteCentavos) sincronizarLoteWebInterno_([Object.assign({},base,{categoria:d.categoria,valorTotal:previa.minhaParteCentavos/100,tags:'#dividido',isAssinatura:false})]);
-    previa.emprestimos.forEach(e=>salvarEmprestimoWebInterno_(Object.assign({},base,{pessoa:e.pessoa,valorTotal:e.valorCentavos/100,recebidoInicial:e.recebido,observacoes:'Divisão de conta; recebimento independente da fatura.'})));
+    let indicePlano=0;
+    if(previa.minhaParteCentavos) sincronizarLoteWebInterno_([Object.assign({},base,{categoria:d.categoria,valorTotal:previa.minhaParteCentavos/100,tags:'#dividido',isAssinatura:false})],previa.parcelamento.partes[indicePlano++].valoresCentavos);
+    previa.emprestimos.forEach(e=>salvarEmprestimoWebInterno_(Object.assign({},base,{pessoa:e.pessoa,valorTotal:e.valorCentavos/100,recebidoInicial:e.recebido,observacoes:'Divisão de conta; recebimento independente da fatura.'}),previa.parcelamento.partes[indicePlano++].valoresCentavos));
     return {sucesso:true,minhaParteCentavos:previa.minhaParteCentavos,emprestimos:previa.emprestimos.length,totalCentavos:previa.totalCentavos};
   },false);
 }

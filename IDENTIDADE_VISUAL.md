@@ -72,6 +72,8 @@ Cartões e Limites mantém Editar à esquerda e Excluir à direita. As prévias 
 
 Os valores de objetivo e progresso do Planejamento seguem a máscara monetária do app e aceitam colagem em reais. O estado ativo de ÷2/×2 acompanha o rascunho após recarga quando os valores continuam coerentes; desfazer não remove a tag `#dividido` adicionada manualmente.
 
+A confirmação de uma rachadinha parcelada mostra valores por fatura e por pessoa, agrupando apenas competências consecutivas com valor igual. Na edição de empréstimo fragmentado, a prévia distingue o valor do registro a receber, o já recebido preservado e o total recomposto da parcela; não apresentar o restante como se fosse o valor integral.
+
 Textos auxiliares pequenos em fundos escuros usam cinza slate-400, evitando slate-500 nos rótulos de 10 px. Ver tudo usa purple-300 sem transparência e as quantidades das tags usam indigo-300. Nos elementos apontados pela auditoria da Mensal, o contraste medido no CSS real ficou entre 5,71:1 e 8,28:1; isso verifica esses elementos, não substitui uma auditoria completa das telas e estados.
 
 O padrão é símbolo acompanhado de texto: ⚙️ Gerenciar (antes Organizar), ✏️ Editar, 🗑️ Excluir/Remover, ➕ Adicionar/Incluir/Lançar, 🧹 Limpar, 📋 Copiar, 🫴 Cobrar, 💰 Registrar recebimento, ➖ Registrar recebimento parcial, 🔁 Repetir, 💾 Salvar/Guardar e ↻ Atualizar. A engrenagem também identifica Gestão e ajustes: é o mesmo contexto de gestão, distinto da edição de um registro. ⚖️ identifica Comparar preços; 💵 identifica Composição da fatura.

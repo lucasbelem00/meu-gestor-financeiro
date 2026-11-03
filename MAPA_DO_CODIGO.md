@@ -56,7 +56,7 @@ As sugestões de descrição no Novo usam `ordenarDescricoesAutofillGestor`: fre
 | `interface/navegacao.js` | Rolagem por aba, botão de voltar ao topo, destino atual destacado na Central e Voltar fechando a Central | `iniciarRolagemNavegacaoGestor`, `atualizarBotaoTopoGestor`, `voltarAoTopoGestor`, `sincronizarSelecaoCentralGestor` |
 | `interface/modais.js` | Histórico temporário coordenado de Menu, editores, confirmação, fatura, exportação e cobrança; Voltar fecha a camada superior usando os fechamentos existentes | `criarHistoricoModaisGestor`, `iniciarHistoricoModaisGestor` |
 | `interface/protecao.js` | Painel de backups, consulta dos arquivos anuais e filtros de empréstimos | `solicitarEmprestimosArquivoProtecaoGestor`, `restaurarFiltrosIniciaisEmpGestor` |
-| `shared/rachadinha.js` | Cálculo da divisão em centavos, compartilhado pela tela e servidor | `calcularDivisaoContaGestor` |
+| `shared/rachadinha.js` | Cálculo da divisão e distribuição conjunta das parcelas em centavos | `calcularDivisaoContaGestor`, `parcelarDivisaoConjuntaGestor` |
 | `shared/competencias.js` | Intervalo de anos e validação da primeira/última competência das parcelas | `anoCompetenciaValidoGestor_`, `validarPeriodoParcelasGestor_`; incorporado na interface e no backend pelo gerador |
 | `shared/calendario-bancario.js` | Calendário bancário automático único para a interface e o fallback dos avisos no servidor | `vencimentoFaturaBaseBancarioGestor`, `feriadosBancariosGestor`; gerado em `interface/situacoes.js` e no backend. Correções manuais locais permanecem na interface |
 | `shared/protecao.js` | Backup agendado, arquivo anual, compactação e recuperação da manutenção | `backupMensalProtecaoGestor_`, `planejarArquivoAnualProtecaoGestor_`, `rotinaProtecaoProgramadaGestor` |
@@ -182,3 +182,13 @@ Na rodada da fila, cache v115 e 926 testes aprovados. O recurso depende do backe
 `Backend/Code.gs`: `prepararTotaisExclusaoPessoalGestor_` calcula o grupo por Compra ID e os totais em centavos antes/depois da exclusão. `excluirLancamentoWebInterno_` verifica os pagamentos dos alvos, atualiza somente a coluna E dos sobreviventes antes de remover linhas e mantém quantidade/posição original das parcelas. O resultado traz `compra` com totais e contagens; o diário existente preserva o estado anterior para conferência e desfazer. Não há novo formato de metadados nem migração automática de exclusões antigas.
 
 O plano anual existente transforma alterações em registros fechados em ajustes de continuidade, sem reescrever o retrato. As mensagens de `excluirLancamentoLocal` no HTML explicam o total das parcelas restantes. Cache v116; última suíte completa: 936 testes aprovados. Atualizar backend e frontend; sem nova função manual de ativação. Nenhuma publicação remota executada nesta rodada.
+
+## Rachadinha parcelada e prévia de fragmentos — 03/11/2026
+
+`shared/rachadinha.js`: `parcelarDivisaoConjuntaGestor` conserva totais por parte e fatura, distribuindo restos em ciclo. `previaRachadinhaWeb` assina o plano e `registrarRachadinhaWeb` o recalcula, usando argumentos internos de `sincronizarLoteWebInterno_` e `salvarEmprestimoWebInterno_`. `valoresParcelasInternasGestor_` valida o plano; campos do pedido público não controlam essas parcelas. Os demais cadastros mantêm seu cálculo anterior.
+
+`interface/rachadinha.js`: `textoParcelamentoRachadinhaGestor` apresenta a distribuição antes de gravar, agrupando períodos de valor igual. Registro parcelado exige o plano compatível do backend. O total considera apenas o que será registrado, não partes omitidas ou valores pagos por outro participante.
+
+`recebidosPorParcelaEmprestimoGestor_` e `resumoFragmentoEmprestimoGestor_` recompõem o recebido/total da parcela para a prévia, sem alterar os recebimentos. `textoPreviaValorEmprestimoGestor`, em `interface/compartilhamento.js`, apresenta o efeito da edição tanto individual quanto em lote. As proteções de pagamento e a regra de Pix foram preservadas.
+
+Última suíte completa: 949 testes aprovados; cache v117. Atualizar Apps Script e frontend. Protocolo 18, sem nova coluna nem ativação manual. Não há redistribuição retroativa de divisões já registradas. Nenhuma publicação remota executada nesta rodada.

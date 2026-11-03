@@ -256,6 +256,12 @@ function abrirRegistroRachadinhaGestor(){
 }
 function atualizarParcelasRegistroRachaGestor(){const nome=document.getElementById('rachaRegistroForma').value,cartao=formaEhCartaoGestor(nome);document.getElementById('rachaRegistroBoxParcelas').classList.toggle('hidden',!cartao);if(!cartao)document.getElementById('rachaRegistroParcelas').value=1;const data=document.getElementById('rachaRegistroData').value,forma=buscarFormaPagamentoGestor(nome);if(/^\d{2}\/\d{2}\/\d{4}$/.test(data)&&forma){const calculo=calcularMesFaturaCartao(forma,data);if(calculo.mesFat)document.getElementById('rachaRegistroMes').value=calculo.mesFat;}}
 function fecharRegistroRachaGestor(){const m=document.getElementById('modalRegistroRachaGestor');m.classList.add('hidden');m._focoAnterior?.focus();}
+// Agrupa apenas períodos consecutivos com o mesmo valor, sem ocultar centavos.
+function textoParcelamentoRachadinhaGestor(plano){
+  if(!plano||plano.quantidade<=1)return '';
+  function serie(valores){const linhas=[];for(let i=0;i<valores.length;){let fim=i;while(fim+1<valores.length&&valores[fim+1]===valores[i])fim++;linhas.push((i===fim?plano.meses[i]:plano.meses[i]+' a '+plano.meses[fim])+': '+formatBRL(valores[i]/100)+(fim>i?' por fatura':''));i=fim+1;}return linhas.join('\n');}
+  return '\n\nParcelamento desta gravação:\n'+serie(plano.totaisCentavos)+'\n\n'+plano.partes.map(p=>p.nome+':\n'+serie(p.valoresCentavos)).join('\n\n')+'\n\nDistribuição de centavos pela regra do app; confira os valores efetivos do banco.';
+}
 async function conferirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Confira o envio existente','Consulte Atividade antes de preparar outra gravação desta divisão.');abrirAtividadeGestor();return;}
   const botao=document.getElementById('btnPreviaRegistroRacha');if(botao.disabled)return;botao.disabled=true;
@@ -266,8 +272,9 @@ async function conferirRegistroRachadinhaGestor(){
     const versao=assinar();
     const previa=await apiCall('previaRachadinhaWeb',dados,1);
     if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden'))throw Error('A divisão ou os campos mudaram. Confira a prévia novamente antes de registrar.');
+    if(dados.numParcelas>1&&previa.parcelamento?.regra!=='restos-ciclicos-v1')throw Error('Atualize o Apps Script para conferir o parcelamento conjunto antes de registrar.');
     if(rachaEnvioGuardado?.estado==='confirmado')throw Error('Esta divisão já foi registrada neste aparelho. Confira o Histórico e os Empréstimos antes de lançar novamente.');
-    const texto='Sua parte: '+formatBRL(previa.minhaParteCentavos/100)+(dados.incluirMinhaParte?' (Novo Registro)':' (não será registrada)')+'\n'+previa.emprestimos.map(e=>e.pessoa+': '+formatBRL(e.valorCentavos/100)+(e.recebido?' — já recebido':' — a receber')).join('\n')+'\nTotal desta gravação: '+formatBRL(previa.totalCentavos/100)+'\n\nForma: '+dados.formaPagto+' • Fatura: '+dados.mesPrimeiraFatura+'\nPagar a fatura e receber da pessoa são controles separados.';
+    const texto='Sua parte: '+formatBRL(previa.minhaParteCentavos/100)+(dados.incluirMinhaParte?' (Novo Registro)':' (não será registrada)')+'\n'+previa.emprestimos.map(e=>e.pessoa+': '+formatBRL(e.valorCentavos/100)+(e.recebido?' — já recebido':' — a receber')).join('\n')+'\nTotal desta gravação: '+formatBRL(previa.totalCentavos/100)+textoParcelamentoRachadinhaGestor(previa.parcelamento)+'\n\nForma: '+dados.formaPagto+' • Fatura: '+dados.mesPrimeiraFatura+'\nPagar a fatura e receber da pessoa são controles separados.';
     mostrarConfirmacao('Registrar esta divisão?',texto,async()=>{
       if(divisaoRachaEnviadaGestor())return;
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}

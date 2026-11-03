@@ -2,6 +2,12 @@
       const texto=String(status??'');return {'Assinatura Ativa':'Recorrência ativa','Assinatura Paga':'Recorrência paga','Assinatura Cancelada':'Recorrência desativada'}[texto.trim()]||texto;
     }
 // Mensagens de texto para celular. Formatação não altera registros ou pagamentos.
+function textoPreviaValorEmprestimoGestor(i){
+  const linhas=['Parcela '+i.parcela+' · fatura '+i.mes];
+  if(Number(i.recebidoAntes)>0)linhas.push('Valor deste registro a receber: '+formatBRL(i.antes)+' → '+formatBRL(i.depois),'Já recebido preservado: '+formatBRL(i.recebidoAntes),'Total desta parcela: '+formatBRL(i.totalParcelaAntes)+' → '+formatBRL(i.totalParcelaDepois));
+  else linhas.push('Valor: '+formatBRL(i.antes)+' → '+formatBRL(i.depois));
+  return linhas.join('\n');
+}
 function textoLinhaMensagemGestor(valor){return String(valor??'').replace(/[\r\n]+/g,' ').trim();}
 function tipoCompraMensagemGestor(parcela){
   const p=textoLinhaMensagemGestor(parcela).replace(/^'/,'');
