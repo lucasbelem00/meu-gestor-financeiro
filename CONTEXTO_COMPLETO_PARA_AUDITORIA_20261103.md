@@ -35,8 +35,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v120` |
-| Última suíte completa documentada | 967 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v121` |
+| Última suíte completa documentada | 971 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -494,3 +494,9 @@ Atualização do Módulo 6: opção “Mostrar metas sem gastos” na Mensal usa
 Calculadora: histórico e cópia exibem até duas casas decimais, como o visor; resultados internos e reutilização preservam a precisão original. Conferência: candidatos estritos por data/valor e grupos ambíguos preservados. Nova seção sugere correspondências com mesmo valor e diferença de um ou dois dias corridos apenas entre itens sem correspondência. Não consome registros, não associa automaticamente nem registra pagamentos; sugestões podem se sobrepor e os itens continuam nas listas sem correspondência. Índices por dia/valor evitam busca quadrática. Diagnóstico inclui somente a contagem de grupos próximos, sem conteúdo do extrato. Cache v120. Implementação local, sem publicação remota.
 
 Validação do Módulo 7: quatro regressões novas; suíte completa com 967 aprovados, zero falhas. CSS compilado, cópias de interface sincronizadas e dist preparado. Validação na implantação real continua pendente.
+
+
+### Módulo 8 — exclusão no Planejamento
+Adicionado Excluir à direita de Editar, com confirmação nominal e aviso de que lançamentos financeiros não são excluídos. Usa lista integral, incluindo concluídos ocultos, e salvamento existente com versão e requestId. Confirmação invalida após mudança de campos, lista ou época de restauração. Excluir outro item preserva formulário e rascunho; excluir o item editado informa descarte do próprio rascunho, realizado só após sucesso. Falha/conflito preserva estado; envio incerto bloqueia repetição. Metas acima de 100% continuam mostrando percentual real com barra limitada. Cache v121, código local sem publicação remota.
+
+Validação do Módulo 8: quatro regressões novas; suíte completa com 971 aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado. Validação na implantação real pendente. Nenhuma função manual nova no Apps Script.

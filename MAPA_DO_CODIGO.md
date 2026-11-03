@@ -202,3 +202,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Relatórios: renderizarTermometroMensalGestor em index.html atualiza a opção de metas sem gastos com o cache mensal, sem API; categorias zeradas não filtram.
 
 - Módulo 7: interface/usabilidade.js formata histórico/cópia da calculadora em até duas casas, preservando precisão interna. interface/conferencia.js calcula proximos por índices de data/valor e renderiza sugestões sem alterar candidatos, pagamentos ou itens sem correspondência.
+
+- Planejamento: excluirItemPlanejamentoGestor (interface/planejamento.js) confirma e remove por ID da lista integral; enviarPlanejamentoGestor recebe preservarEditor opcional para exclusões que não envolvem o rascunho aberto. Fluxos antigos mantêm comportamento padrão.

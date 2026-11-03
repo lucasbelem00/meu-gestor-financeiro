@@ -115,3 +115,5 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Mensal: metas sem gastos são opcionais e informativas, sem lupa ou ação de filtro. Anual: distinguir total registrado de período comparado e informar parcelas futuras; manter explicação no PDF executivo.
 
 - Calculadora: resultados visíveis e copiados usam até duas casas decimais; precisão interna preservada. Conferir extrato: seção “Possíveis correspondências — datas próximas” separada dos candidatos estritos e das ambiguidades, com aviso de revisão manual e preservação das diferenças.
+
+- Planejamento: Excluir à direita de Editar, com ícone de lixeira e cor de exclusão; confirmação identifica o item e distingue rascunho do item excluído de campos preservados.

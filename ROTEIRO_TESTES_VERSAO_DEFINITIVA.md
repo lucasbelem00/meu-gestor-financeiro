@@ -124,3 +124,6 @@ As propostas foram implementadas na continuação de 31/10: Menu → Planejament
 
 
 Módulo 7: calcular 50,33 com acréscimo de 10%; conferir 55,36 no visor, histórico e cópia. Conferir extrato com mesmo valor em datas separadas por um/dois dias, inclusive virada de mês/ano: deve sugerir, manter registros sem correspondência e não registrar pagamento. Datas com três dias de diferença e valores diferentes não sugerem; correspondências estritas continuam prioritárias.
+
+
+Módulo 8: excluir item com concluídos ocultos e outro rascunho aberto; somente o escolhido sai e rascunho permanece. Cancelar confirmação não altera nada. Excluir o item editado avisa sobre o rascunho e só limpa após sucesso. Alterar campos durante confirmação deve invalidá-la. Conflito entre aparelhos deve preservar estado; resposta incerta não deve gerar segundo pedido. Meta reservada acima do objetivo mantém percentual real, barra até 100%.
