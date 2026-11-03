@@ -237,3 +237,9 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Novo em index.html: voltarPagamentoAVistaGestor reutiliza atualizarLayoutParcelas e salvarRascunho; atualizarPreviewParcelas apresenta parcelas restantes sem alterar a divisão original em centavos.
 
 - Novo: atualizarRotuloParcelasNovoGestor, iniciarEdicaoParcelasNovoGestor e concluirEdicaoParcelasNovoGestor em index.html controlam rótulo visual sem alterar tipo numérico do campo; atualizarLayoutParcelas sincroniza apresentação após atalhos/rascunhos.
+
+## Correções da auditoria em três partes — 03/11/2026
+
+- Backend/Code.gs: validarTransicaoStatusEdicaoGestor_ protege editores pessoais e de terceiros; processarAssinaturasAutomaticas e editarAssinaturaWebInterno_ preservam perfil do modelo.
+- reordenarFormasPagamentoWebInterno_: preserva posições de resumo/fórmulas e recusa fórmulas nos cadastros móveis, sem tentar traduzir referências.
+- shared/portugues.js: fonte única de DICIONARIO_ACENTOS_PT; scripts/sincronizar-rachadinha.cjs incorpora no HTML e Apps Script. Editar a fonte, não as cópias geradas.

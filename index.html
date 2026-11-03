@@ -1401,10 +1401,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </div>
           <div>
             <label class="block text-[11px] font-bold text-slate-400 mb-1">Status</label>
-            <select id="selEdEmpStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none">
+            <select id="selEdEmpStatus" disabled aria-describedby="selEdEmpStatusAjuda" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none">
               <option value="A Receber">A Receber</option>
               <option value="Recebido">Recebido</option>
             </select>
+            <p id="selEdEmpStatusAjuda" class="text-xs text-slate-300 mt-1">Recebimentos: use Registrar recebimento. Para desfazer, consulte Atividade.</p>
           </div>
         </div>
 
@@ -1602,7 +1603,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Status</label>
-            <select id="selEdStatus" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold">
+            <select id="selEdStatus" disabled aria-describedby="selEdStatusAjuda" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold">
               <option value="Em Aberto">Em Aberto</option>
               <option value="Pago">Pago</option>
               <option value="Agendado">Agendado</option>
@@ -1611,6 +1612,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <option value="Assinatura Cancelada">Recorrência desativada</option>
               <option value="Pago (Cancelada)">Pago (Cancelada)</option>
             </select>
+            <p id="selEdStatusAjuda" class="text-xs text-slate-300 mt-1">Pagamentos: use Conferir fatura. Para desfazer, consulte Atividade.</p>
           </div>
         </div>
 
@@ -1846,21 +1848,26 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       return nomeBruto;
     }
 
-    const DICIONARIO_ACENTOS_PT = {
-      'acai': 'açaí', 'almoco': 'almoço', 'cafe': 'café', 'pao': 'pão', 'agua': 'água',
-      'farmacia': 'farmácia', 'remedio': 'remédio', 'remedios': 'remédios', 'racao': 'ração',
-      'veterinario': 'veterinário', 'combustivel': 'combustível', 'oleo': 'óleo',
-      'mecanico': 'mecânico', 'hamburguer': 'hambúrguer', 'aniversario': 'aniversário',
-      'condominio': 'condomínio', 'informatica': 'informática', 'eletronicos': 'eletrônicos',
-      'eletronico': 'eletrônico', 'servicos': 'serviços', 'servico': 'serviço',
-      'alimentacao': 'alimentação', 'saude': 'saúde', 'educacao': 'educação',
-      'vestuario': 'vestuário', 'cartao': 'cartão', 'salao': 'salão', 'acougue': 'açougue',
-      'sacolao': 'sacolão', 'pedagio': 'pedágio', 'taxi': 'táxi', 'clinica': 'clínica',
-      'estetica': 'estética', 'inscricao': 'inscrição', 'lampada': 'lâmpada',
-      'sache': 'sachê', 'atacadao': 'atacadão', 'assai': 'assaí', 'bistro': 'bistrô',
-      'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos',
-      'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó'
-    };
+    // INICIO DICIONARIO PT GERADO
+// Dicionário único para apresentação de títulos. Alterações devem ser regeneradas.
+const DICIONARIO_ACENTOS_PT = {
+  'acai': 'açaí', 'almoco': 'almoço', 'cafe': 'café', 'pao': 'pão', 'agua': 'água',
+  'farmacia': 'farmácia', 'remedio': 'remédio', 'remedios': 'remédios', 'racao': 'ração',
+  'veterinario': 'veterinário', 'combustivel': 'combustível', 'oleo': 'óleo',
+  'mecanico': 'mecânico', 'hamburguer': 'hambúrguer', 'aniversario': 'aniversário',
+  'condominio': 'condomínio', 'informatica': 'informática', 'eletronicos': 'eletrônicos',
+  'eletronico': 'eletrônico', 'servicos': 'serviços', 'servico': 'serviço',
+  'alimentacao': 'alimentação', 'saude': 'saúde', 'educacao': 'educação',
+  'vestuario': 'vestuário', 'cartao': 'cartão', 'salao': 'salão', 'acougue': 'açougue',
+  'sacolao': 'sacolão', 'pedagio': 'pedágio', 'taxi': 'táxi', 'clinica': 'clínica',
+  'estetica': 'estética', 'inscricao': 'inscrição', 'lampada': 'lâmpada',
+  'sache': 'sachê', 'atacadao': 'atacadão', 'assai': 'assaí', 'bistro': 'bistrô',
+  'cosmetico': 'cosmético', 'cosmeticos': 'cosméticos', 'oculos': 'óculos',
+  'mae': 'mãe', 'irmao': 'irmão', 'irma': 'irmã', 'vo': 'vó', 'tenis': 'tênis',
+  'relogio': 'relógio', 'rodizio': 'rodízio', 'porcao': 'porção', 'onibus': 'ônibus',
+  'gas': 'gás', 'ipva': 'ipva', 'iptu': 'iptu', 'cartorio': 'cartório'
+};
+// FIM DICIONARIO PT GERADO
 
     // Textos da planilha são dados: nunca entram como código em eventos inline.
     function escaparHTML(valor) {
@@ -3811,6 +3818,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       definirValorMoeda('inpEdValor', lerValorMoeda(valor));
       document.getElementById('inpEdMesFat').value = mes;
       document.getElementById('selEdStatus').value = status;
+      document.getElementById('selEdStatus').disabled = true;
       document.getElementById('inpEdTags').value = tag || '';
       sincronizarChipsTags('edicao');
 
@@ -4221,6 +4229,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       document.getElementById('inpEdEmpDesc').value = desc;
       document.getElementById('selEdEmpForma').value = forma;
       document.getElementById('selEdEmpStatus').value = status;
+      document.getElementById('selEdEmpStatus').disabled = true;
       definirValorMoeda('inpEdEmpValor', lerValorMoeda(valor));
       document.getElementById('inpEdEmpMesFat').value = mes;
       document.getElementById('inpEdEmpObs').value = obs || '';

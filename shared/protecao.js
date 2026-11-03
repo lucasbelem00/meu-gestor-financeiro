@@ -385,7 +385,7 @@ function conferirRestaurabilidadeBackupProtecaoGestor_(dados){
     if(base.hashFinanceiro)base.hashFinanceiro=assinaturaFinanceiraBackupProtecaoGestor_(base);
     if(base.hashOrganizacao)base.hashOrganizacao=assinaturaBackupAnualGestor_(base);
     validarBackupRestauracaoGestor_(base);
-    return {restauravel:false,aviso:'Cópia completa preservada e conferida. Colunas ou fórmulas particulares exigem recuperação assistida; a restauração automática deste arquivo não foi confirmada.'};
+    return {restauravel:false,aviso:'Cópia completa preservada e conferida. Colunas ou fórmulas particulares exigem recuperação assistida por análise técnica; não há assistente automático para esse caso nesta tela. A restauração deste arquivo não foi confirmada.'};
   }
 }
 function registrarSituacaoBackupProtecaoGestor_(periodo,arquivoId,hash,data,avaliacao){
@@ -478,7 +478,7 @@ function obterEmprestimosArquivadosWeb(param){
 }
 function validarParticoesBackupProtecaoGestor_(backup){
   if(!Array.isArray(backup.arquivosAnuais)||backup.arquivosAnuais.length>100||backup.hashFinanceiro!==assinaturaFinanceiraBackupProtecaoGestor_(backup))throw Error('Os arquivos anuais do backup estão incompletos ou foram alterados.');
-  if(Utilities.newBlob(JSON.stringify(backup)).getBytes().length>LIMITE_BACKUP_RESTAURACAO_GESTOR_)throw Error('Este backup excede 8 MB. Preserve-o para recuperação assistida em lotes; nenhum conteúdo foi ignorado.');
+  if(Utilities.newBlob(JSON.stringify(backup)).getBytes().length>LIMITE_BACKUP_RESTAURACAO_GESTOR_)throw Error('Este backup excede 8 MB. Guarde o arquivo original. Este tamanho exige análise técnica para recuperação em lotes; não há restauração automática nesta tela. Nenhum conteúdo foi ignorado.');
   const base=Object.assign({},backup,{formato:'gestor-financeiro-backup-v1'});delete base.arquivosAnuais;delete base.hashFinanceiro;
   const abas=validarBackupRestauracaoGestor_(base),ids=new Set(),anos=new Set();let celulas=abas.reduce(function(s,a){return s+a.valores.length*a.valores[0].length;},0);
   abas.filter(function(a){return ehAbaRegistrosGestor_(a.nome);}).forEach(function(a){a.valores.slice(1).forEach(function(r){if(r[11])ids.add(String(r[11]));});});
@@ -490,7 +490,7 @@ function validarParticoesBackupProtecaoGestor_(backup){
     });});
     return {ano:dados.ano,abas:conferidas.map(function(a){return {nome:a.nome,valores:normalizarMatrizProtecaoGestor_(a.valores,COLUNAS_GESTOR_)};})};
   });
-  if(celulas>500000)throw Error('O backup completo ultrapassa 500 mil células. Preserve o arquivo para recuperação assistida.');return abas;
+  if(celulas>500000)throw Error('O backup completo ultrapassa 500 mil células. Guarde o arquivo original para análise técnica; a restauração automática desta tela não aceita esse volume.');return abas;
 }
 function planejarAnuaisRestauracaoProtecaoGestor_(abas,backup,ss){
   const leitura=catalogoParaRecuperacaoProtecaoGestor_(ss),catalogo=leitura.catalogo,legiveis=[],indisponiveis=[],naoConferidos=[],recebidos=abas.arquivosAnuais||[];

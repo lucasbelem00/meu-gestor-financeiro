@@ -158,6 +158,8 @@ function isStatusCancelado(statusStr) {
   return ['assinatura cancelada','ocorrência pulada'].includes(String(statusStr || '').trim().toLowerCase());
 }
 
+// INICIO DICIONARIO PT GERADO
+// Dicionário único para apresentação de títulos. Alterações devem ser regeneradas.
 const DICIONARIO_ACENTOS_PT = {
   'acai': 'açaí', 'almoco': 'almoço', 'cafe': 'café', 'pao': 'pão', 'agua': 'água',
   'farmacia': 'farmácia', 'remedio': 'remédio', 'remedios': 'remédios', 'racao': 'ração',
@@ -175,6 +177,7 @@ const DICIONARIO_ACENTOS_PT = {
   'relogio': 'relógio', 'rodizio': 'rodízio', 'porcao': 'porção', 'onibus': 'ônibus',
   'gas': 'gás', 'ipva': 'ipva', 'iptu': 'iptu', 'cartorio': 'cartório'
 };
+// FIM DICIONARIO PT GERADO
 
 function formatarTituloInteligente(texto) {
   if (!texto) return '';
@@ -492,7 +495,7 @@ function processarAssinaturasAutomaticas(lancSheet) {
           ref[10] || ''
         ].concat([gerarIdGestor_(), ref[12] || gerarIdGestor_(), 1, 'Em Aberto', ref[15] || '', '', 0]);
         definirSerieRecorrenteGestor_(novaLinha, { diaReferencia: diaOrig, encerrada: false });
-        definirPerfilGastoGestor_(novaLinha,perfilPadraoCategoriaGestor_(obterPlanilhaGestor_(),novaLinha[3]));
+        definirPerfilGastoGestor_(novaLinha,perfilRegistradoGastoGestor_(ref)||perfilPadraoCategoriaGestor_(obterPlanilhaGestor_(),novaLinha[3]));
         novasLinhas.push(novaLinha);
         existentes.add(mes);
       }
@@ -925,6 +928,7 @@ function editarEmprestimoLinhaWebInterno_(dados) {
 
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descOriginal, dados.mesOriginal, dados.parcelaOriginal);
     if (idxAlvo < 0 || idxAlvo >= rawAll.length) throw new Error("Parcela do empréstimo não encontrada.");
+    validarTransicaoStatusEdicaoGestor_(rawAll[idxAlvo][9],dados.status,true);
     const indicesValores=new Set(indicesValorEmprestimoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo));
     const planoValores=dados.escopoValorParcelas==='proximas'?planoValoresEmprestimoGestor_(dados,{raw:rawAll,disp:dispAll},idxAlvo):null;
     if(planoValores&&dados.assinaturaValores!==planoValores.assinatura)throw Error('Os valores ou parcelas mudaram desde a prévia. Confira novamente antes de salvar.');
@@ -2339,6 +2343,11 @@ function indicesMesmaCompra(dispAll, idxAlvo) {
 }
 
 // Monta uma linha de 11 colunas de "Lançamentos" aplicando alterações (over)
+// Edição cadastral não cria nem desfaz pagamento/recebimento.
+function validarTransicaoStatusEdicaoGestor_(antes,depois,emprestimo){
+ const recebido=s=>String(s).trim()==='Recebido';
+ if(emprestimo?recebido(antes)!==recebido(depois):isStatusPago(antes)!==isStatusPago(depois))throw Error(emprestimo?'Para registrar recebimento, use Registrar recebimento. Para desfazer, confira a ação em Atividade. A edição não altera recebimentos.':'Para registrar pagamento, use Conferir fatura. Para desfazer, confira a ação em Atividade. A edição não altera pagamentos.');
+}
 function montarLinhaLanc(d, r, over) {
   const o = over || {};
   const parc = limparApostrofo(d[6]);
@@ -2385,6 +2394,7 @@ function editarLancamentoLinhaWebInterno_(dados) {
     if (idx < 0) throw new Error('Lançamento não localizado. Atualize a página e tente novamente.');
     dados = Object.assign({}, dados, { formaPagto: validarFormaAtualGestor_(dados.formaPagto, { formaAnterior: disp[idx][2] }), categoria: validarCategoriaAtualGestor_(dados.categoria) });
 
+    validarTransicaoStatusEdicaoGestor_(raw[idx][9],dados.status,false);
     const alvo = disp[idx];
     const parcAlvo = limparApostrofo(alvo[6]);
     const infoAlvo = parseNumParcela(parcAlvo);
@@ -2633,7 +2643,7 @@ function editarAssinaturaWebInterno_(dados) {
     const dia = Math.min(diaReferencia, new Date(ref.getFullYear(), ref.getMonth() + 1, 0).getDate());
     nova[0] = "'" + pad2(dia) + '/' + mes; nova[11] = gerarIdGestor_(); nova[13] = 1; nova[14] = 'Em Aberto'; nova[17] = 0;
     definirSerieRecorrenteGestor_(nova, { diaReferencia: diaReferencia, encerrada: false });
-    definirPerfilGastoGestor_(nova,perfilPadraoCategoriaGestor_(ss,catNova));
+    definirPerfilGastoGestor_(nova,perfilRegistradoGastoGestor_(raw[idx])||perfilPadraoCategoriaGestor_(ss,catNova));
     escreverLinhaPlanilha(lancSheet, Math.max(2, lancSheet.getLastRow() + 1), nova); qtd++;
   }
   organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
@@ -2906,11 +2916,14 @@ function reordenarFormasPagamentoWebInterno_(param) {
     const colunaTipo = garantirTiposFormasGestor_(sh);
     const colunaIdentidade=garantirIdentidadesFormasGestor_(sh);
     const rng = sh.getRange(7, 2, sh.getLastRow() - 6, 6);
-    const v = rng.getValues();
+    const valores = rng.getValues(),formulas=rng.getFormulas();
+    const v=valores.map((r,i)=>r.map((x,j)=>formulas[i][j]||x));
     const tipos = sh.getRange(7, colunaTipo, v.length, 1).getValues();
     const identidades=sh.getRange(7,colunaIdentidade,v.length,1).getValues();
     const cadastros = v.map(function (r,i) { return {valores:r,tipo:tipos[i][0],identidade:identidades[i][0]}; });
-    const usados = new Set();
+    const fixos=new Set(cadastros.map((c,i)=>c.tipo==='resumo'?i:-1).filter(i=>i>=0));
+    if(formulas.some((r,i)=>!fixos.has(i)&&r.some(Boolean)))throw Error('Há fórmulas em um cadastro de forma de pagamento. A ordem foi preservada. Revise essas fórmulas antes de reordenar.');
+    const usados = new Set(fixos);
     const novo = [];
     (nomes || []).forEach(function (n) {
       const alvo = chaveFormaGestor_(n);
@@ -2923,6 +2936,8 @@ function reordenarFormasPagamentoWebInterno_(param) {
       }
     });
     cadastros.forEach(function (cadastro, ix) { if (!usados.has(ix)) novo.push(cadastro); });
+    const ordem=novo.slice();let proximo=0;novo.length=0;
+    cadastros.forEach((c,i)=>novo.push(fixos.has(i)?c:ordem[proximo++]));
     rng.setValues(novo.map(function (cadastro) { return cadastro.valores; }));
     sh.getRange(7, colunaTipo, novo.length, 1).setValues(novo.map(function (cadastro) { return [cadastro.tipo]; }));
     sh.getRange(7,colunaIdentidade,novo.length,1).setValues(novo.map(function(cadastro){return [cadastro.identidade];}));
@@ -4904,7 +4919,7 @@ function validarBackupRestauracaoGestor_(backup) {
   if(backup&&backup.formato==='gestor-financeiro-backup-v2')return validarParticoesBackupProtecaoGestor_(backup);
   backup=normalizarNotasBackupRestauracaoGestor_(backup);
   if (!backup || backup.formato !== 'gestor-financeiro-backup-v1' || !Array.isArray(backup.abas)) throw new Error('Selecione uma cópia JSON exportada pelo Gestor. CSV não permite restauração completa.');
-  if (Utilities.newBlob(JSON.stringify(backup)).getBytes().length > LIMITE_BACKUP_RESTAURACAO_GESTOR_) throw new Error('Este backup excede o limite de restauração pelo app (8 MB). Preserve o arquivo para recuperação assistida.');
+  if (Utilities.newBlob(JSON.stringify(backup)).getBytes().length > LIMITE_BACKUP_RESTAURACAO_GESTOR_) throw new Error('Este backup excede o limite de restauração pelo app (8 MB). Guarde o arquivo original para análise técnica; a restauração automática desta tela não aceita esse volume.');
   const vistos = new Set(), ids = new Set(); let celulas = 0, formulasCriticas = 0;
   const permitidas = ABAS_BACKUP_RESTAURAVEL_.concat(['_Gestor_Atividade']);
   const abas = backup.abas.map(function (aba) {
@@ -5907,7 +5922,7 @@ function conferirRestaurabilidadeBackupProtecaoGestor_(dados){
     if(base.hashFinanceiro)base.hashFinanceiro=assinaturaFinanceiraBackupProtecaoGestor_(base);
     if(base.hashOrganizacao)base.hashOrganizacao=assinaturaBackupAnualGestor_(base);
     validarBackupRestauracaoGestor_(base);
-    return {restauravel:false,aviso:'Cópia completa preservada e conferida. Colunas ou fórmulas particulares exigem recuperação assistida; a restauração automática deste arquivo não foi confirmada.'};
+    return {restauravel:false,aviso:'Cópia completa preservada e conferida. Colunas ou fórmulas particulares exigem recuperação assistida por análise técnica; não há assistente automático para esse caso nesta tela. A restauração deste arquivo não foi confirmada.'};
   }
 }
 function registrarSituacaoBackupProtecaoGestor_(periodo,arquivoId,hash,data,avaliacao){
@@ -6000,7 +6015,7 @@ function obterEmprestimosArquivadosWeb(param){
 }
 function validarParticoesBackupProtecaoGestor_(backup){
   if(!Array.isArray(backup.arquivosAnuais)||backup.arquivosAnuais.length>100||backup.hashFinanceiro!==assinaturaFinanceiraBackupProtecaoGestor_(backup))throw Error('Os arquivos anuais do backup estão incompletos ou foram alterados.');
-  if(Utilities.newBlob(JSON.stringify(backup)).getBytes().length>LIMITE_BACKUP_RESTAURACAO_GESTOR_)throw Error('Este backup excede 8 MB. Preserve-o para recuperação assistida em lotes; nenhum conteúdo foi ignorado.');
+  if(Utilities.newBlob(JSON.stringify(backup)).getBytes().length>LIMITE_BACKUP_RESTAURACAO_GESTOR_)throw Error('Este backup excede 8 MB. Guarde o arquivo original. Este tamanho exige análise técnica para recuperação em lotes; não há restauração automática nesta tela. Nenhum conteúdo foi ignorado.');
   const base=Object.assign({},backup,{formato:'gestor-financeiro-backup-v1'});delete base.arquivosAnuais;delete base.hashFinanceiro;
   const abas=validarBackupRestauracaoGestor_(base),ids=new Set(),anos=new Set();let celulas=abas.reduce(function(s,a){return s+a.valores.length*a.valores[0].length;},0);
   abas.filter(function(a){return ehAbaRegistrosGestor_(a.nome);}).forEach(function(a){a.valores.slice(1).forEach(function(r){if(r[11])ids.add(String(r[11]));});});
@@ -6012,7 +6027,7 @@ function validarParticoesBackupProtecaoGestor_(backup){
     });});
     return {ano:dados.ano,abas:conferidas.map(function(a){return {nome:a.nome,valores:normalizarMatrizProtecaoGestor_(a.valores,COLUNAS_GESTOR_)};})};
   });
-  if(celulas>500000)throw Error('O backup completo ultrapassa 500 mil células. Preserve o arquivo para recuperação assistida.');return abas;
+  if(celulas>500000)throw Error('O backup completo ultrapassa 500 mil células. Guarde o arquivo original para análise técnica; a restauração automática desta tela não aceita esse volume.');return abas;
 }
 function planejarAnuaisRestauracaoProtecaoGestor_(abas,backup,ss){
   const leitura=catalogoParaRecuperacaoProtecaoGestor_(ss),catalogo=leitura.catalogo,legiveis=[],indisponiveis=[],naoConferidos=[],recebidos=abas.arquivosAnuais||[];

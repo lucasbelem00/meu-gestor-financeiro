@@ -43,8 +43,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v127` |
-| Última suíte completa documentada | 978 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v128` |
+| Última suíte completa documentada | 990 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -540,3 +540,17 @@ Validação do refino 48/33/19: 13 testes direcionados aprovados, CSS proporcion
 Novo: campo numérico de parcelas apresenta rótulo visual À vista quando desfocado e em 1, mantendo valor real numérico para payload/rascunho. Ao focar em 1, remove o valor para digitação; ao sair vazio ou em 1, normaliza para 1, atualiza layout e salva rascunho. Em 2+ mostra número e mantém Início. Rótulo sem captura de toque e ajuda acessível, sem mudar campo para texto. Cache v127, implementação local sem publicação.
 
 Validação de À vista no campo: duas regressões novas; 978 testes aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado. Publicação e conferência visual no aparelho pendentes.
+
+
+### Auditoria externa em três partes — correções aplicadas
+- Recorrências: novas ocorrências automáticas e criadas pela edição preservam perfil registrado do modelo, inclusive escolha explicitamente não classificada. Somente modelo legado sem perfil herda padrão da categoria. Meses já gravados não são reclassificados. Substitui a regra histórica do teste que reaplicava o padrão a cada mês.
+- Editores pessoais/terceiros: situação é apresentada somente para consulta. Backend recusa mudanças entre pago/não pago ou recebido/a receber pela edição, em ambos os sentidos; registrar e desfazer usam fluxos próprios. Editar descrição e outros dados continua preservando pagamentos existentes. Alterar valor mantém as proteções e o recálculo já existentes.
+- Reordenar formas: linhas tipo resumo ficam nas posições originais, incluindo fórmulas. Cadastros sem fórmulas são reordenados nos espaços restantes com identidades/tipos. Fórmulas em cadastros móveis bloqueiam a reordenação antes de gravar, evitando converter resultados em valores ou deslocar referências relativas.
+- Fechamento mantém regra atual: compra no dia exato segue para próxima fatura. Não aplicar feriados ao fechamento; ajuste bancário por dias úteis permanece no vencimento. Testar anterior/exato/posterior e virada de ano; correspondência com cartão real deve ser conferida no banco.
+- Backup: mensagens esclarecem que recuperação assistida exige análise técnica; não existe assistente automático para volume ou personalizações fora do limite.
+- Dicionário de títulos centralizado em shared/portugues.js, incorporado pelo gerador nos dois ambientes. Mantida fonte do backend, acrescentando à apresentação nove entradas que só existiam no servidor; sem reescrever descrições antigas.
+- Segurança: consulta somente de leitura à configuração da Vercel confirmou proteção SSO ativada com escopo all_except_custom_domains. Proxy local continua bloqueando produção. Tentativas HTTP sem autenticação com ação inválida (sem consultar dados) não completaram conexão; acesso real não foi validado. Nenhuma configuração remota foi alterada.
+- Permanecem etapas próprias: autenticação definitiva e teste anônimo real; medições em base fictícia ampliada; diagnóstico/otimização de armazenamento; fonte de data/fuso para uso offline. Sem retirada de travas, expurgo por idade, índices novos ou migração para IndexedDB neste pacote.
+Cache v128; frontend e Apps Script precisam ser atualizados juntos. Código local, sem publicação remota e sem função manual de ativação.
+
+Validação da auditoria em três partes: 12 regressões novas; suíte completa com 990 aprovados, zero falhas. Atualizado teste anterior de recorrência para a decisão de herança do perfil registrado. CSS compilado, interfaces espelhadas sincronizadas e dist preparado. Conferência visual e fluxos reais nos dois aparelhos pendentes.

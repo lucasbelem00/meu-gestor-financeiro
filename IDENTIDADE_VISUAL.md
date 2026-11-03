@@ -129,3 +129,5 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Refinamento do Novo parcelado: proporção vigente 48/33/19 para Valor/Parcelas/Início, substituindo 42/33/25. Linha do atalho À vista usa flex e botão h-6 centralizado, alinhado aos atalhos vizinhos.
 
 - Novo: Parcelas em 1 mostra À vista; foco limpa apenas a quantidade 1 e mantém teclado numérico. Sair vazio restaura 1/À vista. Quantidades maiores mostram o número.
+
+- Edição de lançamento e empréstimo: situação somente para consulta, com ajuda indicando os fluxos próprios de pagamento/recebimento e Atividade para desfazer. Não aparentar que edição cadastral registra dinheiro.

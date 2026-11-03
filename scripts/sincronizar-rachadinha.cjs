@@ -1,5 +1,10 @@
 const fs=require('node:fs'),path=require('node:path');
 function sincronizarMotor(){
+  for(const nome of ['index.html','Backend/Code.gs']){
+    const arquivo=path.resolve(__dirname,'..',nome),fonte=fs.readFileSync(arquivo,'utf8'),ini='// INICIO DICIONARIO PT GERADO',fim='// FIM DICIONARIO PT GERADO';
+    if(fonte.split(ini).length!==2||fonte.split(fim).length!==2)throw Error('Dicionário compartilhado ausente ou repetido: '+nome);
+    fs.writeFileSync(arquivo,fonte.slice(0,fonte.indexOf(ini))+ini+'\n'+fs.readFileSync(path.resolve(__dirname,'../shared/portugues.js'),'utf8').trim()+'\n'+fonte.slice(fonte.indexOf(fim)));
+  }
   for(const n of ['index.html','Backend/Code.gs']){const s=fs.readFileSync(path.resolve(__dirname,'..',n),'utf8');for(const marcador of ['// INICIO COMPETENCIAS GERADAS','// INICIO MOTOR RACHADINHA GERADO'])if(s.split(marcador).length!==2)throw Error('Bloco compartilhado ausente ou repetido: '+marcador+' em '+n);}
   const raiz=path.resolve(__dirname,'..'), motor=fs.readFileSync(path.join(raiz,'shared/rachadinha.js'),'utf8').trim();
   for(const nome of ['index.html','Backend/Code.gs']){

@@ -26,10 +26,10 @@ test('Painel inclui pagos, exclui cancelados, terceiros, outros meses e previsõ
  const a=base([personal('Pago',30,'1/1','10/2026','Pago'),personal('Pendente',20),personal('Cancelado',99,'∞/∞','10/2026','Ocorrência Pulada'),personal('Futuro',70,'1/1','11/2026')],[loan('Ana','A Receber',999)]);
  const p=a.dados().perfilGastos;assert.equal(p.total,5000);assert.equal(p.tipo.naoClassificado,5000);assert.equal(Object.values(p.tipo).reduce((s,v)=>s+v,0),p.total);assert.equal(Object.values(p.prioridade).reduce((s,v)=>s+v,0),p.total);
 });
-test('geração mensal usa padrão atual sem mudar a classificação das ocorrências passadas',()=>{
+test('geração mensal herda o perfil registrado; padrão da categoria só preenche modelo legado sem perfil',()=>{
  const a=base([personal('Mensal',90,'∞/∞','10/2026','Assinatura Paga')]);categorias(a);a.ctx.getHojeSeguro=()=>new Date(2026,10,16);a.dados();
  const outubro=rows(a).find(r=>String(r[8]).includes('10/2026')),novembro=rows(a).find(r=>String(r[8]).includes('11/2026'));assert.equal(perfil(a,outubro).tipo,'');assert.equal(perfil(a,novembro).tipo,'variavel');
- categorias(a,'fixo','ajustavel');a.ctx.getHojeSeguro=()=>new Date(2026,11,16);a.dados();assert.equal(perfil(a,rows(a).find(r=>String(r[8]).includes('11/2026'))).tipo,'variavel');assert.equal(perfil(a,rows(a).find(r=>String(r[8]).includes('12/2026'))).tipo,'fixo');
+ categorias(a,'fixo','ajustavel');a.ctx.getHojeSeguro=()=>new Date(2026,11,16);a.dados();assert.equal(perfil(a,rows(a).find(r=>String(r[8]).includes('11/2026'))).tipo,'variavel');assert.equal(perfil(a,rows(a).find(r=>String(r[8]).includes('12/2026'))).tipo,'variavel');
 });
 test('filtro do Histórico corresponde ao resumo e devolve a classificação sem deslocar identidades',()=>{
  const a=base();categorias(a);compra(a,{descricao:'Classificada'});const res=a.ctx.executarAcaoApi_('filtrarLancamentosWeb',{filtros:{mes:'10/2026',perfilCampo:'tipo',perfilValor:'variavel'},offset:0,limite:50});assert.equal(res.qtdTotal,1);assert.equal(res.itens[0][1],'Classificada');assert.equal(res.itens[0][20].tipo,'variavel');assert.ok(res.itens[0][13]);

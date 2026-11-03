@@ -154,3 +154,6 @@ Depois dos testes individuais, executar um fluxo integrado: cadastrar → parcel
 Novo: informar R$ 250 em 3 parcelas e conferir 1ª de R$ 83,34 e demais 2 de R$ 83,33. Início 2 deve mostrar somente duas de R$ 83,33. Clicar em À vista deve ocultar Início, retornar ambos os campos a 1 e preservar valor, descrição e tags; recarregar e conferir rascunho.
 
 Novo/Parcelas: em 1, deve mostrar À vista. Tocar limpa a quantidade e permite teclado numérico; sair vazio ou com 1 restaura À vista. Digitar 3 mostra 3 e Início. Voltar pelo atalho À vista e restaurar rascunho devem sincronizar o rótulo sem enviar texto no lugar de números.
+
+
+Auditoria em três partes: criar recorrência com perfil diferente da categoria, gerar próximo mês e editar condição para mês ainda inexistente; perfil deve persistir. Trocar padrão da categoria não muda essa série. Criar fatura R$ 300, pagar R$ 100 e editar descrição: pago permanece R$ 100; editor não altera situação financeira. Registrar recebimento e desfazer por Atividade continuam separados do banco. Reordenar cartões: resumo/formulas ficam na posição e fórmulas de cadastro móvel geram bloqueio sem gravação. Conferir dia anterior/exato/posterior ao fechamento e virada anual; não deslocar fechamento por feriado. Verificar proteção da API sem credencial em ambiente controlado e confirmar regra de fechamento com cartão real.
