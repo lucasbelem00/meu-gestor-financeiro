@@ -3342,8 +3342,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       let htmlL = '';
       lista.forEach(l => {
         const total=lerValorMoeda(l[7]),pago=/^(Pago|Assinatura Paga|Pago \(Cancelada\)|Recebido)$/i.test(String(l[9]||'').trim())||l[16]==='Pago',cancelado=/^(Assinatura Cancelada|Ocorrência Pulada)$/i.test(String(l[9]||'').trim());
-        const situacao=cancelado?estiloSituacaoVisualGestor('vazio',l[9]):situacaoBancoVisualGestor({total,pago:pago?total:0,saldo:pago?0:total,forma:l[2],mesFatura:l[8],vencimento:formaSituacaoVisualGestor(l[2]).vencimento,imediato:formaEhImediataGestor(l[2])});
-        const alertaPrazo=['hoje','vencido'].includes(situacao.codigo),badgeColor=alertaPrazo?situacao.fundo:obterClasseBadgeStatus(l[9]);
+        const pagoValor=typeof l[18]==='number'&&Number.isFinite(l[18])?Math.max(0,Math.min(total,l[18])):pago?total:0,parcial=pagoValor>0&&pagoValor<total;
+        const situacao=cancelado?estiloSituacaoVisualGestor('vazio',l[9]):situacaoBancoVisualGestor({total,pago:pagoValor,saldo:Math.max(0,total-pagoValor),forma:l[2],mesFatura:l[8],vencimento:formaSituacaoVisualGestor(l[2]).vencimento,imediato:formaEhImediataGestor(l[2])});
+        const alertaPrazo=['hoje','vencido'].includes(situacao.codigo),badgeColor=alertaPrazo||parcial?situacao.fundo:obterClasseBadgeStatus(l[9]);
         const referencia = referenciaLinhaSegura('g', l[10], l[13], l[15]);
         const tagsHtml = String(l[11] || '').split(',').map(t => t.trim()).filter(Boolean).map(t =>
           `<button type="button" ${acaoHTML('filtrarPorTagRapida', [t])} class="bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1.5 inline-block transition active:scale-95" title="Toque para filtrar por ${escaparHTML(t)}">${escaparHTML(t)}</button>`
@@ -3358,9 +3359,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</div>
           </div></div>
           <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
-            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${escaparHTML(rotuloStatusRecorrenciaGestor(alertaPrazo?situacao.texto:l[9]))}</span>
+            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${escaparHTML(rotuloStatusRecorrenciaGestor(alertaPrazo||parcial?situacao.texto:l[9]))}</span>
             <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${escaparHTML(l[8])}</span></span>
           </div>
+          ${parcial?`<p class="text-xs text-slate-300">Pago ao banco: ${formatBRL(pagoValor)} · Falta pagar: ${formatBRL(Math.max(0,total-pagoValor))}</p>`:''}
           <div class="btn-acao-lanc gap-2 w-full mt-3 pt-3 border-t border-slate-700/50 ${modoEdicaoLancamentos ? 'flex' : 'hidden'}">
             <button type="button" ${acaoHTML('repetirLancamentoHoje', [l[1], l[2], l[3], l[7], l[11] || ''])} class="flex-1 text-emerald-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-emerald-900/20 hover:bg-emerald-600 rounded-xl transition active:scale-95 border border-emerald-500/20">🔁 Repetir</button>
 ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[11] || '', l[6] || '',l[20]||null])} class="flex-1 text-purple-400 hover:text-white text-xs font-bold px-2.5 py-2.5 bg-purple-900/20 hover:bg-purple-600 rounded-xl transition active:scale-95 border border-purple-500/20">✏️ Editar</button>
@@ -3936,12 +3938,12 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
         });
         selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${escaparHTML(m)}">${escaparHTML(m)}</option>`).join('');
-        const pessoasEmp = [...new Set(todosItens.map(i => String(i.pessoa || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        const pessoasEmp = [...new Map(todosItens.map(i => String(i.pessoa || '').trim()).filter(Boolean).map(p=>[normalizarTexto(p),p])).values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
         const formasEmp = [...new Set(todosItens.map(i => String(i.forma || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
         selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pessoasEmp.map(p => `<option value="${escaparHTML(p)}">${escaparHTML(p)}</option>`).join('');
         if (vMes && mesesEmp.includes(vMes)) selMes.value = vMes;
         selMes.dataset.iniciado = '1';
-        if (vPes && pessoasEmp.includes(vPes)) selPes.value = vPes;
+        if(vPes){const nome=pessoasEmp.find(p=>normalizarTexto(p)===normalizarTexto(vPes));if(nome)selPes.value=nome;}
         if (selForma) {
           selForma.innerHTML = '<option value="">Todas as Formas</option>' + formasEmp.map(f => `<option value="${escaparHTML(f)}">${escaparHTML(f)}</option>`).join('');
           if (vForma && formasEmp.includes(vForma)) selForma.value = vForma;
@@ -3956,7 +3958,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
       const filtrados = todosItens.filter(item => {
         if (fMes && item.mesFatura !== fMes) return false;
-        if (fPes && item.pessoa !== fPes) return false;
+        if (fPes && normalizarTexto(item.pessoa) !== normalizarTexto(fPes)) return false;
         if (fSt && item.status !== fSt) return false;
         if (fForma && item.forma !== fForma) return false;
         if (fBusca) {
@@ -3969,11 +3971,11 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
       const mapaPessoas = Object.create(null);
       filtrados.forEach(it => {
-        const pessoaNome = String(it.pessoa || 'Desconhecido');
-        if (!mapaPessoas[pessoaNome]) mapaPessoas[pessoaNome] = { nome: pessoaNome, aReceber: 0, recebido: 0, itens: [] };
-        if (it.status === 'Recebido') mapaPessoas[pessoaNome].recebido += (it.valorRaw || 0);
-        else mapaPessoas[pessoaNome].aReceber += (it.valorRaw || 0);
-        mapaPessoas[pessoaNome].itens.push(it);
+        const pessoaNome=String(it.pessoa||'Desconhecido').trim(),chavePessoa=normalizarTexto(pessoaNome);
+        if (!mapaPessoas[chavePessoa]) mapaPessoas[chavePessoa] = { nome: pessoaNome, aReceber: 0, recebido: 0, itens: [] };
+        if (it.status === 'Recebido') mapaPessoas[chavePessoa].recebido += (it.valorRaw || 0);
+        else mapaPessoas[chavePessoa].aReceber += (it.valorRaw || 0);
+        mapaPessoas[chavePessoa].itens.push(it);
       });
 
       const boxPessoas = document.getElementById('listaResumoPessoasEmp');
@@ -4272,7 +4274,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       const fBusca = String(document.getElementById('inpBuscaEmp')?.value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
       const todos = typeof itensEmprestimosConsultaProtecaoGestor==='function'?itensEmprestimosConsultaProtecaoGestor():(emprestimosGlobal.itens || []);
       const itens = todos.filter(i => {
-        if (i.pessoa !== pessoa || (fMes && i.mesFatura !== fMes) || (fSt && i.status !== fSt) || (fForma && i.forma !== fForma)) return false;
+        if (normalizarTexto(i.pessoa) !== normalizarTexto(pessoa) || (fMes && i.mesFatura !== fMes) || (fSt && i.status !== fSt) || (fForma && i.forma !== fForma)) return false;
         if (!fBusca) return true;
         const texto = [i.pessoa, i.descricao, i.data, i.mesFatura, i.forma, i.parcela, i.observacoes, i.dataCombinada]
           .join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
@@ -4436,7 +4438,9 @@ function montarResumoHistoricoMensagemGestor(itens,resumo,filtros){
     const excluido=['assinatura cancelada','ocorrência pulada'].includes(status.toLocaleLowerCase('pt-BR'));
     const bloco=['• *'+textoLinhaMensagemGestor(item[1])+'*','Data: '+textoLinhaMensagemGestor(item[0]),tipoCompraMensagemGestor(item[6]),formaMensagemGestor(item[2])];
     if(item[8])bloco.push('Fatura: '+textoLinhaMensagemGestor(item[8]));
-    if(status)bloco.push('Situação: '+rotuloStatusRecorrenciaGestor(status)+(excluido?' (fora do total)':''));
+    const parcial=!excluido&&typeof item[18]==='number'&&typeof item[19]==='number'&&item[18]>0&&item[19]>0;
+    if(status)bloco.push('Situação: '+(parcial?'Pagamento parcial':rotuloStatusRecorrenciaGestor(status))+(excluido?' (fora do total)':''));
+    if(parcial)bloco.push('Pago ao banco: '+formatBRL(item[18]),'Falta pagar: '+formatBRL(item[19]));
     bloco.push('Valor: *'+textoLinhaMensagemGestor(item[7])+'*');
     (excluido?fora:ativos).push(bloco.join('\n'));
   });
@@ -4462,7 +4466,7 @@ function montarSimulacaoMensagemGestor(s,primeiraFatura){
 }
 function chaveParcelaMensagemGestor(it){
   // Identidade da compra, não descrição/valor, comprova a ligação entre recebimentos.
-  return it.compraId?JSON.stringify([it.compraId,it.pessoa,it.forma,it.parcela,it.mesFatura]):null;
+  return it.compraId?JSON.stringify([it.compraId,String(it.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(),it.forma,it.parcela,it.mesFatura]):null;
 }
 function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
   const f=filtros||{},grupos=new Map();let total=0,recebido=0;
@@ -4481,7 +4485,7 @@ function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
     // Sob A Receber, os fragmentos recebidos disponíveis explicam o saldo, sem
     // entrar no total cobrado. Não inferir recebimentos pela quitação no banco.
     let recebidoGrupo=g.recebido;
-    if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>r.pessoa===pessoa&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
+    if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>String(r.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()===String(pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
     const bloco=['• *'+textoLinhaMensagemGestor(it.descricao)+'*',tipoCompraMensagemGestor(it.parcela),formaMensagemGestor(it.forma)];
     if(it.mesFatura&&(!f.mes||it.mesFatura!==f.mes))bloco.push('Referência: '+textoLinhaMensagemGestor(it.mesFatura));
     if(g.aberto>0&&it.dataCombinada)bloco.push('Devolver até: '+textoLinhaMensagemGestor(it.dataCombinada));
@@ -5525,21 +5529,22 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       const btn = document.getElementById('btnSyncOffline'); btn.textContent = 'Enviando...'; btn.disabled = true;
       try {
         const executou = await comTravaAbasGestor('fila', async () => {
-          const fila = lerFilaOfflineGestor();
+          const fila = lerFilaOfflineGestor().slice(0,50);
           if (!fila.length) return true;
           const res = await apiCall('sincronizarLoteWeb', fila);
           const confirmados = new Set(Array.isArray(res.requestIds) ? res.requestIds : []);
           fila.forEach(item => { if (confirmados.has(item.requestId)) localStorage.removeItem(GESTOR_FILA_PREFIXO + item.requestId); });
-          if (res.completo === false || confirmados.size !== fila.length) throw new Error(res.erro || 'A nuvem ainda não confirmou todos os itens.');
+          if(res.completo===false||confirmados.size!==fila.length){const erro=new Error(res.erro||'A nuvem ainda não confirmou todos os itens.');erro.codigo=res.codigo;throw erro;}
           localStorage.removeItem('syncOfflineResultadoIncerto');
-          mostrarAviso('Sucesso', `Sincronização concluída! ${confirmados.size} item(ns) enviado(s).`);
+          const restantes=lerFilaOfflineGestor().length;
+          mostrarAviso('Sucesso', `${confirmados.size} item(ns) enviado(s).${restantes?' Ainda há '+restantes+' item(ns) guardado(s); toque em sincronizar novamente.':' Sincronização concluída!'}`);
           carregarDados();
           return true;
         });
         if (executou === false) mostrarAviso('Sincronização em outra aba', 'Aguarde a outra aba terminar. Os itens continuam guardados neste aparelho.');
       } catch (err) {
-        gravarArmazenamentoGestor('syncOfflineResultadoIncerto', 'true');
-        mostrarAviso('Sincronização pendente', 'Os itens não confirmados continuam guardados neste aparelho. Você pode sincronizar novamente sem duplicar os itens já confirmados. Detalhe: ' + err.message);
+        if(err.codigo!=='FILA_INVALIDA')gravarArmazenamentoGestor('syncOfflineResultadoIncerto','true');
+        mostrarAviso(err.codigo==='FILA_INVALIDA'?'Confira os itens indicados':'Sincronização pendente', 'Os itens não confirmados continuam guardados neste aparelho. Você pode sincronizar novamente sem duplicar os itens já confirmados. Detalhe: ' + err.message);
       } finally {
         btn.disabled = false;
         sincronizacaoFilaEmAndamento = false;

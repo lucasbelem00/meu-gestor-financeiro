@@ -32,7 +32,9 @@ function montarResumoHistoricoMensagemGestor(itens,resumo,filtros){
     const excluido=['assinatura cancelada','ocorrência pulada'].includes(status.toLocaleLowerCase('pt-BR'));
     const bloco=['• *'+textoLinhaMensagemGestor(item[1])+'*','Data: '+textoLinhaMensagemGestor(item[0]),tipoCompraMensagemGestor(item[6]),formaMensagemGestor(item[2])];
     if(item[8])bloco.push('Fatura: '+textoLinhaMensagemGestor(item[8]));
-    if(status)bloco.push('Situação: '+rotuloStatusRecorrenciaGestor(status)+(excluido?' (fora do total)':''));
+    const parcial=!excluido&&typeof item[18]==='number'&&typeof item[19]==='number'&&item[18]>0&&item[19]>0;
+    if(status)bloco.push('Situação: '+(parcial?'Pagamento parcial':rotuloStatusRecorrenciaGestor(status))+(excluido?' (fora do total)':''));
+    if(parcial)bloco.push('Pago ao banco: '+formatBRL(item[18]),'Falta pagar: '+formatBRL(item[19]));
     bloco.push('Valor: *'+textoLinhaMensagemGestor(item[7])+'*');
     (excluido?fora:ativos).push(bloco.join('\n'));
   });
@@ -58,7 +60,7 @@ function montarSimulacaoMensagemGestor(s,primeiraFatura){
 }
 function chaveParcelaMensagemGestor(it){
   // Identidade da compra, não descrição/valor, comprova a ligação entre recebimentos.
-  return it.compraId?JSON.stringify([it.compraId,it.pessoa,it.forma,it.parcela,it.mesFatura]):null;
+  return it.compraId?JSON.stringify([it.compraId,String(it.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase(),it.forma,it.parcela,it.mesFatura]):null;
 }
 function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
   const f=filtros||{},grupos=new Map();let total=0,recebido=0;
@@ -77,7 +79,7 @@ function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
     // Sob A Receber, os fragmentos recebidos disponíveis explicam o saldo, sem
     // entrar no total cobrado. Não inferir recebimentos pela quitação no banco.
     let recebidoGrupo=g.recebido;
-    if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>r.pessoa===pessoa&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
+    if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>String(r.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()===String(pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
     const bloco=['• *'+textoLinhaMensagemGestor(it.descricao)+'*',tipoCompraMensagemGestor(it.parcela),formaMensagemGestor(it.forma)];
     if(it.mesFatura&&(!f.mes||it.mesFatura!==f.mes))bloco.push('Referência: '+textoLinhaMensagemGestor(it.mesFatura));
     if(g.aberto>0&&it.dataCombinada)bloco.push('Devolver até: '+textoLinhaMensagemGestor(it.dataCombinada));

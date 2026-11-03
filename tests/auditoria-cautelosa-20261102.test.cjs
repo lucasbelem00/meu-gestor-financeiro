@@ -14,7 +14,7 @@ test('ida e volta preserva exceção individual e escolha explícita de não cla
 });
 test('ordenação retroativa preserva perfil, identidades e mesmo contrato do Histórico',()=>{
  const a=ambiente([personal('Posterior',50,'1/1','10/2026','Em Aberto','Cartao','20/10/2026')]);padrao(a);a.api('salvarLancamentoWeb',{...launch,numParcelas:1,dataCompra:'01/10/2026',descricao:'Anterior',requestId:'retroativa-auditoria-001'});
- const d=a.api('getDadosCompletos'),h=a.api('filtrarLancamentosWeb',{filtros:{mes:'10/2026'},offset:0,limite:50});for(const lista of [d.lancamentos,h.itens]){const r=lista.find(r=>r[1]==='Anterior');assert.equal(r.length,22);assert.equal(r[20].tipo,'variavel');assert.equal(r[17],false);assert.equal(r[18],null);assert.equal(r[21],null);assert(r[13]);}
+ const d=a.api('getDadosCompletos'),h=a.api('filtrarLancamentosWeb',{filtros:{mes:'10/2026'},offset:0,limite:50});for(const lista of [d.lancamentos,h.itens]){const r=lista.find(r=>r[1]==='Anterior');assert.equal(r.length,22);assert.equal(r[20].tipo,'variavel');assert.equal(r[17],false);assert.equal(r[18],0);assert.equal(r[19],100);assert.equal(r[21],null);assert(r[13]);}
 });
 test('observação de recebimento parcial não acumula marcadores e preserva conteúdo livre',()=>{
  const a=ambiente();for(const [antes,depois]of [['','Pagamento Parcial'],[' Pago dia 20 ','Pago dia 20 (Pagamento Parcial)'],['Pago dia 20 (Pagamento Parcial) (Pagamento Parcial)','Pago dia 20 (Pagamento Parcial)'],['Pagamento Parcial','Pagamento Parcial']])assert.equal(a.ctx.observacaoPagamentoParcialGestor_(antes),depois);

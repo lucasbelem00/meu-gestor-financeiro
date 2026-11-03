@@ -46,7 +46,7 @@ test('consulta começa em Todos os meses e conserva o mês escolhido ao atualiza
   const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8'),i=html.indexOf('      if (selMes && selPes) {'),fim=html.indexOf("      const fMes = selMes?.value || '';",i),bloco=html.slice(i,fim);
   function seletor(){return {value:'',dataset:{},set innerHTML(v){this.markup=v;this.value='';}};}
   const selMes=seletor(),selPes=seletor(),selForma=seletor(),dados=[{pessoa:'Ana',mesFatura:'10/2026',forma:'Pix'},{pessoa:'Bruno',mesFatura:'11/2026',forma:'Cartão'}];
-  const c=vm.createContext({selMes,selPes,selForma,todosItens:dados,evolucaoMesAtual:'10/2026',escaparHTML:String});vm.runInContext(bloco,c);assert.equal(selMes.value,'');
+  const c=vm.createContext({selMes,selPes,selForma,todosItens:dados,evolucaoMesAtual:'10/2026',escaparHTML:String});vm.runInContext(html.match(/function normalizarTexto\(str\) \{[\s\S]*?\n    \}/)[0],c);vm.runInContext(bloco,c);assert.equal(selMes.value,'');
   selMes.value='11/2026';selPes.value='Bruno';selForma.value='Cartão';vm.runInContext(bloco,c);assert.equal(selMes.value,'11/2026');assert.equal(selPes.value,'Bruno');assert.equal(selForma.value,'Cartão');
   selMes.value='';vm.runInContext(bloco,c);assert.equal(selMes.value,'');
 });

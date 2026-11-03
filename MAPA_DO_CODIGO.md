@@ -158,3 +158,7 @@ Calendário nacional de vencimentos, exceções locais e limites da implementaç
 Despesa fixa: prévia protegida e ação reversível para pular uma competência em [Pular mês](PULAR_MES_FIXO.md), implementadas em shared/pular-fixo.js.
 
 Retomada de assinaturas encerradas: [fluxo, validações e publicação](RETOMAR_ASSINATURA.md). Servidor em shared/retomar-fixo.js; modal em interface/retomada.js.
+
+## Revisão de segurança e consistência de 03/11/2026
+
+Ver `REVISAO_RELATORIO_20261103.md` para decisões e roteiro. `acessoPreviaDiretaGestor_` protege a prévia do Apps Script com identidade; o token de `doPost` permanece independente. `sincronizarLoteWeb` informa erros por item e confirma os válidos; a tela envia até 50 itens por vez. `completarLinhaConsultaGestor_` preenche 18/19 com pago/saldo no Histórico, preservando os índices técnicos existentes. Exclusões financeiras verificam movimentos antes de apagar linhas. A rota antiga `quitarFaturaWeb` recusa novas gravações; os rótulos antigos são preservados para atividades já registradas.

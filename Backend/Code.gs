@@ -218,10 +218,19 @@ function onOpen() {
 }
 
 // CORRIGIDO: o app fica no Vercel; esta página só confirma que a API está no ar
+// A prévia direta só atende à conta que executa a implantação. Falha fechada.
+function acessoPreviaDiretaGestor_() {
+  if (propriedade_("GESTOR_API_BRIDGE_ENABLED") !== "true") return false;
+  try {
+    const ativo=String(Session.getActiveUser().getEmail()||'').trim().toLowerCase();
+    const executor=String(Session.getEffectiveUser().getEmail()||'').trim().toLowerCase();
+    return Boolean(ativo && executor && ativo===executor);
+  } catch (_) { return false; }
+}
 function doGet(e) {
   // A interface hospedada no Apps Script é apenas uma prévia explícita.
   // O /exec de produção continua respondendo como API/health check.
-  if (e && e.parameter && e.parameter.preview === '1' && propriedade_("GESTOR_API_BRIDGE_ENABLED") === "true") {
+  if (e && e.parameter && e.parameter.preview === '1' && acessoPreviaDiretaGestor_()) {
     return HtmlService.createHtmlOutputFromFile('Index')
       .setTitle('Gestor de Gastos');
   }
@@ -236,7 +245,7 @@ function atualizarStatusAutomaticoInterno_() {
     const lancSheet = ss.getSheetByName('Lançamentos');
     const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
     const empSheet = ss.getSheetByName('Empréstimos');
-    if (lancSheet) organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
+    if (lancSheet) { processarAssinaturasAutomaticas(lancSheet); organizarEAtualizarPlanilha(lancSheet, pagtoSheet); }
     if (empSheet) organizarAbaEmprestimos(empSheet);
   } catch (e) {
     console.error("Erro atualizarStatusAutomatico: " + e);
@@ -861,16 +870,20 @@ function excluirEmprestimoWebInterno_(dados) {
     const uL = empSheet.getLastRow();
     if (uL < 2) throw new Error('Empréstimo não encontrado. Atualize a lista.');
 
-    const dispAll = lerAbaCompleta(empSheet, COLUNAS_GESTOR_).disp;
+    const lidoEmp=lerAbaCompleta(empSheet,COLUNAS_GESTOR_),dispAll=lidoEmp.disp;
     const idxAlvo = localizarIndiceSeguro(dispAll, dados.linha, dados.descricao, dados.mesFatura, dados.parcela);
     if (idxAlvo < 0) throw new Error('Registro não encontrado.');
 
+    const rawAlvo=lidoEmp.raw[idxAlvo];
+    if(String(rawAlvo[9]||'').trim()==='Recebido'||valorPagoBancoGestor_(rawAlvo,true)>0)throw new Error('Há recebimento ou pagamento registrado nesta parcela. Confira ou desfaça o movimento em Atividade antes de excluir.');
     const linhaInt = idxAlvo + 2;
     const compraId=dispAll[idxAlvo][12];
     if (!dados.excluirTodasParcelas) {
       empSheet.deleteRow(linhaInt);
     } else {
       const linhasApagar = indicesMesmaCompra(dispAll, idxAlvo).filter(function (i) { return i === idxAlvo || String(dispAll[i][9] || '').trim() !== 'Recebido'; }).map(function (i) { return i + 2; });
+      const rawTodos=lidoEmp.raw;
+      if(linhasApagar.some(function(n){return valorPagoBancoGestor_(rawTodos[n-2],true)>0;}))throw new Error('Há pagamento registrado em uma das parcelas. Confira ou desfaça o pagamento antes de excluir.');
       linhasApagar.sort((a, b) => b - a).forEach(l => empSheet.deleteRow(l));
     }
     atualizarTotalCompraEmprestimoGestor_(empSheet,compraId);
@@ -1330,15 +1343,18 @@ function sincronizarLoteWebInterno_(loteOffline) {
 }
 
 function sincronizarLoteWeb(loteOffline) {
-  if (!Array.isArray(loteOffline) || !loteOffline.length) throw new Error('Fila inválida.');
-  loteOffline.forEach(function (d, i) { validarLancamentoWeb_(d, i + 1); if (!/^[A-Za-z0-9_.:-]{8,160}$/.test(String(d.requestId || ''))) throw new Error('Atualize o app: lançamento sem identificação segura.'); });
-  const ids = [];
-  for (let i = 0; i < loteOffline.length; i++) {
-    const item = loteOffline[i];
-    try { executarOperacaoGestor_('salvarLancamentoWeb', item, function () { return sincronizarLoteWebInterno_([item]); }, false); ids.push(item.requestId); }
-    catch (e) { return { sucesso: false, completo: false, qtd: ids.length, requestIds: ids, erro: e.message, resultadoIncerto: e.resultadoIncerto === true }; }
+  if (!Array.isArray(loteOffline) || !loteOffline.length || loteOffline.length>500) throw new Error('Fila inválida ou muito grande. Envie até 500 itens por vez.');
+  const ids=[], invalidos=[];
+  for(let i=0;i<loteOffline.length;i++) {
+    const item=loteOffline[i];
+    try {
+      validarLancamentoWeb_(item,i+1);
+      if(!/^[A-Za-z0-9_.:-]{8,160}$/.test(String(item.requestId||'')))throw new Error('Lançamento sem identificação segura. Atualize o app.');
+    } catch(e) { invalidos.push({indice:i+1,requestId:String(item&&item.requestId||''),erro:e.message});continue; }
+    try { executarOperacaoGestor_('salvarLancamentoWeb',item,function(){return sincronizarLoteWebInterno_([item]);},false);ids.push(item.requestId); }
+    catch(e){return {sucesso:false,completo:false,qtd:ids.length,requestIds:ids,invalidos,erro:e.message,resultadoIncerto:e.resultadoIncerto===true};}
   }
-  return { sucesso: true, completo: true, qtd: ids.length, requestIds: ids };
+  return {sucesso:!invalidos.length,completo:!invalidos.length,qtd:ids.length,requestIds:ids,invalidos,codigo:invalidos.length?'FILA_INVALIDA':null,erro:invalidos.map(e=>'Item '+e.indice+': '+e.erro).join(' ')};
 }
 function salvarLancamentoWeb(dados) {
   return executarOperacaoGestor_('salvarLancamentoWeb', dados, function () { return sincronizarLoteWebInterno_([dados]); }, false);
@@ -2135,7 +2151,7 @@ function doPost(e) {
 // Retorna texto JSON para converter datas e objetos complexos com segurança.
 function apiCallServidor(action, param) {
   try {
-    if (propriedade_("GESTOR_API_BRIDGE_ENABLED") !== "true") {
+    if (!acessoPreviaDiretaGestor_()) {
       throw new Error('A prévia direta do Apps Script está desativada. Use o endereço protegido do app.');
     }
     return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param) });
@@ -2229,7 +2245,7 @@ function executarAcaoApiInterna_(action, param) {
     case 'editarLancamentoLinhaWeb': return editarLancamentoLinhaWeb(param);
     case 'excluirLancamentoWeb': return excluirLancamentoWeb(param);
     case 'adiantarParcelasWeb': return adiantarParcelasWeb(param);
-    case 'quitarFaturaWeb': return quitarFaturaWeb(param);
+    case 'quitarFaturaWeb': throw new Error('Atualize o app e use Conferir fatura para registrar um pagamento com valor e prévia.');
     case 'salvarNotasWeb': return salvarNotasWeb(param);
     case 'salvarEmprestimoWeb': return salvarEmprestimoWeb(param);
     case 'alternarStatusEmprestimoWeb': return alternarStatusEmprestimoWeb(param);
@@ -2439,6 +2455,7 @@ function excluirLancamentoWebInterno_(dados) {
         return i === idx || (!isStatusPago(disp[i][9]) && !isStatusCancelado(disp[i][9]));
       });
     }
+    if(alvos.some(function(i){return valorPagoBancoGestor_(lido.raw[i],false)>0;}))throw new Error('Há pagamento registrado neste lançamento. Confira ou desfaça o pagamento em Atividade antes de excluir.');
     alvos.map(function (i) { return i + 2; }).sort(function (a, b) { return b - a; }).forEach(function (n) {
       lancSheet.deleteRow(n);
     });
@@ -2550,50 +2567,6 @@ function adiantarParcelasWebInterno_(dados) {
   }
 }
 
-function quitarFaturaWebInterno_(dados) {
-  const lock = obterLockGestor_();
-  try {
-    lock.waitLock(15000);
-    const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const lido = lerAbaCompleta(lancSheet, 11);
-    const disp = lido.disp;
-    const forma = chaveFormaGestor_(dados.forma);
-    const mes = validarMesFaturaWeb_(dados.mesFatura);
-    const info = parseMesFat(mes);
-    const hoje = getHojeSeguro();
-    const mesPassado = info.a < hoje.getFullYear() || (info.a === hoje.getFullYear() && info.m < (hoje.getMonth() + 1));
-
-    const colStatus = disp.map(function (d) { return [d[9]]; });
-    let qtd = 0;
-    disp.forEach(function (d, i) {
-      if (!String(d[1] || '').trim()) return;
-      if (chaveFormaGestor_(d[2]) !== forma || limparApostrofo(d[8]) !== mes) return;
-      const st = String(d[9] || '').trim();
-      if (isStatusPago(st) || isStatusCancelado(st)) return;
-      colStatus[i][0] = (st === 'Assinatura Ativa') ? (mesPassado ? 'Pago' : 'Assinatura Paga') : 'Pago';
-      qtd++;
-    });
-    if (qtd > 0) lancSheet.getRange(2, 10, colStatus.length, 1).setValues(colStatus);
-    const emp = ss.getSheetByName('Empréstimos');
-    let qtdTerceiros = 0;
-    if (emp && emp.getLastRow() > 1) {
-      const e = lerAbaCompleta(emp, COLUNAS_GESTOR_);
-      e.raw.forEach(function (r, i) {
-        if (chaveFormaGestor_(e.disp[i][3]) === forma && limparApostrofo(e.disp[i][8]) === mes && r[14] !== 'Pago') { emp.getRange(i + 2, 15).setValue('Pago'); qtdTerceiros++; }
-      });
-    }
-    return { sucesso: true, qtd: qtd, qtdTerceiros: qtdTerceiros };
-  } catch (e) {
-    throw new Error('Falha ao quitar fatura: ' + e.message);
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-// ============================================================================
-// ASSINATURAS (DESPESAS FIXAS)
-// ============================================================================
 
 function editarAssinaturaWebInterno_(dados) {
   const ss = obterPlanilhaGestor_(), lancSheet = ss.getSheetByName('Lançamentos'), pagtoSheet = ss.getSheetByName('Formas de Pagamento');
@@ -3206,7 +3179,7 @@ function calcularResumoParcelas(linhas) {
 // modo 'historico': [..., linha(10), tags(11), resParc(12)]  |  modo 'relatorio': [..., tags(10), linha(11), resParc(12)]
 function completarLinhaConsultaGestor_(linha,raw,modo,arquivado){
   while(linha.length<22)linha.push(null);
-  linha[modo==='relatorio'?19:17]=Boolean(arquivado);linha[20]=lerPerfilGastoGestor_(raw);linha[21]=null;
+  linha[modo==='relatorio'?19:17]=Boolean(arquivado);if(modo==='historico'){linha[18]=valorPagoBancoGestor_(raw,false);linha[19]=arred2(Math.max(0,extractNum(raw[7])-linha[18]));}linha[20]=lerPerfilGastoGestor_(raw);linha[21]=null;
   return linha;
 }
 function itemLancamento(l, resumo, modo) {
@@ -3533,7 +3506,7 @@ function excluirLancamentoWeb(param) { return executarOperacaoGestor_('excluirLa
 
 function adiantarParcelasWeb(param) { return executarOperacaoGestor_('adiantarParcelasWeb', param, function () { return adiantarParcelasWebInterno_(param); }, false); }
 
-function quitarFaturaWeb(param) { return executarOperacaoGestor_('quitarFaturaWeb', param, function () { return quitarFaturaWebInterno_(param); }, false); }
+function quitarFaturaWeb() { throw new Error('Atualize o app e use Conferir fatura para registrar um pagamento com valor e prévia.'); }
 
 function salvarNotasWeb(param) { return executarOperacaoGestor_('salvarNotasWeb', param, function () { return salvarNotasWebInterno_(param); }, false); }
 
