@@ -8,6 +8,20 @@
 // teste pode apontar para a planilha de teste e o projeto de produção para a real.
 const CHAVE_ID_PLANILHA_GESTOR = 'GESTOR_PLANILHA_ID';
 
+// Executar manualmente no editor, pela conta responsável pela implantação.
+// Não expor no catálogo da API: consentimento exige interação no Google.
+function prepararAutorizacaoInicialGestor() {
+  ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/script.scriptapp',
+    'https://www.googleapis.com/auth/userinfo.email'
+  ]);
+  const resultado = { sucesso: true, mensagem: 'Permissões necessárias concedidas. Backups e organização anual continuam com a configuração atual; nenhuma rotina ou arquivo foi criado por esta preparação.' };
+  console.log(resultado.mensagem);
+  return resultado;
+}
+
 function obterPlanilhaGestor_() {
   if (CONTEXTO_GESTOR_) return CONTEXTO_GESTOR_.ss;
   const id = PropertiesService.getScriptProperties()

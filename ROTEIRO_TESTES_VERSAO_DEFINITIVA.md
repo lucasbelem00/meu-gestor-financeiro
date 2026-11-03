@@ -95,6 +95,12 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+Evidência posterior do usuário em 03/11/2026: preparação de permissões executada com sucesso e nova versão Apps Script publicada; app exibe base Gestor de Gastos e os três recursos ativos, com backup confirmado às 19:28. Consultas declaradas corretas pelo usuário. Restam observar primeiro lançamento real sem duplicação, atualização em outro aparelho e rotinas futuras. Não marcar restauração real ou todos os PDFs como testados somente com essa captura.
+
+Preparação de permissões (opcional em base já autorizada): seguir Backend/AUTORIZACAO_INICIAL.md e executar prepararAutorizacaoInicialGestor no editor pela conta da implantação. Conferir consentimento dos quatro escopos e ausência de mudança nos estados de proteção/organização/PDF; a função não cria backup nem gatilho. Não revogar acessos na definitiva para simular recusa. Testar consentimento inicial em projeto de testes, preservando fuso e dependências do manifesto. Google pode exigir nova autorização se permissões/conta mudarem; o teste local não comprova consentimento real.
+
+Conferência após publicação em 03/11/2026: Production READY no commit 1c6ecdc da main; POST anônimo no domínio definitivo retornou 401, sem consulta financeira. Próximo passo: abrir domínio definitivo com login, confirmar base Gestor de Gastos e consultar Histórico/Mensal/Agenda comparando dados conhecidos antes da primeira gravação real. A publicação foi verificada; a conexão autenticada ainda não.
+
 Atualização de 03/11/2026: usuário informou atualização/publicação do Apps Script definitivo e cadastro das propriedades; valores e destino ainda não validados por consulta autenticada. Vercel confirmou All Deployments e os dois pares de variáveis separados entre Preview e Production, sem leitura dos valores. Código local remove agora o bloqueio absoluto de Production. Publicar o commit contendo essa mudança no ambiente Production, repetir POST anônimo (401/redirect de autenticação) e consultar base autenticada antes de gravar. Não basta redeploy de commit antigo: ele mantém o bloqueio 404.
 
 Só avançar quando os testes essenciais acima estiverem aprovados, sem divergência de totais ou pendência desconhecida. Guardar uma lista do que ainda não foi testado.
