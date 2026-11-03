@@ -36,13 +36,21 @@ const ConferenciaLocalGestor = (() => {
     for(const [itens,mapa] of [[extrato,es],[app,as]])for(const i of itens){const k=ch(i);if(!mapa.has(k))mapa.set(k,[]);mapa.get(k).push(i);}
     const pares=[],ambiguos=[],soExtrato=[],soApp=[];
     for(const k of new Set([...es.keys(),...as.keys()])){const e=es.get(k)||[],a=as.get(k)||[];if(e.length===1&&a.length===1)pares.push({extrato:e[0],app:a[0]});else if(e.length&&a.length)ambiguos.push({extrato:e,app:a});else{soExtrato.push(...e);soApp.push(...a);}}
-    return {pares,ambiguos,soExtrato,soApp};
+    // Sugestões não consomem registros nem alteram os candidatos estritos.
+    // Índices por dia/valor evitam comparar cada linha com todas as demais.
+    const restantesApp=new Map(),restantesExtrato=new Map(),proximos=[];
+    for(const [itens,mapa] of [[soApp,restantesApp],[soExtrato,restantesExtrato]])for(const i of itens){const k=ch(i);if(!mapa.has(k))mapa.set(k,[]);mapa.get(k).push(i);}
+    for(const e of restantesExtrato.values()){
+      const a=[];for(const deslocamento of [-2,-1,1,2])a.push(...(restantesApp.get((e[0].dia+deslocamento)+'|'+e[0].centavos)||[]));
+      if(a.length)proximos.push({extrato:e,app:a});
+    }
+    return {pares,ambiguos,soExtrato,soApp,proximos};
   }
   function diagnostico(codigo,etapa,contagens={}) {
     // Lista fechada: nunca copiar Error.message, cabeçalhos, nomes, linhas ou arquivo.
     const codigos=['ARQUIVO_GRANDE','LINHAS_EXCESSIVAS','COLUNAS_EXCESSIVAS','SEPARADOR_INVALIDO','CSV_ASPAS','CSV_CABECALHO','CSV_COLUNAS','VALOR_INVALIDO','DATA_INVALIDA','COLUNAS_MAPEADAS','CONSULTA_FALHOU','FORMATO_RESPOSTA','ARQUIVO_LEITURA','SEM_DESPESAS','DADOS_APP_INVALIDOS','OK'];
     const numero=k=>Number.isSafeInteger(contagens[k])&&contagens[k]>=0?contagens[k]:0;
-    return {formato:'gestor-conferencia-diagnostico-v1',versaoFerramenta:2,geradoEm:new Date().toISOString(),codigo:codigos.includes(codigo)?codigo:'ERRO_INTERNO',etapa:['arquivo','mapeamento','consulta','comparacao'].includes(etapa)?etapa:'comparacao',linhaErro:numero('linhaErro'),registroAppErro:numero('registroAppErro'),linhas:numero('linhas'),candidatos:numero('candidatos'),ambiguidades:numero('ambiguidades'),somenteExtrato:numero('somenteExtrato'),somenteApp:numero('somenteApp')};
+    return {formato:'gestor-conferencia-diagnostico-v1',versaoFerramenta:2,geradoEm:new Date().toISOString(),codigo:codigos.includes(codigo)?codigo:'ERRO_INTERNO',etapa:['arquivo','mapeamento','consulta','comparacao'].includes(etapa)?etapa:'comparacao',linhaErro:numero('linhaErro'),registroAppErro:numero('registroAppErro'),linhas:numero('linhas'),candidatos:numero('candidatos'),ambiguidades:numero('ambiguidades'),somenteExtrato:numero('somenteExtrato'),somenteApp:numero('somenteApp'),datasProximas:numero('datasProximas')};
   }
   return {moeda,data,csv,compararPrecos,conciliar,diagnostico};
 })();
@@ -105,7 +113,7 @@ async function compararExtratoGestor(){
    app.push({dia:ConferenciaLocalGestor.data(emp?l.data:l[0]),descricao:String(emp?l.descricao:l[1]),centavos,origem:emp?'Terceiros':'Pessoal'});
   }catch(_){throw Object.assign(new Error(),{codigoConferencia:'DADOS_APP_INVALIDOS',registroAppErro:i+1});}}
   r.lancamentos.forEach((l,i)=>incluirApp(l,i,false));r.terceiros.itens.forEach((l,i)=>incluirApp(l,i,true));
-  const c=ConferenciaLocalGestor.conciliar(extrato,app);diagnosticarConferenciaGestor('OK',etapa,{linhas:arquivoConferenciaGestor.length-1,candidatos:c.pares.length,ambiguidades:c.ambiguos.length,somenteExtrato:c.soExtrato.length,somenteApp:c.soApp.length});
+  const c=ConferenciaLocalGestor.conciliar(extrato,app);diagnosticarConferenciaGestor('OK',etapa,{linhas:arquivoConferenciaGestor.length-1,candidatos:c.pares.length,ambiguidades:c.ambiguos.length,somenteExtrato:c.soExtrato.length,somenteApp:c.soApp.length,datasProximas:c.proximos.length});
   const contar=(n,s,p)=>n+' '+(n===1?s:p);
   resultado.append(elConferenciaGestor('p',contar(c.pares.length,'candidato','candidatos')+' • '+contar(c.ambiguos.length,'grupo ambíguo','grupos ambíguos')+' • '+c.soExtrato.length+' só no extrato • '+c.soApp.length+' só no app. '+contar(excluidos,'registro de sinal oposto/zero desconsiderado.','registros de sinal oposto/zero desconsiderados.'),'text-sky-200'));
   resultado.append(elConferenciaGestor('p','Consulta do app: '+new Date(r.consultadoEmDesempenho||Date.now()).toLocaleString('pt-BR')+(r.origemLeituraDesempenho==='cache'?' • consulta recente em cache.':'.'),'text-xs text-slate-300'));
@@ -116,6 +124,9 @@ async function compararExtratoGestor(){
   for(const p of c.pares){const bloco=elConferenciaGestor('article','','border-t border-slate-700 py-2');bloco.append(linha(p.extrato,'No extrato'),linha(p.app,'No app'));pares.append(bloco);}
   const ambiguos=grupo('Grupos ambíguos — sem associação automática',c.ambiguos.length);
   c.ambiguos.forEach((g,i)=>{const bloco=elConferenciaGestor('article','','border-t border-slate-700 py-2');bloco.append(elConferenciaGestor('h4','Grupo '+(i+1),'font-bold text-slate-200'));for(const x of g.extrato)bloco.append(linha(x,'No extrato'));for(const x of g.app)bloco.append(linha(x,'No app'));ambiguos.append(bloco);});
+  const proximos=grupo('Possíveis correspondências — datas próximas',c.proximos.length);
+  proximos.append(elConferenciaGestor('p','Mesmo valor, com diferença de até dois dias corridos. São sugestões para revisão: os registros continuam nas listas sem correspondência. Uma linha pode aparecer em mais de uma sugestão. Nenhum pagamento é registrado.','text-sm text-slate-300'));
+  c.proximos.forEach((g,i)=>{const bloco=elConferenciaGestor('article','','border-t border-slate-700 py-2');bloco.append(elConferenciaGestor('h4','Sugestão '+(i+1),'font-bold text-slate-200'));for(const x of g.extrato)bloco.append(linha(x,'No extrato'));for(const x of g.app)bloco.append(linha(x,'No app'));proximos.append(bloco);});
   for(const [titulo,itens]of [['Somente no extrato',c.soExtrato],['Somente no app',c.soApp]]){const d=grupo(titulo,itens.length);for(const x of itens)d.append(linha(x,titulo));}
  }catch(e){if(geracao!==geracaoConferenciaGestor)return;diagnosticarConferenciaGestor(e.codigoConferencia||(etapa==='consulta'?'CONSULTA_FALHOU':'FORMATO_RESPOSTA'),etapa,{registroAppErro:e.registroAppErro,linhaErro:e.linhaConferencia,linhas:arquivoConferenciaGestor?arquivoConferenciaGestor.length-1:0});}
  finally{if(pedidoConferenciaGestor===geracao){pedidoConferenciaGestor=null;atualizarControlesConferenciaGestor();}}

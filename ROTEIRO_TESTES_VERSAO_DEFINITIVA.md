@@ -121,3 +121,6 @@ As propostas foram implementadas na continuação de 31/10: Menu → Planejament
 - Período inválido na Agenda agora remove os compromissos antigos e desativa a navegação até a correção do período.
 - Prévia local com dados fictícios: gráfico à esquerda do Horizonte no computador, mesma altura de início; no celular, Horizonte antes do gráfico. Sem rolagem horizontal nos tamanhos observados e sem erros/avisos de console no fluxo de cópia.
 - Build, espelhos da interface e módulos incorporados conferidos. Não houve publicação, alteração do backend financeiro ou escrita nas planilhas reais neste ajuste. Os novos controles não exigem função manual de ativação.
+
+
+Módulo 7: calcular 50,33 com acréscimo de 10%; conferir 55,36 no visor, histórico e cópia. Conferir extrato com mesmo valor em datas separadas por um/dois dias, inclusive virada de mês/ano: deve sugerir, manter registros sem correspondência e não registrar pagamento. Datas com três dias de diferença e valores diferentes não sugerem; correspondências estritas continuam prioritárias.

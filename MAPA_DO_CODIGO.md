@@ -200,3 +200,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 `interface/rotina.js` explica a competência/mês da fatura nos indicadores, incluindo pagos e em aberto. As somas do backend e os critérios de período não mudaram. Cache v118; última suíte completa: 961 testes aprovados. Atualização de frontend, sem nova ativação no Apps Script e sem publicação remota nesta rodada.
 
 - Relatórios: renderizarTermometroMensalGestor em index.html atualiza a opção de metas sem gastos com o cache mensal, sem API; categorias zeradas não filtram.
+
+- Módulo 7: interface/usabilidade.js formata histórico/cópia da calculadora em até duas casas, preservando precisão interna. interface/conferencia.js calcula proximos por índices de data/valor e renderiza sugestões sem alterar candidatos, pagamentos ou itens sem correspondência.

@@ -35,8 +35,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v119` |
-| Última suíte completa documentada | 963 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v120` |
+| Última suíte completa documentada | 967 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -488,3 +488,9 @@ Enviar somente `Code.gs` e `Index.html` permite parte da auditoria, mas não bas
 
 
 Atualização do Módulo 6: opção “Mostrar metas sem gastos” na Mensal usa metasCategorias já carregadas; padrão compacto mantido e metas zeradas sem ação de filtro. Anual e PDF executivo distinguem total registrado (inclui parcelas futuras) e valor do período comparado, com intervalo explícito. Cálculos e revisões dos PDFs preservados. Cache v119, pacote local, sem publicação remota. Dois testes de regressão adicionados; suíte completa: 963 aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado com sucesso.
+
+
+### Módulo 7 — calculadora e conferência local
+Calculadora: histórico e cópia exibem até duas casas decimais, como o visor; resultados internos e reutilização preservam a precisão original. Conferência: candidatos estritos por data/valor e grupos ambíguos preservados. Nova seção sugere correspondências com mesmo valor e diferença de um ou dois dias corridos apenas entre itens sem correspondência. Não consome registros, não associa automaticamente nem registra pagamentos; sugestões podem se sobrepor e os itens continuam nas listas sem correspondência. Índices por dia/valor evitam busca quadrática. Diagnóstico inclui somente a contagem de grupos próximos, sem conteúdo do extrato. Cache v120. Implementação local, sem publicação remota.
+
+Validação do Módulo 7: quatro regressões novas; suíte completa com 967 aprovados, zero falhas. CSS compilado, cópias de interface sincronizadas e dist preparado. Validação na implantação real continua pendente.
