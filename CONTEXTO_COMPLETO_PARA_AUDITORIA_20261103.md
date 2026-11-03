@@ -35,8 +35,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v118` |
-| Última suíte completa documentada | 961 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v119` |
+| Última suíte completa documentada | 963 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -404,6 +404,13 @@ O Total do mês continua usando a competência da fatura e inclui registros pago
 
 Validação: 12 regressões novas, suíte completa com 961 aprovados, zero falhas. Cache v118; mudanças de frontend e documentação, sem publicação remota nem função manual nova no Apps Script. A validação na implantação real continua pendente.
 
+### Revisão dos relatórios e PDFs — recomendações aplicadas
+
+- Metas zeradas já são devolvidas pelo backend em `metasCategorias`, inclusive em mês sem consumo. O termômetro usa deliberadamente categorias com gasto, comportamento coberto por testes de interface. Não é perda de configuração nem ausência no payload. Recomenda-se opção “Mostrar metas sem gastos”, preservando o padrão compacto e reutilizando o payload, sem consulta extra. Categorias zeradas devem permanecer informativas, sem filtros que produzam lista vazia.
+- Total do ano inclui todos os registros do ano escolhido, inclusive parcelas futuras já lançadas. A comparação anual vigente limita-se aos mesmos meses dos dois anos. São escopos diferentes, não uma soma errada. Melhorar rótulos na tela e no PDF executivo: total registrado no ano versus valor do período comparado, explicitando meses e parcelas futuras. PDFs automáticos anuais são destinados a anos anteriores/concluídos, portanto não presumir o mesmo conflito YTD em todos os PDFs. Não mudar as somas para forçar igualdade entre escopos.
+- PDFs antigos são revisões preservadas intencionalmente. Crescimento no Drive merece acompanhamento, sem exclusão automática ou política de retenção presumida. Não foi feita medição do consumo real de armazenamento.
+- Geração de até dois PDFs por execução reduz trabalho, mas não elimina falhas, tempo excedido ou limites da plataforma. jsPDF usa dados já carregados e a geração ocorre no navegador, mas pode precisar carregar a biblioteca e não é instantânea em qualquer aparelho. Limpar caracteres não suportados protege a apresentação com a fonte usada; não é prova de invulnerabilidade do formato binário. Filtros locais evitam ida à API, mas não têm latência literalmente zero. Não usar elogios do relatório externo como garantia de escalabilidade ou ausência de falhas.
+
 Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
 
 - Reconciliação assistida de uma pendência PRONTO quando a planilha sofreu alteração externa incompatível. Não basta marcar o plano como abandonado: pode haver efeitos parciais a conferir.
@@ -478,3 +485,6 @@ Para revisão técnica abrangente, incluir pelo menos:
 - `ROTEIRO_TESTES_VERSAO_DEFINITIVA.md`, com a ressalva de que partes registram verificações antigas.
 
 Enviar somente `Code.gs` e `Index.html` permite parte da auditoria, mas não basta para concluir sobre proxy, geração, cache, acesso e implantação. Uma análise estática nunca deve alegar que verificou permissões ou dados remotos sem ter acesso e evidência dessa conferência.
+
+
+Atualização do Módulo 6: opção “Mostrar metas sem gastos” na Mensal usa metasCategorias já carregadas; padrão compacto mantido e metas zeradas sem ação de filtro. Anual e PDF executivo distinguem total registrado (inclui parcelas futuras) e valor do período comparado, com intervalo explícito. Cálculos e revisões dos PDFs preservados. Cache v119, pacote local, sem publicação remota. Dois testes de regressão adicionados; suíte completa: 963 aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado com sucesso.

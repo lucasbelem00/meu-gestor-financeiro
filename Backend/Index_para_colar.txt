@@ -709,6 +709,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🎯 Termômetro de Metas</h3>
               <span class="text-[10px] text-slate-400">Toque para filtrar</span>
             </div>
+            <label class="flex items-center gap-2 text-xs text-slate-300 mb-3"><input id="mostrarMetasSemGastosMensal" type="checkbox" onchange="renderizarTermometroMensalGestor(ultimoRelatorioMensalCache)"> Mostrar metas sem gastos</label>
             <div id="termometro-metas" class="space-y-4"></div>
           </div>
         </div>
@@ -754,8 +755,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <div class="card-glass p-4 border-t-4 border-t-purple-500 flex flex-col justify-between">
           <div>
-            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Gasto Ano</span>
+            <span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total registrado no ano</span>
             <div id="anual-total" class="text-lg sm:text-2xl font-bold text-purple-400 mt-1">R$ 0,00</div>
+            <p class="text-[10px] text-slate-300 mt-1">Inclui parcelas futuras já registradas.</p>
           </div>
           <div id="anual-sub-qtd" class="text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-slate-700/50 leading-snug">🔢 0 lançamentos no ano</div>
         </div>
@@ -6093,7 +6095,22 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       // cadastradas sem lançamentos continuam no cadastro, fora destes atalhos.
       return Array.from(new Map((res.categorias || []).filter(c=>Number(c.total)>0).map(c=>[chaveCategoriaMensalGestor(c.nome),c])).values());
     }
-    function categoriasTermometroMensalGestor(res) { return (res.categorias || []).filter(c=>Number(c.meta)>0 && Number(c.total)>0); }
+    function renderizarTermometroMensalGestor(res) {
+      if (!res) return;
+        let htmlMetas = '';
+        let temMeta = false;
+        categoriasTermometroMensalGestor(res, document.getElementById('mostrarMetasSemGastosMensal')?.checked).forEach(c => {
+          if (c.meta > 0) {
+            const situacao=estadoMetaCategoriaGestor(c.total,c.meta);if(!situacao)return;
+            temMeta = true;
+            const realPct=situacao.percentual,pct=situacao.largura.toFixed(0),corBg=situacao.corBg,corTexto=situacao.corTexto;
+            htmlMetas += `<button type="button" ${Number(c.total)>0 ? 'aria-pressed="false"' : 'disabled aria-label="Meta sem gastos neste mês"'} data-filtro-mensal-tipo="categoria" data-filtro-mensal-valor="${escaparHTML(c.nome)}" ${Number(c.total)>0 ? acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome]) : ''} class="w-full rounded-xl border border-transparent p-2 text-left transition"><span class="sr-only">${situacao.rotulo}. </span><span class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-1 text-xs font-semibold mb-1"><span class="text-slate-300 break-words">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)}${Number(c.total)>0 ? ' 🔍' : ' · Sem gastos'}</span><span class="${corTexto} break-words sm:text-right">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></span><span class="block w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><span class="block ${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></span></span></button>`;
+          }
+        });
+        document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-400 text-center">Nenhuma meta a exibir nesta seleção.</p>';
+      sincronizarEstadoFiltrosMensalGestor();
+    }
+    function categoriasTermometroMensalGestor(res, mostrarSemGastos = false) { return ((mostrarSemGastos ? res.metasCategorias : res.categorias) || res.categorias || []).filter(c=>Number(c.meta)>0 && (mostrarSemGastos || Number(c.total)>0)); }
     function sincronizarEstadoFiltrosMensalGestor() {
       document.querySelectorAll('[data-filtro-mensal-tipo]').forEach(controle => {
         const ativo = filtroMensalSelecionadoGestor(controle.dataset.filtroMensalTipo,controle.dataset.filtroMensalValor);
@@ -6262,17 +6279,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
           boxTags.classList.add('hidden');
         }
 
-        let htmlMetas = '';
-        let temMeta = false;
-        categoriasTermometroMensalGestor(res).forEach(c => {
-          if (c.meta > 0) {
-            const situacao=estadoMetaCategoriaGestor(c.total,c.meta);if(!situacao)return;
-            temMeta = true;
-            const realPct=situacao.percentual,pct=situacao.largura.toFixed(0),corBg=situacao.corBg,corTexto=situacao.corTexto;
-            htmlMetas += `<button type="button" aria-pressed="false" data-filtro-mensal-tipo="categoria" data-filtro-mensal-valor="${escaparHTML(c.nome)}" ${acaoHTML('aplicarFiltroInternoMensal', ['categoria', c.nome])} class="w-full rounded-xl border border-transparent p-2 text-left transition"><span class="sr-only">${situacao.rotulo}. </span><span class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center justify-between gap-1 text-xs font-semibold mb-1"><span class="text-slate-300 break-words">${escaparHTML(isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome)} 🔍</span><span class="${corTexto} break-words sm:text-right">${formatBRL(c.total)} / ${formatBRL(c.meta)} (${realPct.toFixed(0)}%)</span></span><span class="block w-full bg-slate-800 rounded-full h-2.5 overflow-hidden"><span class="block ${corBg} h-full rounded-full transition-all duration-500" style="width: ${pct}%"></span></span></button>`;
-          }
-        });
-        document.getElementById('termometro-metas').innerHTML = temMeta ? htmlMetas : '<p class="text-xs text-slate-400 text-center">Nenhuma categoria com meta e gasto neste mês.</p>';
+        renderizarTermometroMensalGestor(res);
 
         renderizarListaItensFaturaMensal();
         sincronizarEstadoFiltrosMensalGestor();
@@ -6312,7 +6319,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         ultimoRelatorioAnualCache = res;
         const comparacao=res.comparacaoAnterior;
         if(badgeComparacao){const v=comparacao?.variacao;badgeComparacao.textContent=(v!=null&&v!==0?(v<0?'📉 ':'📈 '):'')+(comparacao?.texto||'Comparação indisponível');badgeComparacao.className=classeComparacao+(v==null||v===0?'bg-slate-800 text-slate-400 border-slate-700':v<0?'bg-emerald-500/15 text-emerald-400 border-emerald-500/30':'bg-rose-500/15 text-rose-400 border-rose-500/30');badgeComparacao.title=comparacao?.criterio||'Atualize o Apps Script para incluir a comparação.';}
-        if(criterioComparacao)criterioComparacao.textContent=comparacao?(comparacao.intervalo+' · mesmos meses dos dois anos'):'';
+        if(criterioComparacao)criterioComparacao.textContent=comparacao?(comparacao.intervalo+' · mesmos meses dos dois anos · Período comparado: '+formatBRL(comparacao.atualRaw)+' | Ano anterior: '+formatBRL(comparacao.anteriorRaw)):'';
         document.getElementById('tabela-anual-cat').setAttribute('aria-busy', 'false');
         document.querySelectorAll('[onclick="gerarPDFExecutivo(\'anual\')"]').forEach(b => { b.disabled = false; });
 
@@ -6440,8 +6447,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         nota((e.qtdLancamentos || 0) + ' lançamentos | Valor médio: ' + (e.ticketMedio || moeda(0)) + ' | Pago: ' + (e.pctQuitado || '0%') + '. Comparação: ' + (e.ritmoTexto || 'sem período anterior.'));
         nota('Maior gasto: ' + (e.maiorGasto || '-') + '. À vista / 1x: ' + (e.aVistaValor || moeda(0)) + '; parcelados e fixos: ' + (e.rigidoValor || moeda(0)) + '.');
       } else {
-        indicadores([['Total pessoal no ano', d.total || moeda(0), [109, 40, 217]], ['Média dos meses com gastos', d.media || moeda(0), [3, 105, 161]], ['Lançamentos pessoais', d.qtdTransacoes || 0, [4, 120, 87]]]);
-        if(d.comparacaoAnterior){titulo('Comparação com o ano anterior');nota(d.comparacaoAnterior.texto+'. '+d.comparacaoAnterior.criterio);nota('Total comparado: '+moeda(d.comparacaoAnterior.atualRaw)+' | Base anterior: '+moeda(d.comparacaoAnterior.anteriorRaw));}
+        indicadores([['Total registrado no ano', d.total || moeda(0), [109, 40, 217]], ['Média dos meses com gastos', d.media || moeda(0), [3, 105, 161]], ['Lançamentos pessoais', d.qtdTransacoes || 0, [4, 120, 87]]]);
+        nota('Total registrado no ano: inclui parcelas futuras já registradas.');
+        if(d.comparacaoAnterior){titulo('Comparação com o ano anterior — '+d.comparacaoAnterior.intervalo);nota(d.comparacaoAnterior.texto+'. '+d.comparacaoAnterior.criterio);nota('Valor do período comparado: '+moeda(d.comparacaoAnterior.atualRaw)+' | Base anterior: '+moeda(d.comparacaoAnterior.anteriorRaw));}
         nota('Mês com maior gasto: ' + (d.maiorMes || '-') + '. Mês com menor gasto (entre os meses com registros): ' + (d.menorMes || '-') + '.');
         const comp = d.composicao || {};
         nota('À vista / 1x: ' + (comp.aVistaValor || moeda(0)) + ' (' + (comp.aVistaPct || 0) + '%). Parcelados e fixos: ' + (comp.rigidoValor || moeda(0)) + ' (' + (comp.rigidoPct || 0) + '%).');

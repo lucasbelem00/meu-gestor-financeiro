@@ -198,3 +198,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 `estadoMetaCategoriaGestor`, em `interface/perfil.js`, calcula o estado visual em centavos, sem usar o percentual arredondado para decidir alerta/excesso. `atualizarVisorMetaCategoria` e o termômetro mensal no HTML reaproveitam a função: verde abaixo de 80%, âmbar até 100% inclusive e rosa acima. O percentual arredondado permanece apenas na apresentação. `interface/painel.js` também usa o valor exato no alerta intermediário da barra de limite pessoal.
 
 `interface/rotina.js` explica a competência/mês da fatura nos indicadores, incluindo pagos e em aberto. As somas do backend e os critérios de período não mudaram. Cache v118; última suíte completa: 961 testes aprovados. Atualização de frontend, sem nova ativação no Apps Script e sem publicação remota nesta rodada.
+
+- Relatórios: renderizarTermometroMensalGestor em index.html atualiza a opção de metas sem gastos com o cache mensal, sem API; categorias zeradas não filtram.

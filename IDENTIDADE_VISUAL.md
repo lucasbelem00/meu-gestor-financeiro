@@ -111,3 +111,5 @@ O Perfil dos gastos aparece em Análise e planejamento, depois do limite pessoal
 ## Posição ao navegar entre abas
 
 Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição anterior. O ajuste ocorre antes e depois da troca, com conferência nos quadros seguintes e proteção por geração da navegação. O app controla a restauração de rolagem do histórico para que o fechamento assíncrono do Menu não recupere a posição da aba anterior. Fechar um modal sem trocar de aba mantém a posição da tela. Atualizações na mesma visita podem preservar a rolagem; atalhos explícitos para cadastro ou resumo cancelam o ajuste pendente para alcançar o destino pretendido.
+
+- Mensal: metas sem gastos são opcionais e informativas, sem lupa ou ação de filtro. Anual: distinguir total registrado de período comparado e informar parcelas futuras; manter explicação no PDF executivo.
