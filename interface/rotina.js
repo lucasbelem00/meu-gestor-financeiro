@@ -218,7 +218,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
     adotarOrigemRascunhoFinanceiroGestor(tipo,chave,valor);
     if(!emp)for(const id of ['perfil-novo-tipo','perfil-novo-prioridade']){const campo=document.getElementById(id);if(campo&&!Object.prototype.hasOwnProperty.call(valor.dados?.campos||{},id))campo.value='padrao';}
     Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
-    if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
+    if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{if(typeof restaurarEstadoMetadeGestor==='function')restaurarEstadoMetadeGestor(valor.dados);atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
 function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','➖ Registrar recebimento parcial'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}

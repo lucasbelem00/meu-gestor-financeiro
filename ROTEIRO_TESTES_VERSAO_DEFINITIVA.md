@@ -67,6 +67,8 @@ Se uma gravação ficar sem confirmação, não cadastrar de novo com outra iden
 
 ## 6. Sincronização e recuperação
 
+Complemento de 03/11/2026 (cache v115; última suíte local: 926 testes): conferir a área de revisão dos rejeitados em Atividade. Ela deve preservar o conteúdo e motivo, permitir copiar/consultar, recolocar somente o pedido original e criar rascunho de correção apenas após cancelamento confirmado. Um envio já gravado ou em conferência não pode gerar outra compra. Revisões resolvidas continuam consultáveis na seção recolhida. A ordem de inclusão usa metadados locais, sem modificar o pedido enviado. Cenários de cinquenta inválidos e falha de armazenamento foram ensaiados com dados fictícios automatizados; não corromper a fila real para reproduzi-los. A validação do PWA publicado continua pendente.
+
 - [ ] Abrir a cópia de testes no computador e celular. Gravar um item simples no primeiro e atualizar o segundo: deve aparecer uma vez, com o mesmo valor.
 - [ ] Abrir uma edição no computador, alterar o mesmo item no celular e tentar salvar a edição antiga: o conflito deve ser informado, sem substituir silenciosamente a alteração mais nova.
 - [ ] Ficar sem conexão antes de enviar um cadastro de teste. Conferir a pendência; reconectar e seguir a ação protegida do app. O resultado final deve ter somente uma compra, inclusive se o envio for repetido pelo fluxo protegido.

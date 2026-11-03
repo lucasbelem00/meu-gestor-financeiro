@@ -35,10 +35,10 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `1d4de98` — `Revisão Claude` |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v114` |
-| Última suíte completa documentada | 912 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v115` |
+| Última suíte completa documentada | 926 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
-| Último pacote de correções | Revisão do relatório, seguida dos ajustes de moeda no Planejamento e estado de ÷2/×2 descritos abaixo |
+| Último pacote de correções | Revisão recuperável dos rejeitados da fila offline e ordenação por inclusão; ajustes anteriores de moeda e ÷2/×2 preservados |
 
 Esses números representam o estado observado, não uma promessa para versões posteriores. Confira `git status`, `git log`, `sw.js` e os resultados dos comandos antes de continuar. Os testes não foram repetidos apenas para escrever este resumo.
 
@@ -241,7 +241,8 @@ Versão e hash detectam telas antigas e mudanças externas. IDs duplicados e div
 - Na revisão recente, a validação passou a ser por item: inválidos recebem posição/motivo, válidos podem ser confirmados.
 - Uma falha durante a execução continua interrompendo o restante para respeitar a recuperação.
 - A interface envia até 50 itens por solicitação e informa se restaram outros guardados.
-- Somente itens confirmados são removidos da fila.
+- Somente confirmações ou cópias recuperáveis conferidas permitem retirar um item da fila ativa: rejeitados são preservados na área de revisão local, nunca descartados automaticamente.
+- A inclusão tem data em metadado local separado do pedido financeiro. Itens antigos sem data usam desempate estável, sem data histórica inventada.
 - Rascunhos e notas têm estados e regras próprios. Não substituir toda a persistência por sessionStorage nem apagar localStorage para “resolver” um erro.
 - Edição concorrente deve avisar conflito e preservar o dado mais recente.
 - Confirmações de ações sensíveis precisam corresponder à versão e aos campos apresentados; mudanças posteriores exigem nova revisão.
@@ -352,7 +353,7 @@ A rodada mais recente analisou um relatório externo extenso e aplicou os achado
 
 Antes dessa rodada, foram corrigidos problemas de perfil nos rascunhos/backups, datas, classificação perdida em transferências, estados anuais indevidos (“Ano undefined”), ReferenceError na renderização do Histórico, layout do Painel/comparador, modais/Voltar, contraste e ordenação de sugestões por frequência. Consulte testes e relatórios, sem assumir que a lista de correções elimina toda possível regressão.
 
-Após os ajustes de moeda e rascunho do botão metade, a suíte completa mais recente concluiu **912 testes aprovados**, zero falhas. Na rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
+Após os ajustes de moeda e rascunho do botão metade, foram aprovados 912 testes. Com a revisão recuperável e ordenação da fila offline, a suíte completa passou a **926 testes aprovados**, zero falhas. Em rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
 
 **O próximo passo de liberação é atualizar/conferir a implantação de testes e executar os testes reais essenciais.** Não há autorização implícita para restaurar a planilha definitiva, remover proteção de produção ou apagar arquivos anuais.
 
@@ -363,6 +364,17 @@ Após os ajustes de moeda e rascunho do botão metade, a suíte completa mais re
 - **Moeda no Planejamento:** objetivo e progresso usam a máscara comum. Colagem aceita moeda brasileira como `1.500,00`, `R$ 1.500,00` e inteiro em reais. `centavosPlanejamentoGestor` faz leitura estrita em centavos, compartilhada pelo salvamento e rascunho. Texto inválido não vira zero silenciosamente; o rascunho preserva a digitação para correção. A máscara é registrada antes do salvamento automático; a validação do servidor permanece. IDs: `plano-valor` e `plano-progresso`.
 - **Estado do botão metade após recarga:** `capturarEstadoMetadeGestor` guarda versão, original em centavos, metade e autoria automática da tag no rascunho de sessão e durável. `restaurarEstadoMetadeGestor` só ativa ×2 se os números salvos forem coerentes com o campo restaurado. Desfazer retorna ao original inclusive com centavo ímpar, retira somente a tag automática e preserva a tag manual. Cópias antigas sem metadados não recebem original inventado; estado incompatível é ignorado sem apagar tags.
 - **Validação:** 912 testes aprovados na suíte completa. Mudanças locais de frontend/cache; nenhuma publicação remota nem função manual de ativação foi executada para esses dois ajustes.
+
+### Fila offline em 03/11 — melhorias implementadas localmente
+
+- Rejeitados identificados pelo índice e requestId do lote são copiados para `gestorFilaRevisaoV1:` com payload original, ID, motivo e origem. A cópia é gravada e relida antes de retirar a chave ativa; falha de armazenamento mantém o original. Se houver queda entre as etapas, a fila ignora a cópia ativa idêntica já guardada para revisão. Cinquenta rejeitados deixam de bloquear o lote seguinte.
+- Atividade apresenta dados, motivo e ações de copiar, consultar confirmação, recolocar o original, preparar correção e cancelar com segurança. Preparar correção exige cancelamento confirmado pelo servidor; somente depois cria um rascunho separado em Novo → Rascunhos de novo lançamento, preservando o formulário atual e a classificação. Um pedido já confirmado não gera nova cópia; gravação em conferência ou falha de rede não autoriza correção. A correção usa outra identidade de rascunho, sem alterar o pedido antigo.
+- Revisões resolvidas continuam consultáveis em “Revisões anteriores neste aparelho” e não contam como pendências. São cópias locais; não se tornam backup da planilha. Identificadores locais inválidos exigem revisão técnica e conservam a opção de copiar dados, sem gerar uma operação nova por suposição.
+- A ordem usa `gestorFilaOrdemV1:` separado do payload, com horário da primeira inclusão e desempate por chave. Registros antigos sem metadado usam ordem estável por chave e precedem os datados; nenhuma data histórica é inventada. Reenvios mantêm o conteúdo, requestId e horário já guardados; tentativa de sobrescrever o mesmo ID com outro conteúdo é recusada. O backend continua calculando a impressão digital do pedido completo, sem receber os novos metadados locais.
+- O diagnóstico informa a contagem `emRevisao`, sem copiar o conteúdo financeiro. A coordenação entre abas usa a trava existente da fila. O resgate manual de qualquer rascunho também restaura/limpa seu estado próprio de ÷2/×2, para não herdar o estado do formulário anterior.
+- Web Locks coordena abas na mesma origem quando disponível; há fallback local, e a proteção financeira principal contra duplicação continua no backend. Não prometer exclusão perfeita entre aparelhos.
+- Notas têm mecanismo próprio e tentativas automáticas de sincronização; não afirmar que todas as falhas de Notas exigem reenvio manual. O fluxo de empréstimos pendentes não é igual ao lote dos gastos pessoais. A recuperação por requestId/diário não é upload de arquivo resumível.
+- Validação local: 926 testes aprovados, incluindo armazenamento insuficiente, queda entre cópia e retirada, cinquenta rejeitados, confirmação anterior, bloqueio de correção sob incerteza e preservação do pedido no reenvio. Cache v115. Não houve publicação nem teste desta interface na conta real.
 
 Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
 

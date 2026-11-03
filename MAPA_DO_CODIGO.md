@@ -39,7 +39,7 @@ As sugestões de descrição no Novo usam `ordenarDescricoesAutofillGestor`: fre
 | `index.html` | Estrutura das telas, integração e regras de interface ainda não extraídas | `apiCall`, `setAba`, `carregarDados`, renderização e formulários |
 | `interface/botoes.js` | Identidade textual dos botões de ação, inclusive após mudanças de texto, sem alterar dimensões, callbacks ou registros | `rotuloAcaoBotaoGestor`, `padronizarBotaoAcaoGestor`, `iniciarPadraoBotoesGestor` |
 | `interface/rotina.js` | Rascunhos financeiros, identidade da edição e fluxos diários | `lerRascunhoRotinaGestor`, `guardarRascunhoRotinaGestor` |
-| `interface/sincronizacao.js` | Orientações e recuperação das pendências | `orientacaoPendenciaGestor`, `conferirRecuperacaoServidorGestor` |
+| `interface/sincronizacao.js` | Orientações, recuperação e revisão local dos rejeitados da fila | `orientacaoPendenciaGestor`, `conferirRecuperacaoServidorGestor`, `executarRevisaoFilaGestor`, `renderizarRevisaoFilaGestor` |
 | `interface/compartilhamento.js` | Mensagens em blocos para WhatsApp: empréstimos, Histórico e Simulação; totais e situações separados | `montarCobrancaMensagemGestor`, `montarResumoHistoricoMensagemGestor`, `montarSimulacaoMensagemGestor` |
 | `interface/usabilidade.js` | Horizonte, simulador, calculadora, notas e comportamento da Mensal | `renderizarNotasUI`, `copiarNotaGestor` (lista), `copiarTextoEditorNotaGestor` (campo atual); procurar também por horizonte, simulador e nota neste arquivo |
 | `interface/rachadinha.js` | Pessoas, itens, prévia, rascunho e preenchimento da divisão | `calcularRachadinha`, `renderizarPessoasRachaDet`, `preencherParteRachaGestor` |
@@ -167,4 +167,12 @@ Ver `REVISAO_RELATORIO_20261103.md` para decisões e roteiro. `acessoPreviaDiret
 
 `interface/planejamento.js`: `centavosPlanejamentoGestor` valida moeda brasileira e converte em centavos para salvamento e rascunho; `configurarMoedaPlanejamentoGestor` aplica a máscara comum e trata colagem sem confundir inteiro em reais com centavos. Texto incompleto/inválido é preservado no rascunho, sem envio como zero.
 
-`index.html`: `capturarEstadoMetadeGestor` e `restaurarEstadoMetadeGestor` guardam/validam original, metade e autoria da tag. `salvarRascunho` e `dadosFormularioRascunhoGestor` em `interface/rotina.js` preservam esses metadados nas cópias de sessão e duráveis. Rascunhos antigos não permitem inferir o original. Cache v114; última suíte completa: 912 testes aprovados. Atualizar o frontend para disponibilizar o ajuste; sem nova ativação no Apps Script.
+`index.html`: `capturarEstadoMetadeGestor` e `restaurarEstadoMetadeGestor` guardam/validam original, metade e autoria da tag. `salvarRascunho` e `dadosFormularioRascunhoGestor` em `interface/rotina.js` preservam esses metadados nas cópias de sessão e duráveis. Rascunhos antigos não permitem inferir o original. A rodada de moeda usou cache v114 e 912 testes; a seguinte está descrita abaixo. Sem nova ativação no Apps Script.
+
+## Fila offline recuperável e ordenada — 03/11/2026
+
+No HTML principal, `entradasFilaOrdenadasGestor` ordena pelos metadados locais `gestorFilaOrdemV1:`, com desempate estável para registros antigos; `guardarRejeicoesFilaGestor` confere a resposta contra o lote, guarda e verifica a cópia em `gestorFilaRevisaoV1:` antes de retirar da fila ativa. `lerFilaOfflineGestor` não reenvia uma cópia idêntica já em revisão após interrupção. Nenhum timestamp é acrescentado ao pedido financeiro.
+
+`interface/sincronizacao.js` apresenta a revisão em Atividade, com consulta, reenvio do original, cancelamento e preparação de correção. `criarCopiaCorrecaoFilaGestor` só é chamado após cancelamento confirmado; guarda rascunho separado, não substitui o formulário e não reutiliza o requestId cancelado para novo conteúdo. Originais resolvidos continuam acessíveis em uma seção recolhida local. `interface/rotina.js` restaura também o estado de metade ao recuperar rascunhos manualmente.
+
+Cache v115; última suíte completa: 926 testes aprovados. O recurso depende do backend já existente que retorna rejeições por item e oferece consulta/cancelamento seguros. Atualização local de frontend, sem função manual nova e sem publicação remota realizada nesta rodada.

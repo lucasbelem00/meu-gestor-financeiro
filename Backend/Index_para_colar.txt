@@ -2323,17 +2323,52 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         });
         if (localStorage.getItem('filaOfflineGestor') === legadoTexto) localStorage.removeItem('filaOfflineGestor');
       }
-      return lerEntradasLocaisGestor(GESTOR_FILA_PREFIXO).map(e => e.valor);
+      return entradasFilaOrdenadasGestor().filter(e=>{
+        const revisao=lerJSONLocalGestor(chaveRevisaoFilaGestor(e.chave),null);
+        // Uma queda entre guardar a revisão e remover a chave antiga não reenvia o item.
+        return !(revisao&&revisao.estado!=='reenviado'&&JSON.stringify(revisao.payload)===JSON.stringify(e.valor));
+      }).map(e=>e.valor);
     }
 
     function enfileirarGastoOfflineGestor(payload) {
       lerFilaOfflineGestor();
       const item = { ...payload, baseRestauracao: payload.baseRestauracao ?? (payload.requestId ? undefined : (localStorage.getItem('gestorEpocaRestauracaoV1') || '')), requestId: payload.requestId || novoRequestIdGestor() };
+      const chave=GESTOR_FILA_PREFIXO+item.requestId,anterior=localStorage.getItem(chave);
+      if(anterior&&JSON.stringify(JSON.parse(anterior))!==JSON.stringify(item))throw Error('Este envio já possui outros dados guardados. Confira Atividade antes de alterar.');
+      if(!anterior&&!localStorage.getItem('gestorFilaOrdemV1:'+item.requestId))gravarArmazenamentoGestor('gestorFilaOrdemV1:'+item.requestId,JSON.stringify({criadoEm:Date.now()}));
       // Uma chave por operação preserva os itens adicionados por outras abas durante o envio.
-      gravarArmazenamentoGestor(GESTOR_FILA_PREFIXO + item.requestId, JSON.stringify(item));
+      gravarArmazenamentoGestor(chave, JSON.stringify(item));
       return item;
     }
 
+    function chaveRevisaoFilaGestor(chaveFila) {
+      return 'gestorFilaRevisaoV1:'+String(chaveFila).slice(GESTOR_FILA_PREFIXO.length);
+    }
+    function entradasFilaOrdenadasGestor() {
+      const instante=e=>{const t=lerJSONLocalGestor('gestorFilaOrdemV1:'+e.chave.slice(GESTOR_FILA_PREFIXO.length),null)?.criadoEm;return Number.isSafeInteger(t)&&t>=0?t:0;};
+      return lerEntradasLocaisGestor(GESTOR_FILA_PREFIXO).map(e=>({...e,ordem:instante(e)})).sort((a,b)=>a.ordem-b.ordem||(a.chave<b.chave?-1:a.chave>b.chave?1:0));
+    }
+    function revisoesFilaGestor() {
+      return lerEntradasLocaisGestor('gestorFilaRevisaoV1:').filter(e=>e.valor?.versao===1&&e.valor.estado==='revisar');
+    }
+    function guardarRejeicoesFilaGestor(fila,invalidos) {
+      let quantidade=0;
+      for(const rejeicao of Array.isArray(invalidos)?invalidos:[]){
+        if(!Number.isInteger(rejeicao.indice)||rejeicao.indice<1||rejeicao.indice>fila.length)continue;
+        const item=fila[rejeicao.indice-1];
+        if(String(item?.requestId||'')!==String(rejeicao.requestId||''))continue;
+        const entrada=entradasFilaOrdenadasGestor().find(e=>JSON.stringify(e.valor)===JSON.stringify(item));
+        if(!entrada)continue;
+        const original=localStorage.getItem(entrada.chave),chave=chaveRevisaoFilaGestor(entrada.chave),anterior=lerJSONLocalGestor(chave,null);
+        if(anterior&&JSON.stringify(anterior.payload)!==JSON.stringify(item))throw Error('Há outra versão deste envio em revisão. As cópias foram preservadas.');
+        const copia={versao:1,estado:'revisar',chaveFila:entrada.chave,requestId:entrada.chave.slice(GESTOR_FILA_PREFIXO.length),payload:item,motivo:String(rejeicao.erro||'Dados precisam de revisão'),rejeitadoEm:Date.now()};
+        const texto=JSON.stringify(copia);gravarArmazenamentoGestor(chave,texto);
+        if(localStorage.getItem(chave)!==texto)throw Error('Não foi possível guardar a revisão. O envio continua na fila.');
+        if(localStorage.getItem(entrada.chave)===original)localStorage.removeItem(entrada.chave);
+        quantidade++;
+      }
+      return quantidade;
+    }
 
 
     function referenciaLinhaSegura(tipo, linha, registroId, versao) {
@@ -2701,7 +2736,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         if (document.visibilityState === 'visible' && navigator.onLine) sincronizarNotasNuvem();
       });
       window.addEventListener('storage', event => {
-        if (event.key?.startsWith(GESTOR_FILA_PREFIXO) || event.key === 'filaOfflineGestor') atualizarIndicadorOffline();
+        if(event.key?.startsWith(GESTOR_FILA_PREFIXO)||event.key==='filaOfflineGestor'||event.key?.startsWith('gestorFilaRevisaoV1:')){atualizarIndicadorOffline();if(typeof atualizarBadgeAtividadeGestor==='function')atualizarBadgeAtividadeGestor();}
         if (event.key?.startsWith(GESTOR_NOTAS_OP_PREFIXO) || event.key === 'gestorNotasBaseV2') {
           const base = lerJSONLocalGestor('gestorNotasBaseV2', null);
           if (base) { notasBaseServidor = base.anotacoes || []; revisaoNotasServidor = Number(base.revision || 0); }
@@ -5550,6 +5585,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
           const res = await apiCall('sincronizarLoteWeb', fila);
           const confirmados = new Set(Array.isArray(res.requestIds) ? res.requestIds : []);
           fila.forEach(item => { if (confirmados.has(item.requestId)) localStorage.removeItem(GESTOR_FILA_PREFIXO + item.requestId); });
+          if(Array.isArray(res.invalidos)&&res.invalidos.length)guardarRejeicoesFilaGestor(fila,res.invalidos);
           if(res.completo===false||confirmados.size!==fila.length){const erro=new Error(res.erro||'A nuvem ainda não confirmou todos os itens.');erro.codigo=res.codigo;throw erro;}
           localStorage.removeItem('syncOfflineResultadoIncerto');
           const restantes=lerFilaOfflineGestor().length;
@@ -5560,11 +5596,12 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
         if (executou === false) mostrarAviso('Sincronização em outra aba', 'Aguarde a outra aba terminar. Os itens continuam guardados neste aparelho.');
       } catch (err) {
         if(err.codigo!=='FILA_INVALIDA')gravarArmazenamentoGestor('syncOfflineResultadoIncerto','true');
-        mostrarAviso(err.codigo==='FILA_INVALIDA'?'Confira os itens indicados':'Sincronização pendente', 'Os itens não confirmados continuam guardados neste aparelho. Você pode sincronizar novamente sem duplicar os itens já confirmados. Detalhe: ' + err.message);
+        mostrarAviso(err.codigo==='FILA_INVALIDA'?'Itens guardados para revisão':'Sincronização pendente', (err.codigo==='FILA_INVALIDA'?'Abra Atividade e sincronização para revisar os itens rejeitados. Os demais envios podem continuar sendo sincronizados. ':'Os itens não confirmados continuam guardados neste aparelho. Você pode sincronizar novamente sem duplicar os itens já confirmados. ')+'Detalhe: '+err.message);
       } finally {
         btn.disabled = false;
         sincronizacaoFilaEmAndamento = false;
         atualizarIndicadorOffline();
+        if(typeof atualizarBadgeAtividadeGestor==='function')atualizarBadgeAtividadeGestor();
       }
     }
 
@@ -7733,6 +7770,7 @@ function listarPendenciasAtividadeGestor() {
     mapa.set(p.requestId, { id: p.requestId, tipo: 'mutacao', action: p.action, payload, estado: p.estado === 'incerto' ? 'Precisa de conferência' : 'Envio ainda não confirmado', descricao: payload?.descricao || payload?.descOriginal || payload?.pessoa || '' });
   });
   lerEntradasLocaisGestor('gestorEmprestimoPendenteV3:').forEach(({ valor: p }) => { if (p.payload?.requestId) mapa.set(p.payload.requestId, { id: p.payload.requestId, tipo: 'emprestimo', action: 'salvarEmprestimoWeb', payload: p.payload, estado: 'Precisa de conferência', descricao: p.payload.pessoa + ' • ' + p.payload.descricao }); });
+  if(typeof revisoesFilaGestor==='function')revisoesFilaGestor().forEach(({chave,valor:p})=>mapa.set(p.requestId,{id:p.requestId,tipo:'fila-revisao',action:'salvarLancamentoWeb',payload:p.payload,chaveRevisao:chave,estado:'Dados precisam de revisão',descricao:String(p.payload?.descricao||'Lançamento offline'),motivo:p.motivo}));
   lerEntradasLocaisGestor('gestorCancelamentoV1:').forEach(({valor:p}) => {
     const item=mapa.get(p.requestId) || {id:p.requestId,action:p.action,tipo:'cancelamento',descricao:''};
     item.cancelamentoSolicitado=true; item.estado='Cancelamento aguardando confirmação'; mapa.set(p.requestId,item);
@@ -7781,6 +7819,7 @@ function renderizarPendenciasAtividadeGestor() {
     const proximoGrupo = p.tipo === 'servidor' || p.tipo === 'serie' ? 'Na planilha' : 'Neste aparelho';
     if (grupo !== proximoGrupo) { grupo = proximoGrupo; box.appendChild(elementoAtividadeGestor('h3', grupo, 'text-xs font-bold text-slate-200 pt-2')); }
     const card = elementoAtividadeGestor('article', null, 'card-glass p-4 space-y-2');
+    if(p.tipo==='fila-revisao'){renderizarRevisaoFilaGestor(card,p);box.appendChild(card);return;}
     card.append(elementoAtividadeGestor('h3', rotuloAcaoAtividadeGestor(p.action), 'font-bold text-white text-sm'), elementoAtividadeGestor('p', p.estado, 'text-xs font-bold text-amber-200'), elementoAtividadeGestor('p', p.descricao, 'text-xs text-slate-200 break-words'));
     card.appendChild(elementoAtividadeGestor('p',orientacaoPendenciaGestor(p),'text-xs text-slate-200 leading-relaxed'));
     if(p.tipo==='serie') {
@@ -7831,6 +7870,7 @@ function renderizarPendenciasAtividadeGestor() {
     }
     box.appendChild(card);
   });
+  if(typeof renderizarHistoricoRevisoesFilaGestor==='function')renderizarHistoricoRevisoesFilaGestor(box);
   const tamanho = lerJSONLocalGestor('gestorTamanhoHistoricoV1', {});
   document.getElementById('textoDiagnosticoAtividade').textContent = (tamanho.revisarCrescimento ? 'O histórico técnico cresceu. Planeje uma revisão e exportação; não apague as abas de controle. ' : '') + pendentes.length + ' grupo(s) pendente(s). ' + (navigator.onLine ? 'O navegador informa que há rede; a confirmação depende da resposta da nuvem.' : 'Sem rede no momento. Seus itens locais continuam guardados.');
 }
@@ -7901,7 +7941,7 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
 }
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
-  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();
@@ -8457,6 +8497,76 @@ document.addEventListener('DOMContentLoaded',()=>{
   guia.innerHTML='<summary class="cursor-pointer font-bold text-white py-1">Como resolver cada situação</summary><ul class="space-y-2 mt-3"><li><strong>Sem conexão:</strong> mantenha o app instalado e reconecte. Os envios locais continuam guardados.</li><li><strong>Confirmação pendente:</strong> use Consultar confirmação. Se necessário, repita o envio protegido; não crie outro gasto igual.</li><li><strong>Diferença na planilha:</strong> veja os detalhes e a recuperação segura. Se ela não puder concluir, copie o diagnóstico para revisão.</li><li><strong>Campo inválido:</strong> corrija o campo indicado antes de enviar novamente.</li><li><strong>Armazenamento indisponível:</strong> feche outras abas e libere espaço no aparelho. Não apague os dados do site enquanto houver envios pendentes.</li></ul><p class="mt-3 text-slate-300">Os botões explicam a ação antes de alterar dados. O diagnóstico técnico não inclui o conteúdo financeiro.</p>';
   painel.prepend(guia);
 });
+
+// A revisão é uma cópia local recuperável. Não modifica o pedido financeiro.
+function validarRevisaoFilaGestor(chave,assinatura){
+ const r=lerJSONLocalGestor(chave,null);
+ if(!r||r.versao!==1||r.estado!=='revisar'||chave!==chaveRevisaoFilaGestor(r.chaveFila)||r.chaveFila!==GESTOR_FILA_PREFIXO+r.requestId)throw Error('Esta revisão mudou. Atualize Atividade.');
+ if(assinatura&&JSON.stringify(r)!==assinatura)throw Error('Os dados mudaram desde a confirmação. Confira a revisão novamente.');
+ return r;
+}
+function gravarEstadoRevisaoFilaGestor(chave,r,estado,extras={}){
+ validarRevisaoFilaGestor(chave,JSON.stringify(r));
+ const texto=JSON.stringify({...r,...extras,estado,conferidoEm:Date.now()});gravarArmazenamentoGestor(chave,texto);
+ if(localStorage.getItem(chave)!==texto)throw Error('Não foi possível guardar a conferência. A cópia original permanece preservada.');
+}
+function criarCopiaCorrecaoFilaGestor(r){
+ const chave='gestorRascunhoV3:novo:fila-'+r.requestId;
+ if(localStorage.getItem(chave))return chave; // Nunca sobrescrever uma correção já iniciada.
+ const p=r.payload||{},data=String(p.dataCompra||''),d=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(data),perfil=p.perfilGasto;
+ const campos={inpData:data,inpDataDia:d?.[1]||'',inpDataMes:d?.[2]||'',inpDataAno:d?.[3]||'',inpMesFat:String(p.mesPrimeiraFatura||''),inpDesc:String(p.descricao||''),selForma:String(p.formaPagto||''),selCat:String(p.categoria||''),inpValor:typeof p.valorTotal==='number'&&Number.isFinite(p.valorTotal)?formatBRL(p.valorTotal):String(p.valorTotal??''),inpParc:String(p.numParcelas??1),inpParcIni:String(p.parcelaInicial??1),inpTags:String(p.tags||''),checkAssinatura:p.isAssinatura===true,chkPixParcelado:p.pixParcelado===true,'perfil-novo-tipo':perfil&&Object.prototype.hasOwnProperty.call(perfil,'tipo')?perfil.tipo:'padrao','perfil-novo-prioridade':perfil&&Object.prototype.hasOwnProperty.call(perfil,'prioridade')?perfil.prioridade:'padrao'};
+ const texto=JSON.stringify({versao:3,tipo:'novo',atualizadoEm:Date.now(),dados:{rascunhoId:novoRequestIdGestor(),origemRevisaoFila:r.requestId,campos}});
+ gravarArmazenamentoGestor(chave,texto);if(localStorage.getItem(chave)!==texto)throw Error('A cópia para correção não pôde ser guardada. O original continua em revisão.');return chave;
+}
+async function executarRevisaoFilaGestor(chave,modo,assinatura){
+ try{
+  if(!navigator.onLine)throw Error('Conecte-se para conferir o envio original. A cópia permanece neste aparelho.');
+  const feito=await comTravaAbasGestor('fila',async()=>{
+   const r=validarRevisaoFilaGestor(chave,assinatura);
+   if(!/^[A-Za-z0-9_.:-]{8,160}$/.test(r.requestId))throw Error('A identificação local precisa de revisão técnica. Use Copiar dados; a cópia não será apagada.');
+   const cancelar=['corrigir','cancelar'].includes(modo),res=await apiCall(cancelar?'cancelarOperacaoWeb':'consultarOperacaoWeb',{action:'salvarLancamentoWeb',requestId:r.requestId},1);
+   validarRevisaoFilaGestor(chave,JSON.stringify(r));
+   if(res.estado==='confirmado'){
+    if(typeof conferirPendenciasGestor==='function')await conferirPendenciasGestor([r.requestId]);
+    gravarEstadoRevisaoFilaGestor(chave,r,'confirmado');mostrarAviso('Envio já confirmado','O lançamento já foi gravado. Confira o Histórico; nenhuma nova cópia foi preparada.');if(typeof carregarDados==='function')await carregarDados();return;
+   }
+   if(cancelar&&res.estado==='cancelado'){
+    let copia;if(modo==='corrigir')copia=criarCopiaCorrecaoFilaGestor(r);
+    if(typeof concluirCancelamentoLocalGestor==='function')concluirCancelamentoLocalGestor({action:'salvarLancamentoWeb',requestId:r.requestId});
+    gravarEstadoRevisaoFilaGestor(chave,r,modo==='corrigir'?'rascunho':'cancelado',copia?{rascunho:copia}:{});
+    if(typeof renderizarRecuperacaoRascunhosGestor==='function')renderizarRecuperacaoRascunhosGestor();
+    mostrarAviso(copia?'Cópia para correção pronta':'Envio cancelado',copia?'Abra Novo → Rascunhos de novo lançamento → Recuperar. Confira os campos antes de salvar. O envio original foi cancelado e sua cópia permanece preservada.':'A nuvem confirmou o cancelamento. A cópia local de revisão foi preservada.');return;
+   }
+   if(modo==='reenviar'&&res.estado==='nao_localizado'){
+    if(r.payload?.requestId!==r.requestId)throw Error('O identificador do conteúdo está diferente da cópia. Cancele o envio antes de preparar uma correção.');
+    const atual=localStorage.getItem(r.chaveFila);if(atual&&JSON.stringify(JSON.parse(atual))!==JSON.stringify(r.payload))throw Error('Há outro conteúdo na fila. As duas cópias foram preservadas.');
+    gravarArmazenamentoGestor(r.chaveFila,JSON.stringify(r.payload));
+    if(localStorage.getItem(r.chaveFila)!==JSON.stringify(r.payload))throw Error('Não foi possível recolocar o envio. A revisão foi preservada.');
+    gravarEstadoRevisaoFilaGestor(chave,r,'reenviado');mostrarAviso('Envio recolocado na fila','O conteúdo e a identificação original foram mantidos. Sincronize para tentar novamente.');return;
+   }
+   if(res.estado==='cancelado'){mostrarAviso('Envio já cancelado','Use Preparar correção para revisar uma nova cópia. O pedido cancelado não será reenviado.');return;}
+   mostrarAviso(res.estado==='nao_localizado'?'Envio ainda não localizado':'Gravação precisa de conferência',res.estado==='nao_localizado'?'Você pode recolocar o original na fila ou preparar uma correção com cancelamento seguro.':'A gravação pode ter começado. Consulte a confirmação e a recuperação em Atividade antes de criar outra operação.');
+  });
+  if(feito===false)mostrarAviso('Outra aba está conferindo a fila','Aguarde a outra aba terminar. Os dados continuam guardados.');
+ }catch(e){mostrarAviso('Revisão preservada',e.message);}
+ finally{if(typeof renderizarPendenciasAtividadeGestor==='function')renderizarPendenciasAtividadeGestor();if(typeof atualizarBadgeAtividadeGestor==='function')atualizarBadgeAtividadeGestor();if(typeof atualizarIndicadorOffline==='function')atualizarIndicadorOffline();}
+}
+function renderizarRevisaoFilaGestor(card,p){
+ card.append(elementoAtividadeGestor('h3','Lançamento offline — revisar','font-bold text-amber-200'),elementoAtividadeGestor('p',p.descricao,'text-sm text-white break-words'),elementoAtividadeGestor('p',p.motivo,'text-xs text-amber-200 break-words'),elementoAtividadeGestor('p','Retirado da fila automática, com os dados preservados. Confira a confirmação antes de corrigir ou tentar novamente.','text-xs text-slate-200'));
+ const detalhes=elementoAtividadeGestor('details',null,'text-xs text-slate-300');detalhes.appendChild(elementoAtividadeGestor('summary','Ver dados guardados','cursor-pointer py-2'));detalhes.appendChild(elementoAtividadeGestor('pre',JSON.stringify(p.payload,null,2),'whitespace-pre-wrap break-words'));card.appendChild(detalhes);
+ card.appendChild(botaoAtividadeGestor('Copiar dados',()=>copiarTextoAreaTransferencia(JSON.stringify(lerJSONLocalGestor(p.chaveRevisao,null),null,2),'Cópia de revisão copiada.')));
+ card.appendChild(botaoAtividadeGestor('Consultar confirmação',()=>executarRevisaoFilaGestor(p.chaveRevisao,'consultar')));
+ for(const [modo,rotulo,texto]of [['reenviar','Recolocar na fila','O app consultará a confirmação e, se não localizar o envio, recolocará exatamente o mesmo conteúdo na fila. Não corrige campos.'],['corrigir','Preparar correção','O app pedirá o cancelamento seguro do envio original. Somente após a confirmação criará um rascunho separado para você revisar em Novo, sem substituir o formulário atual.'],['cancelar','Cancelar envio com segurança','O app pedirá à nuvem o cancelamento. Se já houver gravação, ela será conferida. A cópia local será preservada.']])card.appendChild(botaoAtividadeGestor(rotulo,()=>{
+  try{const r=validarRevisaoFilaGestor(p.chaveRevisao),assinatura=JSON.stringify(r);mostrarConfirmacao(rotulo+'?',texto,()=>executarRevisaoFilaGestor(p.chaveRevisao,modo,assinatura),false,rotulo,'neutral');}catch(e){mostrarAviso('Confira a revisão',e.message);}
+ }));
+}
+function renderizarHistoricoRevisoesFilaGestor(box){
+ const resolvidas=lerEntradasLocaisGestor('gestorFilaRevisaoV1:').filter(e=>e.valor?.versao===1&&e.valor.estado!=='revisar');if(!resolvidas.length)return;
+ const arquivo=elementoAtividadeGestor('details',null,'card-glass p-4 text-xs text-slate-300');arquivo.appendChild(elementoAtividadeGestor('summary','Revisões anteriores neste aparelho ('+resolvidas.length+')','cursor-pointer py-2 font-bold'));let montado=false;
+ arquivo.addEventListener('toggle',()=>{if(!arquivo.open||montado)return;montado=true;
+  resolvidas.forEach(({valor:r})=>{const item=elementoAtividadeGestor('details',null,'mt-3 border-t border-slate-700 pt-2');item.appendChild(elementoAtividadeGestor('summary',String(r.payload?.descricao||'Lançamento offline')+' — '+({confirmado:'confirmado',cancelado:'cancelado',rascunho:'cópia para correção preparada',reenviado:'recolocado na fila'}[r.estado]||r.estado),'cursor-pointer py-2'));item.appendChild(elementoAtividadeGestor('pre',JSON.stringify(r,null,2),'whitespace-pre-wrap break-words'));item.appendChild(botaoAtividadeGestor('Copiar dados',()=>copiarTextoAreaTransferencia(JSON.stringify(r,null,2),'Cópia de revisão copiada.')));arquivo.appendChild(item);});
+ });box.appendChild(arquivo);
+}
 // FIM INTERFACE SINCRONIZACAO GERADA
 </script>
 <script>
@@ -8730,7 +8840,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
     adotarOrigemRascunhoFinanceiroGestor(tipo,chave,valor);
     if(!emp)for(const id of ['perfil-novo-tipo','perfil-novo-prioridade']){const campo=document.getElementById(id);if(campo&&!Object.prototype.hasOwnProperty.call(valor.dados?.campos||{},id))campo.value='padrao';}
     Object.entries(valor.dados?.campos || {}).forEach(([id,v])=>{const campo=document.getElementById(id);if(!campo||!Array.from(form?.elements || []).includes(campo))return;if(campo.type==='checkbox')campo.checked=Boolean(v);else campo.value=v;campo.dataset.escolhaManual='true';});
-    if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
+    if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{if(typeof restaurarEstadoMetadeGestor==='function')restaurarEstadoMetadeGestor(valor.dados);atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
 function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','➖ Registrar recebimento parcial'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
