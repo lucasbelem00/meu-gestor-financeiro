@@ -60,7 +60,7 @@ function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
   const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','chkPixParcelado'];
-  return {campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
+  return {...(!emp&&typeof capturarEstadoMetadeGestor==='function'?{metade:capturarEstadoMetadeGestor()}:{}),campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
 }
 function datasEscolhidasRascunhoGestor(tipo,dados){
   const c=dados?.campos||{},p=tipo==='emp'?'inpEmp':'inp',data=dados?.dataAutomatica||dataPadraoRascunhoGestor(),partes=data.split('/'),defaults={};
@@ -132,7 +132,7 @@ const guardarRascunhoAnteriorRotinaGestor=guardarRascunhoGestor;
 guardarRascunhoGestor=function(chave,valor){
   const tipo=chave==='rascunhoLancamento'?'novo':chave==='rascunhoEmprestimo'?'emp':null;
   if(!tipo)return guardarRascunhoAnteriorRotinaGestor(chave,valor);
-  const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
+  const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;if(tipo==='novo')dados.metade=atual.metade??null;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
   gravarArmazenamentoGestor(chave,JSON.stringify(dados),{sessao:true,opcional:true});return salvo;
 };
 const restaurarRascunhoAnteriorRotinaGestor=restaurarRascunhosCompletosGestor;

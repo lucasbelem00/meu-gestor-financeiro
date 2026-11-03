@@ -1,0 +1,440 @@
+# Gestor de Gastos — contexto completo para continuidade e auditoria
+
+Atualizado em **03/11/2026**, com base no código e na documentação local. Este documento pode ser enviado a outra IA junto dos arquivos do projeto. Não contém tokens, senhas, IDs privados de planilhas nem dados financeiros reais.
+
+**Manutenção contínua:** por solicitação de Lucas, este arquivo deve acompanhar as alterações e melhorias futuras. A data no nome identifica sua criação; a data acima e as seções afetadas devem ser atualizadas a cada revisão relevante. As orientações permanentes estão em `AGENTS.md`.
+
+## 1. Leia primeiro: o que é este documento
+
+Este é um resumo das decisões, da arquitetura, das regras de negócio e do ponto em que o desenvolvimento parou. Não é uma certificação de ausência de falhas. A IA que receber este material deve conferir o código atual antes de concluir que um problema existe ou já foi corrigido.
+
+Distinga sempre:
+
+1. Implementação presente no repositório.
+2. Comportamento demonstrado por testes locais com dados fictícios.
+3. Comportamento verificado na implantação real.
+4. Proposta ainda não implementada ou decisão que exige discussão.
+
+O projeto tem muitos relatórios datados. Alguns registram versões antigas e podem mencionar nomes, testes, protocolo e cache já superados. **O código atual, o mapa do código e os relatórios mais recentes têm prioridade sobre números históricos.**
+
+## 2. Objetivo e perfil do projeto
+
+O produto se chama **Gestor de Gastos**. É um aplicativo financeiro pessoal, instalável como PWA em celular e computador, com armazenamento principal em Google Sheets e backend em Google Apps Script.
+
+O objetivo é controlar gastos pessoais, cartões, parcelas, recorrências e dinheiro adiantado para terceiros, sem misturar pagamento ao banco com recebimento das pessoas. Também reúne ferramentas práticas de planejamento, comparação e compartilhamento de resumos.
+
+Lucas, o usuário e responsável pelo projeto, programa como hobby. As explicações devem ser em português simples, mostrando o motivo e o efeito de cada mudança. Ele valoriza clareza, praticidade no celular, consistência visual, preservação do histórico e segurança dos dados. Prefere discutir alterações de conceito antes de implantá-las; correções já autorizadas devem ser concluídas e verificadas.
+
+Estamos lapidando o app na base de testes antes de transferir o conjunto para uso definitivo. Não pretendemos declarar o sistema “perfeito” apenas por uma revisão estática ou por testes automatizados.
+
+## 3. Estado atual conferido
+
+| Item | Estado na preparação deste documento |
+| --- | --- |
+| Repositório local | `C:\Users\lucas\OneDrive\Documentos\GitHub\meu-gestor-financeiro` |
+| Branch local | `New` |
+| Último commit observado | `1d4de98` — `Revisão Claude` |
+| Protocolo do pacote | 18 |
+| Cache do service worker | `gestor-gastos-v114` |
+| Última suíte completa documentada | 912 testes aprovados, zero falhas |
+| Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
+| Último pacote de correções | Revisão do relatório, seguida dos ajustes de moeda no Planejamento e estado de ÷2/×2 descritos abaixo |
+
+Esses números representam o estado observado, não uma promessa para versões posteriores. Confira `git status`, `git log`, `sw.js` e os resultados dos comandos antes de continuar. Os testes não foram repetidos apenas para escrever este resumo.
+
+A última rodada de desenvolvimento não publicou a implantação nem alterou planilhas reais. Um commit no GitHub pode disparar publicação automática na Vercel conforme a configuração do projeto; isso **não publica automaticamente o código do Apps Script**. Não presumir que frontend e backend remotos estejam atualizados só porque o código está salvo no Git.
+
+## 4. Ambientes e separação dos dados
+
+- Planilha de testes: **Cópia de Gestor de Gastos**.
+- Planilha definitiva: **Gestor de Gastos**.
+- Cada projeto Apps Script usa sua propriedade `GESTOR_PLANILHA_ID` para escolher a base. O nome da planilha não determina o destino.
+- Não trocar esse ID a cada janeiro: existe um controle permanente responsável pelas bases anuais.
+- Não copiar tokens, gatilhos, IDs ou configurações do ambiente de testes para o definitivo sem conferir seus destinos.
+- Restauração e ensaios destrutivos devem usar outra cópia descartável, nunca a planilha definitiva.
+- O PWA de testes foi instalado pelo endereço fixo da branch `New`, não por um link individual de implantação.
+
+O endereço usado historicamente para essa branch é `meu-gestor-financeiro-git-new-lucasbelem00.vercel.app`. Isso não comprova que a implantação atual corresponde ao código local.
+
+## 5. Arquitetura e caminho de uma operação
+
+```text
+Navegador / PWA
+  → index.html + módulos de interface incorporados
+  → apiCall
+  → /api/gestor na Vercel
+  → doPost no Apps Script, com token mantido no servidor
+  → validação, identidade, versão, trava e diário da operação
+  → planilha de controle / bases anuais / ajustes vinculados
+  → resposta e confirmação para a interface
+```
+
+O frontend é principalmente HTML, JavaScript e CSS compilado com Tailwind/PostCSS. **Não é um aplicativo React ou Next.js.** Não propor reescrita em outro framework como requisito para resolver bugs localizados.
+
+A Vercel serve os arquivos públicos e o proxy Node.js. O Apps Script executa as regras financeiras e acessa Sheets e Drive. O PWA mantém recursos estáticos, cópias de leitura, rascunhos e uma fila de envios conforme o fluxo.
+
+Uma falha de rede ou HTTP 504 **não significa que a gravação não aconteceu**. É possível a planilha ter recebido os dados e a resposta ter se perdido. O sistema usa identificações estáveis de envio e consulta de confirmação para evitar duplicidade.
+
+## 6. Recursos e telas existentes
+
+### Novo registro
+
+Cadastro de data da compra, competência da fatura, descrição, forma, categoria, valor, parcelas, tags e recorrência. Há sugestões de descrição e preenchimento auxiliar, prévia de parcelas e distribuição dos centavos.
+
+As sugestões priorizam frequência de **compras distintas**, depois compra mais recente e ordem alfabética em português. Doze parcelas da mesma compra não contam como doze compras frequentes. O fluxo reaproveita os dados já consultados, sem buscar todos os anos novamente só para ordenar sugestões.
+
+Rascunhos preservam também as escolhas de tipo e prioridade do gasto. Há proteção para não substituir campos relacionados a um envio ainda em conferência.
+
+### Painel
+
+Resumo da rotina: mês atual, valores em aberto e pagos, compromissos que precisam de atenção, atalhos de fatura e terceiros, Horizonte dos próximos meses, distribuição dos gastos e análise/planejamento.
+
+No computador, gráfico à esquerda e Horizonte à direita, usando área maior. No celular, conteúdo empilhado; não comprimir uma tabela inteira para forçar o encaixe. A comparação de meses precisa de espaço suficiente e navegação legível.
+
+O **limite pessoal mensal** é um teto opcional de gastos pessoais, incluindo os já pagos. Não é saldo bancário nem limite do cartão. Exclui empréstimos a terceiros e permite incluir previsões de recorrências. Sua preferência é local ao aparelho e não faz parte do backup da planilha. Quando configurado, o resultado fica visível sem exigir abrir a edição; quando ultrapassado, há indicação de excesso.
+
+### Histórico
+
+Busca, filtros, paginação e gerenciamento dos lançamentos pessoais. Possui resumo da seleção, repetição, edição, exclusão e compartilhamento. O valor de uma compra continua fazendo parte do gasto mesmo depois do pagamento; quitação muda o saldo, não apaga a despesa.
+
+### Mensal
+
+Consulta por competência, indicadores, composição da fatura, consumo por forma, tags, metas de categorias, filtros e lançamentos. O filtro pode ser acionado pelos indicadores e gráficos, além dos controles próximos da lista.
+
+**Entrar normalmente na Mensal seleciona o mês vigente do calendário.** A opção antiga de avançar porque os cartões estavam quitados foi removida. Uma consulta manual permanece enquanto o usuário está na tela e durante atualização dos dados. Atalhos explícitos para uma fatura respeitam o período clicado.
+
+Dentro de um mesmo grupo, seleções se somam; entre grupos, os filtros se combinam. Por exemplo: duas categorias funcionam como “categoria A ou B”; categoria mais tag exige as duas condições. Metas e lista de categorias controlam o mesmo grupo. O resumo azul aparece quando há filtro, com X vermelho para limpar a combinação.
+
+### Balanço anual
+
+Totais, evolução por mês, ranking de categorias, perfil dos gastos, comparação com ano anterior e PDF executivo. No ano vigente, a comparação usa meses equivalentes; anos encerrados podem ser comparados integralmente. Sem base adequada, o indicador precisa informar isso, sem inventar porcentagem.
+
+### Empréstimos para terceiros
+
+Cadastro e consulta por pessoa, forma, mês e situação. Edição de valor e data combinada, recebimento total ou parcial, cobrança com prévia para WhatsApp e movimentação entre gasto pessoal e terceiro com proteções.
+
+“Empréstimo” também representa uma compra feita no cartão/Pix para outra pessoa, não apenas empréstimo bancário. O dinheiro que a pessoa deve e o saldo que Lucas deve ao banco são controles separados.
+
+### Recorrências / despesas fixas
+
+Séries mensais, alterações programadas, pular cobrança, desativar e retomar. A interface passou a usar “Recorrência” em situações antes exibidas como “Assinatura”. Os dados internos ainda contêm estados antigos por compatibilidade.
+
+Pular uma ocorrência não é desativar a série. Uma ocorrência com pagamento exige conferência antes de ser pulada. Retomar usa revisão das condições, inclusive cobrança, sem apagar o histórico anterior.
+
+### Cartões e limites
+
+Cadastro, ordem, edição, arquivamento e reativação de formas, limite e compromissos. Uma forma pode ser cartão, Pix ou outra modalidade suportada. Não decidir o tipo apenas pelo nome escrito: Pix e cartões podem ser renomeados.
+
+### Categorias e metas
+
+Categorias com meta de consumo e padrões opcionais de classificação. “Outros” tem tratamento protegido e posição própria. Não remover sua proteção como simples limpeza visual.
+
+### Agenda financeira
+
+Calendário de faturas com saldo e devoluções com data combinada, com filtros de tipo e situação. A Agenda **consulta compromissos**, não cria gastos nem efetua pagamentos.
+
+O vencimento bancário usa calendário compartilhado para fins de semana e feriados bancários nacionais contemplados. Há ajustes manuais locais na interface. A data prometida por uma pessoa não deve ser adiada automaticamente como vencimento bancário. Um prazo de hoje deve aparecer como hoje, e não como vencido.
+
+### Metas e compras planejadas
+
+Planejamento persistido na base de controle: objetivo ou compra, valor, progresso manual, prazo, prioridade e situação. Possui rascunho, proteção contra edição concorrente, ocultação de concluídos e ordenação por prazo/prioridade. Concluído continua no histórico. Enviar ao simulador ou preencher um formulário não equivale a gravar uma compra automaticamente.
+
+### Ferramentas
+
+- **Dividir com a galera:** divisão rápida com/sem bebida e modo detalhado por pessoas/itens, cálculo em centavos, acertos entre pessoas, rascunho e prévia compartilhável.
+- **Simular compra:** cálculo e distribuição de parcelas, comparação com preço à vista e prévia editável de mensagem. Simulação não registra despesa por conta própria.
+- **Calculadora:** resultado copiável, sem copiar resultado antigo quando a expressão atual é inválida.
+- **Bloco de notas:** criar, editar, excluir e copiar o texto em edição ou uma nota salva. Usa controle de revisão e sincronização; não substituir por uma gravação integral sem tratamento de conflito.
+- **Comparar preços:** preço total, conteúdo por pacote, quantidade de pacotes e unidade; normalização de unidades compatíveis, resultado organizado e rolagem até ele. A primeira opção sugere a unidade das demais; escolhas manuais específicas são respeitadas.
+- **Conferir extrato:** análise local de CSV para comparar com dados do app e apontar diferenças. O conteúdo do CSV não é enviado à API por esse recurso. Deve oferecer diagnóstico útil, sem transformar diferenças em lançamentos automáticos.
+
+Outras áreas: Atividade e sincronização, exportação/backup e chave Pix de cobrança. Novas ferramentas devem trazer utilidade concreta, sem preencher espaços vazios com duplicações.
+
+## 7. Regras financeiras indispensáveis
+
+### Banco e pessoa são independentes
+
+Exemplo: R$ 100 pessoais e R$ 40 de outra pessoa na mesma fatura:
+
+- Fatura do banco: R$ 140.
+- Pagar R$ 140 ao banco zera o saldo da fatura.
+- A pessoa continua devendo R$ 40 até o recebimento ser registrado.
+- Receber primeiro os R$ 40 da pessoa não paga o cartão automaticamente.
+
+Um pagamento bancário parcial não torna todos os itens quitados. Sua distribuição segue regra estável e revisável, preservando os valores já pagos. Juros e encargos não devem aparecer como diferenças silenciosamente absorvidas.
+
+### Valores e parcelas
+
+- Divisões, somas e comparações sensíveis usam centavos e regras explícitas de arredondamento.
+- R$ 100 em 3 parcelas deve continuar somando exatamente R$ 100.
+- Não arredondar cada parcela independentemente e perder/somar centavos.
+- Compra `1/1` é exibida como **⚡ À vista**; isso descreve parcelamento, não significa que o banco já foi pago.
+- `∞/∞` permanece como identificação técnica de recorrência, embora o infinito tenha sido retirado dos rótulos visuais.
+- Comparar gasto pessoal com total bancário sem considerar terceiros gera falsas divergências.
+
+### Conferir fatura
+
+A função consulta totais e permite registrar pagamento ao banco com prévia. A comparação opcional pergunta o total mostrado no app do banco e calcula a diferença em relação ao total registrado. **Comparar não é pagar nem importar automaticamente a diferença.**
+
+### Exclusões e movimentos
+
+Na revisão de 03/11, exclusões de gastos com pagamento, inclusive parcial, e de parcelas de terceiros com recebimento ou pagamento bancário passaram a ser bloqueadas. Conferir/desfazer o movimento é necessário antes de excluir. Isso também afeta Pix já registrado como pago. Não retirar o bloqueio para fazer um teste antigo “passar” sem discutir a regra.
+
+Mover entre pessoal e empréstimos não pode perder pagamento, criar recebimento implícito nem apagar metadados. Alterar descrição/categoria não pode mudar competência ou quitação por efeito colateral.
+
+## 8. Classificação do perfil dos gastos
+
+Duas dimensões independentes:
+
+- Tipo: **Fixo / Variável / Não classificado**.
+- Prioridade: **Essencial / Ajustável / Não classificado**.
+
+Recorrência automática e classificação “Fixo” não são sinônimos: uma conta pode ter frequência previsível, mas valor variável; classificar não cria uma série de cobranças.
+
+Os padrões ficam em `Perfil de Categorias`. Novos lançamentos registram um retrato do padrão vigente, com possibilidade de exceção. Mudar a categoria depois **não reclassifica o passado automaticamente**. A edição individual altera somente o registro selecionado, não as outras parcelas.
+
+Ausência de classificação histórica e escolha explicitamente vazia são situações distintas. Não usar um fallback que preencha o passado com o padrão atual silenciosamente.
+
+Pessoal → terceiros preserva o perfil. No retorno, preserva esse retrato e desativa a data de devolução. Empréstimo originalmente sem perfil pode receber o padrão da categoria escolhida ao virar pessoal, conforme as regras existentes.
+
+O resumo do Painel considera gastos pessoais registrados no período, excluindo terceiros, cancelados/pulados e previsões. Perfil e classificações também acompanham relatórios e PDFs. Mudar um padrão de categoria, sozinho, não muda o retrato financeiro anterior.
+
+## 9. Identidade, versões, diário e dados técnicos
+
+Não confundir posição da linha com identidade do registro. Ordenação e inserção retroativa mudam o número da linha. Registro ID e Compra ID têm funções diferentes: cada parcela tem identidade própria, mas pertence a uma compra/série.
+
+As linhas financeiras têm 18 colunas. As sete últimas, de L a R, usam estes índices JavaScript:
+
+| Coluna | Índice | Função |
+| --- | --- | --- |
+| L | 11 | Registro ID |
+| M | 12 | Compra ID |
+| N | 13 | Versão |
+| O | 14 | Estado Banco |
+| P | 15 | Migração/metadados estruturados |
+| Q | 16 | Conteúdo SHA256 |
+| R | 17 | Pago ao banco |
+
+As primeiras onze colunas não são idênticas entre Lançamentos e Empréstimos. Não copiar os índices de descrição, pessoa, categoria e observação entre as duas abas sem conferir o esquema.
+
+Os metadados preservam informações de série, devolução e perfil, incluindo formatos anteriores quando necessário. Sobrescrever a célula inteira com um único novo atributo pode apagar informações de outro recurso.
+
+O contrato de consulta da interface é diferente da linha bruta da planilha. Nas respostas de 22 posições:
+
+| Índice | Histórico | Mensal / relatório no modo correspondente |
+| --- | --- | --- |
+| 17 | Indicador de arquivo anual | Valor pago ao banco |
+| 18 | Valor pago ao banco | Saldo |
+| 19 | Saldo | Indicador de arquivo anual |
+| 20 | Perfil/classificação | Perfil/classificação |
+| 21 | Estado/retrato anual | Estado/retrato anual |
+
+Conferir `completarLinhaConsultaGestor_` e `itemLancamento`. Antes da última revisão, 18/19 do Histórico podiam estar vazios; o frontend mantém fallback para respostas antigas. **Não identificar o modo apenas pelo comprimento do array.**
+
+O diário protege reenvios e recuperação, com estados como PREPARANDO, PRONTO e CONFIRMADO. PRONTO pode significar que parte do plano já foi aplicada. Cancelar uma operação nessa situação não pode ser equivalente a apagar o diário.
+
+Versão e hash detectam telas antigas e mudanças externas. IDs duplicados e divergências de arquivos anuais são tratados como problemas de integridade. Não gerar um novo ID automaticamente só para eliminar o erro, pois uma duplicação acidental pode virar uma despesa aparentemente válida.
+
+## 10. Offline, rascunhos, notas e concorrência
+
+- A fila conserva o mesmo `requestId` no reenvio. Não gerar novo ID para uma operação sem confirmação.
+- Na revisão recente, a validação passou a ser por item: inválidos recebem posição/motivo, válidos podem ser confirmados.
+- Uma falha durante a execução continua interrompendo o restante para respeitar a recuperação.
+- A interface envia até 50 itens por solicitação e informa se restaram outros guardados.
+- Somente itens confirmados são removidos da fila.
+- Rascunhos e notas têm estados e regras próprios. Não substituir toda a persistência por sessionStorage nem apagar localStorage para “resolver” um erro.
+- Edição concorrente deve avisar conflito e preservar o dado mais recente.
+- Confirmações de ações sensíveis precisam corresponder à versão e aos campos apresentados; mudanças posteriores exigem nova revisão.
+
+O armazenamento local é útil, mas contém informações pessoais no aparelho. Uma futura política de limpeza precisa distinguir cache descartável de rascunhos e envios não confirmados. Um PIN visual não equivale automaticamente a criptografia dos dados.
+
+## 11. Organização anual, backup e PDFs
+
+Objetivo decidido: **um único webapp, com bases financeiras por ano e consulta do passado pelo mesmo endereço**. Não reconstruir a planilha única apagando o ano anterior e confiando somente em PDFs.
+
+O controle permanente mantém cadastros, catálogo de anos, continuidade, notas e evidências. Os registros financeiros são organizados por competência. Uma parcela em janeiro pode exigir preparar a base seguinte antes da virada do calendário.
+
+- `_Gestor_Anos`: catálogo das bases abertas/fechadas.
+- `_Gestor_AjustesAnuais`: estado de alterações posteriores ao fechamento, vinculado ao retrato original.
+- `_Gestor_Resumo`: informação derivada, reconstruível.
+- `_Gestor_RelatoriosPDF`: acompanhamento de preparações e revisões.
+- Outras abas técnicas mantêm diário, atividade e proteção. Não excluir abas apenas por estarem ocultas ou parecerem auxiliares.
+
+Ano fechado é um retrato preservado. Pagamento ou recebimento tardio não deve reescrever o arquivo fechado nem contar novamente a despesa. O app pode mostrar o estado atualizado por ajustes vinculados.
+
+A ativação anual/PDF foi tornada assíncrona para evitar concentrar toda a operação numa requisição HTTP e gerar 504. A interface acompanha os estados, e o trabalho deve ser retomável.
+
+PDFs executivos e automáticos são relatórios de consulta, com período e revisão. Incluem perfil dos gastos e comparação anual conforme o período. Não substituem JSON restaurável nem a planilha estruturada. Arquivos anteriores não devem ser sobrescritos indiscriminadamente.
+
+O backup restaurável precisa incluir dependências anuais e ajustes. A restauração tem prévia, confirmação e verificações de integridade; seu teste deve usar uma cópia separada. Não presumir sincronização perfeita da planilha real apenas porque a transformação funciona nos mocks.
+
+## 12. Datas e calendário: histórico dos problemas
+
+Houve falhas envolvendo competência inválida, texto convertido automaticamente para Date pelo Sheets e planos pendentes após exclusão/restauração. Foram acrescentados validadores, serialização e recuperação estrita de conversões conhecidas.
+
+Regras para novas revisões:
+
+- Distinguir data de compra, competência, vencimento e devolução combinada.
+- Não confiar em `new Date(textoBR)` para interpretar `dd/mm/aaaa`.
+- Conferir dia real do calendário, mês, ano e fuso do destino.
+- Não converter uma competência para ISO com deslocamento de fuso que mude o mês.
+- Não tratar todo erro de consulta como ausência de internet: um ReferenceError da interface já interrompeu a renderização e gerou mensagem enganosa de dados não atualizados.
+- Preservar os testes de domingo seguido de Finados, fim de mês, virada de ano e conversões de texto/data.
+- O calendário bancário compartilhado não é uma garantia de todas as exceções locais ou das condições específicas de cada contrato bancário.
+
+Uma fonte única de data de servidor para todos os modos, inclusive offline, ainda merece uma mudança própria com testes. Não foi implementada integralmente na última revisão.
+
+## 13. Segurança e publicação
+
+O proxy `api/gestor.js` já possui catálogo de ações, POST obrigatório, limite de envio de 1 MiB, validação do destino Apps Script, token no servidor, resposta sem cache e tratamento de timeout. O timeout interno é de 55 segundos; `vercel.json` configura duração máxima de 60 segundos para a função.
+
+**A API recusa o ambiente Vercel de produção com 404 intencionalmente.** Não remover esse bloqueio como se fosse um bug sem definir e testar o acesso no ambiente definitivo.
+
+Na inspeção remota de 03/11, o conector retornou autenticação Vercel habilitada para `meu-gestor-financeiro`, com escopo `all_except_custom_domains`. Isso exclui domínios personalizados dessa regra. Não houve alteração remota de configuração.
+
+A prévia direta do Apps Script (`preview=1` e `apiCallServidor`) foi reforçada: exige habilitação e identidade verificável igual à conta executora. Identidade vazia, diferente ou indisponível é recusada. A API `doPost` usa token e continua independente dessa prévia. Para o uso normal pela Vercel, a prévia pode ficar desativada.
+
+**Não foram consultadas as Script Properties e as permissões da implantação Apps Script atual.** A correção local não comprova que a versão antiga publicada esteja protegida. É necessário publicar a nova versão do backend.
+
+Não incluir segredos em HTML, logs, relatórios, mensagens a outras IAs ou exemplos. Não confiar no conhecimento do endereço como autenticação. Conferir a superfície de funções públicas do Apps Script ao revisar o acesso; não avaliar somente o proxy.
+
+## 14. Organização do código e geração dos arquivos
+
+| Caminho | Responsabilidade |
+| --- | --- |
+| `index.html` | Estrutura das telas e integração; contém módulos incorporados e código ainda não extraído |
+| `interface/` | Fontes dos módulos do navegador: rotina, perfil, painel, agenda, ferramentas, navegação, modais, proteção, desempenho etc. |
+| `shared/` | Regras compartilhadas e fontes de módulos incorporados no backend: calendário, competências, perfil, anual, proteção, relatórios, planejamento, divisão etc. |
+| `Backend/Code.gs` | Código distribuído para Apps Script; regras principais e blocos gerados |
+| `api/gestor.js` | Proxy Node.js na Vercel |
+| `shared/acoes.js` | Catálogo comum de ações e seus efeitos |
+| `scripts/sincronizar-rachadinha.cjs` | Incorpora muitos módulos; o nome histórico não significa que cuide somente da divisão |
+| `scripts/gerar-css.cjs` | Incorpora módulos, compila CSS e sincroniza HTMLs |
+| `scripts/sincronizar-interface.cjs` | Copia HTML para os espelhos; sozinho não incorpora módulos alterados |
+| `scripts/publicar-estatico.cjs` | Prepara `dist/`; o nome não significa publicação remota |
+| `Backend/Index.html`, `Backend/Index_para_colar.txt` | Espelhos de distribuição do HTML |
+| `sw.js`, `manifest.json`, `icons/` | Cache, instalação e marca do PWA |
+| `tests/` | Regressões com dados fictícios e simulações de interface/serviços |
+
+Quando uma função estiver num módulo-fonte, editar essa fonte e regenerar. Não corrigir somente a cópia entre marcadores GERADO. Não manter variantes manuais divergentes dos três HTMLs. Não remover blocos finais do HTML só por parecerem duplicações: muitos são a distribuição gerada de uma fonte única.
+
+Camadas sobre `apiCall`, `setAba` e renderização possuem finalidades como cache, diário, diagnóstico e navegação. Consolidar só após rastrear os efeitos. Repetição de nome não prova que a camada seja obsoleta.
+
+Funções importantes: `executarOperacaoGestor_`, `consultarOperacaoWeb`, `registrarPagamentoFaturaWeb`, `completarLinhaConsultaGestor_`, `perfilRegistradoGastoGestor_`, `compararAnosGastosGestor_`, `rotinaProtecaoProgramadaGestor` e os pontos de entrada de `MAPA_DO_CODIGO.md`.
+
+## 15. Identidade visual e decisões de usabilidade
+
+Consultar `IDENTIDADE_VISUAL.md` antes de trocar ícones ou cores.
+
+- Marca própria: bolsa dourada sobre azul, a partir de `icons/gestor.svg`; não reutilizar o cartão como marca do app.
+- Mesmo significado pode repetir símbolo. O problema é o mesmo símbolo representar ações diferentes.
+- Mensal 📅; anual 📆; Agenda 🗓️; Planejamento 📑; Histórico 🧾; Notas 📝; Pix 💠; recorrência 📌; repetir 🔁; à vista ⚡; parcelas ➗; comparar preços ⚖️.
+- Gerenciar ⚙️; editar ✏️; excluir 🗑️; adicionar ➕; limpar 🧹; copiar 📋; cobrar 🫴; recebimento parcial ➖; antecipação ⏩.
+- Verde indica pago/recebido; âmbar, pendência; vencido usa laranja mais distinto; hoje tem destaque próprio; meta/limite excedido exige alerta. Cor de total não deve insinuar quitação.
+- Compras não pagas usam valor neutro; pagas podem usar verde. Recorrência ativa é uma condição da série, não prova de pagamento.
+- A Central tem fundos neutros, cor no ícone e seleção do destino atual. Desktop em grupos/colunas; celular em pares, sem rolagem vazia artificial.
+- Botões devem ser compactos, consistentes e legíveis. Editar fica à esquerda e Excluir à direita nas ações correspondentes.
+- Voltar do celular deve fechar a camada superior de modal/Menu antes de sair do app. Trocar de aba abre o topo, não a posição rolada da outra aba.
+- Mensagens para WhatsApp usam blocos curtos; ferramentas apresentam prévia antes da cópia. Cobrar abre prévia e permite copiar. Não encher uma única linha com descrição, cartão, parcela e valor.
+- Ícone instalado e tela de abertura dependem também do cache do navegador/sistema. A identidade do pacote deve ser conferida separadamente da atualização percebida no aparelho.
+
+## 16. Últimas correções e onde paramos
+
+A rodada mais recente analisou um relatório externo extenso e aplicou os achados confirmados de forma conservadora:
+
+1. Proteção por identidade da prévia direta do Apps Script.
+2. Desativação de `quitarFaturaWeb` como caminho de gravação; algoritmo antigo removido. Rótulos de atividade antiga foram preservados para histórico.
+3. Bloqueio de exclusões com pagamento/recebimento registrado.
+4. Pago/saldo no Histórico inicial e paginado, com apresentação e mensagem compartilhada de pagamento parcial.
+5. Validação por item na fila offline, preservação dos inválidos e confirmação dos válidos.
+6. Normalização consistente dos nomes de pessoas em agrupamento, filtro, cobrança e ligação de fragmentos recebidos, sem renomear fisicamente os registros.
+7. Manutenção manual também processando recorrências antes de organizar.
+
+Antes dessa rodada, foram corrigidos problemas de perfil nos rascunhos/backups, datas, classificação perdida em transferências, estados anuais indevidos (“Ano undefined”), ReferenceError na renderização do Histórico, layout do Painel/comparador, modais/Voltar, contraste e ordenação de sugestões por frequência. Consulte testes e relatórios, sem assumir que a lista de correções elimina toda possível regressão.
+
+Após os ajustes de moeda e rascunho do botão metade, a suíte completa mais recente concluiu **912 testes aprovados**, zero falhas. Na rodada anterior, houve também conferência em planilha simulada: a manutenção completou agosto/setembro/outubro de 2026 e não duplicou os períodos numa segunda execução.
+
+**O próximo passo de liberação é atualizar/conferir a implantação de testes e executar os testes reais essenciais.** Não há autorização implícita para restaurar a planilha definitiva, remover proteção de produção ou apagar arquivos anuais.
+
+## 17. Recomendações externas que não foram aplicadas automaticamente
+
+### Achados adicionais corrigidos em 03/11 — Planejamento e botão metade
+
+- **Moeda no Planejamento:** objetivo e progresso usam a máscara comum. Colagem aceita moeda brasileira como `1.500,00`, `R$ 1.500,00` e inteiro em reais. `centavosPlanejamentoGestor` faz leitura estrita em centavos, compartilhada pelo salvamento e rascunho. Texto inválido não vira zero silenciosamente; o rascunho preserva a digitação para correção. A máscara é registrada antes do salvamento automático; a validação do servidor permanece. IDs: `plano-valor` e `plano-progresso`.
+- **Estado do botão metade após recarga:** `capturarEstadoMetadeGestor` guarda versão, original em centavos, metade e autoria automática da tag no rascunho de sessão e durável. `restaurarEstadoMetadeGestor` só ativa ×2 se os números salvos forem coerentes com o campo restaurado. Desfazer retorna ao original inclusive com centavo ímpar, retira somente a tag automática e preserva a tag manual. Cópias antigas sem metadados não recebem original inventado; estado incompatível é ignorado sem apagar tags.
+- **Validação:** 912 testes aprovados na suíte completa. Mudanças locais de frontend/cache; nenhuma publicação remota nem função manual de ativação foi executada para esses dois ajustes.
+
+Estes pontos continuam úteis para investigação ou discussão, sem tratá-los como falhas já demonstradas e sem implementar atalhos arriscados:
+
+- Reconciliação assistida de uma pendência PRONTO quando a planilha sofreu alteração externa incompatível. Não basta marcar o plano como abandonado: pode haver efeitos parciais a conferir.
+- Prévia de quantidade exata de recorrências retroativas. Deve vir das mesmas regras do servidor, considerando períodos existentes e pulados.
+- Fonte de data autoritativa para os modos online/offline, com testes de fuso e viradas.
+- Mostrar melhor diferença entre parcelas originalmente contratadas e registros remanescentes após exclusões.
+- Fusão explícita de categorias/pessoas, busca global, atalhos de teclado, política de privacidade local e limites uniformes de campos: evoluções próprias, não reparos a aplicar sem desenho.
+- Desempenho de travas, leituras anuais, snapshots, ordenação física e paginação: medir antes de refatorar. Não retirar travas de consultas que fazem manutenção.
+- Modo de consulta parcial de arquivo anual indisponível: só com indicação clara dos dados faltantes; nunca apresentar total incompleto como completo.
+
+Não adotar recomendações de recriar IDs duplicados automaticamente, limpar persistência indiscriminadamente, enfraquecer proteção de CSV ou sobrescrever anos fechados. Também não foi demonstrado erro financeiro no modo rápido com bebida; os controles existentes já distinguem a parte com e sem bebida.
+
+## 18. Como testar e preparar o pacote
+
+Na pasta do projeto, com Node.js e dependências disponíveis:
+
+```powershell
+npm test
+npm run build
+```
+
+Equivalentes diretos:
+
+```powershell
+node --test
+node scripts/gerar-css.cjs
+node scripts/publicar-estatico.cjs
+git diff --check
+```
+
+O Node disponível no ambiente desta sessão estava em:
+
+```text
+C:/Users/lucas/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe
+```
+
+Esse caminho é específico da máquina e pode mudar. Não tratar como dependência do produto. Evitar builds simultâneos, porque o gerador escreve nos mesmos arquivos. A pasta OneDrive já apresentou erros transitórios de arquivo ocupado; conferir se uma falha é de acesso antes de atribuí-la à lógica financeira.
+
+Teste prioritário com dados fictícios: compra pessoal de R$ 100 + terceiro de R$ 40 na mesma fatura; pagar parcialmente e depois quitar banco; receber R$ 15 e depois R$ 25 da pessoa. Conferir banco e pessoa em ordens inversas, sem duplicação e sem misturar saldos.
+
+Conferir também: centavos, edição concorrente, resposta perdida, reenvio, exclusões protegidas, Pix, mudança de forma, rascunhos/notas, recorrência pulada/retomada, dezembro/janeiro, ano fechado com movimento posterior, JSON restaurado em cópia isolada, PDFs e consistência entre Histórico/Mensal/Agenda.
+
+Os testes locais não substituem PWA real, rede, permissões, quotas, gatilhos, arquivos Drive, aparência em todas as telas nem restauração real. Não marcar uma caixa do roteiro como aprovada sem executar seu cenário correspondente.
+
+## 19. Atualização remota e liberação definitiva
+
+1. Guardar backup completo e versão anterior do código/implantação.
+2. Confirmar que o Apps Script de testes aponta para a cópia correta.
+3. Atualizar `Backend/Code.gs`, salvar e publicar uma nova versão da implantação existente de teste.
+4. Atualizar o frontend correspondente e conferir a versão realmente servida no PWA.
+5. Conferir acesso autorizado/não autorizado, estado das pendências e totais conhecidos.
+6. Executar `ROTEIRO_TESTES_VERSAO_DEFINITIVA.md` em conjunto com os documentos atuais. Seu cabeçalho antigo não define o protocolo/cache atuais.
+7. Verificar proteção automática, organização anual e PDFs pelos estados reais do app e pelos arquivos gerados; não concluir que estão ativos só pela cor do botão.
+8. Planejar a publicação definitiva com autenticação própria conferida, destinos corretos e preservação dos dados reais. Não remover simplesmente o 404 de produção.
+
+Não foi acrescentada uma função de migração a executar manualmente só por causa dos novos campos da consulta. Isso não dispensa atualizar o backend. Ativação de proteção/organização anual e permissões/gatilhos são assuntos separados.
+
+## 20. Instrução sugerida para outra IA fazer auditoria
+
+> Você está revisando o Gestor de Gastos, um PWA pessoal com frontend HTML/JavaScript na Vercel e backend Google Apps Script/Sheets. Leia este documento, MAPA_DO_CODIGO.md, IDENTIDADE_VISUAL.md e REVISAO_RELATORIO_20261103.md; depois confira os arquivos atuais. Não suponha que relatórios antigos descrevem a versão presente. Procure falhas reproduzíveis de integridade, cálculos, datas, concorrência, offline, restauração, continuidade anual, segurança e usabilidade. Para cada achado, informe arquivo/função, cenário concreto, comportamento esperado/atual, impacto e evidência. Separe confirmação, hipótese, decisão intencional e sugestão de evolução. Examine as duas pontas do contrato e os módulos-fonte, não só o HTML gerado. Preserve a independência entre banco e pessoa, os centavos, IDs, versões, diário, metadados e retratos anuais. Não proponha limpar armazenamento, recriar identificadores ou remover travas para esconder erros. Antes de editar, confira git status/diff; não altere dados reais nem publique sem instrução. Ao corrigir, faça mudanças pequenas, testes relevantes e build, explicando em português simples os resultados e os limites da validação.
+
+## 21. Arquivos a fornecer para uma revisão externa
+
+Ideal: fornecer o repositório sanitizado, sem `.env`, tokens, credenciais, exports financeiros reais, caches pessoais e anexos privados.
+
+Para revisão técnica abrangente, incluir pelo menos:
+
+- Este documento, `MAPA_DO_CODIGO.md`, `IDENTIDADE_VISUAL.md` e `REVISAO_RELATORIO_20261103.md`.
+- `Backend/Code.gs`, `index.html`, `api/gestor.js`.
+- Pastas `shared/`, `interface/`, `scripts/`, `tests/`.
+- `package.json`, lockfile, `vercel.json`, `sw.js`, `manifest.json` e configuração de build relevante.
+- `ROTEIRO_TESTES_VERSAO_DEFINITIVA.md`, com a ressalva de que partes registram verificações antigas.
+
+Enviar somente `Code.gs` e `Index.html` permite parte da auditoria, mas não basta para concluir sobre proxy, geração, cache, acesso e implantação. Uma análise estática nunca deve alegar que verificou permissões ou dados remotos sem ter acesso e evidência dessa conferência.

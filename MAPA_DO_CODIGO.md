@@ -162,3 +162,9 @@ Retomada de assinaturas encerradas: [fluxo, validações e publicação](RETOMAR
 ## Revisão de segurança e consistência de 03/11/2026
 
 Ver `REVISAO_RELATORIO_20261103.md` para decisões e roteiro. `acessoPreviaDiretaGestor_` protege a prévia do Apps Script com identidade; o token de `doPost` permanece independente. `sincronizarLoteWeb` informa erros por item e confirma os válidos; a tela envia até 50 itens por vez. `completarLinhaConsultaGestor_` preenche 18/19 com pago/saldo no Histórico, preservando os índices técnicos existentes. Exclusões financeiras verificam movimentos antes de apagar linhas. A rota antiga `quitarFaturaWeb` recusa novas gravações; os rótulos antigos são preservados para atividades já registradas.
+
+## Moeda do Planejamento e rascunho da metade — 03/11/2026
+
+`interface/planejamento.js`: `centavosPlanejamentoGestor` valida moeda brasileira e converte em centavos para salvamento e rascunho; `configurarMoedaPlanejamentoGestor` aplica a máscara comum e trata colagem sem confundir inteiro em reais com centavos. Texto incompleto/inválido é preservado no rascunho, sem envio como zero.
+
+`index.html`: `capturarEstadoMetadeGestor` e `restaurarEstadoMetadeGestor` guardam/validam original, metade e autoria da tag. `salvarRascunho` e `dadosFormularioRascunhoGestor` em `interface/rotina.js` preservam esses metadados nas cópias de sessão e duráveis. Rascunhos antigos não permitem inferir o original. Cache v114; última suíte completa: 912 testes aprovados. Atualizar o frontend para disponibilizar o ajuste; sem nova ativação no Apps Script.

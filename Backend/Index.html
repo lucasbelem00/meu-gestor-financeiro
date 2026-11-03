@@ -2928,6 +2928,22 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       sincronizarChipsTags(contexto);
     }
 
+    // Só restaura uma operação cuja metade ainda coincide com o campo atual.
+    function capturarEstadoMetadeGestor() {
+      if(valorOriginalAntesMetade===null)return null;
+      const originalCentavos=Math.round(valorOriginalAntesMetade*100),valorDivididoCentavos=Math.round(lerValorMoeda(document.getElementById('inpValor'))*100);
+      if(!Number.isSafeInteger(originalCentavos)||originalCentavos<=0||valorDivididoCentavos!==Math.round(originalCentavos/2))return null;
+      return {versao:1,originalCentavos,valorDivididoCentavos,tagAutomatica:tagDivididoAutoAdicionada===true};
+    }
+    function restaurarEstadoMetadeGestor(dados) {
+      valorOriginalAntesMetade=null;tagDivididoAutoAdicionada=false;
+      const m=dados?.metade,valor=Math.round(lerValorMoeda(document.getElementById('inpValor'))*100);
+      if(m?.versao===1&&Number.isSafeInteger(m.originalCentavos)&&m.originalCentavos>0&&Number.isSafeInteger(m.valorDivididoCentavos)&&m.valorDivididoCentavos>0&&m.valorDivididoCentavos===Math.round(m.originalCentavos/2)&&valor===m.valorDivididoCentavos){
+        valorOriginalAntesMetade=m.originalCentavos/100;tagDivididoAutoAdicionada=m.tagAutomatica===true;
+      }
+      estadoIntegracaoInterfaceGestor.pxEstiloBotaoMetade(valorOriginalAntesMetade!==null);
+    }
+
     function removerTagDivididoAutomatica() {
       if (!tagDivididoAutoAdicionada) return;
       var inpTags = estadoIntegracaoInterfaceGestor.pxEl('inpTags');
@@ -6935,6 +6951,7 @@ function limparSimuladorTudo() {
     // --- 4. RASCUNHO AUTO-SAVE (Prevenção contra perda de dados offline) ---
     function salvarRascunho() {
       const rascunho = {
+        metade:typeof capturarEstadoMetadeGestor==='function'?capturarEstadoMetadeGestor():null,
         desc: document.getElementById('inpDesc')?.value || '',
         valor: document.getElementById('inpValor')?.value || '',
         parc: document.getElementById('inpParc')?.value || '1',
@@ -6972,6 +6989,7 @@ function limparSimuladorTudo() {
               campo.value = forma ? (typeof forma === 'string' ? forma : forma.nome) : valor;
             } else campo.value = valor;
           });
+          if(chave==='rascunhoLancamento'&&typeof restaurarEstadoMetadeGestor==='function')restaurarEstadoMetadeGestor(dados);
         } catch (erro) { console.warn('Rascunho não restaurado:', erro.message); }
       }
       rascunhosRestauradosGestor = true;
@@ -8554,7 +8572,7 @@ function dataPadraoRascunhoGestor(){const d=new Date();return String(d.getDate()
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
   const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','chkPixParcelado'];
-  return {campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
+  return {...(!emp&&typeof capturarEstadoMetadeGestor==='function'?{metade:capturarEstadoMetadeGestor()}:{}),campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
 }
 function datasEscolhidasRascunhoGestor(tipo,dados){
   const c=dados?.campos||{},p=tipo==='emp'?'inpEmp':'inp',data=dados?.dataAutomatica||dataPadraoRascunhoGestor(),partes=data.split('/'),defaults={};
@@ -8626,7 +8644,7 @@ const guardarRascunhoAnteriorRotinaGestor=guardarRascunhoGestor;
 guardarRascunhoGestor=function(chave,valor){
   const tipo=chave==='rascunhoLancamento'?'novo':chave==='rascunhoEmprestimo'?'emp':null;
   if(!tipo)return guardarRascunhoAnteriorRotinaGestor(chave,valor);
-  const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
+  const dados=JSON.parse(valor),atual=dadosFormularioRascunhoGestor(tipo==='emp');dados.camposManuais=atual.camposManuais;dados.dataAutomatica=atual.dataAutomatica;if(tipo==='novo')dados.metade=atual.metade??null;const salvo=guardarRascunhoRotinaGestor(tipo,dados);
   gravarArmazenamentoGestor(chave,JSON.stringify(dados),{sessao:true,opcional:true});return salvo;
 };
 const restaurarRascunhoAnteriorRotinaGestor=restaurarRascunhosCompletosGestor;
@@ -8949,11 +8967,29 @@ function selecionarItensPlanejamentoGestor(linhas,ocultarConcluidos=true,ordem='
  visiveis.sort((a,b)=>Number(a[7]==='concluido')-Number(b[7]==='concluido')||(ordem==='prioridade'?prioridade(a)-prioridade(b)||prazo(a,b):prazo(a,b)||prioridade(a)-prioridade(b)));
  return {itens:visiveis,total:linhas.length,ocultos:linhas.length-visiveis.length};
 }
+// Uma leitura estrita para salvar e rascunhar: não transforma erro em zero.
+function centavosPlanejamentoGestor(texto,opcional=false){
+ const t=String(texto??'').trim().replace(/^R\$\s*/, '');
+ if(!t&&opcional)return 0;
+ if(!/^(?:\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:[.,]\d{1,2})?)$/.test(t))throw Error('Informe um valor positivo válido, como 1.500,00.');
+ const agrupado=/^\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?$/.test(t),normal=(agrupado?t.replace(/\./g,''):t).replace(',','.');
+ const [inteiro,fracao='']=normal.split('.'),n=Number(inteiro)*100+Number(fracao.padEnd(2,'0'));
+ if(!Number.isSafeInteger(n)||n<0)throw Error('Valor fora do limite.');return n;
+}
+function configurarMoedaPlanejamentoGestor(e){
+ e.inputMode='numeric';e.placeholder='R$ 0,00';
+ e.addEventListener('input',()=>{if(/^(?:R\$\s*)?[\d.,\s]*$/.test(e.value))mascaraMoedaTeclado(e);});
+ e.addEventListener('paste',evento=>{
+  if(!evento.clipboardData)return;evento.preventDefault();const texto=evento.clipboardData.getData('text');
+  try{const n=centavosPlanejamentoGestor(texto,true);e.value=n?formatBRL(n/100):'';}catch(erro){e.value=texto;document.getElementById('estadoPlanejamentoGestor').textContent=erro.message;}
+  guardarRascunhoPlanejamentoGestor();
+ });
+}
 function renderizarPlanejamentoGestor(somenteLista=false){
  const f=document.getElementById('formPlanejamentoGestor'),lista=document.getElementById('listaPlanejamentoGestor');if(!f||!lista||!planejamentoAtualGestor)return;
  if(!somenteLista){f.replaceChildren();document.getElementById('estadoPlanejamentoGestor').textContent='Metas e intenções salvas na base de controle. Valores informados manualmente.';
  const item=(Array.isArray(planejamentoEditandoGestor)&&planejamentoEditandoGestor.length===8?planejamentoEditandoGestor:null)||['','meta','','','','','normal','planejado'];
- for(const [id,titulo,tipo,valor]of [['tipo','Tipo','select',item[1]],['nome','Nome','text',item[2]],['valor','Objetivo / estimativa (R$)','text',item[3]!==''?String(item[3]/100).replace('.',','):''],['progresso','Já reservado — apenas metas (R$)','text',item[4]!==''?String(item[4]/100).replace('.',','):''],['prazo','Prazo opcional','date',item[5]],['prioridade','Prioridade','select',item[6]]]){const l=elementoPlanejamentoGestor('label',titulo,'text-xs text-slate-200'),e=document.createElement(tipo==='select'?'select':'input');e.id='plano-'+id;e.className='block w-full mt-1 rounded-xl border border-slate-600 bg-slate-900 text-white p-3';if(tipo==='select')for(const [v,t]of id==='tipo'?[['meta','Meta de reserva/compra'],['compra','Compra planejada']]:[['alta','Alta'],['normal','Normal'],['baixa','Baixa']]){const o=elementoPlanejamentoGestor('option',t);o.value=v;e.append(o);}else{e.type=tipo;if(['valor','progresso'].includes(id))e.inputMode='decimal';if(id==='nome')e.maxLength=150;}e.value=planejamentoTextosRascunhoGestor?.[id]??valor;e.addEventListener('input',guardarRascunhoPlanejamentoGestor);l.append(e);f.append(l);}
+ for(const [id,titulo,tipo,valor]of [['tipo','Tipo','select',item[1]],['nome','Nome','text',item[2]],['valor','Objetivo / estimativa (R$)','text',item[3]!==''?formatBRL(item[3]/100):''],['progresso','Já reservado — apenas metas (R$)','text',item[4]!==''?formatBRL(item[4]/100):''],['prazo','Prazo opcional','date',item[5]],['prioridade','Prioridade','select',item[6]]]){const l=elementoPlanejamentoGestor('label',titulo,'text-xs text-slate-200'),e=document.createElement(tipo==='select'?'select':'input');e.id='plano-'+id;e.className='block w-full mt-1 rounded-xl border border-slate-600 bg-slate-900 text-white p-3';if(tipo==='select')for(const [v,t]of id==='tipo'?[['meta','Meta de reserva/compra'],['compra','Compra planejada']]:[['alta','Alta'],['normal','Normal'],['baixa','Baixa']]){const o=elementoPlanejamentoGestor('option',t);o.value=v;e.append(o);}else{e.type=tipo;if(['valor','progresso'].includes(id))e.inputMode='decimal';if(id==='nome')e.maxLength=150;}e.value=planejamentoTextosRascunhoGestor?.[id]??valor;if(['valor','progresso'].includes(id))configurarMoedaPlanejamentoGestor(e);e.addEventListener('input',guardarRascunhoPlanejamentoGestor);l.append(e);f.append(l);}
  const salvar=elementoPlanejamentoGestor('button',item[0]?'Salvar alterações':'Adicionar ao planejamento','rounded-xl bg-blue-600 text-white p-3 font-bold');salvar.type='submit';f.append(salvar);if(item[0]){const cancelar=elementoPlanejamentoGestor('button','Cancelar edição','rounded-xl border border-rose-400 text-rose-200 p-3');cancelar.type='button';cancelar.onclick=()=>confirmarAcaoPlanejamentoGestor('Cancelar edição?','O rascunho será descartado; itens salvos permanecem.',()=>{planejamentoEditandoGestor=null;planejamentoTextosRascunhoGestor=null;removerRascunhoPlanejamentoGestor();renderizarPlanejamentoGestor();},'Descartar rascunho');f.append(cancelar);}
  }
  lista.replaceChildren();
@@ -8965,10 +9001,10 @@ function renderizarPlanejamentoGestor(somenteLista=false){
  atualizarBloqueioPlanejamentoGestor();
 }
 async function enviarPlanejamentoGestor(itens){if(!epocaPlanejamentoAtualGestor()){mostrarAviso('A base foi restaurada','Consulte o planejamento novamente antes de salvar.');return;}if(planejamentoOcupadoGestor||!planejamentoAtualGestor)return;if(planejamentoIncertoGestor){mostrarAviso('Confirmação pendente','Confira a operação em Atividade e atualize o app antes de continuar.');return;}planejamentoOcupadoGestor=true;const controles=document.querySelectorAll('#view-planejamento button,#view-planejamento input,#view-planejamento select');controles.forEach(e=>e.disabled=true);try{const epoca=lerEpocaPlanejamentoGestor(),resposta=await apiCall('salvarPlanejamentoWeb',{itens,versao:planejamentoAtualGestor.versao,requestId:novoRequestIdGestor()},1);if(epoca!==lerEpocaPlanejamentoGestor()){epocaPlanejamentoAtualGestor();document.getElementById('estadoPlanejamentoGestor').textContent='A base foi restaurada durante o envio. Consulte o estado atual antes de continuar.';return;}planejamentoAtualGestor=resposta;planejamentoEditandoGestor=null;planejamentoTextosRascunhoGestor=null;removerRascunhoPlanejamentoGestor();renderizarPlanejamentoGestor();}catch(e){planejamentoIncertoGestor=Boolean(e.resultadoIncerto);document.getElementById('estadoPlanejamentoGestor').textContent=e.message+' Confira Atividade antes de repetir um envio sem confirmação.';}finally{planejamentoOcupadoGestor=false;atualizarBloqueioPlanejamentoGestor();}}
-function salvarItemPlanejamentoGestor(){try{const v=id=>document.getElementById('plano-'+id).value,moeda=id=>{const t=v(id).trim();if(!/^\d+(?:[.,]\d{1,2})?$/.test(t))throw Error('Use valores positivos, sem separador de milhar, com até duas casas decimais.');const n=Math.round(Number(t.replace(',','.'))*100);if(!Number.isSafeInteger(n))throw Error('Valor fora do limite.');return n;},valor=moeda('valor'),progresso=v('progresso').trim()?moeda('progresso'):0;if(valor<=0||!v('nome').trim())throw Error('Informe o nome e um objetivo maior que zero.');const id=planejamentoEditandoGestor?.[0]||novoRequestIdGestor(),r=[id,v('tipo'),v('nome').trim(),valor,progresso,v('prazo'),v('prioridade'),planejamentoEditandoGestor?.[7]||'planejado'],itens=planejamentoAtualGestor.linhas.slice(1).filter(x=>x[0]!==id);itens.push(r);enviarPlanejamentoGestor(itens);}catch(e){document.getElementById('estadoPlanejamentoGestor').textContent=e.message;}}
+function salvarItemPlanejamentoGestor(){try{const v=id=>document.getElementById('plano-'+id).value,moeda=id=>centavosPlanejamentoGestor(v(id)),valor=moeda('valor'),progresso=v('progresso').trim()?moeda('progresso'):0;if(valor<=0||!v('nome').trim())throw Error('Informe o nome e um objetivo maior que zero.');const id=planejamentoEditandoGestor?.[0]||novoRequestIdGestor(),r=[id,v('tipo'),v('nome').trim(),valor,progresso,v('prazo'),v('prioridade'),planejamentoEditandoGestor?.[7]||'planejado'],itens=planejamentoAtualGestor.linhas.slice(1).filter(x=>x[0]!==id);itens.push(r);enviarPlanejamentoGestor(itens);}catch(e){document.getElementById('estadoPlanejamentoGestor').textContent=e.message;}}
 const abaAntesPlanejamentoGestor=window.setAba;window.setAba=function(aba,...args){const r=abaAntesPlanejamentoGestor(aba,...args);if(aba==='planejamento'){epocaPlanejamentoAtualGestor();if(!planejamentoAtualGestor||!planejamentoEditandoGestor)carregarPlanejamentoGestor();else renderizarPlanejamentoGestor();}return r;};
 
-function guardarRascunhoPlanejamentoGestor(){const v=id=>document.getElementById('plano-'+id).value;planejamentoTextosRascunhoGestor=Object.fromEntries(['tipo','nome','valor','progresso','prazo','prioridade'].map(k=>[k,v(k)]));const moeda=id=>Math.round(Number(v(id).replace(',','.'))*100)||0;planejamentoEditandoGestor=[planejamentoEditandoGestor?.[0]||novoRequestIdGestor(),v('tipo'),v('nome'),moeda('valor'),moeda('progresso'),v('prazo'),v('prioridade'),planejamentoEditandoGestor?.[7]||'planejado'];try{gravarArmazenamentoGestor('gestorPlanoRascunhoV1',JSON.stringify({epoca:planejamentoEpocaGestor,linha:planejamentoEditandoGestor,textos:planejamentoTextosRascunhoGestor}));}catch(e){mostrarAviso('Rascunho não guardado',e.message);}}
+function guardarRascunhoPlanejamentoGestor(){const v=id=>document.getElementById('plano-'+id).value;planejamentoTextosRascunhoGestor=Object.fromEntries(['tipo','nome','valor','progresso','prazo','prioridade'].map(k=>[k,v(k)]));const moeda=id=>{try{return centavosPlanejamentoGestor(v(id),true);}catch(_){return null;}};planejamentoEditandoGestor=[planejamentoEditandoGestor?.[0]||novoRequestIdGestor(),v('tipo'),v('nome'),moeda('valor'),moeda('progresso'),v('prazo'),v('prioridade'),planejamentoEditandoGestor?.[7]||'planejado'];try{gravarArmazenamentoGestor('gestorPlanoRascunhoV1',JSON.stringify({epoca:planejamentoEpocaGestor,linha:planejamentoEditandoGestor,textos:planejamentoTextosRascunhoGestor}));}catch(e){mostrarAviso('Rascunho não guardado',e.message);}}
 // FIM INTERFACE PLANEJAMENTO GERADA
 // INICIO INTERFACE DESEMPENHO GERADA
 // Leituras coordenadas e trabalho visual apenas nas telas que estão abertas.
