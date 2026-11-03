@@ -152,3 +152,5 @@ Complementa os passos anteriores; não substitui suas instruções. A numeraçã
 Depois dos testes individuais, executar um fluxo integrado: cadastrar → parcelar/dividir → pagar banco/receber pessoa → consultar relatórios → exportar → restaurar em cópia descartável → conferir novamente. Repetir parte do fluxo em dois aparelhos e com interrupção de rede. Não provocar falhas de armazenamento nem mudar o ano da base definitiva para testar.
 
 Novo: informar R$ 250 em 3 parcelas e conferir 1ª de R$ 83,34 e demais 2 de R$ 83,33. Início 2 deve mostrar somente duas de R$ 83,33. Clicar em À vista deve ocultar Início, retornar ambos os campos a 1 e preservar valor, descrição e tags; recarregar e conferir rascunho.
+
+Novo/Parcelas: em 1, deve mostrar À vista. Tocar limpa a quantidade e permite teclado numérico; sair vazio ou com 1 restaura À vista. Digitar 3 mostra 3 e Início. Voltar pelo atalho À vista e restaurar rascunho devem sincronizar o rótulo sem enviar texto no lugar de números.

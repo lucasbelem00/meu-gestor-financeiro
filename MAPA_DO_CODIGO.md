@@ -235,3 +235,5 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Proteção no Painel: resumoAlertaProtecaoGestor_ em shared/protecao.js compõe flags leves da carga getDadosCompletos; renderizarAlertaProtecaoPainelGestor em interface/protecao.js controla aviso e acesso aos detalhes, atualizado também pela consulta de situação.
 
 - Novo em index.html: voltarPagamentoAVistaGestor reutiliza atualizarLayoutParcelas e salvarRascunho; atualizarPreviewParcelas apresenta parcelas restantes sem alterar a divisão original em centavos.
+
+- Novo: atualizarRotuloParcelasNovoGestor, iniciarEdicaoParcelasNovoGestor e concluirEdicaoParcelasNovoGestor em index.html controlam rótulo visual sem alterar tipo numérico do campo; atualizarLayoutParcelas sincroniza apresentação após atalhos/rascunhos.

@@ -523,7 +523,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 <label for="inpParc" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Parcelas</label>
 
               </div>
-              <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              <div class="relative">
+                <input type="number" id="inpParc" inputmode="numeric" value="1" min="1" onfocus="iniciarEdicaoParcelasNovoGestor()" onblur="concluirEdicaoParcelasNovoGestor()" aria-describedby="ajudaParcelasNovoGestor" style="color:transparent" oninput="atualizarLayoutParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+                <span id="rotuloAVistaNovoGestor" aria-hidden="true" class="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-white">À vista</span>
+              </div>
+              <span id="ajudaParcelasNovoGestor" class="sr-only">Uma parcela significa à vista. Toque para informar outra quantidade.</span>
 <div class="flex gap-1 mt-1.5">
                   <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(3, 'novo')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">3x</button>
                   <button type="button" onclick="vibrar(); aplicarParcelamentoRapido(6, 'novo')" class="flex-1 h-6 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">6x</button>
@@ -3045,6 +3049,20 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       vibrar();document.getElementById('inpParc').value='1';document.getElementById('inpParcIni').value='1';atualizarLayoutParcelas();salvarRascunho();
     }
 
+    function atualizarRotuloParcelasNovoGestor(){
+      const campo=document.getElementById('inpParc'),rotulo=document.getElementById('rotuloAVistaNovoGestor');if(!campo||!rotulo)return;
+      const mostrar=document.activeElement!==campo&&(Number(campo.value||1)===1);
+      rotulo.hidden=!mostrar;rotulo.classList.toggle('hidden',!mostrar);if(campo.style)campo.style.color=mostrar?'transparent':'';
+    }
+    function iniciarEdicaoParcelasNovoGestor(){
+      const campo=document.getElementById('inpParc');if(Number(campo.value||1)===1)campo.value='';
+      const rotulo=document.getElementById('rotuloAVistaNovoGestor');if(rotulo){rotulo.hidden=true;rotulo.classList.add('hidden');}if(campo.style)campo.style.color='';
+    }
+    function concluirEdicaoParcelasNovoGestor(){
+      const campo=document.getElementById('inpParc');if(!campo.value||Number(campo.value)===1)campo.value='1';
+      atualizarLayoutParcelas();salvarRascunho();
+    }
+
     function atualizarLayoutParcelas() {
       const chkAss = document.getElementById('checkAssinatura')?.checked;
       const nomeForma = (document.getElementById('selForma')?.value || '').toLowerCase();
@@ -3082,6 +3100,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         }
       }
       atualizarPreviewParcelas();
+      atualizarRotuloParcelasNovoGestor();
     }
 
 

@@ -43,8 +43,8 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v126` |
-| Última suíte completa documentada | 976 testes aprovados, zero falhas |
+| Cache do service worker | `gestor-gastos-v127` |
+| Última suíte completa documentada | 978 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
 
@@ -535,3 +535,8 @@ Validação do ajuste proporcional: 13 testes direcionados aprovados; CSS propor
 Refino do Novo parcelado: proporção passa a 48% Valor / 33% Parcelas / 19% Início (descontados espaços). Início com padding horizontal reduzido; À vista em contêiner flex, altura h-6, conteúdo centralizado sem quebra e sem padding extra. Remove diferença de alinhamento causada pela linha de base do botão inline em contêiner de bloco. Não restringe a quantidade de dígitos aceita pela regra existente. Cache v126, alteração visual local; conferência no celular pendente.
 
 Validação do refino 48/33/19: 13 testes direcionados aprovados, CSS proporcional compilado e contêiner flex conferidos, interfaces sincronizadas e dist preparado. Sem publicação remota. Última suíte completa permanece 976 da execução anterior; não repetida nesta mudança visual.
+
+
+Novo: campo numérico de parcelas apresenta rótulo visual À vista quando desfocado e em 1, mantendo valor real numérico para payload/rascunho. Ao focar em 1, remove o valor para digitação; ao sair vazio ou em 1, normaliza para 1, atualiza layout e salva rascunho. Em 2+ mostra número e mantém Início. Rótulo sem captura de toque e ajuda acessível, sem mudar campo para texto. Cache v127, implementação local sem publicação.
+
+Validação de À vista no campo: duas regressões novas; 978 testes aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado. Publicação e conferência visual no aparelho pendentes.
