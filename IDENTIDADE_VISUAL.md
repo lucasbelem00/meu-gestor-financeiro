@@ -121,3 +121,5 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Painel: aviso compacto âmbar de proteção somente para falhas registradas, sem popup; botão Conferir proteção abre detalhes. Estado normal não ocupa espaço.
 
 - Novo: ⚡ À vista abaixo de Início usa o estilo compacto dos atalhos de parcelas. Prévia discreta em duas linhas; Início e prévia ficam ocultos ao retornar a uma parcela.
+
+- Novo parcelado: Valor, Parcelas e Início sempre lado a lado, inclusive no celular; atalhos abaixo dos respectivos campos. Evitar expansão do Valor para linha inteira nesse estado.

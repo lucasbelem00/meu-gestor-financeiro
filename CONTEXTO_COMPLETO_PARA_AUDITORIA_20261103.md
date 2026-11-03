@@ -43,7 +43,7 @@ Estamos lapidando o app na base de testes antes de transferir o conjunto para us
 | Branch local | `New` |
 | Último commit observado | `82bd1a4` — `Módulo 4 Gemini` (o ajuste seguinte de metas ainda está no trabalho local) |
 | Protocolo do pacote | 18 |
-| Cache do service worker | `gestor-gastos-v123` |
+| Cache do service worker | `gestor-gastos-v124` |
 | Última suíte completa documentada | 976 testes aprovados, zero falhas |
 | Último build documentado | CSS, interfaces espelhadas e pacote estático gerados com sucesso |
 | Último pacote de correções | Cores consistentes das metas, distinção entre atingir/ultrapassar e explicação da competência no Painel |
@@ -520,3 +520,8 @@ Validação do aviso de proteção: três regressões novas; suíte completa com
 Botão ⚡ À vista abaixo de Início retorna quantidade e início a 1, usa layout existente para ocultar Início e salva rascunho. Preserva valor, descrição, tags e demais campos. Prévia em duas linhas distingue quantidade e valores, informando início posterior e somente parcelas restantes com distribuição original de centavos. Atualiza ao digitar início; início fora do intervalo exibe orientação. Sem mudanças no cálculo ou gravação do backend. Cache v123, implementação local.
 
 Validação de Novo/À vista: duas regressões novas; 976 testes aprovados, zero falhas. CSS compilado, interfaces sincronizadas e dist preparado. Sem publicação remota ou alteração no backend financeiro; conferência visual no aparelho pendente.
+
+
+Correção visual de Novo: com parcelamento, Valor/Parcelas/Início ficam na mesma linha inclusive no celular (três colunas, espaços menores em telas estreitas). Mantido À vista sob Início e ocultação ao retornar a 1x. Campo de valor usa fonte/padding compactos no celular. Cache v124. Sem mudança financeira, implementação local.
+
+Validação desta correção visual: 13 testes direcionados aprovados e execução direta de atualizarLayoutParcelas conferiu três colunas em parcelado e ocultação de Início em 1x. CSS/espelhos e dist preparados. Última suíte completa permanece a documentada anteriormente, 976 testes; não foi repetida para esta mudança visual. Conferência no aparelho ainda pendente.
