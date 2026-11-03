@@ -13,8 +13,17 @@ async function chamar({ body = { action: 'getDadosCompletos' }, method = 'POST',
   finally { global.fetch = fetchAnterior; for (const k of Object.keys(process.env)) if (!(k in anteriores)) delete process.env[k]; Object.assign(process.env, anteriores); }
 }
 
-test('produção bloqueia acesso à API antes de consultar o backend', async () => {
-  const r = await chamar({ env: { VERCEL_ENV: 'production' } }); assert.equal(r.statusCode, 404); assert.equal(r.chamadas.length, 0);
+test('produção usa sua configuração de servidor para acessar o backend', async () => {
+  const r = await chamar({ env: { VERCEL_ENV: 'production', GESTOR_API_URL: 'https://script.google.com/macros/s/FAKE_PRODUCTION/exec', GESTOR_API_TOKEN: 'token-producao-ficticio' } });
+  assert.equal(r.statusCode, 200); assert.equal(r.chamadas.length, 1);
+  assert.equal(r.chamadas[0].url, 'https://script.google.com/macros/s/FAKE_PRODUCTION/exec');
+  assert.equal(JSON.parse(r.chamadas[0].body).apiToken, 'token-producao-ficticio');
+});
+test('produção sem token ou com destino inválido não consulta o backend', async () => {
+  for (const env of [{ GESTOR_API_TOKEN: '' }, { GESTOR_API_URL: 'https://example.invalid/exec' }]) {
+    const r = await chamar({ env: { VERCEL_ENV: 'production', ...env } });
+    assert.equal(r.statusCode, 503); assert.equal(r.chamadas.length, 0);
+  }
 });
 test('aceita somente POST', async () => {
   const r = await chamar({ method: 'GET' }); assert.equal(r.statusCode, 405); assert.equal(r.headers.Allow, 'POST'); assert.equal(r.chamadas.length, 0);

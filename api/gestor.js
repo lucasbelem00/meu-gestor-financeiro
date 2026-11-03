@@ -5,11 +5,8 @@ module.exports = async function gestor(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
-  // O plano gratuito protege os endereços de Preview com Vercel Authentication.
-  // Mantemos o endereço de produção sem acesso à planilha.
-  if (process.env.VERCEL_ENV === 'production') {
-    return res.status(404).json({ sucesso: false, erro: 'Serviço indisponível.' });
-  }
+  // Preview e Production exigem Vercel Authentication em All Deployments.
+  // O destino e o token são próprios de cada ambiente e ficam no servidor.
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ sucesso: false, erro: 'Método não permitido.' });

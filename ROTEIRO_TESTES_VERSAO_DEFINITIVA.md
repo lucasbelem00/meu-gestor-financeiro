@@ -95,6 +95,8 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+Atualização de 03/11/2026: usuário informou atualização/publicação do Apps Script definitivo e cadastro das propriedades; valores e destino ainda não validados por consulta autenticada. Vercel confirmou All Deployments e os dois pares de variáveis separados entre Preview e Production, sem leitura dos valores. Código local remove agora o bloqueio absoluto de Production. Publicar o commit contendo essa mudança no ambiente Production, repetir POST anônimo (401/redirect de autenticação) e consultar base autenticada antes de gravar. Não basta redeploy de commit antigo: ele mantém o bloqueio 404.
+
 Só avançar quando os testes essenciais acima estiverem aprovados, sem divergência de totais ou pendência desconhecida. Guardar uma lista do que ainda não foi testado.
 
 1. [ ] Fazer backup completo da **Gestor de Gastos** definitiva e guardar a versão anterior do código/implantação para retorno.
@@ -163,3 +165,10 @@ Pacote de desempenho conservador: após atualizar frontend e Apps Script, confer
 
 
 Relógio civil (v130): após atualizar frontend e Apps Script, copiar Diagnóstico e conferir fuso/origem da referência. Verificar Hoje/Ontem, mês atual da Mensal e destaque de hoje na Agenda. Reabrir offline depois de uma consulta online e conferir o calendário; manter uma data manual preenchida e verificar que sincronizar não a altera. Não precisa mudar o relógio do aparelho real: viradas e fusos diferentes já têm testes automatizados. Se mudar horário do dispositivo enquanto estiver offline, reconectar para obter referência confiável.
+
+
+Acesso definitivo: Vercel → projeto meu-gestor-financeiro → Security/Deployment Protection → Vercel Authentication → All Deployments. Conferir ausência de exceção pública para o domínio do app. Testar página e /api/gestor sem sessão: devem exigir autenticação. Manter bloqueio de produção do proxy até verificar essa proteção. Login usa conta Vercel autorizada; não enviar tokens de ambiente no chat. POST anônimo da branch de testes já retornou 401 em 03/11/2026.
+
+
+Proteção verificada em 03/11/2026: Vercel Authentication → All Deployments ativado por autorização de Lucas. POST anônimo em /api/gestor de produção e da branch New retornou 401. Etapa de proteção de acesso destes endereços concluída; manter bloqueio de produção do código até preparar backup/destino e liberação controlada.
+Registro da migração em 03/11/2026: cópia nativa pré-migração da definitiva criada com autorização e metadados conferidos (pasta de backups, sem compartilhamento). Isso não conclui sozinho o item de backup completo/retorno de implantação: JSON, propriedades e gatilhos são verificações separadas. Apps Script da definitiva localizado; ainda sem propriedades de conexão e com interface antiga. Produção permanece bloqueada e sem variáveis configuradas. Aguardar criação da credencial pelo usuário antes de configurar a conexão definitiva e testar consultas reais.

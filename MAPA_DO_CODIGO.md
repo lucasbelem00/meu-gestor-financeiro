@@ -11,6 +11,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Liberação definitiva preparada em 03/11/2026: api/gestor.js atende também Production usando as variáveis próprias desse ambiente. Vercel Authentication em All Deployments é a barreira de login externa obrigatória; o proxy não autentica o usuário por conta própria. Validações de token, destino, método, tamanho e ações permanecem. Remoção do bloqueio absoluto é mudança local até publicação e conferência real.
+
 `Tela → apiCall → proxy /api/gestor → doPost no Apps Script → regra financeira → planilha → confirmação → atualização da tela`.
 
 O diário da operação permite reconhecer um reenvio. Falta de resposta não significa que a gravação falhou: a operação pode estar na planilha e ainda precisar de confirmação.

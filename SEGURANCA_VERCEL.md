@@ -1,6 +1,18 @@
 # Segurança gratuita do Gestor Financeiro no Vercel
 
-Este roteiro mantém GitHub, Vercel, Apps Script e a instalação como PWA. O app instalado deve usar o endereço de Preview protegido. A API do ambiente de produção é bloqueada pelo código, independentemente da proteção de acesso configurada na plataforma.
+Este roteiro mantém GitHub, Vercel, Apps Script e a instalação como PWA. Testes usam Preview; a definitiva usa Production, com projetos Apps Script e segredos separados.
+
+## Configuração atual — 03/11/2026
+
+- Vercel Authentication confirmado em **All Deployments**. Essa proteção da plataforma é obrigatória para página e API; o proxy não implementa login próprio. Não criar exceção pública nem reduzir o escopo sem outra autenticação equivalente.
+- GESTOR_API_URL e GESTOR_API_TOKEN confirmados como cadastrados separadamente em Production e Preview, sem leitura de valores. Isso não valida ainda o destino nem o conteúdo dos segredos.
+- O pacote local remove o bloqueio absoluto de Production: cada ambiente usa suas próprias variáveis do servidor, mantendo validação do destino, token obrigatório, POST e catálogo de ações. Publicação deste pacote e consulta autenticada real ainda pendentes.
+- Antes da publicação, POST anônimo em /api/gestor de Production e New retornou 401. Repetir após publicar. Usar ação inválida sem dados financeiros. Confirmar também consulta autenticada e nome da base definitiva, sem transferir dados fictícios.
+- Instalar o PWA definitivo somente pelo endereço de produção autenticado depois dessas verificações. O PWA da branch New continua apontando para testes.
+
+## Procedimento histórico de testes — outubro/2026
+
+As instruções abaixo registram a fase anterior, quando apenas Preview era usado e Production estava bloqueada no código. Para a liberação definitiva, prevalece a configuração atual acima; não remover as variáveis Production já configuradas.
 
 ## Conferência em 23/10/2026
 
