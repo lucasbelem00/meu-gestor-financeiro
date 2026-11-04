@@ -6,6 +6,12 @@ Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os te
 
 ## 1. Preparar o teste
 
+Reteste v141 (04/11/2026): publicar backend e frontend; antes de ativar, confirmar comportamento imediato. Executar ativarResumoEmSegundoPlanoGestor pela conta proprietária e conferir gatilho único rotinaResumoPlanilhaGestor. Salvar um gasto e editá-lo: confirmar uma única gravação e indicadores atuais, resumoMs=0 quando elegível, resumoPlanilha.pendente=true no retrato/diagnóstico. Fechar app somente após Salvo, aguardar rotina do Google e consultar novamente: pendente=false, resumo atualizado e sem duplicação. Em Atividade, resumo pendente deve aparecer separado de envio financeiro. Atualizar situação do backup confirma modo/gatilho.
+
+Validação local final v141: 1.082 testes aprovados em 04/11/2026, zero falhas. Instalação do gatilho e reteste na conta real ainda pendentes.
+
+Somente em cópia descartável: testar interrupção após PRONTO (worker deve aguardar recuperação), falha de materialização (tarefa preservada e erro visível), conclusão da marca interrompida (repetição inofensiva), vários envios antes do gatilho (resultado agregado), trava ocupada, identidade de base diferente e falta de permissão ao instalar. Em caso de falha ao registrar intenção ou fórmulas particulares nas entradas, o resumo deve continuar imediato. Ao reabrir após envio sem resposta, conferir pendência com mesmo identificador; pendência exclusiva de resumo não deve oferecer novo envio financeiro.
+
 Reteste v140 — desempenho Novo/Edição (04/11/2026): publicar Code.gs na mesma implantação e frontend na Vercel; atualizar app instalado. Criar gasto e editar descrição/valor, aguardando concluir sem sair da tela. Conferir registro único, valor, competência, classificação e versão para edição seguinte. Exportar diagnóstico: versaoInterface=v140; atualizacoesConfirmadas e evento atualizacaoDadosConfirmada indicam tela atualizada com dados da confirmação; normalmente não haverá getDadosCompletos adicional logo após essas ações elegíveis. Comparar duração total clique→tela e atualizacaoMs. Conferir também empréstimos inalterados, cartões/limites, horizonte, autofill e recorrências. Depois atualizar manualmente: deve consultar a rede e mostrar os mesmos dados.
 
 Última validação local deste pacote: suíte completa em 04/11/2026 com 1.073 testes aprovados e zero falhas; não substitui o reteste real acima.

@@ -4,6 +4,16 @@ Executar pela conta responsável pela implantação e pelos gatilhos, separadame
 
 ## Projeto existente
 
+### Resumo em segundo plano (v141)
+
+Após atualizar Code.gs, publicar a nova versão na mesma implantação e atualizar o frontend, executar **ativarResumoEmSegundoPlanoGestor** uma vez no editor, pela conta proprietária da implantação. Conferir antes a base de teste/definitiva configurada no projeto. Essa ativação é separada das permissões iniciais: instala uma rotina de cinco minutos e registra uma primeira atualização; não ativa backup ou organização anual. Repetir na mesma conta não duplica a rotina. Se o Google solicitar consentimento, revisar e autorizar na própria conta; não há escopo adicional aos quatro já documentados.
+
+Sem executar essa função, o resumo continua imediato. Depois de executar, em Exportar dados e backup → Atualizar situação, conferir “Resumo da planilha: atualização em segundo plano ativada” ou a atualização pendente. A rotina funciona com app fechado; o Google pode atrasar a execução. Novo/Edição só mostram sucesso depois da gravação financeira conferida. Resumo pendente não exige reenviar o lançamento. Se o gatilho for removido, executar a função novamente na mesma conta; tarefas pendentes continuam guardadas. [Referência do agendamento do Google](https://developers.google.com/apps-script/reference/script/clock-trigger-builder#everyMinutes(Integer)).
+
+O estado mostrado no app é o da última consulta. Atualizar situação novamente para conferir conclusão. Se houver erro, revisar a execução rotinaResumoPlanilhaGestor no Apps Script; não limpar fila/rascunhos do aparelho nem reenviar registros financeiros para tentar reparar o resumo.
+
+### Preparar permissões e publicar
+
 1. Atualizar Código.gs com Backend/Code.gs e salvar.
 2. Em Configurações do projeto, marcar Mostrar arquivo de manifesto appsscript.json no editor.
 3. Abrir appsscript.json. Acrescentar ou substituir apenas a propriedade oauthScopes pela lista do modelo Backend/appsscript.json. Preservar o fuso atual, dependências, runtime, configurações de implantação e outras propriedades. Não colar o modelo inteiro sobre um manifesto existente sem conferir essas diferenças. Se houver escopos adicionais de personalizações, revisar sua utilização antes de removê-los.

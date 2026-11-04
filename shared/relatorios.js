@@ -1,4 +1,61 @@
 // Compara gastos pessoais por competência, em centavos e com períodos equivalentes.
+// Intenção persistida antes de PRONTO; o gatilho lê somente dados confirmados.
+const CHAVE_RESUMO_ASSINCRONO_GESTOR_='GESTOR_RESUMO_ASSINCRONO_V1';
+function lerResumoAssincronoGestor_(){
+  const texto=PropertiesService.getScriptProperties().getProperty(CHAVE_RESUMO_ASSINCRONO_GESTOR_);
+  if(!texto)return null;
+  const s=JSON.parse(texto);if(s.versao!==1||typeof s.origem!=='string'||typeof s.ativo!=='boolean'||typeof s.pendente!=='boolean')throw Error('Controle do resumo em segundo plano inválido.');
+  return s.origem===propriedade_(CHAVE_ID_PLANILHA_GESTOR)?s:null;
+}
+function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties().setProperty(CHAVE_RESUMO_ASSINCRONO_GESTOR_,JSON.stringify(s));}
+function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
+  try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
+  catch(_){return {modo:'imediato',pendente:false,erro:'Confira a configuração do resumo em segundo plano.'};}
+}
+// Executar uma vez no editor, na conta proprietária da implantação.
+// A criação do gatilho deve terminar antes de habilitar o modo assíncrono.
+function ativarResumoEmSegundoPlanoGestor(){
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{
+    if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor'))ScriptApp.newTrigger('rotinaResumoPlanilhaGestor').timeBased().everyMinutes(5).create();
+    const anterior=lerResumoAssincronoGestor_();
+    salvarResumoAssincronoGestor_({versao:1,origem:propriedade_(CHAVE_ID_PLANILHA_GESTOR),ativo:true,pendente:true,solicitadoEm:new Date().toISOString(),atualizadoEm:anterior?.atualizadoEm||null,erro:''});
+    return {sucesso:true,mensagem:'Resumo em segundo plano ativado. O Google verifica a tarefa a cada cinco minutos, mesmo com o app fechado.'};
+  }finally{lock.releaseLock();}
+}
+function entradasCalculadasResumoGestor_(ctx){
+  const abas=ctx?.ss?.abas||{},formula=v=>typeof v==='string'&&v.startsWith('=');
+  return ['Lançamentos','Empréstimos'].some(n=>abas[n]?.valores.some(r=>r.some(formula)))||
+    Boolean(abas['Formas de Pagamento']?.valores.slice(6).some(r=>r.slice(1,7).some(formula)))||
+    Boolean(abas['Dashboard & Resumo']?.valores.slice(16,41).some(r=>formula(r[1])||formula(r[3])));
+}
+function solicitarResumoAssincronoGestor_(acao,ctx){
+  if(!['salvarLancamentoWeb','editarLancamentoLinhaWeb'].includes(acao))return false;
+  if(entradasCalculadasResumoGestor_(ctx))return false;
+  try{
+    const s=lerResumoAssincronoGestor_();if(!s?.ativo)return false;
+    s.pendente=true;s.solicitadoEm=new Date().toISOString();salvarResumoAssincronoGestor_(s);return true;
+  }catch(_){return false;} // Sem intenção durável, mantém o resumo síncrono.
+}
+function concluirResumoAssincronoGestor_(){
+  const s=lerResumoAssincronoGestor_();if(!s?.ativo)return;
+  s.pendente=false;s.erro='';s.atualizadoEm=new Date().toISOString();salvarResumoAssincronoGestor_(s);
+}
+function rotinaResumoPlanilhaGestor(){
+  try{const inicial=lerResumoAssincronoGestor_();if(!inicial?.ativo||!inicial.pendente)return {pendente:false};}catch(_){return {pendente:true,erroConfiguracao:true};}
+  const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return {pendente:true,ocupado:true};
+  try{
+    const s=lerResumoAssincronoGestor_();if(!s?.ativo||!s.pendente)return {pendente:false};
+    const ss=obterPlanilhaGestor_(),diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
+    // Nunca materializar uma aplicação financeira interrompida ou divergente.
+    if(diario&&localizarLinhasTecnicasGestor_(diario,3,'PRONTO').length)return {pendente:true,aguardandoConferencia:true};
+    const manutencao=ss.getSheetByName(ABA_MANUTENCAO_PROTECAO_GESTOR_);
+    if(manutencao&&localizarLinhasTecnicasGestor_(manutencao,2,'PRONTO').length)return {pendente:true,aguardandoConferencia:true};
+    try{atualizarResumoNativoGestor_(ss);return {sucesso:true,pendente:false};}
+    catch(e){const atual=lerResumoAssincronoGestor_();if(atual){atual.pendente=true;atual.erro=String(e.message||e).slice(0,250);salvarResumoAssincronoGestor_(atual);}return {sucesso:false,pendente:true};}
+  }finally{lock.releaseLock();}
+}
+
 function compararAnosGastosGestor_(registros,ano){
   const hoje=getHojeSeguro(),anoAtual=hoje.getFullYear(),mesLimite=ano===anoAtual?hoje.getMonth()+1:12;
   const anterior=ano-1,intervalo=mesLimite===12?'Ano completo':'Jan a '+['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][mesLimite-1];
@@ -104,6 +161,9 @@ function atualizarResumoNativoGestor_(ss,tempos){
   // apenas as fórmulas reconhecidas. Fórmulas particulares nunca são apagadas.
   if(dash){const atuais=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(const m of migracoes){const atual=atuais[m.linha-1]?.[m.coluna-1]||'';if(atual!==m.gerada&&((m.aceitas||[]).includes(atual)||reconhecerFormulaPadraoResumoGestor_(atual,m.linha,m.coluna,ss,valoresDashboard)))dash.getRange(m.linha,m.coluna).setValue(m.gerada);}}
   medir('resumoFormulasMs');
+  // Todas as entradas chamam sob a trava do projeto. Se a marca não puder
+  // ser concluída, permanece pendente para repetir a materialização idempotente.
+  concluirResumoAssincronoGestor_();
   return {sucesso:true,hash:hash,periodos:Array.from(new Set(registros.map(r=>r.mes))),grupos:grupos.length,formulasMigradas:migracoes.length};
 }
 function migrarResumoNativoGestor_(ss){return atualizarResumoNativoGestor_(ss);}

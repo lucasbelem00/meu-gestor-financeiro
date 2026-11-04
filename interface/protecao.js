@@ -1,6 +1,7 @@
+let estadoResumoPlanilhaUIgestor=null;
 function renderizarAlertaProtecaoPainelGestor(s){
  const box=document.getElementById('alertaProtecaoPainelGestor');if(!box)return;
- const falha=Boolean(s&&(s.falhaRotina||s.falhaRelatorios||s.falhaAtivacao||s.falhaConfiguracao));box.replaceChildren();box.hidden=!falha;box.className=falha?'rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 space-y-2':'hidden';if(!falha)return;
+ const falha=Boolean(s&&(s.falhaResumo||s.falhaRotina||s.falhaRelatorios||s.falhaAtivacao||s.falhaConfiguracao));box.replaceChildren();box.hidden=!falha;box.className=falha?'rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 space-y-2':'hidden';if(!falha)return;
  const p=document.createElement('p');p.className='text-sm text-amber-200';p.textContent='Proteção automática precisa de atenção. Confira os detalhes do backup e dos arquivos anuais.';box.append(p);
  const b=document.createElement('button');b.type='button';b.className='rounded-lg border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200';b.textContent='Conferir proteção';b.onclick=()=>abrirExportacaoDados();box.append(b);
 }
@@ -46,6 +47,7 @@ const renderEmpAntesProtecaoGestor=window.renderizarPainelEmprestimos;
 window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);atualizarAtalhoFiltrosProtecaoGestor();solicitarEmprestimosArquivoProtecaoGestor();return r;};
 const renderDadosAntesProtecaoGestor=window.renderizarDados;
 window.renderizarDados=function(dados){
+  estadoResumoPlanilhaUIgestor=dados.resumoPlanilha||null;
   const novo=Array.isArray(dados.arquivosAnuais)?dados.arquivosAnuais:[];
   if(JSON.stringify(novo)!==JSON.stringify(arquivosAnuaisUIProtecaoGestor)){geracaoArquivosUIProtecaoGestor++;emprestimosArquivoUIProtecaoGestor=[];chaveEmprestimosArquivoUIProtecaoGestor='';pedidoEmprestimosArquivoUIProtecaoGestor=null;}
   arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
@@ -98,6 +100,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     if(s.anos?.length)lista.append(criar('p','Os lançamentos ficam nas bases de cada ano. A base de controle pode ficar apenas com os cabeçalhos; o webapp reúne os registros para consulta.','text-xs text-slate-200'));
     for(const ano of s.anos||[]){const url=linkSeguroProtecaoGestor(ano.url);if(url){const a=criar('a','Ano '+ano.ano+' · '+(ano.estado==='FECHADO'?'fechado, somente leitura':'aberto'),'block text-sky-200 underline');a.href=url;a.target='_blank';a.rel='noopener noreferrer';lista.append(a);}}
     if(s.erroRelatorios)lista.append(criar('p','Relatórios: '+s.erroRelatorios,'text-amber-300'));
+    if(s.resumoPlanilha)lista.append(criar('p',s.resumoPlanilha.pendente?'Resumo da planilha: atualização pendente no Google. Os lançamentos confirmados já estão salvos; você pode fechar o app.':s.resumoPlanilha.modo==='segundo_plano'?'Resumo da planilha: atualização em segundo plano ativada.':'Resumo da planilha: atualização imediata. Para ativar o segundo plano, execute ativarResumoEmSegundoPlanoGestor no Apps Script.','text-xs text-slate-200'));
+    if(s.resumoPlanilha?.erro)lista.append(criar('p','Resumo: '+s.resumoPlanilha.erro,'text-amber-300'));
+    if(s.resumoPlanilha?.rotinaInstalada===false)lista.append(criar('p','A rotina do resumo não foi encontrada nesta conta. Execute ativarResumoEmSegundoPlanoGestor no editor da conta proprietária da implantação para reinstalar.','text-amber-300'));
     if(s.avisoApresentacaoAnual)lista.append(criar('p','Apresentação anual: '+s.avisoApresentacaoAnual,'text-amber-300'));
     if(s.avisoBackupAssistido)lista.append(criar('p',s.avisoBackupAssistido,'text-amber-300'));
     if(s.ultimaCopiaPreservada)lista.append(criar('p','Última cópia preservada para recuperação assistida: '+dataLegivelBackupGestor(s.ultimaCopiaPreservada.data)+'. Ela não substitui a confirmação de um backup restaurável.','text-slate-300'));
