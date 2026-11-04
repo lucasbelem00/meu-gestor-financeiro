@@ -1,7 +1,7 @@
 // Corrige somente conversão de texto em Date depois de um bloco já aplicado.
 // A igualdade do hash integral é obrigatória antes e depois da escrita.
-function recuperarDatasTextoPlanoGestor_(ss,plano){
- for(const m of plano.mudancas||[]){
+function recuperarDatasTextoPlanoGestor_(ss,plano,selecionadas){
+ for(const m of selecionadas||plano.mudancas||[]){
   const campos=m.nome==='Anotações'?[[3,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/]]:m.nome==='Planejamento'?[[5,'yyyy-MM-dd',/^\d{4}-\d{2}-\d{2}$/]]:ehAbaRegistrosGestor_(m.nome)?[[0,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/],[6,'d/M',/^\d{1,2}\/\d{1,2}$/],[8,'MM/yyyy',/^\d{2}\/\d{4}$/]]:[];
   if(!campos.length||m.modo==='anexar')continue;
   const destino=destinoMudancaAnualGestor_(ss,m,plano),sh=destino.getSheetByName(m.nome);if(!sh)continue;

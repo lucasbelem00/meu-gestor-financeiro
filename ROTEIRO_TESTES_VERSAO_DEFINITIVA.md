@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v148: publicar backend e frontend, confirmar v148 e repetir Novo/Edição aguardando Salvo. Conferir um único registro, valor, competência, parcelas e somatórias; exportar diagnóstico e comparar aplicacaoMs, aplicarDestinosMs e tempo total. Resumo pendente não deve ser confundido com envio pendente. Na cópia descartável, preservar cenários de interrupção/retomada e conversão legada de datas em notas/planejamento/registros anuais, inclusive divergência real de valor que deve continuar bloqueada. Não criar falhas artificialmente na base definitiva nem reinstalar gatilhos.
+
+
 Reteste v147: publicar backend e frontend juntos (inclui medições v146). Na cópia de testes, criar Pix passado (Pago) e futuro (Agendado); conferir aviso nos próximos sete dias e dia exato na Agenda, inclusive domingo/feriado. Corrigir data do futuro para passada: opção de pagamento sugerida, revisão e confirmação antes de Pago. Desmarcar deve preservar pendência; pendente já corrigido deve permitir marcar explicitamente. Conferir um único registro, saldo, remoção do aviso e desfazer em Atividade; versão antiga/reenvio devem manter proteções. Cartão, recorrência e Pix parcelado não usam essa exceção. Data não deve mover Mês Fatura. Conferir Ajuda recolhida, cards Não classificado e diagnóstico v147. Não criar ou desfazer movimentos reais apenas para teste; não reinstalar gatilhos.
 
 

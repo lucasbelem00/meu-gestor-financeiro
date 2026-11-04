@@ -4061,14 +4061,22 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   conferirDestinosRestauracaoGestor_(plano,ss);
   recuperarTextosTransferenciaAnualGestor_(ss,plano);
-  recuperarDatasTextoPlanoGestor_(ss,plano);
   });
   (plano.mudancas || []).forEach(function (m) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     const leituraDestino={};
-    const destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));
+    let destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));
     let sh = destino.getSheetByName(m.nome);
-    const atual = medir('aplicarLeituraMs',()=>leituraDestino.valores || lerEstadoAbaGestor_(sh)), hash = hashEstadoGestor_(atual);
+    let atual = medir('aplicarLeituraMs',()=>leituraDestino.valores || lerEstadoAbaGestor_(sh)), hash = hashEstadoGestor_(atual);
+    // Datas convertidas precisam de reparação apenas se a fotografia real
+    // divergir dos estados antes/depois do diário. No caminho normal, a mesma
+    // conferência integral dispensa uma segunda varredura preventiva.
+    if(hash!==m.antes&&hash!==m.depois){
+      medir('aplicarDestinosMs',()=>recuperarDatasTextoPlanoGestor_(ss,plano,[m]));
+      // A recuperação pode ter escrito. Nunca reaproveitar a fotografia anterior.
+      destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));sh=destino.getSheetByName(m.nome);
+      atual=medir('aplicarLeituraMs',()=>leituraDestino.valores||lerEstadoAbaGestor_(sh));hash=hashEstadoGestor_(atual);
+    }
     // Aprovação explícita só reconhece linhas já aplicadas. Nunca reescreve
     // outras linhas para fazê-las coincidir com uma fotografia antiga.
     const aprovado=plano.conferenciaAprovada;
@@ -6945,8 +6953,8 @@ function salvarPlanejamentoWeb(p){return executarOperacaoGestor_('salvarPlanejam
 // INICIO MODULO DATAS-RECUPERACAO GERADO
 // Corrige somente conversão de texto em Date depois de um bloco já aplicado.
 // A igualdade do hash integral é obrigatória antes e depois da escrita.
-function recuperarDatasTextoPlanoGestor_(ss,plano){
- for(const m of plano.mudancas||[]){
+function recuperarDatasTextoPlanoGestor_(ss,plano,selecionadas){
+ for(const m of selecionadas||plano.mudancas||[]){
   const campos=m.nome==='Anotações'?[[3,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/]]:m.nome==='Planejamento'?[[5,'yyyy-MM-dd',/^\d{4}-\d{2}-\d{2}$/]]:ehAbaRegistrosGestor_(m.nome)?[[0,'dd/MM/yyyy',/^\d{2}\/\d{2}\/\d{4}$/],[6,'d/M',/^\d{1,2}\/\d{1,2}$/],[8,'MM/yyyy',/^\d{2}\/\d{4}$/]]:[];
   if(!campos.length||m.modo==='anexar')continue;
   const destino=destinoMudancaAnualGestor_(ss,m,plano),sh=destino.getSheetByName(m.nome);if(!sh)continue;

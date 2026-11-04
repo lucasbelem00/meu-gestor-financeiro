@@ -10,6 +10,26 @@ function planoAnual(){
  return {...a,e,sh,plano:{mudancas:[m]}};
 }
 
+test('gravação anual normal dispensa varredura preventiva de datas, mantendo resultado e releitura final',()=>{
+ function executar(preventiva){const a=planoAnual();let consultas=0,recuperacoes=0;const abrir=a.ctx.SpreadsheetApp.openById,ler=a.sh.getRange,reparar=a.ctx.recuperarDatasTextoPlanoGestor_;
+  a.ctx.SpreadsheetApp.openById=function(...p){consultas++;return abrir.apply(this,p);};
+  a.sh.getRange=function(...p){const r=ler.apply(this,p);for(const k of ['getValues','getFormulas']){const f=r[k];r[k]=function(){consultas++;return f.call(this);};}return r;};
+  a.ctx.recuperarDatasTextoPlanoGestor_=function(...p){recuperacoes++;return reparar(...p);};
+  if(preventiva)a.ctx.recuperarDatasTextoPlanoGestor_(a.db,a.plano);
+  a.ctx.aplicarPlanoGestor_(a.db,a.plano);const apos=JSON.stringify(a.sh.rows);
+  assert.equal(a.sh.rows[1][1],'Editado');assert.equal(a.ctx.hashEstadoGestor_(a.ctx.lerEstadoAbaGestor_(a.sh)),a.plano.mudancas[0].depois);
+  return {consultas,recuperacoes,apos};
+ }
+ const antiga=executar(true),nova=executar(false);assert(nova.consultas<antiga.consultas);assert.equal(nova.recuperacoes,0);assert.equal(antiga.recuperacoes,1);
+ // IDs são gerados em bases isoladas: a igualdade financeira é conferida pelo hash do próprio plano.
+});
+
+test('estado divergente ainda chama recuperação específica e não encobre alteração financeira',()=>{
+ const a=planoAnual(),original=a.ctx.recuperarDatasTextoPlanoGestor_;let chamadas=0;
+ a.ctx.recuperarDatasTextoPlanoGestor_=function(ss,plano,selecionadas){chamadas++;assert.equal(selecionadas.length,1);assert.equal(selecionadas[0],a.plano.mudancas[0]);return original(ss,plano,selecionadas);};
+ a.sh.rows[1][7]=99;assert.throws(()=>a.ctx.aplicarPlanoGestor_(a.db,a.plano),/não corresponde/);assert.equal(chamadas,1);assert.equal(a.sh.rows[1][7],99);
+});
+
 test('planejamento de inclusão e edição usa a fotografia conferida com plano idêntico e bloqueia conflito posterior',()=>{
  for(const incluir of [false,true]){
   const a=planoAnual(),conferidos=a.ctx.dadosAnoGestor_(a.e).abas.find(x=>x.nome==='Lançamentos').valores,depois=clone(conferidos);
