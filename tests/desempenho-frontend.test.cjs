@@ -43,11 +43,61 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+function snapshotConfirmado(saldo=20){return {versao:1,dados:{protocoloGestor:18,integridade:{bloqueada:false,pendencias:[]},epocaRestauracao:'',kpis:{totalAberto:saldo},faturas:{},lancamentos:[],formasPagamento:[],configCategorias:[],emprestimos:{itens:[]},versoesConfiguracao:{formas:'f',categorias:'c'}}};}
+
+test('Novo/Edição confirmados atualizam a tela uma vez sem consulta completa adicional',async()=>{
+ for(const acao of ['salvarLancamentoWeb','editarLancamentoLinhaWeb']){
+  const chamadas=[],ingeridos=[];const a=ambiente(async nome=>{chamadas.push(nome);return nome===acao?{sucesso:true,atualizacaoDados:snapshotConfirmado()}:{saldo:99};},true,{receberEstadoDadosCompletosGestor:d=>ingeridos.push(d)});
+  await a.ctx.apiCall(acao,{incluirAtualizacaoDados:true});
+  assert.equal(a.renderizados.length,0);
+  const p=a.ctx.carregarDados(),q=a.ctx.carregarDados();assert.equal(p,q);assert.equal(await p,true);await q;
+  assert.deepEqual(chamadas,[acao]);assert.equal(a.renderizados.length,1);assert.equal(a.renderizados[0].kpis.totalAberto,20);assert.equal(ingeridos.length,1);assert.equal(a.ctx.obterMetricasDesempenhoGestor().atualizacoesConfirmadas,1);
+  await a.ctx.carregarDados();assert.deepEqual(chamadas,[acao,'getDadosCompletos']);
+ }
+});
+
+test('API interna não consome snapshot e resposta sem opt-in ou de outra ação usa rede normal',async()=>{
+ for(const [acao,param] of [['salvarLancamentoWeb',{}],['salvarCategoriasWeb',{incluirAtualizacaoDados:true}]]){
+  let completas=0;const a=ambiente(async nome=>nome==='getDadosCompletos'?(completas++,{saldo:99}):{atualizacaoDados:snapshotConfirmado()},true,{receberEstadoDadosCompletosGestor(){throw Error('não consumir');}});
+  await a.ctx.apiCall(acao,param);assert.equal(await a.ctx.carregarDados(),true);assert.equal(completas,1);
+ }
+ let completas=0;const a=ambiente(async nome=>nome==='getDadosCompletos'?(completas++,{saldo:99}):{atualizacaoDados:snapshotConfirmado()},true,{receberEstadoDadosCompletosGestor(){throw Error('não consumir');}});
+ await a.ctx.apiCall('salvarLancamentoWeb',{incluirAtualizacaoDados:true});await a.ctx.apiCall('getDadosCompletos');assert.equal(completas,1);
+});
+
+test('invalidação durante ou depois da mutação impede aplicar snapshot confirmado antigo',async()=>{
+ for(const durante of [true,false]){
+  const chamadas=[];const a=ambiente(nome=>new Promise(resolve=>chamadas.push({nome,resolve})),true,{receberEstadoDadosCompletosGestor(){throw Error('não aplicar');}});
+  const envio=a.ctx.apiCall('salvarLancamentoWeb',{incluirAtualizacaoDados:true});await aguardar();
+  if(durante)a.eventos.storage({key:'gestorEpocaRestauracaoV1'});
+  chamadas[0].resolve({atualizacaoDados:snapshotConfirmado()});await envio;
+  if(!durante)a.eventos.storage({key:'gestorEpocaRestauracaoV1'});
+  const recarga=a.ctx.carregarDados();await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].nome,'getDadosCompletos');
+  chamadas[1].resolve({saldo:99});assert.equal(await recarga,true);assert.equal(a.renderizados[0].saldo,99);
+ }
+});
+
+test('snapshot opcional inválido, expirado ou com falha de ingestão não prejudica confirmação e usa rede',async()=>{
+ for(const valor of [undefined,{versao:2,dados:{}},{versao:1,dados:{}},snapshotConfirmado()]){
+  let completas=0;const a=ambiente(async nome=>nome==='getDadosCompletos'?(completas++,{saldo:99}):{confirmado:true,atualizacaoDados:valor},true,{receberEstadoDadosCompletosGestor(){throw Error('ingestão falhou');}});
+  assert.equal((await a.ctx.apiCall('salvarLancamentoWeb',{incluirAtualizacaoDados:true})).confirmado,true);assert.equal(await a.ctx.carregarDados(),true);assert.equal(completas,1);
+ }
+ let agora=1000;const c=coordenador({agora:()=>agora,executar:async()=>({atualizacaoDados:snapshotConfirmado()})});
+ await c.chamar('salvarLancamentoWeb',{incluirAtualizacaoDados:true});agora+=15000;assert.equal(c.consumirAtualizacaoConfirmada(),null);
+});
+
+test('invalidação em microtask entre consumo e render impede promover snapshot antigo',async()=>{
+ let a;const chamadas=[];
+ a=ambiente(async nome=>{chamadas.push(nome);return nome==='getDadosCompletos'?{saldo:99}:{atualizacaoDados:snapshotConfirmado()};},true,{receberEstadoDadosCompletosGestor(){Promise.resolve().then(()=>a.eventos.storage({key:'gestorEpocaRestauracaoV1'}));}});
+ await a.ctx.apiCall('salvarLancamentoWeb',{incluirAtualizacaoDados:true});assert.equal(await a.ctx.carregarDados(),true);
+ assert.deepEqual(chamadas,['salvarLancamentoWeb','getDadosCompletos']);assert.equal(a.renderizados.length,1);assert.equal(a.renderizados[0].saldo,99);assert.equal(a.ctx.obterMetricasDesempenhoGestor().atualizacoesConfirmadas,0);
+});
+
 test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',async()=>{
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v139');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v140');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

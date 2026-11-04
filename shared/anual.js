@@ -25,7 +25,10 @@ function dadosAnoGestor_(e){
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
   if(e.estado==='FECHADO'&&hashGestor_(dados)!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;
 }
-function cabFinanceiroAnualGestor_(ss,nome){const sh=ss.getSheetByName(nome);return normalizarMatrizProtecaoGestor_([sh?.getDataRange().getValues()[0]||Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0];}
+function cabFinanceiroAnualGestor_(ss,nome){
+  const sh=ss.getSheetByName(nome),colunas=sh&&typeof sh.getMaxColumns==='function'?Math.min(COLUNAS_GESTOR_,sh.getMaxColumns()):COLUNAS_GESTOR_;
+  return normalizarMatrizProtecaoGestor_([sh?sh.getRange(1,1,1,colunas).getValues()[0]:Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0];
+}
 function novaPlanilhaAnoGestor_(ss,pasta,ano,lote,dados,estadoVisual='ABERTO'){
   const nome='Gestor '+ano+' — '+hashGestor_(propriedade_(CHAVE_ID_PLANILHA_GESTOR)).slice(0,10)+' — '+lote;
   const candidatos=pasta.getFilesByName(nome);let destino;
@@ -143,10 +146,18 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
   if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(ctx.ssReal.getSheetByName(n)?.getLastRow()||0)>1))return mudancas;
   const ss=ctx.ssReal,novas=[],catalogo=ctx.anosRestaurados||catalogoAnosGestor_(ss),ajustes=ajustesAnuaisGestor_(ss).filter(r=>!ctx.ss.abas[r[0]]);
+  // Fotografia exclusiva desta construção de plano. As duas origens usam o
+  // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova
+  // chamada e a aplicação do plano conferem os destinos reais novamente.
+  const anosConferidos=new Map(),lerAno=e=>{
+    const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
+    if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
+    return copiarGestor_(anosConferidos.get(chave));
+  };
   for(const nome of ['Lançamentos','Empréstimos']){
     const aba=ctx.ss.abas[nome];if(!aba)continue;
     const fechados=new Map(),porAno=new Map();
-    for(const e of catalogo)if(e.estado==='FECHADO')for(const r of dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
+    for(const e of catalogo)if(e.estado==='FECHADO')for(const r of lerAno(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
     const vistos=new Set();for(const [indice,r0] of aba.valores.slice(1).entries()){
       if(!r0.some(v=>v!==''&&v!=null))continue;const r=copiarGestor_(r0),id=String(r[11]);if(!id||vistos.has(id))throw Error('Identificação anual repetida.');vistos.add(id);
       const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<ANO_MIN_COMPETENCIA_GESTOR_||ano>ANO_MAX_COMPETENCIA_GESTOR_)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
@@ -158,7 +169,7 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     for(const [id,o] of fechados)if(!vistos.has(id))ajustes.push([nome,id,o.ano,hashGestor_(o.r),'EXCLUIDO','']);
     for(const ano of porAno.keys())if(!catalogo.some(e=>e.ano===ano)){const e=garantirAnoGestor_(ss,ano);catalogo.push(e);}
     for(const e of catalogo.filter(e=>e.estado==='ABERTO')){
-      const conferidos=dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores,cab=conferidos[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
+      const conferidos=lerAno(e).abas.find(a=>a.nome===nome).valores,cab=conferidos[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
       const m=mudancaMatrizAnualGestor_(ss,nome,depois,e,conferidos);if(m)novas.push(m);
     }
     const m=mudancaMatrizAnualGestor_(ss,nome,[normalizarMatrizProtecaoGestor_([aba.valores[0]],COLUNAS_GESTOR_)[0]]);if(m)novas.push(m);

@@ -15,7 +15,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     const etapas = [espera, preparacao, execucao, plano, gravacaoInicio ? Date.now() - gravacaoInicio : 0].map(n => Math.max(0, Math.round(Number(n) || 0)));
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -4341,6 +4341,42 @@ function aplicarAnexoTecnicoGestor_(ss, m) {
   SpreadsheetApp.flush();
 }
 
+function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade) {
+  if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb'].includes(ctx.action))return null;
+  const anterior=CONTEXTO_GESTOR_,somenteLeitura=ctx.somenteLeitura;
+  try {
+    const estados=new Map(Object.entries(ctx.ss.abas).map(function([nome,aba]){return [nome,hashEstadoGestor_(aba.valores)];}));
+    // A operação já está confirmada. Este retrato é apenas uma atualização da
+    // tela: não executa manutenção nem acrescenta novas mudanças ao plano.
+    ctx.somenteLeitura=true;CONTEXTO_GESTOR_=ctx;
+    // A consulta habitual pode gerar uma ocorrência ao virar o mês. Ensaiar
+    // somente no contexto virtual; se houver mudança, usar a consulta normal
+    // com seu próprio plano recuperável, sem devolver um retrato incompleto.
+    if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞'))processarAssinaturasAutomaticas(ctx.ss.getSheetByName('Lançamentos'));
+    const dados=getDadosCompletos();
+    if(!dados||dados.erro||dados.error||dados.protocoloGestor!==18)return null;
+    // Fórmulas particulares em entradas podem ter recalculado depois da
+    // escrita real. Não promover valores calculados da fotografia anterior.
+    const formula=v=>typeof v==='string'&&v.startsWith('=');
+    for(const nome of ['Lançamentos','Empréstimos'])if(ctx.ss.abas[nome]?.valores.some(r=>r.some(formula)))return null;
+    if(ctx.ss.abas['Formas de Pagamento']?.valores.slice(6).some(r=>r.slice(1,7).some(formula)))return null;
+    if(ctx.ss.abas['Dashboard & Resumo']?.valores.slice(16,41).some(r=>formula(r[1])||formula(r[3])))return null;
+    // Abrir uma aba ainda não lida pode migrar controles ou criar cabeçalhos.
+    // Nesse caso, a consulta normal fará a manutenção pelo executor completo.
+    for(const [nome,aba] of Object.entries(ctx.ss.abas)){
+      const esperado=estados.has(nome)?estados.get(nome):hashEstadoGestor_(aba.antes);
+      if(hashEstadoGestor_(aba.valores)!==esperado)return null;
+    }
+    informarOrigemAnualResultadoGestor_(dados,ctx);
+    dados.integridade=copiarGestor_(integridade||{bloqueada:false,pendencias:[]});
+    if(ctx.ss.abas['Lançamentos'])dados.integridade.series=pendenciasSeriesGestor_(ctx);
+    const atualizacao={versao:1,dados:dados};
+    // Limite conservador sem transferir outro payload grande pelo proxy.
+    if(JSON.stringify(atualizacao).length*2>700000)return null;
+    return atualizacao;
+  } catch(_) { return null; }
+  finally {CONTEXTO_GESTOR_=anterior;ctx.somenteLeitura=somenteLeitura;}
+}
 function executarOperacaoGestor_(acao, param, executar, leitura) {
   if (CONTEXTO_GESTOR_) return executar();
   const detalhesGravacaoGestor={};
@@ -4423,6 +4459,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'confirmacaoMs',function(){diario.getRange(inicio, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush();});
     if(ctx.financeiroAlterado&&typeof atualizarResumoNativoGestor_==='function')medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'resumoMs',function(){try{atualizarResumoNativoGestor_(real,detalhesGravacaoGestor);}catch(e){const c=configProtecaoGestor_();c.erroRelatorios='Resumo da planilha: '+String(e.message||e).slice(0,250);salvarConfigProtecaoGestor_(c);}});
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'manutencaoMs',function(){confirmarManutencaoLeituraGestor_(ctx);});
+    if(!leitura&&param?.incluirAtualizacaoDados===true&&resultado&&typeof resultado==='object'&&!Array.isArray(resultado)){
+      const atualizacao=medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'atualizacaoMs',function(){return montarAtualizacaoDadosConfirmadaGestor_(ctx,resultado.integridade);});
+      if(atualizacao)resultado.atualizacaoDados=atualizacao;
+    }
     return resultado;
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
@@ -6206,7 +6246,10 @@ function dadosAnoGestor_(e){
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
   if(e.estado==='FECHADO'&&hashGestor_(dados)!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;
 }
-function cabFinanceiroAnualGestor_(ss,nome){const sh=ss.getSheetByName(nome);return normalizarMatrizProtecaoGestor_([sh?.getDataRange().getValues()[0]||Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0];}
+function cabFinanceiroAnualGestor_(ss,nome){
+  const sh=ss.getSheetByName(nome),colunas=sh&&typeof sh.getMaxColumns==='function'?Math.min(COLUNAS_GESTOR_,sh.getMaxColumns()):COLUNAS_GESTOR_;
+  return normalizarMatrizProtecaoGestor_([sh?sh.getRange(1,1,1,colunas).getValues()[0]:Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0];
+}
 function novaPlanilhaAnoGestor_(ss,pasta,ano,lote,dados,estadoVisual='ABERTO'){
   const nome='Gestor '+ano+' — '+hashGestor_(propriedade_(CHAVE_ID_PLANILHA_GESTOR)).slice(0,10)+' — '+lote;
   const candidatos=pasta.getFilesByName(nome);let destino;
@@ -6324,10 +6367,18 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
   if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(ctx.ssReal.getSheetByName(n)?.getLastRow()||0)>1))return mudancas;
   const ss=ctx.ssReal,novas=[],catalogo=ctx.anosRestaurados||catalogoAnosGestor_(ss),ajustes=ajustesAnuaisGestor_(ss).filter(r=>!ctx.ss.abas[r[0]]);
+  // Fotografia exclusiva desta construção de plano. As duas origens usam o
+  // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova
+  // chamada e a aplicação do plano conferem os destinos reais novamente.
+  const anosConferidos=new Map(),lerAno=e=>{
+    const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
+    if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
+    return copiarGestor_(anosConferidos.get(chave));
+  };
   for(const nome of ['Lançamentos','Empréstimos']){
     const aba=ctx.ss.abas[nome];if(!aba)continue;
     const fechados=new Map(),porAno=new Map();
-    for(const e of catalogo)if(e.estado==='FECHADO')for(const r of dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
+    for(const e of catalogo)if(e.estado==='FECHADO')for(const r of lerAno(e).abas.find(a=>a.nome===nome).valores.slice(1))fechados.set(String(r[11]),{r:r,ano:e.ano});
     const vistos=new Set();for(const [indice,r0] of aba.valores.slice(1).entries()){
       if(!r0.some(v=>v!==''&&v!=null))continue;const r=copiarGestor_(r0),id=String(r[11]);if(!id||vistos.has(id))throw Error('Identificação anual repetida.');vistos.add(id);
       const ano=parseMesFat(r[8]).a;if(!Number.isInteger(ano)||ano<ANO_MIN_COMPETENCIA_GESTOR_||ano>ANO_MAX_COMPETENCIA_GESTOR_)throw Error('Competência anual inválida em '+nome+' (registro '+(indice+1)+'). Confira o campo Mês Fatura (MM/AAAA).');
@@ -6339,7 +6390,7 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     for(const [id,o] of fechados)if(!vistos.has(id))ajustes.push([nome,id,o.ano,hashGestor_(o.r),'EXCLUIDO','']);
     for(const ano of porAno.keys())if(!catalogo.some(e=>e.ano===ano)){const e=garantirAnoGestor_(ss,ano);catalogo.push(e);}
     for(const e of catalogo.filter(e=>e.estado==='ABERTO')){
-      const conferidos=dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores,cab=conferidos[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
+      const conferidos=lerAno(e).abas.find(a=>a.nome===nome).valores,cab=conferidos[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
       const m=mudancaMatrizAnualGestor_(ss,nome,depois,e,conferidos);if(m)novas.push(m);
     }
     const m=mudancaMatrizAnualGestor_(ss,nome,[normalizarMatrizProtecaoGestor_([aba.valores[0]],COLUNAS_GESTOR_)[0]]);if(m)novas.push(m);

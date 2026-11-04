@@ -1,0 +1,86 @@
+const {test}=require('node:test'),assert=require('node:assert/strict');
+const {boot,fixture,personal,loan,launch,clone}=require('./fixtures/gestor-mocks.cjs');
+const {ambienteProtecao}=require('./fixtures/protecao-mocks.cjs');
+const api=(a,n,p)=>a.ctx.executarAcaoApi_(n,p);
+function iniciar(dados=fixture()) {const a=boot(dados);api(a,'getDadosCompletos');return a;}
+function conferir(a,r){
+ assert.equal(r.atualizacaoDados?.versao,1);
+ const d=r.atualizacaoDados.dados,atual=api(a,'getDadosCompletos');
+ for(const k of Object.keys(atual).filter(k=>k!=='historicoTecnico'))assert.equal(JSON.stringify(d[k]),JSON.stringify(atual[k]),k);
+ assert.equal(d.integridade.bloqueada,false);
+}
+function editar(a,r,extras={}){return api(a,'editarLancamentoLinhaWeb',{incluirAtualizacaoDados:true,requestId:'snapshot-editar-001',registroId:r[11],compraId:r[12],versao:r[13],linha:2,descOriginal:r[1],mesOriginal:r[8],parcelaOriginal:r[6],descricao:'Descrição atualizada',dataCompra:'16/10/2026',formaPagto:'Cartao',categoria:'Teste',valorParcela:r[7],mesFatura:r[8],status:r[9],tags:'#teste',...extras});}
+
+test('novo devolve retrato completo confirmado sem persistir retrato no diário nem duplicar reenvio',()=>{
+ const a=iniciar(),p={...launch,incluirAtualizacaoDados:true,requestId:'snapshot-novo-001'};
+ const r=api(a,'salvarLancamentoWeb',p);conferir(a,r);
+ assert(!JSON.stringify(a.db.sheets['_Gestor_Operacoes'].rows).includes('atualizacaoDados'));
+ const ids=a.db.sheets['Lançamentos'].rows.slice(1).map(r=>r[11]);
+ const repetido=api(a,'salvarLancamentoWeb',p);assert.equal(repetido.atualizacaoDados,undefined);assert.deepEqual(a.db.sheets['Lançamentos'].rows.slice(1).map(r=>r[11]),ids);
+});
+
+test('edição devolve valores e versões finais iguais à consulta real sem alterar outras parcelas',()=>{
+ const a=iniciar(fixture([personal('Original',30)],[loan('Ana','A Receber',20,'Cartao')])),antes=clone(a.db.sheets['Lançamentos'].rows[1]);
+ const r=editar(a,antes,{valorParcela:45});conferir(a,r);
+ const linha=r.atualizacaoDados.dados.lancamentos.find(x=>x[13]===antes[11]);assert.equal(linha[15],antes[13]+1);assert.equal(linha[1],'Descrição Atualizada');assert.equal(a.db.sheets['Empréstimos'].rows[1][9],'A Receber');
+});
+
+test('cliente sem opt-in mantém resultado anterior sem retrato',()=>{
+ const a=iniciar(),r=api(a,'salvarLancamentoWeb',{...launch,requestId:'snapshot-sem-opt-in-001'});assert.equal(r.atualizacaoDados,undefined);
+});
+
+test('fórmula particular em configuração exige consulta real em vez de valores calculados anteriores',()=>{
+ const a=iniciar();a.db.sheets['Dashboard & Resumo'].getRange(17,4).setValue('=500');
+ const r=api(a,'salvarLancamentoWeb',{...launch,incluirAtualizacaoDados:true,requestId:'snapshot-formula-001'});
+ assert.equal(r.atualizacaoDados,undefined);assert.equal(a.db.sheets['Lançamentos'].rows.length,4);assert.equal(a.db.sheets['Dashboard & Resumo'].getRange(17,4).getFormulas()[0][0],'=500');
+});
+
+test('fluxo completo com retrato reduz leituras reais comparado a salvar e consultar de novo',()=>{
+ function executar(retrato){
+  const a=iniciar(fixture([], [loan('Ana','A Receber',20,'Cartao')]));let leituras=0;
+  for(const sh of Object.values(a.db.sheets)){
+   const obter=sh.getRange;sh.getRange=function(...args){const r=obter.apply(this,args);for(const campo of ['getValues','getFormulas','getDisplayValues','getValue']){const ler=r[campo];if(ler)r[campo]=function(){leituras++;return ler.apply(this,arguments);};}return r;};
+  }
+  const res=api(a,'salvarLancamentoWeb',{...launch,incluirAtualizacaoDados:retrato,requestId:'snapshot-comparacao-001'});
+  const dados=retrato?res.atualizacaoDados?.dados:api(a,'getDadosCompletos');assert(dados);return {leituras,dados};
+ }
+ const antes=executar(false),depois=executar(true);assert(depois.leituras<antes.leituras,JSON.stringify({antes:antes.leituras,depois:depois.leituras}));
+ assert.equal(JSON.stringify(antes.dados.kpis),JSON.stringify(depois.dados.kpis));
+});
+
+test('recorrência e Pix mantêm projeções e controles no retrato confirmado',()=>{
+ for(const pix of [false,true]){
+  const a=iniciar(),r=api(a,'salvarLancamentoWeb',{...launch,formaPagto:pix?'Pix':'Cartao',numParcelas:1,isAssinatura:true,statusInicial:'Assinatura Ativa',incluirAtualizacaoDados:true,requestId:'snapshot-recorrencia-'+pix});
+  conferir(a,r);
+ }
+});
+
+test('virada do mês com ocorrência pendente usa consulta habitual e não grava manutenção após confirmação',()=>{
+ const a=iniciar();api(a,'salvarLancamentoWeb',{...launch,numParcelas:1,isAssinatura:true,statusInicial:'Assinatura Ativa',requestId:'snapshot-fixo-anterior'});
+ a.ctx.getHojeSeguro=()=>new Date(2026,10,16);
+ const r=api(a,'salvarLancamentoWeb',{...launch,descricao:'Compra nova',dataCompra:'16/11/2026',mesPrimeiraFatura:'11/2026',numParcelas:1,incluirAtualizacaoDados:true,requestId:'snapshot-virada-001'});
+ assert.equal(r.atualizacaoDados,undefined);
+ assert.equal(a.db.sheets['Lançamentos'].rows.filter(x=>String(x[6]).includes('∞')&&String(x[8]).includes('11/2026')).length,0);
+ api(a,'getDadosCompletos');assert.equal(a.db.sheets['Lançamentos'].rows.filter(x=>String(x[6]).includes('∞')&&String(x[8]).includes('11/2026')).length,1);
+});
+
+test('falha acessória ao montar retrato preserva gravação confirmada e reenvio protegido',()=>{
+ const a=iniciar(),get=a.ctx.getDadosCompletos;a.ctx.getDadosCompletos=()=>{throw Error('falha de retrato');};
+ const p={...launch,incluirAtualizacaoDados:true,requestId:'snapshot-falha-001'},r=api(a,'salvarLancamentoWeb',p);assert.equal(r.atualizacaoDados,undefined);
+ assert(a.db.sheets['_Gestor_Operacoes'].rows.some(x=>x[0]==='salvarLancamentoWeb:'+p.requestId&&x[2]==='CONFIRMADO'));
+ a.ctx.getDadosCompletos=get;assert.equal(api(a,'salvarLancamentoWeb',p).atualizacaoDados,undefined);assert.equal(a.db.sheets['Lançamentos'].rows.length,4);
+});
+
+test('migração virtual ou retrato grande usa fallback sem gravar mudanças acessórias',()=>{
+ for(const migrar of [true,false]){
+  const a=iniciar(),get=a.ctx.getDadosCompletos;
+  a.ctx.getDadosCompletos=()=>{const dados=get();if(migrar)a.ctx.obterPlanilhaGestor_().getSheetByName('Dashboard & Resumo').getRange(1,1).setValue('migração');else dados.extra='x'.repeat(400000);return dados;};
+  const r=api(a,'salvarLancamentoWeb',{...launch,incluirAtualizacaoDados:true,requestId:'snapshot-fallback-'+String(migrar)});assert.equal(r.atualizacaoDados,undefined);assert.notEqual(a.db.sheets['Dashboard & Resumo'].rows[0][0],'migração');
+ }
+});
+
+test('retrato pós-confirmação preserva parcelas entre anos e informação do ano fechado',()=>{
+ const a=ambienteProtecao(fixture([personal('Antigo',30,'1/1','12/2025')]));a.ativar();a.ctx.cicloAnualGestor_(a.db,a.pasta);
+ const r=api(a,'salvarLancamentoWeb',{...launch,mesPrimeiraFatura:'12/2026',incluirAtualizacaoDados:true,requestId:'snapshot-anos-001'});conferir(a,r);
+ const antigo=r.atualizacaoDados.dados.lancamentos.find(x=>x[1]==='Antigo');assert.equal(antigo[21]?.ano,2025);
+});

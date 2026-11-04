@@ -16,7 +16,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const cargasCompletas = new Set();
   const mutacoesPendentes = new Set();
   let respostaCompletaAtual = null;
-  const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
+  let atualizacaoConfirmada = null;
+  const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0 };
   const motivosInvalidacao = new Set(['externa','mutacao_inicio','mutacao_fim','carga_completa','online','foco','armazenamento','visivel']);
   const invalidacoesPorMotivo = {}, ultimasInvalidacoes = [], ultimosDescartes = [];
   let geracao = 0, bytes = 0;
@@ -42,6 +43,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     ultimasInvalidacoes.push({instante:agora(),geracao,motivo});if(ultimasInvalidacoes.length>20)ultimasInvalidacoes.shift();
     cache.clear(); bytes = 0;
     respostaCompletaAtual = null;
+    atualizacaoConfirmada = null;
     // Promessas anteriores seguem observadas por seus solicitantes, sem serem
     // reaproveitadas por consultas iniciadas depois desta invalidação.
     consultas.clear();
@@ -139,18 +141,41 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       catch (erro) { return Promise.reject(erro); }
     }
     invalidar('mutacao_inicio');
-    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).finally(()=>invalidar('mutacao_fim'));
+    const versaoInicio=geracao;let respostaConfirmada;
+    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
+      const mesmaGeracao=geracao===versaoInicio;
+      invalidar('mutacao_fim');
+      // O servidor só acrescenta este snapshot depois de confirmar a gravação.
+      // Qualquer outra alteração/retomada durante o envio exige consulta normal.
+      try{
+        const snapshot=respostaConfirmada?.atualizacaoDados,d=snapshot?.dados;
+        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb'].includes(acao)&&snapshot?.versao===1&&
+          d&&typeof d==='object'&&!Array.isArray(d)&&Number(d.protocoloGestor)>=18&&!d.erro&&!d.error&&
+          d.integridade&&d.integridade.bloqueada===false&&typeof d.epocaRestauracao==='string'&&
+          d.kpis&&d.faturas&&Array.isArray(d.lancamentos)&&Array.isArray(d.formasPagamento)&&
+          Array.isArray(d.configCategorias)&&Array.isArray(d.emprestimos?.itens)&&d.versoesConfiguracao){
+          const serializado=JSON.stringify(d);
+          if(serializado.length*2<=limiteBytes)atualizacaoConfirmada={geracao,instante:agora(),dados:JSON.parse(serializado)};
+        }
+      }catch(_){/* Acessório opcional nunca transforma confirmação em erro. */}
+    });
     mutacoesPendentes.add(mutacao);
     mutacao.then(()=>mutacoesPendentes.delete(mutacao),()=>mutacoesPendentes.delete(mutacao));
     return mutacao;
   }
   return {
     chamar, invalidar,
+    consumirAtualizacaoConfirmada:()=>{
+      const item=atualizacaoConfirmada;atualizacaoConfirmada=null;
+      if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
+      return copiar(item.dados);
+    },
+    registrarAtualizacaoConfirmada:()=>{metricas.atualizacoesConfirmadas++;},
     // Só recargas visuais usam esta espera. A API de confirmação/protocolo
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v139', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v140', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -179,6 +204,35 @@ window.apiCall = function(acao, param, ...extras) {
 };
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
+const geracoesAtualizacaoRecargaGestor=new WeakMap();
+function validarAtualizacaoDadosRecargaGestor(dados){
+  const geracao=geracoesAtualizacaoRecargaGestor.get(dados);
+  return geracao===undefined||geracao===coordenadorLeiturasDesempenhoGestor.geracao();
+}
+function concluirAtualizacaoDadosRecargaGestor(dados){
+  if(!geracoesAtualizacaoRecargaGestor.has(dados)||!validarAtualizacaoDadosRecargaGestor(dados))return;
+  geracoesAtualizacaoRecargaGestor.delete(dados);
+  coordenadorLeiturasDesempenhoGestor.registrarAtualizacaoConfirmada();
+  try{
+    if(typeof registrarDiagnosticoAtividadeGestor==='function')registrarDiagnosticoAtividadeGestor('atualizacaoDadosConfirmada',null,0);
+    if(typeof gravarArmazenamentoGestor==='function')gravarArmazenamentoGestor('gestorUltimaAtualizacaoV1',JSON.stringify(Date.now()));
+  }catch(_){/* Diagnóstico opcional não invalida a atualização já aplicada. */}
+}
+
+// Somente a recarga visual pode consumir a resposta da gravação. Consultas
+// internas de protocolo, confirmação e API direta continuam consultando a rede.
+function consultarDadosRecargaGestor(){
+  const dados=coordenadorLeiturasDesempenhoGestor.consumirAtualizacaoConfirmada();
+  if(dados){
+    try{
+      if(typeof receberEstadoDadosCompletosGestor!=='function')throw Error('Ingestão indisponível');
+      receberEstadoDadosCompletosGestor(dados);
+      geracoesAtualizacaoRecargaGestor.set(dados,coordenadorLeiturasDesempenhoGestor.geracao());
+      return Promise.resolve(dados);
+    }catch(_){/* Falha na ingestão opcional recorre à consulta completa normal. */}
+  }
+  return apiCall('getDadosCompletos');
+}
 
 // Durante a troca de período, os números e botões do mês anterior ficam
 // cobertos e fora do foco. A estrutura mantém sua altura para não saltar.

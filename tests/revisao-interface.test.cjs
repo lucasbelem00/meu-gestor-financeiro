@@ -27,6 +27,16 @@ function contextoCompartilhamento(api,local=armazenamento()){
  const ctx=vm.createContext({localStorage:local,leiturasAtividadeGestor:new Set(['getDadosCompletos','obterRelatorioMes','obterRelatorioAnual']),limparCachesAposRestauracaoGestor(){},integridadeServidorGestor:{bloqueada:false},atualizarIntegridadeServidorGestor(){},conferirPendenciasGestor:async()=>({confirmadas:0}),apiCall:api});ctx.window=ctx;
  carregarCatalogo(ctx);vm.runInContext(helpers+trecho('const apiAntesDesempenhoGestor = window.apiCall;','// A restauração é gerada a partir de interface/restauracao.js.'),ctx);return ctx;
 }
+
+test('ingestão compartilhada de dados confirmados atualiza identidades, época, integridade e pendências',async()=>{
+ const local=armazenamento(),ctx=contextoCompartilhamento(async()=>({}),local),identidades=[],integridades=[];let limpezas=0,conferencias=0;
+ ctx.registrarIdentidadesGestor=(...args)=>identidades.push(args);ctx.atualizarIntegridadeServidorGestor=i=>integridades.push(i);ctx.limparCachesAposRestauracaoGestor=()=>limpezas++;ctx.conferirPendenciasGestor=async()=>conferencias++;
+ local.setItem('gestorRestauracaoEmAndamentoV1','epoca-atual');
+ const dados={protocoloGestor:18,epocaRestauracao:'epoca-atual',integridade:{bloqueada:false}};
+ assert.equal(ctx.receberEstadoDadosCompletosGestor(dados),dados);await new Promise(r=>setImmediate(r));
+ assert.equal(identidades[0][0],'getDadosCompletos');assert.equal(identidades[0][1],dados);assert.equal(identidades[0][2],true);
+ assert.equal(local.getItem('gestorEpocaRestauracaoV1'),'epoca-atual');assert.equal(local.getItem('gestorRestauracaoEmAndamentoV1'),null);assert.equal(limpezas,1);assert.equal(integridades[0],dados.integridade);assert.equal(conferencias,1);
+});
 test('consultas mensais iguais compartilham envio sem reutilizar outro mês ou leitura anterior à gravação',async()=>{
  const chamadas=[];const ctx=contextoCompartilhamento((a,p)=>new Promise(resolve=>chamadas.push({a,p,resolve})));
  const p1=ctx.apiCall('obterRelatorioMes','10/2026'),p2=ctx.apiCall('obterRelatorioMes','10/2026'),p3=ctx.apiCall('obterRelatorioMes','11/2026');
