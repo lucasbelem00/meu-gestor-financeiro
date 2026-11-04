@@ -43,6 +43,37 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+test('filtros diferentes não acumulam envios; só o último filtro visual pendente é enviado',async()=>{
+ const chamadas=[];let atual=1;const c=coordenador({executar:(acao,param)=>new Promise(resolve=>chamadas.push({acao,param,resolve}))});
+ const a=c.consultarHistorico({termo:'a'},()=>atual===1),cancelarA=assert.rejects(a,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();
+ atual=2;const b=c.consultarHistorico({termo:'b'},()=>atual===2),cancelarB=assert.rejects(b,e=>e.codigo==='CONSULTA_SUBSTITUIDA');
+ atual=3;const ultimo=c.consultarHistorico({termo:'c'},()=>atual===3);await aguardar();assert.equal(chamadas.length,1);
+ chamadas[0].resolve({itens:['a']});await cancelarA;await cancelarB;await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].param.termo,'c');
+ chamadas[1].resolve({itens:['c']});assert.equal((await ultimo).itens[0],'c');
+});
+
+test('consultas diretas de histórico preservam todas as páginas e compartilham pedidos iguais',async()=>{
+ const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise(resolve=>chamadas.push({param,resolve}))});
+ const a=c.chamar('filtrarLancamentosWeb',{offset:0}),igual=c.chamar('filtrarLancamentosWeb',{offset:0}),b=c.chamar('filtrarLancamentosWeb',{offset:50});
+ await aguardar();assert.equal(chamadas.length,1);chamadas[0].resolve({itens:[0]});await Promise.all([a,igual]);await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].param.offset,50);chamadas[1].resolve({itens:[50]});assert.equal((await b).itens[0],50);
+});
+
+test('sair do Histórico impede reconsulta antiga e retoma o filtro ao voltar, sem cancelar gravação',async()=>{
+ let a,retomadas=0;const chamadas=[];
+ a=ambiente(acao=>new Promise(resolve=>chamadas.push({acao,resolve})),false,{abaAtivaAtual:'lancamentos',setAba:aba=>{a.ctx.abaAtivaAtual=aba;},chamarFiltroBackend:()=>retomadas++});
+ const filtro=a.ctx.consultarHistoricoVisivelGestor({termo:'x'},()=>true),cancelado=assert.rejects(filtro,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();
+ a.ctx.setAba('dashboard');const gravar=a.ctx.apiCall('salvarLancamentoWeb',{});await aguardar();
+ chamadas[0].resolve({itens:['antigo']});await cancelado;await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].acao,'salvarLancamentoWeb');
+ chamadas[1].resolve({confirmado:true});assert.equal((await gravar).confirmado,true);
+ a.ctx.setAba('lancamentos');await aguardar();assert.equal(retomadas,1);
+});
+
+test('erro tardio de consulta em tela deixada é substituído sem reenviar a consulta',async()=>{
+ const chamadas=[];const a=ambiente(acao=>new Promise((resolve,reject)=>chamadas.push({acao,resolve,reject})),false,{abaAtivaAtual:'lancamentos'});
+ const p=a.ctx.consultarHistoricoVisivelGestor({},()=>true),cancelado=assert.rejects(p,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();a.ctx.abaAtivaAtual='dashboard';
+ chamadas[0].reject(Object.assign(Error('ocupado'),{codigo:'SERVICO_OCUPADO'}));await cancelado;assert.equal(chamadas.length,1);
+});
+
 function snapshotConfirmado(saldo=20){return {versao:1,dados:{protocoloGestor:18,integridade:{bloqueada:false,pendencias:[]},epocaRestauracao:'',kpis:{totalAberto:saldo},faturas:{},lancamentos:[],formasPagamento:[],configCategorias:[],emprestimos:{itens:[]},versoesConfiguracao:{formas:'f',categorias:'c'}}};}
 
 test('Novo/Edição confirmados atualizam a tela uma vez sem consulta completa adicional',async()=>{
@@ -97,7 +128,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v142');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v143');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

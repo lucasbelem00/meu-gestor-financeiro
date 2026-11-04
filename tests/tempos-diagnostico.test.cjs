@@ -25,6 +25,14 @@ test('tempos incluem apenas ação e durações e sobrevivem a falha do log',()=
   const r=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
   assert.equal(r.totalMs,1000);assert.equal(r.gravacaoMs,200);assert.equal(r.outrosMs,100);
 });
+
+test('intervalo de servidor é opcional e validado sem aceitar intervalos inválidos',()=>{
+ const c=vm.createContext({});vm.runInContext(front,c);
+ const m={versao:1,acao:'obterRelatorioMes',totalMs:100,esperaLockMs:0,preparacaoMs:0,execucaoMs:100,planoMs:0,gravacaoMs:0,outrosMs:0,inicioServidorMs:1700000000000,fimServidorMs:1700000000100};
+ assert.equal(c.normalizarTemposServidorGestor(m.acao,m).inicioServidorMs,m.inicioServidorMs);
+ assert.equal(c.normalizarTemposServidorGestor(m.acao,{...m,fimServidorMs:m.inicioServidorMs-1}).inicioServidorMs,undefined);
+ assert.equal(c.normalizarTemposServidorGestor(m.acao,{...m,inicioServidorMs:'privado'}).inicioServidorMs,undefined);
+});
 test('subetapas preservam retorno e erro e expõem somente durações permitidas',()=>{
  let agora=0;const c=vm.createContext({Date:{now:()=>agora},console:{log(){}}});vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null;'+helper,c);
  const d={};assert.equal(c.medirEtapaGravacaoGestor_(d,'resumoMs',()=>{agora=50;return 7;}),7);

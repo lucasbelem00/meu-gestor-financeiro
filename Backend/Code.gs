@@ -14,6 +14,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     const total = Math.max(0, Date.now() - inicio);
     const etapas = [espera, preparacao, execucao, plano, gravacaoInicio ? Date.now() - gravacaoInicio : 0].map(n => Math.max(0, Math.round(Number(n) || 0)));
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
+    TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
     if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
@@ -3534,12 +3535,15 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
     .map(function (t) { return normalizarTexto(t).replace(/^#/, ''); })
     .filter(Boolean);
 
+  const formaFiltro=f.forma?chaveFormaGestor_(nomeFormaLeituraGestor_(f.forma)):'';
+  const categoriaFiltro=f.categoria?normalizarTexto(f.categoria):'';
+
   const filtrados = todas.filter(function (l) {
     if (!correspondePerfilGastoGestor_(l.r,f)) return false;
     if (f.mes && l.mes !== f.mes) return false;
     if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
-    if (f.forma && chaveFormaGestor_(l.forma) !== chaveFormaGestor_(nomeFormaLeituraGestor_(f.forma))) return false;
-    if (f.categoria && normalizarTexto(l.cat) !== normalizarTexto(f.categoria) && normalizarTexto(l.catRes) !== normalizarTexto(f.categoria)) return false;
+    if (f.forma && chaveFormaGestor_(l.forma) !== formaFiltro) return false;
+    if (f.categoria && normalizarTexto(l.cat) !== categoriaFiltro && normalizarTexto(l.catRes) !== categoriaFiltro) return false;
 
     if (f.status) {
       if (f.status === 'Pago') { if (!isStatusPago(l.status)) return false; }
@@ -4136,8 +4140,8 @@ function diagnosticarPendenciasWeb() {
   const lock=LockService.getScriptLock(); lock.waitLock(30000);
   try {
     const ss=obterPlanilhaGestor_(), diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
-    if(!diario) return {pendencias:[]};
-    return {pendencias:localizarLinhasTecnicasGestor_(diario,3,'PRONTO').map(function(linha) {
+    if(!diario) return {pendencias:[],resumoPlanilha:situacaoResumoPlanilhaGestor_()};
+    return {resumoPlanilha:situacaoResumoPlanilhaGestor_(),pendencias:localizarLinhasTecnicasGestor_(diario,3,'PRONTO').map(function(linha) {
       try { return resumirPendenciaDiarioGestor_(ss,lerOperacaoTecnicaGestor_(diario,linha)); }
       catch(e) { return pendenciaDiarioInvalidoGestor_(diario,linha,e); }
     })};
@@ -6530,7 +6534,9 @@ function lerResumoAssincronoGestor_(){
 }
 function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties().setProperty(CHAVE_RESUMO_ASSINCRONO_GESTOR_,JSON.stringify(s));}
 function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
-  try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
+  try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};
+    const e=s?.ultimaExecucao;if(e&&Number.isFinite(e.inicioServidorMs)&&e.inicioServidorMs>=0)estado.ultimaExecucao={inicioServidorMs:e.inicioServidorMs,fimServidorMs:Number.isFinite(e.fimServidorMs)?e.fimServidorMs:null,duracaoMs:Number.isFinite(e.duracaoMs)?e.duracaoMs:null};
+    if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
   catch(_){return {modo:'imediato',pendente:false,erro:'Confira a configuração do resumo em segundo plano.'};}
 }
 // Executar uma vez no editor, na conta proprietária da implantação.
@@ -6565,6 +6571,7 @@ function concluirResumoAssincronoGestor_(){
 function rotinaResumoPlanilhaGestor(){
   try{const inicial=lerResumoAssincronoGestor_();if(!inicial?.ativo||!inicial.pendente)return {pendente:false};}catch(_){return {pendente:true,erroConfiguracao:true};}
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return {pendente:true,ocupado:true};
+  let inicioExecucao=null;
   try{
     const s=lerResumoAssincronoGestor_();if(!s?.ativo||!s.pendente)return {pendente:false};
     const ss=obterPlanilhaGestor_(),diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
@@ -6572,9 +6579,13 @@ function rotinaResumoPlanilhaGestor(){
     if(diario&&localizarLinhasTecnicasGestor_(diario,3,'PRONTO').length)return {pendente:true,aguardandoConferencia:true};
     const manutencao=ss.getSheetByName(ABA_MANUTENCAO_PROTECAO_GESTOR_);
     if(manutencao&&localizarLinhasTecnicasGestor_(manutencao,2,'PRONTO').length)return {pendente:true,aguardandoConferencia:true};
+    inicioExecucao=Date.now();try{s.ultimaExecucao={inicioServidorMs:inicioExecucao,fimServidorMs:null,duracaoMs:null};salvarResumoAssincronoGestor_(s);}catch(_){}
     try{atualizarResumoNativoGestor_(ss);return {sucesso:true,pendente:false};}
     catch(e){const atual=lerResumoAssincronoGestor_();if(atual){atual.pendente=true;atual.erro=String(e.message||e).slice(0,250);salvarResumoAssincronoGestor_(atual);}return {sucesso:false,pendente:true};}
-  }finally{lock.releaseLock();}
+  }finally{
+    try{if(inicioExecucao!==null){const s=lerResumoAssincronoGestor_();if(s?.ultimaExecucao?.inicioServidorMs===inicioExecucao){const fim=Date.now();s.ultimaExecucao.fimServidorMs=fim;s.ultimaExecucao.duracaoMs=Math.max(0,fim-inicioExecucao);salvarResumoAssincronoGestor_(s);}}}catch(_){}
+    lock.releaseLock();
+  }
 }
 
 function compararAnosGastosGestor_(registros,ano){

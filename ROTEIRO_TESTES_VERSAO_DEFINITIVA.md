@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v143 (módulos 2/5/6/10): publicar backend e frontend, sem reinstalar o gatilho. Alterar rapidamente busca/filtros do Histórico, sair para outra aba e retornar: somente o filtro vigente deve aparecer, com itens e soma coerentes; conferir paginação e copiar resumo. Salvar/editar e trocar de aba deve continuar confirmando uma única gravação. Exportar diagnóstico e verificar v143, filtrosSuperados e intervalos do servidor, comparando a última execução do resumo. Consulta já enviada ou outro aparelho ainda podem gerar espera; não repetir salvamentos por demora de leitura. A ativação e conclusão do resumo em segundo plano já foram observadas na conta antes deste pacote.
+
+
 Preparado em 30/10/2026; orientação por módulos atualizada em 03/11/2026. Protocolo 17 e cache v71 identificavam o pacote original; para o estado atual, consultar CONTEXTO_COMPLETO_PARA_AUDITORIA_20261103.md. A continuação está em `PACOTE_BACKUP_PLANEJAMENTO_20261031.md`; a correção das datas/pendência e a explicação das metas estão em `CORRECAO_DATAS_NOTAS_PLANEJAMENTO_20261031.md`.
 
 Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os testes locais automatizados não substituem os passos na sua conta. Faça primeiro na **Cópia de Gestor de Gastos**; restauração e ensaio de virada usam uma cópia separada, descartável. Não precisa testar tudo de uma vez: siga a ordem e registre onde parou.

@@ -1,5 +1,10 @@
 # Mapa do código do Gestor de Gastos
 
+Pacote local v143 — 04/11/2026: consultas do Histórico são coordenadas em interface/desempenho.js. Uma leitura já enviada termina normalmente; as seguintes aguardam e filtros visuais superados são descartados antes de enviar. A tela recebe somente a escolha vigente. Sair da aba descarta resultados/erros visuais antigos e evita sua repetição automática; ao retornar, o filtro interrompido é retomado. Consultas diretas, cópia e paginação preservam todos os pedidos necessários. Nenhum salvamento é cancelado ao navegar. Uma consulta já recebida pelo Google ainda pode ocupar a trava; outros aparelhos e rotinas também podem gerar espera.
+
+Backend/Code.gs resolve a identidade da forma e a categoria selecionadas uma vez por filtro, mantendo somas, versões e paginação. Diagnóstico acrescenta início/fim no relógio do servidor e resumoPlanilha.ultimaExecucao com duração da materialização, inclusive na consulta recente de pendências. Isso permite investigar coincidência com contenção sem afirmar antecipadamente quem deteve a trava. Não inclui parâmetros financeiros nem credenciais. A trava financeira, diário e confirmação pós-gravação permanecem preservados. Protocolo 18, cache/interface v143. Publicação remota e medição real deste pacote ainda pendentes; atualizar backend e frontend. O gatilho já ativado na conta não precisa ser reinstalado.
+
+
 Atualizado em 04/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes

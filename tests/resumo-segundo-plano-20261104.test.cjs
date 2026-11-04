@@ -73,6 +73,13 @@ test('manutenção interrompida também impede materialização de fotografia pa
  sh.getRange(2,2).setValue('CONFIRMADO');assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);
 });
 
+test('diagnóstico recente registra duração do worker sem incluir conteúdo privado do controle',()=>{
+ const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
+ const e=estado(a).ultimaExecucao;assert(Number.isFinite(e.inicioServidorMs));assert(e.fimServidorMs>=e.inicioServidorMs);assert(e.duracaoMs>=0);
+ const s=JSON.parse(a.props.get('GESTOR_RESUMO_ASSINCRONO_V1'));s.ultimaExecucao.token='privado';a.props.set('GESTOR_RESUMO_ASSINCRONO_V1',JSON.stringify(s));
+ const d=a.ctx.diagnosticarPendenciasWeb();assert.equal(d.resumoPlanilha.ultimaExecucao.inicioServidorMs,e.inicioServidorMs);assert(!JSON.stringify(d.resumoPlanilha).includes('privado'));
+});
+
 test('falha ao persistir intenção usa caminho síncrono e não confirma tarefa inexistente',()=>{
  const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
  const obter=a.ctx.PropertiesService.getScriptProperties;let falhar=true;

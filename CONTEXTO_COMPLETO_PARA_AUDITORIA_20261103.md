@@ -1,10 +1,21 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Pacote local v143 — 04/11/2026: consultas do Histórico são coordenadas em interface/desempenho.js. Uma leitura já enviada termina normalmente; as seguintes aguardam e filtros visuais superados são descartados antes de enviar. A tela recebe somente a escolha vigente. Sair da aba descarta resultados/erros visuais antigos e evita sua repetição automática; ao retornar, o filtro interrompido é retomado. Consultas diretas, cópia e paginação preservam todos os pedidos necessários. Nenhum salvamento é cancelado ao navegar. Uma consulta já recebida pelo Google ainda pode ocupar a trava; outros aparelhos e rotinas também podem gerar espera.
+
+Backend/Code.gs resolve a identidade da forma e a categoria selecionadas uma vez por filtro, mantendo somas, versões e paginação. Diagnóstico acrescenta início/fim no relógio do servidor e resumoPlanilha.ultimaExecucao com duração da materialização, inclusive na consulta recente de pendências. Isso permite investigar coincidência com contenção sem afirmar antecipadamente quem deteve a trava. Não inclui parâmetros financeiros nem credenciais. A trava financeira, diário e confirmação pós-gravação permanecem preservados. Protocolo 18, cache/interface v143. Publicação remota e medição real deste pacote ainda pendentes; atualizar backend e frontend. O gatilho já ativado na conta não precisa ser reinstalado.
+
+
 Atualizado em **04/11/2026**, com base no código e na documentação local. Este documento pode ser enviado a outra IA junto dos arquivos do projeto. Não contém tokens, senhas, IDs privados de planilhas nem dados financeiros reais.
 
 **Manutenção contínua:** por solicitação de Lucas, este arquivo deve acompanhar as alterações e melhorias futuras. A data no nome identifica sua criação; a data acima e as seções afetadas devem ser atualizadas a cada revisão relevante. As orientações permanentes estão em `AGENTS.md`.
 
+Validação local v143 em 04/11/2026: suíte completa com 1.089 testes aprovados, zero falhas (testes-v143.log); inclui sete cenários novos de filtros, diagnóstico e rotina. Interfaces/CSS sincronizados, dist preparado e diff sem erros de espaços. Nenhuma publicação remota ou medição real v143 realizada nesta etapa.
+
 ## 1. Leia primeiro: o que é este documento
+
+Reteste v142 de 04/11/2026 às 11:02 local: Novo 19.072 ms no app (rodada anterior 22.017), edição 23.251 ms (15.907), ambos resumoMs=0 e retratos aplicados. Novo executor 16.922 ms: execução 3.450, plano 1.822, aplicação 5.468, atualização 2.328; edição executor 20.632 ms, aplicação 5.677 e atualização 4.257. Sem ganho uniforme: salvar melhorou nesta amostra e editar piorou. Resumo segue em segundo plano, sem erro, última conclusão 14:02:02Z e nova tarefa pendente; envios financeiros zero e recuperação vazia.
+
+Ponto novo nesta rodada: filtrarLancamentosWeb apresentou respostas de 9.047/13.064/15.103 ms, com esperas de trava de 57/4.664/8.404 ms; uma consulta posterior falhou SERVICO_OCUPADO após 10.075 ms de espera (11.887 no app). É falha de leitura do Histórico, enquanto Novo/Edição foram confirmados. Não identificar o detentor da trava como worker do resumo ou outra ação sem evidência; há consultas concorrentes e nenhuma identificação do processo detentor neste diagnóstico. Próxima investigação deve verificar coordenação dos filtros e duração/contenção dos trabalhos de fundo, mantendo a trava financeira. Uma consulta pendente na captura não é envio financeiro sem confirmação. Somente análise/documentação neste turno.
 
 Diagnóstico recebido em 04/11/2026 às 10:46 local confirma a conclusão posterior: resumoPlanilha modo segundo_plano, pendente=false, erro vazio, solicitadoEm=13:41:24Z e atualizadoEm=13:41:53Z. A tarefa anteriormente pendente foi materializada; não há envios financeiros pendentes nem recuperação necessária. Uma leitura pendente no coordenador não é envio financeiro. O diagnóstico ainda identifica interface v141.
 
