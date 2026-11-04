@@ -13,6 +13,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const leituras = opcoes.leituras || new Set();
   const cacheaveis = new Set(opcoes.cacheaveis || []);
   const cache = new Map(), consultas = new Map();
+  const cargasCompletas = new Set();
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
   let geracao = 0, bytes = 0;
 
@@ -57,6 +58,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     return copia;
   }
   function consultar(acao, param, extras, repeticoes = 0) {
+    // A resposta da carga completa invalida relatórios. Se ela já está em
+    // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
+    if (cacheaveis.has(acao) && cargasCompletas.size) {
+      return Promise.allSettled(Array.from(cargasCompletas)).then(() => consultar(acao, param, extras, repeticoes));
+    }
     const versao = geracao, chave = acao + ':' + chaveEstavel(param) + ':' + chaveEstavel(extras);
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
@@ -81,6 +87,10 @@ function criarCoordenadorLeiturasGestor(opcoes) {
         return { valor, instante: agora(), versaoResposta };
       });
       consultas.set(chaveEnvio, promessa);
+      if(acao==='getDadosCompletos'){
+        cargasCompletas.add(promessa);
+        promessa.then(()=>cargasCompletas.delete(promessa),()=>cargasCompletas.delete(promessa));
+      }
       promessa.then(() => { if (consultas.get(chaveEnvio) === promessa) consultas.delete(chaveEnvio); }, () => { if (consultas.get(chaveEnvio) === promessa) consultas.delete(chaveEnvio); });
     }
     return promessa.then(({valor, instante, versaoResposta}) => {

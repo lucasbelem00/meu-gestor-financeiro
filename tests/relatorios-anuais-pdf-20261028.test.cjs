@@ -9,6 +9,18 @@ function ambiente(dados=fixture()){
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
 
+test('resumo confere ano uma vez para as duas origens e revalida alteração externa na próxima consulta',()=>{
+ const a=ambiente(fixture([personal('Pessoal',30)], [loan('Ana','A Receber',20,'Cartao')]));
+ const e=a.ctx.garantirAnoGestor_(a.db,2026),destino=a.planilhas.get(e.id);
+ for(const nome of ['Lançamentos','Empréstimos']){destino.sheets[nome].rows=clone(a.db.sheets[nome].rows);a.db.sheets[nome].rows=[clone(a.db.sheets[nome].rows[0])];}
+ const c=a.ctx.configProtecaoGestor_();c.organizacaoAnual=true;a.ctx.salvarConfigProtecaoGestor_(c);
+ const dados=a.ctx.dadosAnoGestor_(e),r=a.db.sheets['_Gestor_Anos'].rows.find(r=>r[0]===2026);r[2]='FECHADO';r[3]=a.ctx.hashGestor_(dados);
+ const abrir=a.ctx.SpreadsheetApp.openById;let leituras=0;a.ctx.SpreadsheetApp.openById=id=>{if(id===e.id)leituras++;return abrir(id);};
+ const resumo=a.ctx.registrosResumoNativoGestor_(a.db);assert.equal(leituras,1);assert.equal(resumo.length,2);assert.equal(resumo.reduce((s,r)=>s+r.total,0),5000);
+ destino.sheets['Lançamentos'].rows[1][7]=99;
+ assert.throws(()=>a.ctx.registrosResumoNativoGestor_(a.db),/ano fechado.*alterado/);assert.equal(leituras,2);
+});
+
 test('resumo resolve todas as formas com uma leitura local e observa renomeação na próxima chamada',()=>{
  const a=ambiente(fixture(Array.from({length:12},(_,i)=>personal('Compra '+i,10+i)),[loan('Ana','A Receber',20,'Cartao')]));
  const folha=a.db.sheets['Formas de Pagamento'],original=folha.getDataRange;let leituras=0;

@@ -51,15 +51,18 @@ function ajustesAnuaisGestor_(ss){
   const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_AJUSTES_ANUAIS_GESTOR_))throw Error('Controle de ajustes anuais incompatível.');
   const vistos=new Set();return linhas.slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map(function(r){const chave=r[0]+':'+r[1];if(!ehAbaRegistrosGestor_(r[0])||vistos.has(chave)||!r[1]||!['ATUALIZADO','EXCLUIDO'].includes(r[4]))throw Error('Ajuste anual inválido ou repetido.');vistos.add(chave);return r;});
 }
-function matrizFinanceiraAnualGestor_(ss,nome){
+function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
+  // Reuso opcional e restrito à montagem que possui a mesma base. Nunca
+  // persistir este objeto nem reutilizá-lo depois de aplicar uma gravação.
+  const leitura=leituraLocal?.ss===ss?leituraLocal:null;
   const original=ss.getSheetByName(nome),cab=cabFinanceiroAnualGestor_(ss,nome),mapa=new Map();
   const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
-  for(const e of catalogoAnosGestor_(ss)){
-    let dados;try{dados=dadosAnoGestor_(e);}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
+  for(const e of leitura?leitura.catalogo:catalogoAnosGestor_(ss)){
+    let dados;try{const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;if(leitura?.anos.has(chave))dados=copiarGestor_(leitura.anos.get(chave));else{dados=dadosAnoGestor_(e);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
     for(const r of dados.abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);
   }
   if(CONTEXTO_GESTOR_?.importarLegadoAnual)for(const e of catalogoAnualProtecaoGestor_(ss))for(const r of dadosArquivoAnualProtecaoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);
-  for(const r of ajustesAnuaisGestor_(ss).filter(r=>r[0]===nome)){
+  for(const r of (leitura?leitura.ajustes:ajustesAnuaisGestor_(ss)).filter(r=>r[0]===nome)){
     const antes=mapa.get(String(r[1]));if(r[3]!=='NOVO'&&(!antes||hashGestor_(antes)!==r[3])){if(CONTEXTO_GESTOR_?.anosIndisponiveis?.has(Number(r[2])))continue;throw Error('O ajuste não corresponde ao registro do ano fechado.');}
     if(r[4]==='EXCLUIDO')mapa.delete(String(r[1]));else {let valor;try{valor=desserializarGestor_(JSON.parse(r[5]));}catch(_){throw Error('Conteúdo do ajuste anual inválido.');}if(valor[11]!==r[1])throw Error('Identidade do ajuste incompatível.');mapa.set(String(r[1]),valor);}
   }

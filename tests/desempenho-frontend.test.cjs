@@ -43,6 +43,22 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+test('relatórios aguardam carga completa já iniciada e compartilham apenas o envio da versão nova',async()=>{
+ const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
+ const base=c.chamar('getDadosCompletos');
+ const mes=c.chamar('obterRelatorioMes','11/2026'),mesIgual=c.chamar('obterRelatorioMes','11/2026');
+ await aguardar();assert.equal(chamadas.length,1);assert.equal(chamadas[0].acao,'getDadosCompletos');
+ chamadas[0].resolve({atual:true});await base;await aguardar();
+ assert.equal(chamadas.length,2);assert.equal(chamadas[1].acao,'obterRelatorioMes');
+ chamadas[1].resolve({total:20});const r=await Promise.all([mes,mesIgual]);assert(r.every(x=>x.total===20));assert.equal(c.metricas().descartadas,0);
+});
+test('falha da carga completa não prende relatórios nem causa repetição automática da falha',async()=>{
+ const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
+ const base=c.chamar('getDadosCompletos');const falhou=assert.rejects(base,/rede/);const ano=c.chamar('obterRelatorioAnual','2026');
+ await aguardar();chamadas[0].reject(Error('rede'));await falhou;await aguardar();assert.equal(chamadas.length,2);
+ chamadas[1].resolve({total:30});assert.equal((await ano).total,30);
+});
+
 test('consultas simultâneas compartilham envio e retornam objetos independentes', async () => {
   const chamadas = [];
   const c = coordenador({executar:(acao,param)=>new Promise(resolve=>chamadas.push({acao,param,resolve}))});

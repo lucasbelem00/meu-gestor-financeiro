@@ -11,6 +11,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Otimização v134: registrosResumoNativoGestor_ monta snapshot local de catálogo/ajustes anuais e mapa de anos já conferidos; matrizFinanceiraAnualGestor_ aceita esse snapshot apenas para a mesma base, copiando as matrizes reaproveitadas. Cada nova montagem revalida origem/hash dos anos; não há cache financeiro entre operações. Coordenador em interface/desempenho.js adia relatórios cacheáveis enquanto getDadosCompletos já estiver pendente, evitando que a própria carga completa invalide um relatório recém-enviado. Falha da carga não prende relatórios; compartilhamento, invalidações e guardas de resposta tardia permanecem.
+
 Concorrência v133: adquirirLockOperacaoGestor_ classifica indisponibilidade da trava do executor como SERVICO_OCUPADO, com espera limitada (leitura 10 s, escrita 30 s) e medição estado=ocupado. Nenhum dado é acessado antes da aquisição nem trava alheia liberada. doPost/apiCallServidor incluem tempos opcionais também em falhas; transportes validam/coletam antes de verificar sucesso. Não cria retentativa automática ou mudança no diário de recuperação.
 
 Resumo/relatórios: registrosResumoNativoGestor_ lê e valida identidades/aliases de formas uma vez por montagem, em shared/relatorios.js, reutilizando o mapa somente na função. Elimina releitura por registro fora do contexto transacional (ex.: resumo pós-gravação). Não é cache entre chamadas; próxima montagem observa alterações no cadastro e mantém validação de ambiguidades. Incorporado pelo gerador em Backend/Code.gs.

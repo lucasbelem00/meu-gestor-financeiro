@@ -95,6 +95,8 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+v134: publicar backend e frontend sincronizados. Abrir Mensal enquanto a carga inicial do Painel está pendente e conferir que o relatório do período escolhido aparece após a carga, sem valores de outro mês. Trocar período, editar/salvar e conferir invalidação normal. No próximo lançamento real, comparar resumoMs, total e consultas descartadas; períodos não constam no diagnóstico, portanto duas consultas próximas não provam duplicação. Anos fechados continuam conferidos a cada nova montagem; não alterar arquivo real para testar hash. Sem novas permissões ou mudanças no manifesto.
+
 Escrita com SERVICO_OCUPADO deve preservar envio para conferência: uma tentativa anterior do mesmo requestId pode estar em execução. Testes devem distinguir essa situação da consulta ocupada; não apagar journal/reenviar como novo lançamento. O pacote v133 tem tratamento local e testes, ainda requer publicação dos dois lados.
 
 Concorrência v133: publicar Code.gs e frontend; em projeto de testes simular trava ocupada e conferir SERVICO_OCUPADO, estado=ocupado no Diagnóstico e nenhuma escrita/liberação de trava alheia. Após término da operação, repetir consulta manualmente e conferir dados. Não provocar bloqueio ou interromper execução na definitiva. Não repetir gravação com resultado incerto; conferir confirmação por Atividade. Execução prolongada observada em 03/11/2026 foi limitada pelo Google aos seis minutos; origem interna continua sem comprovação.

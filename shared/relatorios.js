@@ -21,6 +21,8 @@ function registrosResumoNativoGestor_(ss){
   const folhaFormas=ss.getSheetByName('Formas de Pagamento');
   const formasResumo=folhaFormas?validarIdentidadesFormasGestor_(folhaFormas.getDataRange().getValues()).chaves:new Map();
   const nomeFormaResumo=forma=>formasResumo.get(chaveFormaGestor_(forma))?.nome||limparApostrofo(forma);
+  const anual=typeof ativoAnualGestor_==='function'&&ativoAnualGestor_(ss);
+  const leituraAnual=anual?{ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()}:null;
   const incluir=function(nome,r){
     if(!r.some(v=>v!==''&&v!=null))return;
     const id=String(r[11]||'');if(!id||ids.has(id))throw Error('O resumo encontrou registro sem identificação ou repetido. Atualize os dados antes de gerar relatórios.');ids.add(id);
@@ -31,7 +33,7 @@ function registrosResumoNativoGestor_(ss){
     registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaResumo(r[emp?3:2]),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',perfilGasto:emp?null:lerPerfilGastoGestor_(r),total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
   };
   for(const nome of ['Lançamentos','Empréstimos']){
-    const valores=typeof ativoAnualGestor_==='function'&&ativoAnualGestor_(ss)?matrizFinanceiraAnualGestor_(ss,nome):ss.getSheetByName(nome)?.getDataRange().getValues()||[];
+    const valores=anual?matrizFinanceiraAnualGestor_(ss,nome,leituraAnual):ss.getSheetByName(nome)?.getDataRange().getValues()||[];
     valores.slice(1).forEach(r=>incluir(nome,r));
   }
   for(const e of catalogoAnualProtecaoGestor_(ss))for(const a of dadosArquivoAnualProtecaoGestor_(e).abas)a.valores.slice(1).forEach(r=>incluir(a.nome,r));
