@@ -39,7 +39,7 @@ function salvarRecorrenciaWeb(p){return executarOperacaoGestor_('salvarRecorrenc
   const m={origem:p.origem,modo:p.modo,ativo:true,descricao:formatarTituloInteligente(p.descricao),forma:validarFormaAtualGestor_(p.forma,{novaCompra:true}),categoria:p.origem==='pessoal'?validarCategoriaAtualGestor_(p.categoria):'',pessoa:p.origem==='terceiros'?formatarTituloInteligente(p.pessoa):'',valorCentavos:centavosGestor_(p.valor),dia:Number(p.dia),defasagem:Number(p.defasagem),proximoMes:p.proximoMes,tags:String(p.tags||''),perfilGasto:p.perfilGasto||null};
   if(m.modo==='automatico'){const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor'))throw Error('Ative a proteção automática em Exportar dados e backup antes de usar o registro automático. Você pode usar revisão mensal por enquanto.');}
   if(p.registroOrigem){
-    const sh=obterPlanilhaGestor_().getSheetByName('Lançamentos'),r=sh&&lerAbaCompleta(sh,COLUNAS_GESTOR_).raw.find(r=>r[11]===p.registroOrigem);
+    const sh=obterPlanilhaGestor_().getSheetByName(m.origem==='terceiros'?'Empréstimos':'Lançamentos'),r=sh&&lerAbaCompleta(sh,COLUNAS_GESTOR_).raw.find(r=>r[11]===p.registroOrigem);
     if(!r||r[13]!==p.versaoOrigem)throw Error('O lançamento de origem mudou. Abra novamente pelo Histórico.');
     if(limparApostrofo(r[6])!=='1/1')throw Error('Crie o modelo a partir de um gasto à vista, sem alterar uma série parcelada ou recorrente existente.');
     const periodo=parseMesFat(formatarCelulaRegistroGestor_(r[0],'dd/MM/yyyy').slice(3));

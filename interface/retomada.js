@@ -30,7 +30,7 @@ async function salvarRetomadaAssinaturaGestor(){
   const modal=document.getElementById('modalEdicaoAss'),a=modal._retomadaGestor;if(!a)return;
   const btn=document.getElementById('btnSalvarEdAss');if(btn.disabled)return;
   const mes=document.getElementById('inpAssInicio').value.trim(),dia=Number(document.getElementById('diaRetomadaAssGestor').value);
-  if(!parseMesFat(mes).m||!Number.isInteger(dia)||dia<1||dia>31){mostrarAviso('Confira o retorno','Informe um mês válido e um dia de cobrança entre 1 e 31.');return;}
+  if(!interpretarCompetenciaGestor(mes).m||!Number.isInteger(dia)||dia<1||dia>31){mostrarAviso('Confira o retorno','Informe um mês válido e um dia de cobrança entre 1 e 31.');return;}
   const sessao=modal._sessaoEdicao,param={registroId:a.registroId,compraId:a.compraId,versao:a.versao,descOriginal:a.descricao,descricao:formatarTituloInteligente(document.getElementById('inpAssDesc').value),formaPagto:document.getElementById('selAssForma').value,categoria:document.getElementById('selAssCat').value,valorMensal:lerValorMoeda(document.getElementById('inpAssValor').value),mesRetorno:mes,diaCobranca:dia};
   if(!param.descricao||!param.formaPagto||!param.categoria||param.valorMensal<=0){mostrarAviso('Confira os dados','Preencha descrição, forma de pagamento, categoria e valor mensal.');return;}
   btn.disabled=true;btn.textContent='Enviando…';

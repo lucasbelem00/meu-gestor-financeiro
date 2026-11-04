@@ -98,12 +98,12 @@ test('formatação monetária em lote usa as mesmas três colunas, com fallback 
  assert.throws(()=>a.ctx.formatarMoedasPlanoGestor_({getRangeList(){throw Error('falha Sheets');}},4),/falha Sheets/);
 });
 
-test('resumo divergente dispensa leitura de fórmulas; resumo igual só é preservado sem fórmulas',()=>{
+test('resumo diferencial confere fórmulas também em linhas de valores divergentes',()=>{
  const a=ambienteProtecao(),esperado=[['controle'],['hash'],['Atualizado em','2026-11-04T00:00:00.000Z'],['dados']],sh=a.db.insertSheet('Resumo teste');
  a.ctx.gravarResumoConferidoGestor_(sh,esperado);
  const ler=sh.getDataRange;let consultas=0;
  sh.getDataRange=function(){const r=ler.call(this),f=r.getFormulas;r.getFormulas=function(){consultas++;return f.call(this);};return r;};
  const novo=esperado.map(r=>r.slice());novo[3][0]='novo';
- assert.equal(a.ctx.gravarResumoConferidoGestor_(sh,novo),true);assert.equal(consultas,0);
- assert.equal(a.ctx.gravarResumoConferidoGestor_(sh,novo),false);assert.equal(consultas,1);
+ assert.equal(a.ctx.gravarResumoConferidoGestor_(sh,novo),true);assert.equal(consultas,1);
+ assert.equal(a.ctx.gravarResumoConferidoGestor_(sh,novo),false);assert.equal(consultas,2);
 });

@@ -3,7 +3,7 @@ function tela(){
  const campos=new Map(),salvos=new Map(),confirmacoes=[],avisos=[];let n=0;
  function el(tag='div'){const e={tag,children:[],value:'',listeners:{},append(...v){this.children.push(...v);},replaceChildren(){this.children=[];},addEventListener(k,f){(this.listeners[k]??=[]).push(f);},scrollIntoView(){}};Object.defineProperty(e,'id',{get(){return this._id;},set(v){this._id=v;campos.set(v,this);}});return e;}
  const ids=['modelosRecorrenciaGestor','editorModeloRecorrenciaGestor','estadoModelosRecorrenciaGestor','listaModelosRecorrenciaGestor'];ids.forEach(id=>{const e=el();e.id=id;});
- const ctx=vm.createContext({console,Date,Promise,Option:function(t,v){this.textContent=t;this.value=v;},document:{createElement:el,getElementById:id=>campos.get(id),querySelectorAll:()=>Array.from(campos.values()).filter(e=>e.id?.startsWith('modelo-rec-'))},localStorage:{getItem:k=>salvos.get(k)||null,removeItem:k=>salvos.delete(k)},gravarArmazenamentoGestor:(k,v)=>salvos.set(k,v),lerJSONLocalGestor:(k,d)=>salvos.has(k)?JSON.parse(salvos.get(k)):d,novoRequestIdGestor:()=> 'modelo-ui-'+(++n),hojeCivilGestor:()=>new Date(2026,9,16),formatBRL:n=>'R$ '+n,parseMesFat:s=>{const m=/^(\d\d)\/(\d{4})$/.exec(String(s));return m?{m:Number(m[1]),a:Number(m[2])}:{m:0,a:0};},formasGlobais:[{nome:'Cartao'}],categoriasGlobaisEdit:[{nome:'Teste'}],tipoFormaPagamentoGestor:()=> 'cartao',getCategoriaExibicao:s=>s,mascaraMoedaTeclado:e=>{e.value='R$ '+e.value;},centavosPlanejamentoGestor:s=>Number(String(s).replace('R$ ',''))*100,mostrarAviso:(...v)=>avisos.push(v),mostrarConfirmacao:(...v)=>confirmacoes.push(v),carregarDados:async()=>{},setAba(){}});ctx.window=ctx;vm.runInContext(fs.readFileSync('interface/recorrencias.js','utf8'),ctx);return {ctx,campos,salvos,confirmacoes,avisos};
+ const ctx=vm.createContext({console,Date,Promise,Option:function(t,v){this.textContent=t;this.value=v;},document:{createElement:el,getElementById:id=>campos.get(id),querySelectorAll:()=>Array.from(campos.values()).filter(e=>e.id?.startsWith('modelo-rec-'))},localStorage:{getItem:k=>salvos.get(k)||null,removeItem:k=>salvos.delete(k)},gravarArmazenamentoGestor:(k,v)=>salvos.set(k,v),lerJSONLocalGestor:(k,d)=>salvos.has(k)?JSON.parse(salvos.get(k)):d,novoRequestIdGestor:()=> 'modelo-ui-'+(++n),hojeCivilGestor:()=>new Date(2026,9,16),formatBRL:n=>'R$ '+n,formasGlobais:[{nome:'Cartao'}],categoriasGlobaisEdit:[{nome:'Teste'}],tipoFormaPagamentoGestor:()=> 'cartao',getCategoriaExibicao:s=>s,mascaraMoedaTeclado:e=>{e.value='R$ '+e.value;},centavosPlanejamentoGestor:s=>Number(String(s).replace('R$ ',''))*100,mostrarAviso:(...v)=>avisos.push(v),mostrarConfirmacao:(...v)=>confirmacoes.push(v),carregarDados:async()=>{},setAba(){}});ctx.window=ctx;vm.runInContext(fs.readFileSync('shared/competencias.js','utf8'),ctx);vm.runInContext(fs.readFileSync('interface/recorrencias.js','utf8'),ctx);return {ctx,campos,salvos,confirmacoes,avisos};
 }
 const modelo={id:'modelo-ui-001',versao:1,origem:'terceiros',modo:'revisao',ativo:true,descricao:'Internet',pessoa:'Ana',forma:'Cartao',categoria:'',valorCentavos:10000,dia:10,defasagem:1,proximoMes:'10/2026'};
 test('revisão abre confirmação antes de qualquer envio e mudanças posteriores invalidam a confirmação',()=>{
@@ -17,4 +17,20 @@ test('consulta descarta resposta anterior a restauração e não substitui lista
 });
 test('cards de terceiros usam identidade âmbar, sem HTML vindo dos nomes',async()=>{
  const a=tela();a.ctx.apiCall=async()=>({itens:[{...modelo,pessoa:'<script>teste</script>'}]});await a.ctx.carregarModelosRecorrenciaGestor();const card=a.campos.get('listaModelosRecorrenciaGestor').children[0];assert.match(card.children[0].className,/amber/);assert.match(card.children[0].textContent,/<script>/);assert(card.children.every(e=>e.innerHTML===undefined));assert.equal(card.children.find(e=>e.tag==='div').children[0].textContent,'✅ Revisar e registrar mês');
+});
+
+test('cadastro válido abre revisão e salva sem depender de função exclusiva do backend',async()=>{
+ const a=tela(),envios=[];assert.equal(a.ctx.parseMesFat,undefined);
+ a.ctx.apiCall=async(acao,p)=>{envios.push([acao,p]);return acao==='obterRecorrenciasWeb'?{itens:[]}:{sucesso:true};};
+ a.ctx.abrirEditorRecorrenciaGestor({...modelo,id:null,versao:null});a.ctx.salvarEditorRecorrenciaGestor();
+ assert.equal(a.avisos.length,0);assert.equal(a.confirmacoes.length,1);assert.equal(envios.length,0);
+ a.confirmacoes[0][2]();await new Promise(r=>setImmediate(r));
+ assert.equal(envios[0][0],'salvarRecorrenciaWeb');assert.equal(envios[0][1].proximoMes,'10/2026');assert.equal(envios[0][1].valor,100);
+});
+
+test('leitor real compartilhado rejeita competência impossível e texto incompleto',()=>{
+ const a=tela();for(const t of ['13/2026','00/2026','11/26','11/2026resto','11/2201'])assert.equal(a.ctx.interpretarCompetenciaGestor(t).m,0);
+ assert.equal(a.ctx.interpretarCompetenciaGestor('11/2026').m,11);
+ a.ctx.abrirEditorRecorrenciaGestor(modelo);a.campos.get('modelo-rec-proximoMes').value='13/2026';a.ctx.salvarEditorRecorrenciaGestor();
+ assert.equal(a.confirmacoes.length,0);assert.match(a.avisos.at(-1)[1],/datas/);
 });

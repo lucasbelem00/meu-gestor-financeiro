@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+Ajustes v151 — 04/11/2026: atalho Usar tags anteriores imediatamente após o campo Tags e antes dos chips, como ação secundária compacta. Empréstimo segue Novo: Valor/Parcelas/Início numa linha com mais largura para Valor, Início estreito, botão À vista h-6 abaixo; observação ocupa outra linha. Parcela 1 mantém dado numérico e mostra À vista fora do foco. Conferir fatura usa btn-periodo-gestor com chevrons SVG centralizados; cartão e competência empilhados no celular. Criar recorrência sai dos cards e entra em Editar; fundo neutro, origem de terceiros em âmbar. Formulário usa apenas Recorrência no texto público, exibe Pessoa ou Categoria conforme origem e recolhe ajuste da fatura. Controles indisponíveis durante envio mantêm estado visual disabled; mensagens de confirmação continuam distinguindo envio de atualização de tela.
+
+
 Recorrências — padrão v150 (04/11/2026): manter fundo neutro dos cards. Modelos pessoais recebem 📌 Pessoal; modelos de terceiros recebem 🤝 Terceiros e nome da pessoa em âmbar. Separar origem (pessoal/terceiros) de modo (variável/revisão ou fixo/automático). Valor do modelo usa texto neutro; nunca verde de recebido apenas por ser recorrente. Ações: ➕ Nova recorrência, 📌 Criar recorrência no Histórico/Gerenciar, ✅ Revisar e registrar mês, ✏️ Editar, ⏸️ Pular mês, ⏹️ Desativar, ▶️ Retomar. Formulário em uma coluna no celular e duas a partir de sm; botões com quebra e espaçamento, confirmação antes do envio. Séries antigas continuam identificadas por seus estados atuais.
 
 

@@ -3,6 +3,12 @@
 const ANO_MIN_COMPETENCIA_GESTOR_=1900;
 const ANO_MAX_COMPETENCIA_GESTOR_=2200;
 function anoCompetenciaValidoGestor_(ano){return Number.isInteger(ano)&&ano>=ANO_MIN_COMPETENCIA_GESTOR_&&ano<=ANO_MAX_COMPETENCIA_GESTOR_;}
+// Leitura estrita compartilhada. Não depender do parseMesFat exclusivo do servidor.
+function interpretarCompetenciaGestor(valor){
+  const p=/^(\d{2})\/(\d{4})$/.exec(String(valor||'').replace(/^'/,'').trim());
+  if(!p||Number(p[1])<1||Number(p[1])>12||!anoCompetenciaValidoGestor_(Number(p[2])))return {m:0,a:0,time:0};
+  const m=Number(p[1]),a=Number(p[2]);return {m,a,time:new Date(a,m-1,1).getTime()};
+}
 function validarPeriodoParcelasGestor_(valor,quantidade=1,inicial=1){
   const texto=String(valor||'').replace(/^'/,'').trim(),p=/^(\d{2})\/(\d{4})$/.exec(texto);
   if(!p||Number(p[1])<1||Number(p[1])>12||!anoCompetenciaValidoGestor_(Number(p[2])))throw Error('Mês da fatura inválido. Use MM/AAAA, entre '+ANO_MIN_COMPETENCIA_GESTOR_+' e '+ANO_MAX_COMPETENCIA_GESTOR_+'.');

@@ -11,7 +11,7 @@ function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties(
 function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
   try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};
     const e=s?.ultimaExecucao;if(e&&Number.isFinite(e.inicioServidorMs)&&e.inicioServidorMs>=0)estado.ultimaExecucao={inicioServidorMs:e.inicioServidorMs,fimServidorMs:Number.isFinite(e.fimServidorMs)?e.fimServidorMs:null,duracaoMs:Number.isFinite(e.duracaoMs)?e.duracaoMs:null};
-    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
+    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
     if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
   catch(_){return {modo:'imediato',pendente:false,erro:'Confira a configuração do resumo em segundo plano.'};}
 }
@@ -136,19 +136,30 @@ function reconhecerFormulaPadraoResumoGestor_(formula,linha,coluna,ss,valoresDas
   if(linha>=17&&linha<=41&&coluna===3&&comparar('=SUMIFS('+l+'H:H;'+l+'D:D;B'+linha+';'+l+'I:I;TEXT(TODAY();"mm/yyyy");'+l+'J:J;"<>Assinatura Cancelada")'))return {linha:linha,coluna:coluna,categoria:String((valoresDashboard?valoresDashboard[linha-1]?.[1]:ss.getSheetByName('Dashboard & Resumo').getRange(linha,2).getValue())||'')};
   return null;
 }
-function gravarResumoConferidoGestor_(sh,linhas){
-  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
-  // Comparar conteúdo real, não apenas o hash guardado: corrupção e fórmulas
-  // inseridas na aba derivada continuam sendo reparadas pela gravação completa.
-  const dataValida=typeof atuais[2]?.[1]==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(atuais[2][1])&&Number.isFinite(Date.parse(atuais[2][1]));
-  const igual=dataValida&&Math.max(atuais.length,linhas.length)===linhas.length&&linhas.every((r,i)=>Array.from({length:cols},(_,j)=>j).every(j=>{
-    if(i===2&&j===1)return true;
-    return (atuais[i]?.[j]??'')===(r[j]??'');
-  }));
-  // Se os valores já divergiram, a regravação é obrigatória. Só consultar
-  // fórmulas quando os valores iguais permitiriam dispensar essa gravação.
-  if(igual&&!intervalo.getFormulas().some(r=>r.some(Boolean)))return false;
-  gravarMatrizProtecaoGestor_(sh,linhas);return true;
+function gravarResumoConferidoGestor_(sh,linhas,tempos){
+  const inicio=Date.now(),range=sh.getDataRange(),atuais=range.getValues(),formulas=range.getFormulas(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
+  const n=Math.max(atuais.length,linhas.length),alvos=[];
+  for(let i=0;i<n;i++){
+    const nova=Array.from({length:cols},(_,j)=>linhas[i]?.[j]??'');
+    if(formulas[i]?.some(Boolean)||nova.some((v,j)=>!(i===2&&j===1)&&(atuais[i]?.[j]??'')!==v))alvos.push(i);
+  }
+  const data=atuais[2]?.[1];if(typeof data!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(data)||!Number.isFinite(Date.parse(data)))if(!alvos.includes(2))alvos.push(2);
+  if(tempos)tempos.resumoComparacaoMs=Date.now()-inicio;
+  if(!alvos.length){if(tempos){tempos.resumoGravacaoMs=0;tempos.resumoFlushMs=0;}return false;}
+  if(!alvos.includes(2))alvos.push(2);alvos.sort((a,b)=>a-b);
+  // Evita trocar uma gravação em lote por dezenas de chamadas pequenas.
+  const blocos=alvos.reduce((s,v,i)=>s+Number(i===0||v!==alvos[i-1]+1),0);
+  if(blocos>3)alvos.splice(0,alvos.length,...Array.from({length:n},(_,i)=>i));
+  if(sh.getMaxRows&&n>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),n-sh.getMaxRows());
+  if(sh.getMaxColumns&&cols>sh.getMaxColumns())sh.insertColumnsAfter(sh.getMaxColumns(),cols-sh.getMaxColumns());
+  const gravacao=Date.now();
+  for(let k=0;k<alvos.length;){let fim=k+1;while(fim<alvos.length&&alvos[fim]===alvos[fim-1]+1)fim++;
+    const valores=alvos.slice(k,fim).map(i=>Array.from({length:cols},(_,j)=>{const v=linhas[i]?.[j]??'';return typeof v==='string'&&/^[=+@]/.test(v)?"'"+v:v;}));
+    sh.getRange(alvos[k]+1,1,valores.length,cols).setValues(valores);k=fim;
+  }
+  if(tempos)tempos.resumoGravacaoMs=Date.now()-gravacao;
+  const flush=Date.now();SpreadsheetApp.flush();if(tempos)tempos.resumoFlushMs=Date.now()-flush;
+  return true;
 }
 function atualizarResumoNativoGestor_(ss,tempos){
   let marco=Date.now();const medir=nome=>{const agora=Date.now();if(tempos)tempos[nome]=Math.max(0,agora-marco);marco=agora;};
@@ -171,7 +182,7 @@ function atualizarResumoNativoGestor_(ss,tempos){
   medir('resumoDashboardMs');
   if(!sh)sh=ss.insertSheet(ABA_RESUMO_NATIVO_GESTOR_);
   const linhas=[[MARCADOR_RESUMO_NATIVO_GESTOR_,propriedade_(CHAVE_ID_PLANILHA_GESTOR),JSON.stringify({versao:1,migracoes:migracoes})],['SHA256 dos dados',hash],['Atualizado em',new Date().toISOString()],CAB_RESUMO_NATIVO_GESTOR_,...grupos.map(g=>[g.ano,g.mes,g.forma,g.categoria,g.origem,g.total/100,g.pago/100,g.saldo/100,g.recebido/100,g.aReceber/100,g.quantidade,g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.tipo):'',g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.prioridade):''])];
-  const gravado=gravarResumoConferidoGestor_(sh,linhas);if(gravado&&sh.setFrozenRows)sh.setFrozenRows(4);
+  const gravado=gravarResumoConferidoGestor_(sh,linhas,tempos);if(gravado&&sh.setFrozenRows)sh.setFrozenRows(4);
   if(gravado&&grupos.length)sh.getRange(5,6,grupos.length,5).setNumberFormat('R$ #,##0.00');
   medir('resumoEscritaMs');
   // A marca é persistida primeiro: interrupção após uma célula pode retomar

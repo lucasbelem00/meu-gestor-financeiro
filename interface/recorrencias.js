@@ -22,14 +22,14 @@ function renderizarModelosRecorrenciaGestor(){
     const botoes=elementoRecorrenciaGestor('div','','flex flex-wrap gap-2');
     const botao=(texto,fn)=>{const b=elementoRecorrenciaGestor('button',texto,'rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-white font-bold');b.type='button';b.onclick=fn;botoes.append(b);};
     if(m.ativo){
-      const p=parseMesFat(m.proximoMes),hoje=hojeCivilGestor(),data=new Date(p.a,p.m-1,Math.min(m.dia,new Date(p.a,p.m,0).getDate()));
+      const p=interpretarCompetenciaGestor(m.proximoMes),hoje=hojeCivilGestor(),data=new Date(p.a,p.m-1,Math.min(m.dia,new Date(p.a,p.m,0).getDate()));
       if(data<=hoje){const l=elementoRecorrenciaGestor('label','Valor deste mês (R$)','block text-xs text-slate-200'),valor=elementoRecorrenciaGestor('input','','block mt-1 rounded-xl border border-slate-600 bg-slate-900 p-3 w-full');valor.value=formatBRL(m.valorCentavos/100);valor.inputMode='numeric';valor.oninput=()=>mascaraMoedaTeclado(valor);l.append(valor);c.append(l);botao('✅ Revisar e registrar mês',()=>revisarMesRecorrenciaGestor(m,valor.value,false));}
       botao('⏸️ Pular mês',()=>revisarMesRecorrenciaGestor(m,'',true));botao('✏️ Editar',()=>abrirEditorRecorrenciaGestor(m));
       botao('⏹️ Desativar',()=>confirmarModeloRecorrenciaGestor('Desativar recorrência?','Os meses já registrados serão preservados.',()=>enviarModeloRecorrenciaGestor('salvarRecorrenciaWeb',{id:m.id,versao:m.versao,desativar:true})));
     }else botao('▶️ Retomar',()=>abrirEditorRecorrenciaGestor({...m,id:null,versao:null,proximoMes:mesInicialModeloRecorrenciaGestor()}));
     c.append(botoes);lista.append(c);
   }
-  if(!modelosRecorrenciaGestor.length)lista.append(elementoRecorrenciaGestor('p','Nenhum modelo adicional cadastrado. As recorrências automáticas existentes continuam abaixo.','text-sm text-slate-300'));
+  if(!modelosRecorrenciaGestor.length)lista.append(elementoRecorrenciaGestor('p','Nenhuma recorrência adicional cadastrada. As recorrências automáticas existentes continuam abaixo.','text-sm text-slate-300'));
 }
 function mesInicialModeloRecorrenciaGestor(){const h=hojeCivilGestor();return String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();}
 function assinaturaEditorRecorrenciaGestor(){return JSON.stringify([epocaModeloRecorrenciaGestor(),editorRecorrenciaGestor,modelosRecorrenciaGestor,Array.from(document.querySelectorAll('#modelosRecorrenciaGestor input,#modelosRecorrenciaGestor select')).map(e=>[e.id,e.value])]);}
@@ -50,27 +50,22 @@ async function enviarModeloRecorrenciaGestor(acao,p){
 }
 function abrirEditorRecorrenciaGestor(modelo={},confirmado=false){
   if(recorrenciasOcupadasGestor)return;
-  if(editorRecorrenciaGestor&&!confirmado){confirmarModeloRecorrenciaGestor('Abrir outro modelo?','O rascunho atual será substituído.',()=>abrirEditorRecorrenciaGestor(modelo,true));return;}
+  if(editorRecorrenciaGestor&&!confirmado){confirmarModeloRecorrenciaGestor('Abrir outra recorrência?','O rascunho atual será substituído.',()=>abrirEditorRecorrenciaGestor(modelo,true));return;}
   editorRecorrenciaGestor={...modelo,epoca:epocaModeloRecorrenciaGestor()};
-  const f=document.getElementById('editorModeloRecorrenciaGestor');f.replaceChildren();f.append(elementoRecorrenciaGestor('h3',modelo.id?'✏️ Editar modelo':'➕ Nova recorrência','col-span-full font-bold text-white'));
-  const campos=[['origem','Conta de','select',modelo.origem||'pessoal',[['pessoal','Pessoal'],['terceiros','🤝 Terceiros']]],['modo','Valor mensal','select',modelo.modo||'revisao',[['revisao','Variável · revisar cada mês'],['automatico','Fixo · registrar automaticamente']]],['descricao','Descrição','text',modelo.descricao||''],['pessoa','Pessoa (somente terceiros)','text',modelo.pessoa||''],['forma','Forma de pagamento','select',modelo.forma||'',formasGlobais.filter(x=>!x.arquivado&&tipoFormaPagamentoGestor(x)!=='resumo').map(x=>[typeof x==='string'?x:x.nome,typeof x==='string'?x:x.nome])],['categoria','Categoria (somente pessoal)','select',modelo.categoria||'',categoriasGlobaisEdit.map(x=>[x.nome,getCategoriaExibicao(x.nome)])],['valor','Último valor / valor fixo (R$)','text',modelo.valorCentavos?formatBRL(modelo.valorCentavos/100):''],['dia','Dia da cobrança (1 a 31)','number',modelo.dia||1],['proximoMes','Primeiro / próximo mês (MM/AAAA)','text',modelo.proximoMes||mesInicialModeloRecorrenciaGestor()],['defasagem','Fatura em relação à cobrança','select',String(modelo.defasagem||0),[['0','Mesmo mês'],['1','Mês seguinte'],['2','Dois meses depois']]]];
-  for(const [id,titulo,tipo,valor,opcoes]of campos){const label=elementoRecorrenciaGestor('label',titulo,'text-xs text-slate-200 min-w-0'),e=document.createElement(tipo==='select'?'select':'input');e.id='modelo-rec-'+id;e.className='block w-full mt-1 rounded-xl border border-slate-600 bg-slate-900 p-3 text-white';if(tipo==='select'){e.append(new Option('Selecione…',''));for(const [v,t]of opcoes)e.append(new Option(t,v));}else e.type=tipo;e.value=valor;if(id==='valor'){e.inputMode='numeric';e.addEventListener('input',()=>mascaraMoedaTeclado(e));e.addEventListener('paste',evento=>{if(!evento.clipboardData)return;evento.preventDefault();try{e.value=formatBRL(centavosPlanejamentoGestor(evento.clipboardData.getData('text'))/100);guardarModeloRecorrenciaRascunhoGestor();}catch(erro){estadoRecorrenciaGestor(erro.message);}});}if(id==='proximoMes'&&modelo.id)e.readOnly=true;e.addEventListener('input',guardarModeloRecorrenciaRascunhoGestor);label.append(e);f.append(label);}
-  f.append(elementoRecorrenciaGestor('p','O mês da cobrança define a revisão. O mês da fatura é calculado separadamente. O registro automático usa a rotina diária da proteção; valor variável exige sua confirmação.','col-span-full text-xs text-slate-300'));
-  for(const [texto,fn]of [['💾 Salvar modelo',salvarEditorRecorrenciaGestor],['✕ Cancelar',()=>confirmarModeloRecorrenciaGestor('Descartar edição?','Descartar apenas os campos deste modelo?',()=>{editorRecorrenciaGestor=null;f.replaceChildren();try{localStorage.removeItem('gestorModeloRecorrenciaRascunhoV1');}catch(_){}})]]){const b=elementoRecorrenciaGestor('button',texto,'rounded-xl bg-slate-700 p-3 text-white font-bold');b.type='button';b.onclick=fn;f.append(b);}
-  f.scrollIntoView?.({behavior:'smooth',block:'start'});
+  const f=document.getElementById('editorModeloRecorrenciaGestor');f.replaceChildren();f.append(elementoRecorrenciaGestor('h3',modelo.id?'✏️ Editar recorrência':'➕ Nova recorrência','col-span-full font-bold text-white'));
+  const campos=[['origem','Gasto de','select',modelo.origem||'pessoal',[['pessoal','Pessoal'],['terceiros','🤝 Terceiros']]],['modo','Valor mensal','select',modelo.modo||'revisao',[['revisao','Variável · revisar cada mês'],['automatico','Fixo · registrar automaticamente']]],['descricao','Descrição','text',modelo.descricao||''],['pessoa','Pessoa','text',modelo.pessoa||''],['forma','Forma de pagamento','select',modelo.forma||'',formasGlobais.filter(x=>!x.arquivado&&tipoFormaPagamentoGestor(x)!=='resumo').map(x=>[typeof x==='string'?x:x.nome,typeof x==='string'?x:x.nome])],['categoria','Categoria','select',modelo.categoria||'',categoriasGlobaisEdit.map(x=>[x.nome,getCategoriaExibicao(x.nome)])],['valor','Valor mensal sugerido (R$)','text',modelo.valorCentavos?formatBRL(modelo.valorCentavos/100):''],['dia','Dia da cobrança','number',modelo.dia||1],['proximoMes','Começar / continuar em (MM/AAAA)','text',modelo.proximoMes||mesInicialModeloRecorrenciaGestor()],['defasagem','Mês da fatura','select',String(modelo.defasagem||0),[['0','Mesmo mês'],['1','Mês seguinte'],['2','Dois meses depois']]]];
+  for(const [id,titulo,tipo,valor,opcoes]of campos){const label=elementoRecorrenciaGestor('label',titulo,'text-xs text-slate-200 min-w-0'),e=document.createElement(tipo==='select'?'select':'input');e.id='modelo-rec-'+id;label.id='rotulo-modelo-rec-'+id;e.className='block w-full mt-1 rounded-xl border border-slate-600 bg-slate-900 p-3 text-white';if(tipo==='select'){e.append(new Option('Selecione…',''));for(const [v,t]of opcoes)e.append(new Option(t,v));}else e.type=tipo;e.value=valor;if(id==='valor'){e.inputMode='numeric';e.addEventListener('input',()=>mascaraMoedaTeclado(e));e.addEventListener('paste',evento=>{if(!evento.clipboardData)return;evento.preventDefault();try{e.value=formatBRL(centavosPlanejamentoGestor(evento.clipboardData.getData('text'))/100);guardarModeloRecorrenciaRascunhoGestor();}catch(erro){estadoRecorrenciaGestor(erro.message);}});}if(id==='proximoMes'&&modelo.id)e.readOnly=true;e.addEventListener('input',guardarModeloRecorrenciaRascunhoGestor);label.append(e);if(id==='defasagem'){const detalhes=elementoRecorrenciaGestor('details','','col-span-full rounded-xl border border-slate-600 p-3');detalhes.append(elementoRecorrenciaGestor('summary','Mês da fatura','text-sm text-sky-200 cursor-pointer'),label);f.append(detalhes);}else f.append(label);if(id==='defasagem')e.addEventListener('change',()=>{if(e.dataset)e.dataset.escolhaManual='true';});if(['origem','forma','dia','proximoMes'].includes(id))e.addEventListener('change',atualizarOrigemEditorRecorrenciaGestor);}
+  f.append(elementoRecorrenciaGestor('p','Esta recorrência prepara os próximos meses. Um valor variável só é lançado após sua confirmação.','col-span-full text-xs text-slate-300'));
+  for(const [texto,fn]of [['💾 Salvar recorrência',salvarEditorRecorrenciaGestor],['✕ Cancelar',()=>confirmarModeloRecorrenciaGestor('Descartar edição?','Descartar apenas os campos deste modelo?',()=>{editorRecorrenciaGestor=null;f.replaceChildren();try{localStorage.removeItem('gestorModeloRecorrenciaRascunhoV1');}catch(_){}})]]){const b=elementoRecorrenciaGestor('button',texto,'rounded-xl bg-slate-700 p-3 text-white font-bold');b.type='button';b.onclick=fn;f.append(b);}
+  atualizarOrigemEditorRecorrenciaGestor();f.scrollIntoView?.({behavior:'smooth',block:'start'});
 }
 function guardarModeloRecorrenciaRascunhoGestor(){if(!editorRecorrenciaGestor)return;const campos=Object.fromEntries(Array.from(document.querySelectorAll('#editorModeloRecorrenciaGestor input,#editorModeloRecorrenciaGestor select')).map(e=>[e.id,e.value]));try{gravarArmazenamentoGestor('gestorModeloRecorrenciaRascunhoV1',JSON.stringify({modelo:editorRecorrenciaGestor,campos}));}catch(e){estadoRecorrenciaGestor('Rascunho não guardado: '+e.message);}}
 function salvarEditorRecorrenciaGestor(){
   try{const v=id=>document.getElementById('modelo-rec-'+id).value,p={...editorRecorrenciaGestor,origem:v('origem'),modo:v('modo'),descricao:v('descricao'),pessoa:v('pessoa'),forma:v('forma'),categoria:v('categoria'),valor:centavosPlanejamentoGestor(v('valor'))/100,dia:Number(v('dia')),proximoMes:v('proximoMes').trim(),defasagem:Number(v('defasagem'))};
     if(editorRecorrenciaGestor.epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada. Consulte novamente.');
-    if(!p.descricao.trim()||!p.forma||p.valor<=0||!Number.isInteger(p.dia)||p.dia<1||p.dia>31||!parseMesFat(p.proximoMes).m||p.origem==='terceiros'&&!p.pessoa.trim()||p.origem==='pessoal'&&!p.categoria)throw Error('Confira descrição, forma, pessoa/categoria, valor e datas.');
+    if(!p.descricao.trim()||!p.forma||p.valor<=0||!Number.isInteger(p.dia)||p.dia<1||p.dia>31||!interpretarCompetenciaGestor(p.proximoMes).m||p.origem==='terceiros'&&!p.pessoa.trim()||p.origem==='pessoal'&&!p.categoria)throw Error('Confira descrição, forma, pessoa/categoria, valor e datas.');
     confirmarModeloRecorrenciaGestor('Salvar recorrência?',p.descricao+' · '+(p.modo==='revisao'?'Pedir revisão antes de registrar cada mês.':'Registrar automaticamente '+formatBRL(p.valor)+' a partir de '+p.proximoMes+'.'),()=>enviarModeloRecorrenciaGestor('salvarRecorrenciaWeb',p));
-  }catch(e){mostrarAviso('Confira o modelo',e.message);}
-}
-function criarRecorrenciaDoHistoricoGestor(l){
-  if(String(l[6]).replace(/^'/,'')!=='1/1'){mostrarAviso('Série existente','Use um lançamento à vista para criar outro modelo. Séries recorrentes existentes continuam com seu próprio editor.');return;}
-  const partes=l[0].split('/'),h=hojeCivilGestor(),d=new Date(Math.max(new Date(Number(partes[2]),Number(partes[1]),1).getTime(),new Date(h.getFullYear(),h.getMonth(),1).getTime())),mes=String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(),fat=parseMesFat(l[8]),data=parseMesFat(partes[1]+'/'+partes[2]),defasagem=Math.max(0,Math.min(2,(fat.a-data.a)*12+fat.m-data.m));
-  modeloHistoricoPendenteGestor={origem:'pessoal',modo:'revisao',descricao:l[1],forma:l[2],categoria:l[3],valorCentavos:Math.round(lerValorMoeda(l[7])*100),dia:Number(partes[0]),proximoMes:mes,defasagem,tags:l[11]||'',perfilGasto:l[20]||null,registroOrigem:l[13],versaoOrigem:l[15]};setAba('assinaturas');
+  }catch(e){mostrarAviso('Confira a recorrência',e.message);}
 }
 function restaurarEditorModeloRecorrenciaGestor(){
   if(recorrenciasOcupadasGestor)return;
@@ -81,3 +76,31 @@ function restaurarEditorModeloRecorrenciaGestor(){
 }
 const abaAntesModelosRecorrenciaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesModelosRecorrenciaGestor(aba,...args);if(aba==='assinaturas')carregarModelosRecorrenciaGestor();return r;};
+
+function atualizarOrigemEditorRecorrenciaGestor(){
+  const origem=document.getElementById('modelo-rec-origem')?.value;
+  for(const [id,mostrar]of [['pessoa',origem==='terceiros'],['categoria',origem!=='terceiros']]){const l=document.getElementById('rotulo-modelo-rec-'+id);if(l){l.hidden=!mostrar;l.classList?.toggle('hidden',!mostrar);}}
+  const def=document.getElementById('modelo-rec-defasagem');
+  if(!editorRecorrenciaGestor?.id&&!editorRecorrenciaGestor?.registroOrigem&&def?.dataset?.escolhaManual!=='true'&&typeof calcularMesFaturaCartao==='function'){
+    const forma=buscarFormaPagamentoGestor(document.getElementById('modelo-rec-forma').value),p=interpretarCompetenciaGestor(document.getElementById('modelo-rec-proximoMes').value),dia=Number(document.getElementById('modelo-rec-dia').value);
+    if(forma&&p.m&&Number.isInteger(dia)&&dia>=1&&dia<=31){const d=Math.min(dia,new Date(p.a,p.m,0).getDate()),fat=interpretarCompetenciaGestor(calcularMesFaturaCartao(forma,String(d).padStart(2,'0')+'/'+String(p.m).padStart(2,'0')+'/'+p.a).mesFat);if(fat.m)def.value=String(Math.max(0,Math.min(2,(fat.a-p.a)*12+fat.m-p.m)));}
+  }
+}
+function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
+  const abrir=window[nome];window[nome]=function(...args){
+    const r=abrir(...args),m=document.getElementById(modalId);if(!m?.querySelector)return r;
+    let botao=m.querySelector('[data-criar-recorrencia-editor]');
+    if(!botao){botao=elementoRecorrenciaGestor('button','📌 Criar recorrência','w-full rounded-xl border border-slate-600 py-2 px-3 text-sm text-sky-300 text-center');botao.type='button';botao.setAttribute('data-criar-recorrencia-editor','true');m.querySelector('form').append(botao);}
+    const parcela=args[tipo==='pessoal'?9:8],ref=detalhesReferenciaGestor(args[0]);botao.hidden=String(parcela).replace(/^'/,'')!=='1/1'||!ref;
+    botao.onclick=()=>{
+      if(m.getAttribute?.('aria-busy')==='true'){mostrarAviso('Aguarde','Conclua o envio antes de criar a recorrência.');return;}
+      if(m._assinaturaInicial&&m._assinaturaInicial!==assinaturaFormularioRotinaGestor(m.querySelector('form'))){mostrarAviso('Salve a edição primeiro','Crie a recorrência a partir dos dados salvos. Salve ou descarte a edição antes de continuar.');return;}
+      const terceiros=tipo==='terceiros',data=args[1].split('/'),h=hojeCivilGestor(),d=new Date(Math.max(new Date(Number(data[2]),Number(data[1]),1).getTime(),new Date(h.getFullYear(),h.getMonth(),1).getTime())),mes=String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+      const compra=interpretarCompetenciaGestor(data[1]+'/'+data[2]),fat=interpretarCompetenciaGestor(args[6]);
+      modeloHistoricoPendenteGestor={origem:tipo,modo:'revisao',descricao:args[terceiros?3:2],pessoa:terceiros?args[2]:'',forma:args[terceiros?4:3],categoria:terceiros?'':args[4],valorCentavos:Math.round(lerValorMoeda(args[5])*100),dia:Number(data[0]),proximoMes:mes,defasagem:Math.max(0,Math.min(2,(fat.a-compra.a)*12+fat.m-compra.m)),tags:terceiros?'':args[8]||'',perfilGasto:terceiros?null:args[10]||null,registroOrigem:ref.registroId,versaoOrigem:ref.versao};
+      window[terceiros?'fecharModalEdicaoEmp':'fecharModalEdicaoLanc'](true);setAba('assinaturas');
+    };return r;
+  };
+}
+instalarAtalhoRecorrenciaEdicaoGestor('abrirModalEdicaoLanc','modalEdicaoLanc','pessoal');
+instalarAtalhoRecorrenciaEdicaoGestor('abrirModalEdicaoEmp','modalEdicaoEmp','terceiros');

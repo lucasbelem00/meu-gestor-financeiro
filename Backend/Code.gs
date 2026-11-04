@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -144,6 +144,12 @@ function parseMesFat(str) {
 const ANO_MIN_COMPETENCIA_GESTOR_=1900;
 const ANO_MAX_COMPETENCIA_GESTOR_=2200;
 function anoCompetenciaValidoGestor_(ano){return Number.isInteger(ano)&&ano>=ANO_MIN_COMPETENCIA_GESTOR_&&ano<=ANO_MAX_COMPETENCIA_GESTOR_;}
+// Leitura estrita compartilhada. Não depender do parseMesFat exclusivo do servidor.
+function interpretarCompetenciaGestor(valor){
+  const p=/^(\d{2})\/(\d{4})$/.exec(String(valor||'').replace(/^'/,'').trim());
+  if(!p||Number(p[1])<1||Number(p[1])>12||!anoCompetenciaValidoGestor_(Number(p[2])))return {m:0,a:0,time:0};
+  const m=Number(p[1]),a=Number(p[2]);return {m,a,time:new Date(a,m-1,1).getTime()};
+}
 function validarPeriodoParcelasGestor_(valor,quantidade=1,inicial=1){
   const texto=String(valor||'').replace(/^'/,'').trim(),p=/^(\d{2})\/(\d{4})$/.exec(texto);
   if(!p||Number(p[1])<1||Number(p[1])>12||!anoCompetenciaValidoGestor_(Number(p[2])))throw Error('Mês da fatura inválido. Use MM/AAAA, entre '+ANO_MIN_COMPETENCIA_GESTOR_+' e '+ANO_MAX_COMPETENCIA_GESTOR_+'.');
@@ -2164,6 +2170,7 @@ function getDadosCompletos() {
       faturas: { mesesGlobais: mesesContinuos, pivot: pivotFaturas, mesAtual: mesAtualStr, chaveResumo: chaveTotalCarteira, horizonte: horizonte },
       categorias: categorias,
       configCategorias: configCategorias,
+      preferenciasApp:lerPreferenciasAppGestor_(),
       perfilGastos:resumoPerfilGastosGestor_(lancamentosValidos,mesAtualStr),
       consumoCategoriasPorMes: consumoCatPorMes,
       formasPagamento: listaFormasPagto,
@@ -2259,7 +2266,7 @@ function valoresCelulasBackupGestor_(linhas, fuso) {
 }
 function montarBackupDadosGestor_(ss,param,recuperacao) {
     const restauravel=Boolean(param && param.restauravel);
-    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias','Recorrências'].concat(restauravel?[]:['_Gestor_Atividade']);
+    const nomes = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias','Recorrências','Preferências do app'].concat(restauravel?[]:['_Gestor_Atividade']);
     const fuso = ss.getSpreadsheetTimeZone() || getTimezone();
     const abas = nomes.map(function (nome) {
       const sh = folhaLeituraAnualGestor_(ss,nome);
@@ -2286,6 +2293,7 @@ function propriedade_(nome) {
 
 function executarAcaoApiInterna_(action, param) {
   switch (action) {
+    case 'salvarLimitePessoalWeb': return salvarLimitePessoalWeb(param);
     case 'obterRecorrenciasWeb': return obterRecorrenciasWeb();
     case 'salvarRecorrenciaWeb': return salvarRecorrenciaWeb(param);
     case 'confirmarMesRecorrenciaWeb': return confirmarMesRecorrenciaWeb(param);
@@ -4810,7 +4818,7 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   adiantarParcelasWeb: 'Parcelas antecipadas', salvarNotasWeb: 'Notas atualizadas',
   editarAssinaturaWeb: 'Despesa fixa editada', cancelarAssinaturaWeb: 'Despesa fixa cancelada', retomarAssinaturaWeb: 'Assinatura retomada', pularMesFixoWeb: 'Mês da despesa fixa pulado',
   salvarFormaPagamentoWeb: 'Forma de pagamento atualizada', excluirFormaPagamentoWeb: 'Forma de pagamento excluída',
-  reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas', salvarPlanejamentoWeb:'Planejamento atualizado', salvarRecorrenciaWeb:'Modelo de recorrência atualizado', confirmarMesRecorrenciaWeb:'Mês de recorrência tratado', processarModelosRecorrenciaGestor:'Recorrências automáticas registradas',
+  reordenarFormasPagamentoWeb: 'Formas reorganizadas', salvarCategoriasWeb: 'Categorias atualizadas', salvarLimitePessoalWeb:'Limite pessoal atualizado', salvarPlanejamentoWeb:'Planejamento atualizado', salvarRecorrenciaWeb:'Modelo de recorrência atualizado', confirmarMesRecorrenciaWeb:'Mês de recorrência tratado', processarModelosRecorrenciaGestor:'Recorrências automáticas registradas',
   restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
@@ -5007,7 +5015,7 @@ function desfazerAtividadeWeb(param) {
 }
 
 // Restauração com prévia, controle de concorrência e cópia anterior recuperável.
-const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias','Recorrências'];
+const ABAS_BACKUP_RESTAURAVEL_ = ['Dashboard & Resumo', 'Formas de Pagamento', 'Lançamentos', 'Empréstimos', 'Anotações', 'Planejamento','Perfil de Categorias','Recorrências','Preferências do app'];
 const ABA_RESTAURACOES_GESTOR_ = '_Gestor_Restauracoes';
 const LIMITE_BACKUP_RESTAURACAO_GESTOR_ = 8 * 1024 * 1024;
 const CABECALHO_COPIAS_RESTAURACAO_GESTOR_ = ['Operação','Data','Parte','Conteúdo','SHA256','Partes'];
@@ -5026,6 +5034,7 @@ function validarConteudoAbaBackupGestor_(aba) {
   const vazia = function (r) { return r.every(function (v) { return v === '' || v === null; }); };
   const duplicados = new Set();
   const registrar = function (id) { if (duplicados.has(id)) throw new Error('Identificação repetida em ' + nome); duplicados.add(id); };
+  if (nome === 'Preferências do app') validarPreferenciasAppGestor_(linhas);
   if (nome === 'Recorrências') validarModelosRecorrenciaGestor_(linhas);
   if (nome === 'Planejamento') validarPlanejamentoGestor_(linhas);
   if (nome === 'Perfil de Categorias') validarTabelaPerfilCategoriasGestor_(linhas);
@@ -5098,6 +5107,7 @@ function validarBackupRestauracaoGestor_(backup) {
     if (cabecalho && cabecalho.some(function (v, i) { return i < (registros ? 11 : Math.min(cols, cabecalho.length)) && String(v || '').trim() !== String(aba.valores[0][i] || '').trim(); })) throw new Error('Os cabeçalhos de ' + aba.nome + ' não correspondem à planilha atual.');
     const formulas = aba.formulas || [];
     if(aba.nome==='Perfil de Categorias'&&formulas.some(r=>r.some(Boolean)))throw Error('Perfil de Categorias não aceita fórmulas nos dados.');
+    if(aba.nome==='Preferências do app'&&formulas.some(r=>r.some(Boolean)))throw Error('Preferências não aceita fórmulas.');
     if(aba.nome==='Recorrências'&&formulas.some(r=>r.some(Boolean)))throw Error('Recorrências não aceita fórmulas nos dados.');
     if(aba.nome==='Planejamento'&&formulas.some(r=>r.some(Boolean)))throw Error('Planejamento não aceita fórmulas nos dados.');
     const valores = aba.valores.map(function (r, i) { return r.map(function (v, j) {
@@ -5146,7 +5156,7 @@ function validarBackupRestauracaoGestor_(backup) {
   }).filter(Boolean);
   ['Dashboard & Resumo','Formas de Pagamento','Lançamentos'].forEach(function (nome) { if (!vistos.has(nome)) throw new Error('O backup está incompleto: falta ' + nome); });
   // Ausência não significa exclusão: abas que não constam no arquivo ficam intactas.
-  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome) && (!['Planejamento','Perfil de Categorias','Recorrências'].includes(nome)||obterPlanilhaGestor_().getSheetByName(nome)); });
+  abas.preservadas = ABAS_BACKUP_RESTAURAVEL_.filter(function (nome) { return !vistos.has(nome) && (!['Planejamento','Perfil de Categorias','Recorrências','Preferências do app'].includes(nome)||obterPlanilhaGestor_().getSheetByName(nome)); });
   abas.avisos = abas.preservadas.map(function (nome) { return nome + ': ausente no arquivo; os dados atuais serão preservados.'; });
   validarIdentidadesEstadoRestauradoGestor_(abas);
   if (formulasCriticas) abas.avisos.push(formulasCriticas + ' fórmula(s) de configuração serão restauradas como os valores validados exibidos na prévia, preservando limites, nomes, dias e metas.');
@@ -5198,11 +5208,12 @@ function diferencasAbaRestauracaoGestor_(nome, antes, depois) {
       } else if (nome === 'Anotações') { chave='nota:'+r[0]; conteudo=[r[0],r[1],r[2],r[3],r[5]]; }
       else if (nome === 'Formas de Pagamento') { chave='forma:'+chaveFormaGestor_(r[1]); conteudo=r; }
       else if (nome === 'Planejamento') { chave='plano:'+r[0]; conteudo=r.slice(0,8); }
+      else if (nome === 'Preferências do app') { chave='preferencia:'+r[0]; conteudo=r.slice(0,3); }
       else if (nome === 'Recorrências') { chave='recorrencia:'+r[0]; conteudo=r.slice(0,3); }
       else if (nome === 'Perfil de Categorias') { chave='perfil:'+chaveCategoria(r[0]); conteudo=r.slice(0,3); }
       else { chave='categoria:'+chaveCategoria(r[1]); conteudo=[r[1],r[3]]; }
       const repeticao=repetidos.get(chave) || 0; repetidos.set(chave,repeticao+1);
-      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String((nome==='Recorrências'?JSON.parse(r[1]).descricao:r[nome==='Perfil de Categorias'?0:nome==='Planejamento'||nome==='Empréstimos'?2:1]) || r[0] || '').slice(0,160)});
+      mapa.set(chave+':'+repeticao,{hash:hashEstadoGestor_([conteudo]),rotulo:String((nome==='Preferências do app'?'Limite pessoal mensal':nome==='Recorrências'?JSON.parse(r[1]).descricao:r[nome==='Perfil de Categorias'?0:nome==='Planejamento'||nome==='Empréstimos'?2:1]) || r[0] || '').slice(0,160)});
     }); return mapa;
   };
   const atuais=construir(antes), novos=construir(depois), resumo={incluidos:0,alterados:0,removidos:0,mantidos:0,amostras:[]};
@@ -6588,7 +6599,7 @@ function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties(
 function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
   try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};
     const e=s?.ultimaExecucao;if(e&&Number.isFinite(e.inicioServidorMs)&&e.inicioServidorMs>=0)estado.ultimaExecucao={inicioServidorMs:e.inicioServidorMs,fimServidorMs:Number.isFinite(e.fimServidorMs)?e.fimServidorMs:null,duracaoMs:Number.isFinite(e.duracaoMs)?e.duracaoMs:null};
-    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
+    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
     if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
   catch(_){return {modo:'imediato',pendente:false,erro:'Confira a configuração do resumo em segundo plano.'};}
 }
@@ -6713,19 +6724,30 @@ function reconhecerFormulaPadraoResumoGestor_(formula,linha,coluna,ss,valoresDas
   if(linha>=17&&linha<=41&&coluna===3&&comparar('=SUMIFS('+l+'H:H;'+l+'D:D;B'+linha+';'+l+'I:I;TEXT(TODAY();"mm/yyyy");'+l+'J:J;"<>Assinatura Cancelada")'))return {linha:linha,coluna:coluna,categoria:String((valoresDashboard?valoresDashboard[linha-1]?.[1]:ss.getSheetByName('Dashboard & Resumo').getRange(linha,2).getValue())||'')};
   return null;
 }
-function gravarResumoConferidoGestor_(sh,linhas){
-  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
-  // Comparar conteúdo real, não apenas o hash guardado: corrupção e fórmulas
-  // inseridas na aba derivada continuam sendo reparadas pela gravação completa.
-  const dataValida=typeof atuais[2]?.[1]==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(atuais[2][1])&&Number.isFinite(Date.parse(atuais[2][1]));
-  const igual=dataValida&&Math.max(atuais.length,linhas.length)===linhas.length&&linhas.every((r,i)=>Array.from({length:cols},(_,j)=>j).every(j=>{
-    if(i===2&&j===1)return true;
-    return (atuais[i]?.[j]??'')===(r[j]??'');
-  }));
-  // Se os valores já divergiram, a regravação é obrigatória. Só consultar
-  // fórmulas quando os valores iguais permitiriam dispensar essa gravação.
-  if(igual&&!intervalo.getFormulas().some(r=>r.some(Boolean)))return false;
-  gravarMatrizProtecaoGestor_(sh,linhas);return true;
+function gravarResumoConferidoGestor_(sh,linhas,tempos){
+  const inicio=Date.now(),range=sh.getDataRange(),atuais=range.getValues(),formulas=range.getFormulas(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
+  const n=Math.max(atuais.length,linhas.length),alvos=[];
+  for(let i=0;i<n;i++){
+    const nova=Array.from({length:cols},(_,j)=>linhas[i]?.[j]??'');
+    if(formulas[i]?.some(Boolean)||nova.some((v,j)=>!(i===2&&j===1)&&(atuais[i]?.[j]??'')!==v))alvos.push(i);
+  }
+  const data=atuais[2]?.[1];if(typeof data!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(data)||!Number.isFinite(Date.parse(data)))if(!alvos.includes(2))alvos.push(2);
+  if(tempos)tempos.resumoComparacaoMs=Date.now()-inicio;
+  if(!alvos.length){if(tempos){tempos.resumoGravacaoMs=0;tempos.resumoFlushMs=0;}return false;}
+  if(!alvos.includes(2))alvos.push(2);alvos.sort((a,b)=>a-b);
+  // Evita trocar uma gravação em lote por dezenas de chamadas pequenas.
+  const blocos=alvos.reduce((s,v,i)=>s+Number(i===0||v!==alvos[i-1]+1),0);
+  if(blocos>3)alvos.splice(0,alvos.length,...Array.from({length:n},(_,i)=>i));
+  if(sh.getMaxRows&&n>sh.getMaxRows())sh.insertRowsAfter(sh.getMaxRows(),n-sh.getMaxRows());
+  if(sh.getMaxColumns&&cols>sh.getMaxColumns())sh.insertColumnsAfter(sh.getMaxColumns(),cols-sh.getMaxColumns());
+  const gravacao=Date.now();
+  for(let k=0;k<alvos.length;){let fim=k+1;while(fim<alvos.length&&alvos[fim]===alvos[fim-1]+1)fim++;
+    const valores=alvos.slice(k,fim).map(i=>Array.from({length:cols},(_,j)=>{const v=linhas[i]?.[j]??'';return typeof v==='string'&&/^[=+@]/.test(v)?"'"+v:v;}));
+    sh.getRange(alvos[k]+1,1,valores.length,cols).setValues(valores);k=fim;
+  }
+  if(tempos)tempos.resumoGravacaoMs=Date.now()-gravacao;
+  const flush=Date.now();SpreadsheetApp.flush();if(tempos)tempos.resumoFlushMs=Date.now()-flush;
+  return true;
 }
 function atualizarResumoNativoGestor_(ss,tempos){
   let marco=Date.now();const medir=nome=>{const agora=Date.now();if(tempos)tempos[nome]=Math.max(0,agora-marco);marco=agora;};
@@ -6748,7 +6770,7 @@ function atualizarResumoNativoGestor_(ss,tempos){
   medir('resumoDashboardMs');
   if(!sh)sh=ss.insertSheet(ABA_RESUMO_NATIVO_GESTOR_);
   const linhas=[[MARCADOR_RESUMO_NATIVO_GESTOR_,propriedade_(CHAVE_ID_PLANILHA_GESTOR),JSON.stringify({versao:1,migracoes:migracoes})],['SHA256 dos dados',hash],['Atualizado em',new Date().toISOString()],CAB_RESUMO_NATIVO_GESTOR_,...grupos.map(g=>[g.ano,g.mes,g.forma,g.categoria,g.origem,g.total/100,g.pago/100,g.saldo/100,g.recebido/100,g.aReceber/100,g.quantidade,g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.tipo):'',g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.prioridade):''])];
-  const gravado=gravarResumoConferidoGestor_(sh,linhas);if(gravado&&sh.setFrozenRows)sh.setFrozenRows(4);
+  const gravado=gravarResumoConferidoGestor_(sh,linhas,tempos);if(gravado&&sh.setFrozenRows)sh.setFrozenRows(4);
   if(gravado&&grupos.length)sh.getRange(5,6,grupos.length,5).setNumberFormat('R$ #,##0.00');
   medir('resumoEscritaMs');
   // A marca é persistida primeiro: interrupção após uma célula pode retomar
@@ -7219,7 +7241,7 @@ function salvarRecorrenciaWeb(p){return executarOperacaoGestor_('salvarRecorrenc
   const m={origem:p.origem,modo:p.modo,ativo:true,descricao:formatarTituloInteligente(p.descricao),forma:validarFormaAtualGestor_(p.forma,{novaCompra:true}),categoria:p.origem==='pessoal'?validarCategoriaAtualGestor_(p.categoria):'',pessoa:p.origem==='terceiros'?formatarTituloInteligente(p.pessoa):'',valorCentavos:centavosGestor_(p.valor),dia:Number(p.dia),defasagem:Number(p.defasagem),proximoMes:p.proximoMes,tags:String(p.tags||''),perfilGasto:p.perfilGasto||null};
   if(m.modo==='automatico'){const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor'))throw Error('Ative a proteção automática em Exportar dados e backup antes de usar o registro automático. Você pode usar revisão mensal por enquanto.');}
   if(p.registroOrigem){
-    const sh=obterPlanilhaGestor_().getSheetByName('Lançamentos'),r=sh&&lerAbaCompleta(sh,COLUNAS_GESTOR_).raw.find(r=>r[11]===p.registroOrigem);
+    const sh=obterPlanilhaGestor_().getSheetByName(m.origem==='terceiros'?'Empréstimos':'Lançamentos'),r=sh&&lerAbaCompleta(sh,COLUNAS_GESTOR_).raw.find(r=>r[11]===p.registroOrigem);
     if(!r||r[13]!==p.versaoOrigem)throw Error('O lançamento de origem mudou. Abra novamente pelo Histórico.');
     if(limparApostrofo(r[6])!=='1/1')throw Error('Crie o modelo a partir de um gasto à vista, sem alterar uma série parcelada ou recorrente existente.');
     const periodo=parseMesFat(formatarCelulaRegistroGestor_(r[0],'dd/MM/yyyy').slice(3));
@@ -7271,3 +7293,22 @@ function rotinaModelosRecorrenciaGestor(){
   return executarOperacaoGestor_('processarModelosRecorrenciaGestor',{requestId:gerarIdGestor_(),baseRestauracao:epocaRestauracaoGestor_()},()=>({criados:processarModelosAutomaticosGestor_()}),false);
 }
 // FIM MODULO RECORRENCIAS GERADO
+
+// INICIO MODULO PREFERENCIAS GERADO
+const ABA_PREFERENCIAS_APP_GESTOR_='Preferências do app';
+const CAB_PREFERENCIAS_APP_GESTOR_=['Chave','Valor JSON','Versão'];
+function validarPreferenciasAppGestor_(linhas){
+ if(!Array.isArray(linhas)||linhas.length>2||JSON.stringify(linhas[0])!==JSON.stringify(CAB_PREFERENCIAS_APP_GESTOR_))throw Error('Estrutura de preferências inválida.');
+ for(const r of linhas.slice(1)){if(r.length!==3||r[0]!=='limitePessoal'||typeof r[1]!=='string'||!Number.isSafeInteger(r[2])||r[2]<1)throw Error('Preferência inválida.');let v;try{v=JSON.parse(r[1]);}catch(_){throw Error('Valor de preferência inválido.');}if(!v||!Number.isSafeInteger(v.centavos)||v.centavos<0||typeof v.incluirPrevistos!=='boolean')throw Error('Limite pessoal inválido.');}return linhas;
+}
+function lerPreferenciasAppGestor_(){
+ const sh=obterPlanilhaGestor_().getSheetByName(ABA_PREFERENCIAS_APP_GESTOR_);if(!sh||!sh.getLastRow())return {limitePessoal:null,versao:0};
+ const range=sh.getDataRange();if(range.getFormulas().some(r=>r.some(Boolean)))throw Error('Preferências não aceita fórmulas.');
+ const linhas=validarPreferenciasAppGestor_(range.getValues()),r=linhas[1];return {limitePessoal:r?JSON.parse(r[1]):null,versao:r?r[2]:0};
+}
+function salvarLimitePessoalWeb(p){return executarOperacaoGestor_('salvarLimitePessoalWeb',p,()=>{
+ const atual=lerPreferenciasAppGestor_();if(p.versao!==atual.versao)throw Error('O limite mudou em outro aparelho. Atualize os dados antes de salvar.');
+ const v={centavos:p.centavos,incluirPrevistos:p.incluirPrevistos},linhas=[CAB_PREFERENCIAS_APP_GESTOR_,['limitePessoal',JSON.stringify(v),atual.versao+1]];validarPreferenciasAppGestor_(linhas);
+ const ss=obterPlanilhaGestor_(),sh=ss.getSheetByName(ABA_PREFERENCIAS_APP_GESTOR_)||ss.insertSheet(ABA_PREFERENCIAS_APP_GESTOR_);sh.getRange(1,1,2,3).setValues(linhas);return {limitePessoal:v,versao:atual.versao+1};
+},false);}
+// FIM MODULO PREFERENCIAS GERADO

@@ -9,6 +9,14 @@ function ambiente(dados=fixture()){
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
 
+test('resumo altera somente blocos necessários e repara fórmulas mesmo fora do bloco do valor editado',()=>{
+ const a=ambiente(fixture(Array.from({length:10},(_,i)=>personal('Compra '+i,10,'1/1',String(i+1).padStart(2,'0')+'/2026','Em Aberto'))));
+ a.ctx.atualizarResumoNativoGestor_(a.db);const sh=a.db.sheets['_Gestor_Resumo'],ler=sh.getRange;let celulas=0;
+ sh.getRange=function(...args){const r=ler.apply(this,args),gravar=r.setValues;r.setValues=function(v){celulas+=v.reduce((s,r)=>s+r.length,0);return gravar.call(this,v);};return r;};
+ a.db.sheets['Lançamentos'].rows[1][7]=15;a.ctx.atualizarResumoNativoGestor_(a.db);assert(celulas<sh.rows.length*13);assert.equal(sh.rows.slice(4).reduce((s,r)=>s+r[5],0),105);
+ sh.getRange(6,6).setValue('=999');a.ctx.atualizarResumoNativoGestor_(a.db);assert.equal(sh.getRange(6,6).getFormulas()[0][0],'');assert.equal(sh.rows.slice(4).reduce((s,r)=>s+r[5],0),105);
+});
+
 test('resumo reutiliza categorias na mesma execução, mas relê no próximo resumo',()=>{
  const a=ambiente(),dash=a.db.sheets['Dashboard & Resumo'],ler=dash.getRange;let leituras=0;
  dash.getRange=function(...args){const r=ler.apply(this,args);if(args[0]==='B17:B41'||args[0]===17&&args[1]===2){const valores=r.getValues;r.getValues=function(){leituras++;return valores.call(this);};}return r;};

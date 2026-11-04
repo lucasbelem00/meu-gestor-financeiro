@@ -60,17 +60,23 @@ function renderizarRotinaPainelGestor(){
 }
 function renderizarLimitePessoalPainelGestor(dados){
   const resumo=document.getElementById('resumoLimitePessoalGestor');if(!resumo)return;
-  const config=normalizarConfigLimitePessoalGestor(lerJSONLocalGestor('gestorLimitePessoalV1',{})),r=calcularLimitePessoalPainelGestor(dados,config);
+  const config=normalizarConfigLimitePessoalGestor(dados.preferenciasApp?.limitePessoal??lerJSONLocalGestor('gestorLimitePessoalV1',{})),r=calcularLimitePessoalPainelGestor(dados,config);
   const campo=document.getElementById('valorLimitePessoalGestor');
   if(!limitePessoalEmEdicaoGestor){if(document.activeElement!==campo)campo.value=r.limite>0?formatBRL(r.limite/100):'';document.getElementById('previsoesLimitePessoalGestor').checked=config.incluirPrevistos===true;}
   document.getElementById('periodoLimitePessoalGestor').textContent=r.mes||'';
   renderizarResultadoLimitePessoalGestor(resumo,r,config);
 }
-function salvarLimitePessoalPainelGestor(limpar=false){
+let envioLimitePessoalGestor=false;
+async function salvarLimitePessoalPainelGestor(limpar=false){
+  if(envioLimitePessoalGestor)return;
   const valor=limpar?0:lerValorMoeda('valorLimitePessoalGestor'),centavos=Math.round(valor*100);
-  if(!limpar&&(!Number.isSafeInteger(centavos)||centavos<=0)){mostrarAviso('Confira o limite','Informe um valor maior que zero.');return;}
-  try{gravarArmazenamentoGestor('gestorLimitePessoalV1',JSON.stringify({centavos,incluirPrevistos:!limpar&&document.getElementById('previsoesLimitePessoalGestor').checked}));limitePessoalEmEdicaoGestor=false;renderizarRotinaPainelGestor();mostrarAviso(limpar?'Limite removido':'Limite guardado',dadosRotinaPainelGestor?'O acompanhamento mensal foi atualizado.':'O limite está salvo neste aparelho. Aguarde a consulta dos gastos para ver o resultado.');}
-  catch(e){mostrarAviso('Limite não guardado',e.message);}
+  if(!Number.isSafeInteger(centavos)||centavos<0||!limpar&&centavos===0){mostrarAviso('Confira o limite','Informe um valor maior que zero.');return;}
+  if(!dadosRotinaPainelGestor?.preferenciasApp){mostrarAviso('Atualize os dados','Carregue os dados e a versão atual do Apps Script antes de sincronizar o limite.');return;}
+  envioLimitePessoalGestor=true;
+  const liberar=typeof bloquearControlesEnvioGestor==='function'?bloquearControlesEnvioGestor(document.getElementById('limitePessoalPainelGestor')):()=>{};
+  try{const r=await apiCall('salvarLimitePessoalWeb',{centavos,incluirPrevistos:!limpar&&document.getElementById('previsoesLimitePessoalGestor').checked,versao:dadosRotinaPainelGestor.preferenciasApp.versao},1);
+    dadosRotinaPainelGestor.preferenciasApp=r;try{gravarArmazenamentoGestor('gestorLimitePessoalV1',JSON.stringify(r.limitePessoal));}catch(_){}limitePessoalEmEdicaoGestor=false;renderizarRotinaPainelGestor();mostrarAviso(limpar?'Limite removido':'Limite guardado','Salvo na planilha. Os outros aparelhos receberão o limite ao atualizar os dados.');
+  }catch(e){mostrarAviso('Limite não confirmado',e.message);}finally{envioLimitePessoalGestor=false;liberar();}
 }
 const renderDadosAntesRotinaPainelGestor=window.renderizarDados;
 window.renderizarDados=function(dados){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados);}finally{renderizarRotinaPainelGestor();}};
