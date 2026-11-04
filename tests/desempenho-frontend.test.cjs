@@ -45,13 +45,40 @@ function coordenador(opcoes = {}) {
 
 test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',async()=>{
  const a=ambiente(async()=>({total:10}));
- a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
+ a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v138');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v139');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
- for(let i=0;i<30;i++)a.eventos.focus();assert.equal(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes.length,20);
+ for(let i=0;i<30;i++){a.eventos.blur();a.eventos.focus();}assert.equal(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes.length,20);
+});
+
+test('foco e visibilidade da mesma retomada invalidam uma vez, em qualquer ordem',async()=>{
+ for(const ordem of [['focus','document:visibilitychange'],['document:visibilitychange','focus']]){
+  let chamadas=0;const a=ambiente(async()=>({valor:++chamadas}));
+  await a.ctx.apiCall('obterRelatorioMes','10/2026');
+  a.eventos.blur();a.ctx.document.visibilityState='hidden';a.eventos['document:visibilitychange']();
+  const antes=a.ctx.obterMetricasDesempenhoGestor().invalidacoes;
+  a.ctx.document.visibilityState='visible';for(const evento of ordem)a.eventos[evento]();
+  assert.equal(a.ctx.obterMetricasDesempenhoGestor().invalidacoes,antes+1);
+  await a.ctx.apiCall('obterRelatorioMes','10/2026');assert.equal(chamadas,2);
+  a.eventos.blur();a.eventos.focus();assert.equal(a.ctx.obterMetricasDesempenhoGestor().invalidacoes,antes+2);
+ }
+});
+
+test('foco inicial ou repetido não invalida consulta em andamento; foco oculto espera visibilidade',async()=>{
+ const chamadas=[];const a=ambiente(acao=>new Promise(resolve=>chamadas.push({acao,resolve})),true);
+ const dados=a.ctx.carregarDados();await aguardar();a.eventos.focus();a.eventos['document:visibilitychange']();
+ chamadas[0].resolve({saldo:20});assert.equal(await dados,true);assert.equal(chamadas.length,1);assert.equal(a.ctx.obterMetricasDesempenhoGestor().descartadas,0);
+ const antes=a.ctx.obterMetricasDesempenhoGestor().invalidacoes;a.ctx.document.visibilityState='hidden';a.eventos['document:visibilitychange']();a.eventos.focus();assert.equal(a.ctx.obterMetricasDesempenhoGestor().invalidacoes,antes);
+ a.ctx.document.visibilityState='visible';a.eventos['document:visibilitychange']();a.eventos.focus();assert.equal(a.ctx.obterMetricasDesempenhoGestor().invalidacoes,antes+1);
+});
+
+test('retomada não absorve invalidação de gravação ou de outro aparelho',async()=>{
+ const a=ambiente(async()=>({confirmado:true}));a.eventos.blur();a.eventos.focus();
+ a.eventos.storage({key:'gestorEpocaRestauracaoV1'});await a.ctx.apiCall('salvarLancamentoWeb',{});a.eventos['document:visibilitychange']();
+ const m=a.ctx.obterMetricasDesempenhoGestor();assert.equal(m.invalidacoesPorMotivo.foco,1);assert.equal(m.invalidacoesPorMotivo.armazenamento,1);assert.equal(m.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(m.invalidacoesPorMotivo.mutacao_fim,1);assert.equal(m.invalidacoes,4);
 });
 
 test('Histórico espera edição pendente e compartilha consulta após a confirmação sem reenviar edição',async()=>{
@@ -211,7 +238,9 @@ test('retorno à conexão ou ao app invalida relatórios sem apagar rascunhos ou
   let chamadas=0;const a=ambiente(async()=>({valor:++chamadas}));
   a.ctx.filtroTeste={pessoa:'Ana'};a.ctx.rascunhoTeste='meu preenchimento';
   await a.ctx.apiCall('obterRelatorioMes','10/2026');await a.ctx.apiCall('obterRelatorioMes','10/2026');assert.equal(chamadas,1);
-  for(const evento of ['online','focus','document:visibilitychange']) {a.eventos[evento]();await a.ctx.apiCall('obterRelatorioMes','10/2026');}
+  a.eventos.online();await a.ctx.apiCall('obterRelatorioMes','10/2026');
+  a.eventos.blur();a.eventos.focus();await a.ctx.apiCall('obterRelatorioMes','10/2026');
+  a.ctx.document.visibilityState='hidden';a.eventos['document:visibilitychange']();a.ctx.document.visibilityState='visible';a.eventos['document:visibilitychange']();await a.ctx.apiCall('obterRelatorioMes','10/2026');
   assert.equal(chamadas,4);assert.equal(a.ctx.rascunhoTeste,'meu preenchimento');assert.equal(a.ctx.filtroTeste.pessoa,'Ana');
 });
 

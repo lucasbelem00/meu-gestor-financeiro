@@ -150,7 +150,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v138', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v139', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -293,12 +293,31 @@ if (typeof painelEmprestimosAntesCoordenacaoGestor === 'function') {
   };
 }
 window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor('online');const aviso=document.getElementById('avisoLeituraDadosGestor');revalidadorDiaGestor.verificar(aviso?.hidden===false);});
-window.addEventListener('focus',()=>{invalidarLeiturasDesempenhoGestor('foco');revalidadorDiaGestor.verificar();});
+// Foco e visibilidade descrevem a mesma retomada. Só uma saída observada
+// abre outro ciclo; não há janela de tempo que possa ocultar uma saída real.
+function criarControleRetomadaGestor(opcoes){
+  let afastado=opcoes.afastado();
+  return {
+    sair:()=>{afastado=true;},
+    retomar:motivo=>{
+      if(!afastado||!opcoes.visivel())return false;
+      afastado=false;opcoes.retornar(motivo);return true;
+    }
+  };
+}
+const controleRetomadaGestor=criarControleRetomadaGestor({
+  afastado:()=>document.visibilityState!=='visible'||(typeof document.hasFocus==='function'&&!document.hasFocus()),
+  visivel:()=>document.visibilityState==='visible',
+  retornar:motivo=>{invalidarLeiturasDesempenhoGestor(motivo);revalidadorDiaGestor.verificar();}
+});
+window.addEventListener('blur',()=>controleRetomadaGestor.sair());
+window.addEventListener('focus',()=>controleRetomadaGestor.retomar('foco'));
 window.addEventListener('storage', evento => {
   if (evento.key === null || evento.key === 'gestorEpocaRestauracaoV1' || evento.key === 'cacheDadosGestorV11' || evento.key?.startsWith('gestorMutacaoV3:')) invalidarLeiturasDesempenhoGestor('armazenamento');
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {invalidarLeiturasDesempenhoGestor('visivel');revalidadorDiaGestor.verificar();}
+  if(document.visibilityState==='hidden')controleRetomadaGestor.sair();
+  else if(document.visibilityState==='visible')controleRetomadaGestor.retomar('visivel');
 });
 
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo
