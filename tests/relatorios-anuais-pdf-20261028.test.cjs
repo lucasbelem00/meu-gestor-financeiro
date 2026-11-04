@@ -9,6 +9,29 @@ function ambiente(dados=fixture()){
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
 
+test('resumo igual não regrava nem reformata; edição só de descrição preserva o resultado',()=>{
+ const a=ambiente(fixture([personal('Original',30)]));a.ctx.atualizarResumoNativoGestor_(a.db);
+ const sh=a.db.sheets['_Gestor_Resumo'],data=sh.rows[2][1],original=sh.getRange;let escritas=0,formatos=0;
+ sh.getRange=function(...args){const r=original.apply(this,args),gravar=r.setValues;r.setValues=function(v){escritas++;return gravar.call(this,v);};r.setNumberFormat=function(){formatos++;return r;};return r;};
+ a.db.sheets['Lançamentos'].rows[1][1]='Descrição corrigida';
+ const tempos={};a.ctx.atualizarResumoNativoGestor_(a.db,tempos);
+ assert.equal(escritas,0);assert.equal(formatos,0);assert.equal(sh.rows[2][1],data);
+ for(const campo of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs'])assert.equal(typeof tempos[campo],'number');
+ a.db.sheets['Lançamentos'].rows[1][7]=40;a.ctx.atualizarResumoNativoGestor_(a.db);assert(escritas>0);assert.equal(sh.rows.slice(4).reduce((s,r)=>s+r[5],0),40);
+});
+test('resumo corrompido não é aceito só pelo hash e fórmula com valor igual é reparada',()=>{
+ const a=ambiente(fixture([personal('Teste',30)]));a.ctx.atualizarResumoNativoGestor_(a.db);const sh=a.db.sheets['_Gestor_Resumo'];
+ sh.rows[4][5]=999;a.ctx.atualizarResumoNativoGestor_(a.db);assert.equal(sh.rows[4][5],30);
+ sh.getRange(5,6).setValue('=30');a.ctx.atualizarResumoNativoGestor_(a.db);assert.equal(sh.getRange(5,6).getFormulas()[0][0],'');assert.equal(sh.rows[4][5],30);
+ sh.rows.push(['linha indevida']);a.ctx.atualizarResumoNativoGestor_(a.db);assert(!sh.rows.some(r=>r[0]==='linha indevida'));
+});
+test('resumo limita leitura de Dashboard às posições gerenciáveis e preserva conteúdo fora delas',()=>{
+ const a=ambiente(fixture([personal()])),dash=a.db.sheets['Dashboard & Resumo'];dash.getRange(80,20).setValue('=1+2');
+ const dataRange=dash.getDataRange;dash.getDataRange=()=>{throw Error('não ler Dashboard inteiro');};
+ assert.doesNotThrow(()=>a.ctx.atualizarResumoNativoGestor_(a.db));dash.getDataRange=dataRange;
+ assert.equal(dash.getRange(80,20).getFormulas()[0][0],'=1+2');
+});
+
 test('resumo confere ano uma vez para as duas origens e revalida alteração externa na próxima consulta',()=>{
  const a=ambiente(fixture([personal('Pessoal',30)], [loan('Ana','A Receber',20,'Cartao')]));
  const e=a.ctx.garantirAnoGestor_(a.db,2026),destino=a.planilhas.get(e.id);

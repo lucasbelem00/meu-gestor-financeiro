@@ -11,6 +11,10 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Resumo v136 (shared/relatorios.js): gravarResumoConferidoGestor_ compara valores e fórmulas reais da aba derivada para evitar somente gravação idêntica; conteúdo divergente usa gravarMatrizProtecaoGestor_. Dashboard é consultado em faixas limitadas às posições que formulaGerenciadaResumoGestor_ reconhece. atualizarResumoNativoGestor_ aceita objeto opcional de tempos, preenchido na atualização pós-gravação. Envelope/diagnóstico exportam subtempos do resumo por lista branca, sem parâmetros financeiros. Sem cache novo ou mudança no plano recuperável.
+
+Coordenação v135: interface/desempenho.js acompanha mutações em andamento na mesma aba e adia apenas filtrarLancamentosWeb até elas terminarem (sucesso ou falha). Não repete escrita, não inclui consultas de protocolo/recuperação na espera e preserva invalidação antes/depois. Evita a consulta do Histórico iniciar durante uma edição local; não substitui trava do servidor nem coordena outros aparelhos.
+
 Otimização v134: registrosResumoNativoGestor_ monta snapshot local de catálogo/ajustes anuais e mapa de anos já conferidos; matrizFinanceiraAnualGestor_ aceita esse snapshot apenas para a mesma base, copiando as matrizes reaproveitadas. Cada nova montagem revalida origem/hash dos anos; não há cache financeiro entre operações. Coordenador em interface/desempenho.js adia relatórios cacheáveis enquanto getDadosCompletos já estiver pendente, evitando que a própria carga completa invalide um relatório recém-enviado. Falha da carga não prende relatórios; compartilhamento, invalidações e guardas de resposta tardia permanecem.
 
 Concorrência v133: adquirirLockOperacaoGestor_ classifica indisponibilidade da trava do executor como SERVICO_OCUPADO, com espera limitada (leitura 10 s, escrita 30 s) e medição estado=ocupado. Nenhum dado é acessado antes da aquisição nem trava alheia liberada. doPost/apiCallServidor incluem tempos opcionais também em falhas; transportes validam/coletam antes de verificar sucesso. Não cria retentativa automática ou mudança no diário de recuperação.

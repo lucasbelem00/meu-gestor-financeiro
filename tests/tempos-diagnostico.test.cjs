@@ -30,10 +30,10 @@ test('subetapas preservam retorno e erro e expõem somente durações permitidas
  const d={};assert.equal(c.medirEtapaGravacaoGestor_(d,'resumoMs',()=>{agora=50;return 7;}),7);
  assert.throws(()=>c.medirEtapaGravacaoGestor_(d,'aplicacaoMs',()=>{agora=100;throw Error('interrompido');}),/interrompido/);
  assert.equal(d.resumoMs,50);assert.equal(d.aplicacaoMs,50);
- c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,1,{...d,senha:'privada'});
+ c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,1,{...d,resumoLeituraMs:12,resumoCalculoMs:NaN,senha:'privada'});
  const m=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
  vm.runInContext(front,c);const v=c.normalizarTemposServidorGestor(m.acao,m);
- assert.equal(v.detalhesGravacao.resumoMs,50);assert(!JSON.stringify(v).includes('privada'));
+ assert.equal(v.detalhesGravacao.resumoMs,50);assert.equal(v.detalhesGravacao.resumoLeituraMs,12);assert(!Object.hasOwn(v.detalhesGravacao,'resumoCalculoMs'));assert(!JSON.stringify(v).includes('privada'));
  assert.equal(c.normalizarTemposServidorGestor(m.acao,{...m,detalhesGravacao:{resumoMs:NaN}}).detalhesGravacao,undefined);
 });
 test('cada chamada reseta tempos e envelope não modifica dados',()=>{

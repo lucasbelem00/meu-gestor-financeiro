@@ -95,6 +95,10 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+v136: publicar Code.gs e frontend; manter implantação, permissões e manifesto. Numa edição real só de descrição/tags, verificar dados corretos sem necessidade de mudar Atualizado em do resumo se o conteúdo agregado for igual. Numa alteração de valor/pagamento, resumo deve refletir resultado novo e nova materialização. Copiar diagnóstico com subtempos resumoControle/Leitura/Calculo/Dashboard/Escrita/Formulas (ms), componentes de resumoMs. Reparação de corrupção e preservação de fórmulas particulares são testes automatizados; não adulterar a definitiva para testá-los. Conferir no uso habitual, sem repetir lançamentos apenas para medir.
+
+v135 (frontend): editar lançamento real necessário no Histórico e conferir gravação e lista após atualização. Filtro solicitado durante edição local deve aguardar sem nova escrita; após falha deve destravar, preservando eventual envio incerto. Consultas internas de protocolo/Atividade não podem ficar presas pela coordenação. Outra aba/aparelho ainda pode retornar SERVICO_OCUPADO, tratado pelo servidor. Sem nova publicação Apps Script exigida somente por v135.
+
 v134: publicar backend e frontend sincronizados. Abrir Mensal enquanto a carga inicial do Painel está pendente e conferir que o relatório do período escolhido aparece após a carga, sem valores de outro mês. Trocar período, editar/salvar e conferir invalidação normal. No próximo lançamento real, comparar resumoMs, total e consultas descartadas; períodos não constam no diagnóstico, portanto duas consultas próximas não provam duplicação. Anos fechados continuam conferidos a cada nova montagem; não alterar arquivo real para testar hash. Sem novas permissões ou mudanças no manifesto.
 
 Escrita com SERVICO_OCUPADO deve preservar envio para conferência: uma tentativa anterior do mesmo requestId pode estar em execução. Testes devem distinguir essa situação da consulta ocupada; não apagar journal/reenviar como novo lançamento. O pacote v133 tem tratamento local e testes, ainda requer publicação dos dois lados.

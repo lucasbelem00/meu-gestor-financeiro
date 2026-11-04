@@ -14,6 +14,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const cacheaveis = new Set(opcoes.cacheaveis || []);
   const cache = new Map(), consultas = new Map();
   const cargasCompletas = new Set();
+  const mutacoesPendentes = new Set();
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
   let geracao = 0, bytes = 0;
 
@@ -58,6 +59,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     return copia;
   }
   function consultar(acao, param, extras, repeticoes = 0) {
+    // Histórico não disputa a trava com a edição já enviada nesta aba.
+    // Não bloquear consultas internas de protocolo/confirmação da mutação.
+    if(acao==='filtrarLancamentosWeb'&&mutacoesPendentes.size){
+      return Promise.allSettled(Array.from(mutacoesPendentes)).then(()=>consultar(acao,param,extras,repeticoes));
+    }
     // A resposta da carga completa invalida relatórios. Se ela já está em
     // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
     if (cacheaveis.has(acao) && cargasCompletas.size) {
@@ -114,7 +120,10 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       catch (erro) { return Promise.reject(erro); }
     }
     invalidar();
-    return Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).finally(invalidar);
+    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).finally(invalidar);
+    mutacoesPendentes.add(mutacao);
+    mutacao.then(()=>mutacoesPendentes.delete(mutacao),()=>mutacoesPendentes.delete(mutacao));
+    return mutacao;
   }
   return {
     chamar, invalidar,

@@ -62,27 +62,47 @@ function reconhecerFormulaPadraoResumoGestor_(formula,linha,coluna,ss,valoresDas
   if(linha>=17&&linha<=41&&coluna===3&&comparar('=SUMIFS('+l+'H:H;'+l+'D:D;B'+linha+';'+l+'I:I;TEXT(TODAY();"mm/yyyy");'+l+'J:J;"<>Assinatura Cancelada")'))return {linha:linha,coluna:coluna,categoria:String((valoresDashboard?valoresDashboard[linha-1]?.[1]:ss.getSheetByName('Dashboard & Resumo').getRange(linha,2).getValue())||'')};
   return null;
 }
-function atualizarResumoNativoGestor_(ss){
+function gravarResumoConferidoGestor_(sh,linhas){
+  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),formulas=intervalo.getFormulas(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
+  // Comparar conteúdo real, não apenas o hash guardado: corrupção e fórmulas
+  // inseridas na aba derivada continuam sendo reparadas pela gravação completa.
+  const dataValida=typeof atuais[2]?.[1]==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(atuais[2][1])&&Number.isFinite(Date.parse(atuais[2][1]));
+  const igual=dataValida&&Math.max(atuais.length,linhas.length)===linhas.length&&linhas.every((r,i)=>Array.from({length:cols},(_,j)=>j).every(j=>{
+    if(formulas[i]?.[j])return false;
+    if(i===2&&j===1)return true;
+    return (atuais[i]?.[j]??'')===(r[j]??'');
+  }));
+  if(igual)return false;
+  gravarMatrizProtecaoGestor_(sh,linhas);return true;
+}
+function atualizarResumoNativoGestor_(ss,tempos){
+  let marco=Date.now();const medir=nome=>{const agora=Date.now();if(tempos)tempos[nome]=Math.max(0,agora-marco);marco=agora;};
   let sh=ss.getSheetByName(ABA_RESUMO_NATIVO_GESTOR_),meta={migracoes:[]};
   if(sh&&sh.getLastRow()){
     const cab=sh.getRange(1,1,1,3).getValues()[0];if(cab[0]!==MARCADOR_RESUMO_NATIVO_GESTOR_||cab[1]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('A aba _Gestor_Resumo contém dados não gerenciados. Preserve-a antes de gerar o resumo.');
     try{meta=JSON.parse(cab[2]||'{}');}catch(_){throw Error('Controle do resumo nativo inválido.');}if(meta.versao!==1||!Array.isArray(meta.migracoes)||meta.migracoes.length>61||meta.migracoes.some(m=>!m||!Number.isInteger(m.linha)||!Number.isInteger(m.coluna)||typeof m.gerada!=='string'||!formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,m.categoria)||m.gerada!==formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,m.categoria)||m.aceitas&&(!Array.isArray(m.aceitas)||m.aceitas.length>2||m.aceitas.some(f=>typeof f!=='string'||f.length>10000))))throw Error('Controle de fórmulas do resumo inválido.');
   }
-  const registros=registrosResumoNativoGestor_(ss),grupos=agruparResumoNativoGestor_(registros),hash=hashGestor_(registros),dash=ss.getSheetByName('Dashboard & Resumo'),migracoes=meta.migracoes.slice();
-  const valoresDashboard=dash?dash.getDataRange().getValues():[];
-  if(dash){const formulas=dash.getDataRange().getFormulas();for(let i=0;i<formulas.length;i++)for(let j=0;j<formulas[i].length;j++)if(formulas[i][j]){
+  medir('resumoControleMs');
+  const registros=registrosResumoNativoGestor_(ss);medir('resumoLeituraMs');
+  const grupos=agruparResumoNativoGestor_(registros),hash=hashGestor_(registros),dash=ss.getSheetByName('Dashboard & Resumo'),migracoes=meta.migracoes.slice();medir('resumoCalculoMs');
+  const valoresDashboard=[],linhasDashboard=dash?Math.max(1,Math.min(41,dash.getLastRow())):0;
+  if(dash&&linhasDashboard>=17)dash.getRange(17,2,linhasDashboard-16,1).getValues().forEach((r,i)=>{valoresDashboard[16+i]=['',r[0]];});
+  if(dash){const formulas=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(let i=0;i<formulas.length;i++)for(let j=0;j<formulas[i].length;j++)if(formulas[i][j]){
     const anterior=migracoes.find(m=>m.linha===i+1&&m.coluna===j+1),reconhecida=reconhecerFormulaPadraoResumoGestor_(formulas[i][j],i+1,j+1,ss,valoresDashboard);
     if(!reconhecida&&(!anterior||formulas[i][j]!==anterior.gerada&&!(anterior.aceitas||[]).includes(formulas[i][j])))continue;
     const m=reconhecida||Object.assign({},anterior),categoria=m.linha>=17?String(valoresDashboard[m.linha-1]?.[1]||''):m.categoria,gerada=formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,categoria);if(!gerada)continue;
     Object.assign(m,{categoria:categoria,gerada:gerada,aceitas:Array.from(new Set([formulas[i][j],gerada]))});const pos=migracoes.findIndex(x=>x.linha===m.linha&&x.coluna===m.coluna);if(pos<0)migracoes.push(m);else migracoes[pos]=m;
   }}
+  medir('resumoDashboardMs');
   if(!sh)sh=ss.insertSheet(ABA_RESUMO_NATIVO_GESTOR_);
   const linhas=[[MARCADOR_RESUMO_NATIVO_GESTOR_,propriedade_(CHAVE_ID_PLANILHA_GESTOR),JSON.stringify({versao:1,migracoes:migracoes})],['SHA256 dos dados',hash],['Atualizado em',new Date().toISOString()],CAB_RESUMO_NATIVO_GESTOR_,...grupos.map(g=>[g.ano,g.mes,g.forma,g.categoria,g.origem,g.total/100,g.pago/100,g.saldo/100,g.recebido/100,g.aReceber/100,g.quantidade,g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.tipo):'',g.origem==='Pessoal'?rotuloPerfilRelatorioGestor_(g.perfilGasto?.prioridade):''])];
-  gravarMatrizProtecaoGestor_(sh,linhas);if(sh.setFrozenRows)sh.setFrozenRows(4);
-  if(grupos.length)sh.getRange(5,6,grupos.length,5).setNumberFormat('R$ #,##0.00');
+  const gravado=gravarResumoConferidoGestor_(sh,linhas);if(gravado&&sh.setFrozenRows)sh.setFrozenRows(4);
+  if(gravado&&grupos.length)sh.getRange(5,6,grupos.length,5).setNumberFormat('R$ #,##0.00');
+  medir('resumoEscritaMs');
   // A marca é persistida primeiro: interrupção após uma célula pode retomar
   // apenas as fórmulas reconhecidas. Fórmulas particulares nunca são apagadas.
-  if(dash){const atuais=dash.getDataRange().getFormulas();for(const m of migracoes){const atual=atuais[m.linha-1]?.[m.coluna-1]||'';if(atual!==m.gerada&&((m.aceitas||[]).includes(atual)||reconhecerFormulaPadraoResumoGestor_(atual,m.linha,m.coluna,ss,valoresDashboard)))dash.getRange(m.linha,m.coluna).setValue(m.gerada);}}
+  if(dash){const atuais=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(const m of migracoes){const atual=atuais[m.linha-1]?.[m.coluna-1]||'';if(atual!==m.gerada&&((m.aceitas||[]).includes(atual)||reconhecerFormulaPadraoResumoGestor_(atual,m.linha,m.coluna,ss,valoresDashboard)))dash.getRange(m.linha,m.coluna).setValue(m.gerada);}}
+  medir('resumoFormulasMs');
   return {sucesso:true,hash:hash,periodos:Array.from(new Set(registros.map(r=>r.mes))),grupos:grupos.length,formulasMigradas:migracoes.length};
 }
 function migrarResumoNativoGestor_(ss){return atualizarResumoNativoGestor_(ss);}

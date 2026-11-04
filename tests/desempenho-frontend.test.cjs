@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const fonte = fs.readFileSync(path.join(__dirname, '../interface/desempenho.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 const aguardar = () => new Promise(resolve => setImmediate(resolve));
-const leituras = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'obterFaturaPagamentoWeb', 'previaRestauracaoBackupWeb'];
+const leituras = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'obterFaturaPagamentoWeb', 'previaRestauracaoBackupWeb'];
 
 function ambiente(executar, carregarReal = false, extras = {}) {
   const eventos = {}, graficos = [], telas = new Map(), renderizados = [], avisos = [];
@@ -42,6 +42,21 @@ function coordenador(opcoes = {}) {
   const {ctx} = ambiente(async () => ({}));
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
+
+test('Histórico espera edição pendente e compartilha consulta após a confirmação sem reenviar edição',async()=>{
+ const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
+ const editar=c.chamar('editarLancamentoLinhaWeb',{requestId:'mesmo-envio'}),a=c.chamar('filtrarLancamentosWeb',{busca:'x'}),b=c.chamar('filtrarLancamentosWeb',{busca:'x'});
+ await aguardar();assert.equal(chamadas.length,1);assert.equal(chamadas[0].acao,'editarLancamentoLinhaWeb');
+ chamadas[0].resolve({sucesso:true});await editar;await aguardar();assert.equal(chamadas.length,2);
+ chamadas[1].resolve({itens:[1]});await Promise.all([a,b]);assert.equal(chamadas.filter(x=>x.acao==='editarLancamentoLinhaWeb').length,1);
+});
+test('Histórico não fica preso a edição falha e consultas internas continuam disponíveis',async()=>{
+ const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
+ const editar=c.chamar('editarLancamentoLinhaWeb',{}),falhou=assert.rejects(editar,/sem confirmação/),historico=c.chamar('filtrarLancamentosWeb',{}),protocolo=c.chamar('getDadosCompletos');
+ await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].acao,'getDadosCompletos');
+ chamadas[1].resolve({protocolo:18});await protocolo;chamadas[0].reject(Error('sem confirmação'));await falhou;await aguardar();assert.equal(chamadas.length,3);
+ chamadas[2].resolve({itens:[]});await historico;
+});
 
 test('relatórios aguardam carga completa já iniciada e compartilham apenas o envio da versão nova',async()=>{
  const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
