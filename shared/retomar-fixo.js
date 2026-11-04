@@ -25,6 +25,7 @@ function retomarAssinaturaWeb(dados) {
     if(!Number.isInteger(dia)||dia<1||dia>31)throw Error('Informe um dia de cobrança entre 1 e 31.');
     const descricao=formatarTituloInteligente(dados.descricao),forma=validarFormaAtualGestor_(dados.formaPagto,{novaCompra:true}),categoria=validarCategoriaAtualGestor_(dados.categoria),valor=centavosGestor_(dados.valorMensal)/100;
     const data=pad2(Math.min(dia,new Date(m.a,m.m,0).getDate()))+'/'+mes;
+    conferirModeloPessoalDuplicadoGestor_(descricao,forma);
     validarLancamentoWeb_({dataCompra:data,descricao:descricao,formaPagto:forma,categoria:categoria,valorTotal:valor,isAssinatura:true,numParcelas:1,mesPrimeiraFatura:mes});
     if(lido.disp.some(function(r){return limparApostrofo(r[6])==='∞/∞'&&!serieRecorrenteGestor_(r).encerrada&&!['Assinatura Cancelada','Pago (Cancelada)'].includes(r[9])&&normalizarTexto(r[1])===normalizarTexto(descricao)&&chaveFormaGestor_(r[2])===chaveFormaGestor_(forma);}))throw Error('Já existe uma assinatura ativa com esta descrição e forma de pagamento.');
     const id=gerarIdGestor_(),compraId=gerarIdGestor_();

@@ -126,6 +126,22 @@ test('diagnóstico recente registra duração do worker sem incluir conteúdo pr
  const d=a.ctx.diagnosticarPendenciasWeb();assert.equal(d.resumoPlanilha.ultimaExecucao.inicioServidorMs,e.inicioServidorMs);assert(!JSON.stringify(d.resumoPlanilha).includes('privado'));
 });
 
+test('etapas do resumo são numéricas e diagnóstico omite campos privados e inválidos',()=>{
+ const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
+ const s=JSON.parse(a.props.get('GESTOR_RESUMO_ASSINCRONO_V1'));
+ assert.equal(Object.keys(s.ultimaExecucao.etapas).length,6);
+ for(const v of Object.values(s.ultimaExecucao.etapas))assert(Number.isFinite(v)&&v>=0);
+ s.ultimaExecucao.etapas.privado='não exportar';s.ultimaExecucao.etapas.resumoControleMs=-1;a.props.set('GESTOR_RESUMO_ASSINCRONO_V1',JSON.stringify(s));
+ const e=estado(a).ultimaExecucao.etapas;assert.equal(e.privado,undefined);assert.equal(e.resumoControleMs,undefined);
+});
+
+test('memo de hashes e fuso dura apenas uma execução do worker e é restaurado após falha',()=>{
+ const vm=require('node:vm'),a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.memoAnteriorTeste=new Map();vm.runInContext('HASHES_EXECUCAO_GESTOR_=memoAnteriorTeste',a.ctx);
+ const gerar=a.ctx.atualizarResumoNativoGestor_;a.ctx.atualizarResumoNativoGestor_=(...args)=>{assert.equal(vm.runInContext('HASHES_EXECUCAO_GESTOR_===memoAnteriorTeste',a.ctx),false);return gerar(...args);};
+ assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);assert.equal(vm.runInContext('HASHES_EXECUCAO_GESTOR_===memoAnteriorTeste',a.ctx),true);
+ a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.atualizarResumoNativoGestor_=()=>{throw Error('falha controlada');};assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,false);assert.equal(vm.runInContext('HASHES_EXECUCAO_GESTOR_===memoAnteriorTeste',a.ctx),true);assert.equal(a.lock.has,false);
+});
+
 test('falha ao persistir intenção usa caminho síncrono e não confirma tarefa inexistente',()=>{
  const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
  const obter=a.ctx.PropertiesService.getScriptProperties;let falhar=true;

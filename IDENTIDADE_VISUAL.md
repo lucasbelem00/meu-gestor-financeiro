@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+Recorrências — padrão v150 (04/11/2026): manter fundo neutro dos cards. Modelos pessoais recebem 📌 Pessoal; modelos de terceiros recebem 🤝 Terceiros e nome da pessoa em âmbar. Separar origem (pessoal/terceiros) de modo (variável/revisão ou fixo/automático). Valor do modelo usa texto neutro; nunca verde de recebido apenas por ser recorrente. Ações: ➕ Nova recorrência, 📌 Criar recorrência no Histórico/Gerenciar, ✅ Revisar e registrar mês, ✏️ Editar, ⏸️ Pular mês, ⏹️ Desativar, ▶️ Retomar. Formulário em uma coluna no celular e duas a partir de sm; botões com quebra e espaçamento, confirmação antes do envio. Séries antigas continuam identificadas por seus estados atuais.
+
+
 Atualização 04/11/2026, v147: orientações secundárias de Status e Mês Fatura usam Ajuda recolhida junto ao rótulo. Perfil dos gastos mantém apenas os cards clicáveis, sem atalho inferior repetido. Pix agendados usam 💠, data informada e cores situacionais existentes no Painel/Agenda; o texto indica ausência de confirmação, sem presumir débito não pago. Clique abre revisão, nunca baixa financeira automática. Confirmação de Pix/à vista no editor exige opção explícita e revisão antes de salvar.
 
 

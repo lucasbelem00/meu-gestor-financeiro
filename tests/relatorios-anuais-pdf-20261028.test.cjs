@@ -9,6 +9,13 @@ function ambiente(dados=fixture()){
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
 
+test('resumo reutiliza categorias na mesma execução, mas relê no próximo resumo',()=>{
+ const a=ambiente(),dash=a.db.sheets['Dashboard & Resumo'],ler=dash.getRange;let leituras=0;
+ dash.getRange=function(...args){const r=ler.apply(this,args);if(args[0]==='B17:B41'||args[0]===17&&args[1]===2){const valores=r.getValues;r.getValues=function(){leituras++;return valores.call(this);};}return r;};
+ a.ctx.atualizarResumoNativoGestor_(a.db);assert.equal(leituras,1);
+ a.ctx.atualizarResumoNativoGestor_(a.db);assert.equal(leituras,2);
+});
+
 test('resumo igual não regrava nem reformata; edição só de descrição preserva o resultado',()=>{
  const a=ambiente(fixture([personal('Original',30)]));a.ctx.atualizarResumoNativoGestor_(a.db);
  const sh=a.db.sheets['_Gestor_Resumo'],data=sh.rows[2][1],original=sh.getRange;let escritas=0,formatos=0;

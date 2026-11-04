@@ -449,6 +449,8 @@ function executarManutencaoProtegidaWeb(param){return comLockProtecaoGestor_(fun
   const anual=ativoAnualGestor_(ss)?cicloAnualGestor_(ss,pasta):arquivarAnosProtecaoGestor_(ss,pasta),tecnico=compactarHistoricoProtecaoGestor_(ss,pasta);const atual=configProtecaoGestor_();atual.ultimaManutencao={data:new Date().toISOString(),anual:anual,tecnico:tecnico};atual.ultimoErro='';salvarConfigProtecaoGestor_(atual);return atual.ultimaManutencao;
 });}
 function rotinaProtecaoProgramadaGestor(){
+  // Executa sob seu próprio diário/trava, antes da manutenção e do backup.
+  try{rotinaModelosRecorrenciaGestor();const c=configProtecaoGestor_();if(c.erroRecorrencias){c.erroRecorrencias='';salvarConfigProtecaoGestor_(c);}}catch(e){const c=configProtecaoGestor_();c.erroRecorrencias=String(e.message||e).slice(0,250);salvarConfigProtecaoGestor_(c);}
   // Retaguarda diária se o gatilho específico do resumo estiver indisponível.
   if(typeof rotinaResumoPlanilhaGestor==='function')rotinaResumoPlanilhaGestor();
   try{return comLockProtecaoGestor_(function(ss){
