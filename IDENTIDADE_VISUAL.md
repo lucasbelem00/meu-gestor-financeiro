@@ -4,6 +4,8 @@ Estas convenções devem ser mantidas nas novas alterações, títulos, navegaç
 
 Nome único do produto: **Gestor de Gastos**, incluindo título da janela e manifesto de instalação. A ação de consultar os totais e registrar o pagamento ao banco chama-se **Conferir fatura** no Painel e Mensal. Atividade e sincronização concentra o histórico das operações, confirmações e recuperação.
 
+Horários distinguem três eventos: “Dados atualizados neste aparelho” em Atividade; “Última conclusão do resumo da planilha” em Exportar/backup; e “Último backup confirmado” para a cópia de segurança. Conclusão anterior do resumo não elimina uma pendência nova: apresentar ambas quando necessário. Ausência de data válida não deve parecer conclusão bem-sucedida.
+
 No Histórico, o resumo usa 🔢 para contar lançamentos, quantidade neutra e valor roxo com o rótulo “Total da seleção”. Esse total pode incluir registros abertos e pagos; sua cor não deve indicar quitação.
 
 | Recurso | Ícone reservado |
