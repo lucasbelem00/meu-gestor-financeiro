@@ -1,6 +1,10 @@
 // Leituras coordenadas e trabalho visual apenas nas telas que estão abertas.
 // O cache é transitório: nunca guarda mutações, prévias financeiras ou backups.
 let buscaEmprestimosPendenteGestor=null;
+function criarControleResizeHorizonteGestor(opcoes){
+  let pequeno=opcoes.largura()<640;
+  return function(){const novo=opcoes.largura()<640;if(novo===pequeno)return false;pequeno=novo;if(opcoes.possuiDados())opcoes.renderizar();return true;};
+}
 function agendarBuscaEmprestimosGestor(){
   clearTimeout(buscaEmprestimosPendenteGestor);
   buscaEmprestimosPendenteGestor=setTimeout(()=>{buscaEmprestimosPendenteGestor=null;renderizarPainelEmprestimos();},160);
@@ -197,7 +201,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v148', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v149', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

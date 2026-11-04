@@ -2811,7 +2811,7 @@ const DICIONARIO_ACENTOS_PT = {
         }
         if (event.key?.startsWith('gestorEmprestimoPendenteV3:')) exibirPendenciaEmprestimoGestor();
       });
-      window.addEventListener('resize', () => { if (evolucaoMeses.length > 0) renderTabelaEvolucao(); });
+      window.addEventListener('resize', criarControleResizeHorizonteGestor({largura:()=>window.innerWidth,possuiDados:()=>evolucaoMeses.length>0,renderizar:()=>renderTabelaEvolucao()}));
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
           const conf=document.getElementById('modalConfirmacao');if(conf && !conf.classList.contains('hidden')){conf._fecharConfirmacaoGestor?.();e.preventDefault();return;}
@@ -7964,6 +7964,12 @@ function listarPendenciasAtividadeGestor() {
   };
   return typeof agruparLeiturasLocaisGestor==='function'?agruparLeiturasLocaisGestor(coletar):coletar();
 }
+let badgeAtividadeAgendadoGestor=false;
+function agendarBadgeAtividadeGestor(){
+  if(badgeAtividadeAgendadoGestor)return;
+  badgeAtividadeAgendadoGestor=true;
+  Promise.resolve().then(()=>{badgeAtividadeAgendadoGestor=false;atualizarBadgeAtividadeGestor();});
+}
 function atualizarBadgeAtividadeGestor() {
   try {
     const n = listarPendenciasAtividadeGestor().length;
@@ -8412,18 +8418,18 @@ document.addEventListener('DOMContentLoaded',organizarPainelDiarioGestor);
 abasConfig.push({ id: 'atividade', icone: '📡', titulo: 'Atividade', tituloD: 'Atividade e sincronização', cor: 'text-slate-300', principal: false });
 const apiOriginalAtividadeGestor = window.apiCall;
 const indicadorOfflineOriginalAtividadeGestor = window.atualizarIndicadorOffline;
-window.atualizarIndicadorOffline = function () { indicadorOfflineOriginalAtividadeGestor(); atualizarBadgeAtividadeGestor(); };
+window.atualizarIndicadorOffline = function () { indicadorOfflineOriginalAtividadeGestor(); agendarBadgeAtividadeGestor(); };
 const notasUIOriginalAtividadeGestor = window.renderizarNotasUI;
-window.renderizarNotasUI = function () { notasUIOriginalAtividadeGestor(); atualizarBadgeAtividadeGestor(); };
+window.renderizarNotasUI = function () { notasUIOriginalAtividadeGestor(); agendarBadgeAtividadeGestor(); };
 window.apiCall = async function (action, param, tentativas) {
   const inicio = Date.now();
   try { const r = await apiOriginalAtividadeGestor(action, param, tentativas); registrarDiagnosticoAtividadeGestor(action, null, Date.now()-inicio,r); return r; }
   catch (e) { registrarDiagnosticoAtividadeGestor(action, e, Date.now()-inicio); throw e; }
-  finally { atualizarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); }
+  finally { agendarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); }
 };
 window.quitarFaturaCartaoMes = abrirConferenciaFaturaGestor;
-document.addEventListener('DOMContentLoaded', atualizarBadgeAtividadeGestor);
-window.addEventListener('storage', () => { atualizarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); });
+document.addEventListener('DOMContentLoaded', agendarBadgeAtividadeGestor);
+window.addEventListener('storage', () => { agendarBadgeAtividadeGestor(); if (abaAtivaAtual === 'atividade') renderizarPendenciasAtividadeGestor(); });
 document.addEventListener('keydown', e => {
   const modal = document.getElementById('modalPagamentoFaturaGestor'); if (modal.classList.contains('hidden')) return;
   if (!document.getElementById('modalConfirmacao').classList.contains('hidden')) return;
@@ -9371,6 +9377,10 @@ function guardarRascunhoPlanejamentoGestor(){const v=id=>document.getElementById
 // Leituras coordenadas e trabalho visual apenas nas telas que estão abertas.
 // O cache é transitório: nunca guarda mutações, prévias financeiras ou backups.
 let buscaEmprestimosPendenteGestor=null;
+function criarControleResizeHorizonteGestor(opcoes){
+  let pequeno=opcoes.largura()<640;
+  return function(){const novo=opcoes.largura()<640;if(novo===pequeno)return false;pequeno=novo;if(opcoes.possuiDados())opcoes.renderizar();return true;};
+}
 function agendarBuscaEmprestimosGestor(){
   clearTimeout(buscaEmprestimosPendenteGestor);
   buscaEmprestimosPendenteGestor=setTimeout(()=>{buscaEmprestimosPendenteGestor=null;renderizarPainelEmprestimos();},160);
@@ -9567,7 +9577,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v148', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v149', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

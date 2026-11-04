@@ -24,8 +24,8 @@ function normalizarAbaNotasBackupGestor_(aba){
 }
 function garantirCabecalhoNotasGestor_(sh){
   if(!sh)return;
-  const range=sh.getDataRange(),aba=normalizarAbaNotasBackupGestor_({nome:'Anotações',valores:range.getValues(),formulas:range.getFormulas()});
-  const antes=range.getValues()[0];
+  const range=sh.getDataRange(),valores=range.getValues(),aba=normalizarAbaNotasBackupGestor_({nome:'Anotações',valores:valores,formulas:range.getFormulas()});
+  const antes=valores[0];
   if(CABECALHO_NOTAS_GESTOR_.some(function(t,i){return antes[i]!==t;}))sh.getRange(1,1,1,6).setValues([CABECALHO_NOTAS_GESTOR_]);
   return aba;
 }

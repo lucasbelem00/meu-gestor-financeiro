@@ -1,5 +1,8 @@
 # Autorização inicial do Apps Script
 
+Atualização v149 (04/11/2026): a mesma ativação do resumo em segundo plano passa a abranger cadastro, edição, recebimento integral/parcial, exclusão elegível e conversões de empréstimos. Quem já ativou não precisa repetir a função; publicar o backend atualizado mantém o controle/gatilho existente. Confirmação financeira continua obrigatória; fórmula particular ou falha na intenção mantém caminho imediato. Restauração/manutenção conservam tratamento próprio.
+
+
 Executar pela conta responsável pela implantação e pelos gatilhos, separadamente no projeto de testes e no definitivo. O consentimento é concedido no Google; nunca colocar senha ou token neste arquivo.
 
 ## Projeto existente

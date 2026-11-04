@@ -43,6 +43,20 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+test('resize só redesenha o Horizonte quando cruza o modo de tela, sem perder dados atuais',()=>{
+ const a=ambiente(async()=>({}));let largura=500,dados=true,render=0;
+ const resize=a.ctx.criarControleResizeHorizonteGestor({largura:()=>largura,possuiDados:()=>dados,renderizar:()=>render++});
+ for(const l of [510,530,639]){largura=l;resize();}assert.equal(render,0);
+ largura=640;resize();assert.equal(render,1);largura=1100;resize();assert.equal(render,1);
+ dados=false;largura=500;resize();assert.equal(render,1);dados=true;largura=900;resize();assert.equal(render,2);
+});
+
+test('selo automático agrupa chamadas sem atrasar gravações nem a atualização explícita',async()=>{
+ const inicio=html.indexOf('let badgeAtividadeAgendadoGestor='),fim=html.indexOf('function abrirAtividadeGestor()',inicio);const c=vm.createContext({Promise});vm.runInContext(html.slice(inicio,fim),c);let chamadas=0;c.atualizarBadgeAtividadeGestor=()=>chamadas++;
+ c.agendarBadgeAtividadeGestor();c.agendarBadgeAtividadeGestor();c.agendarBadgeAtividadeGestor();assert.equal(chamadas,0);c.atualizarBadgeAtividadeGestor();assert.equal(chamadas,1);await Promise.resolve();assert.equal(chamadas,2);
+ c.agendarBadgeAtividadeGestor();await Promise.resolve();assert.equal(chamadas,3);
+});
+
 test('espera local mede só o intervalo na fila sem guardar filtros e sem mudar os envios',async()=>{
  let instante=10;const chamadas=[];const c=coordenador({agora:()=>instante,executar:(acao,p)=>new Promise(resolve=>chamadas.push({p,resolve}))});
  const a=c.chamar('filtrarLancamentosWeb',{termo:'privado-a'});await aguardar();
@@ -138,7 +152,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v148');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v149');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

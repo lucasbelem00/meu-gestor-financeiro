@@ -6254,8 +6254,8 @@ function normalizarAbaNotasBackupGestor_(aba){
 }
 function garantirCabecalhoNotasGestor_(sh){
   if(!sh)return;
-  const range=sh.getDataRange(),aba=normalizarAbaNotasBackupGestor_({nome:'Anotações',valores:range.getValues(),formulas:range.getFormulas()});
-  const antes=range.getValues()[0];
+  const range=sh.getDataRange(),valores=range.getValues(),aba=normalizarAbaNotasBackupGestor_({nome:'Anotações',valores:valores,formulas:range.getFormulas()});
+  const antes=valores[0];
   if(CABECALHO_NOTAS_GESTOR_.some(function(t,i){return antes[i]!==t;}))sh.getRange(1,1,1,6).setValues([CABECALHO_NOTAS_GESTOR_]);
   return aba;
 }
@@ -6594,15 +6594,20 @@ function ativarResumoEmSegundoPlanoGestor(){
 }
 function entradasCalculadasResumoGestor_(ctx){
   const abas=ctx?.ss?.abas||{},formula=v=>typeof v==='string'&&v.startsWith('=');
-  return ['Lançamentos','Empréstimos'].some(n=>abas[n]?.valores.some(r=>r.some(formula)))||
-    Boolean(abas['Formas de Pagamento']?.valores.slice(6).some(r=>r.slice(1,7).some(formula)))||
-    Boolean(abas['Dashboard & Resumo']?.valores.slice(16,41).some(r=>formula(r[1])||formula(r[3])));
+  if(['Lançamentos','Empréstimos'].some(n=>abas[n]?.valores.some(r=>r.some(formula))))return true;
+  for(const nome of ['Formas de Pagamento','Dashboard & Resumo']){
+    // Algumas ações de terceiros não abrem o cadastro de categorias. Verificar
+    // suas fórmulas sem abrir/migrar outra aba virtual depois de fechar o plano.
+    const matriz=abas[nome]?.valores||ctx?.ssReal?.getSheetByName(nome)?.getDataRange().getFormulas()||[];
+    if(nome==='Formas de Pagamento'?matriz.slice(6).some(r=>r.slice(1,7).some(formula)):matriz.slice(16,41).some(r=>formula(r[1])||formula(r[3])))return true;
+  }
+  return false;
 }
 function solicitarResumoAssincronoGestor_(acao,ctx){
-  if(!['salvarLancamentoWeb','editarLancamentoLinhaWeb'].includes(acao))return false;
-  if(entradasCalculadasResumoGestor_(ctx))return false;
+  if(!['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao))return false;
   try{
     const s=lerResumoAssincronoGestor_();if(!s?.ativo)return false;
+    if(entradasCalculadasResumoGestor_(ctx))return false;
     s.pendente=true;s.solicitadoEm=new Date().toISOString();salvarResumoAssincronoGestor_(s);return true;
   }catch(_){return false;} // Sem intenção durável, mantém o resumo síncrono.
 }

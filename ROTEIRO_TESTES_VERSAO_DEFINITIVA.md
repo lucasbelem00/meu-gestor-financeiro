@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v149: publicar backend e frontend, confirmar v149. Na cópia, criar/editar empréstimo, registrar recebimento integral/parcial, excluir um pendente elegível e converter nos dois sentidos. Aguardar confirmação e verificar registros únicos, saldos bancários e de terceiros separados; resumoMs=0 quando elegível, estado pendente separado da fila, dados atuais no app e conclusão posterior do resumo. Reenvio com o mesmo identificador não pode duplicar. Testar interrupção/retomada e fórmula particular somente na cópia descartável. No celular, abrir teclado ou mudar altura não deve reconstruir Horizonte; atravessar celular/desktop deve ajustar colunas. Selo deve atualizar, inclusive por outra aba, sem afetar persistência. Não reativar gatilhos já instalados nem reenviar finanças por resumo pendente.
+
+
 Reteste v148: publicar backend e frontend, confirmar v148 e repetir Novo/Edição aguardando Salvo. Conferir um único registro, valor, competência, parcelas e somatórias; exportar diagnóstico e comparar aplicacaoMs, aplicarDestinosMs e tempo total. Resumo pendente não deve ser confundido com envio pendente. Na cópia descartável, preservar cenários de interrupção/retomada e conversão legada de datas em notas/planejamento/registros anuais, inclusive divergência real de valor que deve continuar bloqueada. Não criar falhas artificialmente na base definitiva nem reinstalar gatilhos.
 
 

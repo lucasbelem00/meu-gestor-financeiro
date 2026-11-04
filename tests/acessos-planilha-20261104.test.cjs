@@ -10,6 +10,12 @@ function planoAnual(){
  return {...a,e,sh,plano:{mudancas:[m]}};
 }
 
+test('validar cabeçalho de notas lê valores uma vez mantendo fórmulas e validação integral',()=>{
+ const a=ambienteProtecao(),sh=a.db.insertSheet('Anotações');sh.rows=[['ID','Texto','Concluída','Data','Versão','Excluída'],['nota-1','Teste',false,'16/10/2026',1,false]];let leituras=0;const ler=sh.getRange;
+ sh.getRange=function(...p){const r=ler.apply(this,p),valores=r.getValues;r.getValues=function(){leituras++;return valores.call(this);};return r;};
+ a.ctx.garantirCabecalhoNotasGestor_(sh);assert.equal(leituras,1);sh.getRange(2,2).setValue('=1');assert.throws(()=>a.ctx.garantirCabecalhoNotasGestor_(sh),/fórmulas|conteúdo/);
+});
+
 test('gravação anual normal dispensa varredura preventiva de datas, mantendo resultado e releitura final',()=>{
  function executar(preventiva){const a=planoAnual();let consultas=0,recuperacoes=0;const abrir=a.ctx.SpreadsheetApp.openById,ler=a.sh.getRange,reparar=a.ctx.recuperarDatasTextoPlanoGestor_;
   a.ctx.SpreadsheetApp.openById=function(...p){consultas++;return abrir.apply(this,p);};

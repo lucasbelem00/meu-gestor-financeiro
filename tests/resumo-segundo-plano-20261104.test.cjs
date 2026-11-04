@@ -1,13 +1,59 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {ambienteProtecao,fixture,launch}=require('./fixtures/protecao-mocks.cjs');
+const {ambienteProtecao,fixture,launch,personal,loan}=require('./fixtures/protecao-mocks.cjs');
 const api=(a,n,p)=>a.ctx.executarAcaoApi_(n,p);
-function ambiente(){
- const a=ambienteProtecao(fixture());a.carregar();
+function ambiente(dados=fixture()){
+ const a=ambienteProtecao(dados);a.carregar();
  const criar=a.ctx.ScriptApp.newTrigger;a.ctx.ScriptApp.newTrigger=function(nome){const b=criar(nome);b.everyMinutes=n=>{assert.equal(n,5);return b;};return b;};
  return a;
 }
 const estado=a=>a.ctx.situacaoResumoPlanilhaGestor_();
 const salvar=(a,id)=>api(a,'salvarLancamentoWeb',{...launch,requestId:id,incluirAtualizacaoDados:true});
+
+const acoesTerceiros=['salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'];
+function prepararTerceiros(acao){
+ const a=ambiente(fixture([personal('Pessoal',60)],[loan('Ana','A Receber',120,'Cartao')])),r=a.db.sheets[acao==='moverParaEmprestimosWeb'?'Lançamentos':'Empréstimos'].rows[1];
+ const p={registroId:r[11],compraId:r[12],versao:r[13],linha:2,descricao:r[acao==='moverParaEmprestimosWeb'?1:2],mesFatura:r[8],parcela:r[6],descOriginal:r[2],mesOriginal:r[8],parcelaOriginal:r[6],requestId:'async-terceiros-'+acao};
+ if(acao==='salvarEmprestimoWeb')Object.assign(p,{dataCompra:'16/10/2026',pessoa:'Bia',descricao:'Compra',formaPagto:'Cartao',valorTotal:30,numParcelas:1,parcelaInicial:1,mesPrimeiraFatura:'10/2026'});
+ if(acao==='editarEmprestimoLinhaWeb')Object.assign(p,{dataCompra:r[0],pessoa:r[1],formaPagto:r[3],valorParcela:130,status:r[9],observacoes:r[10]});
+ if(acao==='alternarStatusEmprestimoWeb')p.statusDesejado='Recebido';
+ if(acao==='dividirParcelaEmprestimoWeb')p.valorRecebido=40;
+ if(acao==='moverParaEmprestimosWeb')p.pessoa='Bia';
+ if(acao==='moverParaGastosPessoaisWeb')p.categoria='Teste';
+ return {a,p};
+}
+for(const acao of acoesTerceiros)test(acao+' confirma sem resumo síncrono, preserva reenvio e conclui pelo worker',()=>{
+ const {a,p}=prepararTerceiros(acao);a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
+ const antes=JSON.stringify(a.db.sheets['_Gestor_Resumo'].rows),gerar=a.ctx.atualizarResumoNativoGestor_;let chamadas=0;
+ a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};
+ api(a,acao,p);assert.equal(chamadas,0);assert.equal(estado(a).pendente,true);assert.equal(JSON.stringify(a.db.sheets['_Gestor_Resumo'].rows),antes);
+ assert(a.db.sheets['_Gestor_Operacoes'].rows.some(r=>r[0]===acao+':'+p.requestId&&r[2]==='CONFIRMADO'));
+ const financeiro=()=>JSON.stringify(['Lançamentos','Empréstimos'].map(n=>a.db.sheets[n].rows)),confirmado=financeiro();
+ api(a,acao,p);assert.equal(financeiro(),confirmado);assert.equal(chamadas,0);
+ const dados=a.carregar();assert.equal(dados.resumoPlanilha.pendente,true);assert.equal(chamadas,0);assert.equal(dados.emprestimos.itens.length,a.db.sheets['Empréstimos'].rows.slice(1).filter(r=>r[11]).length);
+ assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);assert.equal(estado(a).pendente,false);assert.equal(chamadas,1);assert.equal(financeiro(),confirmado);
+});
+
+test('empréstimo interrompido continua PRONTO, worker espera e recuperação não duplica',()=>{
+ const {a,p}=prepararTerceiros('salvarEmprestimoWeb');a.ctx.ativarResumoEmSegundoPlanoGestor();const aplicar=a.ctx.aplicarPlanoGestor_;
+ a.ctx.aplicarPlanoGestor_=()=>{throw Error('interrupção terceiros');};assert.throws(()=>api(a,'salvarEmprestimoWeb',p),/interrupção terceiros/);assert.equal(estado(a).pendente,true);assert.equal(a.ctx.rotinaResumoPlanilhaGestor().aguardandoConferencia,true);
+ a.ctx.aplicarPlanoGestor_=aplicar;a.carregar();api(a,'salvarEmprestimoWeb',p);assert.equal(a.db.sheets['Empréstimos'].rows.filter(r=>r[1]==='Bia').length,1);assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);
+});
+
+test('restauração e manutenção não passam a adiar resumo com a ampliação para terceiros',()=>{
+ const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
+ for(const acao of ['restaurarBackupDadosWeb','manutencao','desfazerAtividadeWeb'])assert.equal(a.ctx.solicitarResumoAssincronoGestor_(acao,{ss:{abas:{}}}),false);
+ assert.equal(estado(a).pendente,false);
+});
+
+test('nova elegibilidade de terceiros conserva fallback imediato por fórmula ou falha da intenção',()=>{
+ for(const motivo of ['formula','intencao']){
+  const {a,p}=prepararTerceiros('editarEmprestimoLinhaWeb');a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();let chamadas=0;const gerar=a.ctx.atualizarResumoNativoGestor_;
+  a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};
+  if(motivo==='formula')a.db.sheets['Dashboard & Resumo'].getRange(17,4).setValue('=500');
+  else{const obter=a.ctx.PropertiesService.getScriptProperties;let falhar=true;a.ctx.PropertiesService.getScriptProperties=()=>{const props=obter(),set=props.setProperty;props.setProperty=(k,v)=>{if(k==='GESTOR_RESUMO_ASSINCRONO_V1'&&falhar){falhar=false;throw Error('quota temporária');}return set(k,v);};return props;};}
+  api(a,'editarEmprestimoLinhaWeb',p);assert.equal(chamadas,1);assert.equal(estado(a).pendente,false);assert.equal(a.db.sheets['Empréstimos'].rows[1][7],130);
+ }
+});
 
 test('ativação instala uma rotina independente do app, sem duplicar gatilhos ou liberar modo antes de instalar',()=>{
  const a=ambiente();assert.equal(estado(a).modo,'imediato');
