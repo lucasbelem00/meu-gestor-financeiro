@@ -16,6 +16,15 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const cargasCompletas = new Set();
   const mutacoesPendentes = new Set();
   const consultasHistorico = new Set();
+  const esperasConsultas=[];
+  function aguardarConsulta(promessas,motivo,retomar){
+    const inicio=agora();
+    return Promise.allSettled(Array.from(promessas)).then(()=>{
+      esperasConsultas.push({motivo,duracaoMs:Math.max(0,agora()-inicio)});
+      if(esperasConsultas.length>20)esperasConsultas.shift();
+      return retomar();
+    });
+  }
   let respostaCompletaAtual = null;
   let atualizacaoConfirmada = null;
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0, filtrosSuperados:0 };
@@ -73,18 +82,18 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
     if(acao==='filtrarLancamentosWeb'&&mutacoesPendentes.size){
-      return Promise.allSettled(Array.from(mutacoesPendentes)).then(()=>consultar(acao,param,extras,repeticoes,continuar));
+      return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar));
     }
     // A resposta da carga completa invalida relatórios. Se ela já está em
     // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
     if (cacheaveis.has(acao) && cargasCompletas.size) {
-      return Promise.allSettled(Array.from(cargasCompletas)).then(() => consultar(acao, param, extras, repeticoes));
+      return aguardarConsulta(cargasCompletas,'carga_completa',() => consultar(acao, param, extras, repeticoes,continuar));
     }
     const versao = geracao, chave = acao + ':' + chaveEstavel(param) + ':' + chaveEstavel(extras);
     // Uma leitura já enviada pode continuar no Google. As próximas aguardam
     // seu término; filtros visuais superados são descartados antes de enviar.
     if(acao==='filtrarLancamentosWeb'&&consultasHistorico.size&&!consultas.has(versao+':'+chave)){
-      return Promise.allSettled(Array.from(consultasHistorico)).then(()=>consultar(acao,param,extras,repeticoes,continuar));
+      return aguardarConsulta(consultasHistorico,'historico',()=>consultar(acao,param,extras,repeticoes,continuar));
     }
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
@@ -188,7 +197,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v144', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v147', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

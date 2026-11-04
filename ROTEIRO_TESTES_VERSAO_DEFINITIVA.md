@@ -1,5 +1,14 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v147: publicar backend e frontend juntos (inclui medições v146). Na cópia de testes, criar Pix passado (Pago) e futuro (Agendado); conferir aviso nos próximos sete dias e dia exato na Agenda, inclusive domingo/feriado. Corrigir data do futuro para passada: opção de pagamento sugerida, revisão e confirmação antes de Pago. Desmarcar deve preservar pendência; pendente já corrigido deve permitir marcar explicitamente. Conferir um único registro, saldo, remoção do aviso e desfazer em Atividade; versão antiga/reenvio devem manter proteções. Cartão, recorrência e Pix parcelado não usam essa exceção. Data não deve mover Mês Fatura. Conferir Ajuda recolhida, cards Não classificado e diagnóstico v147. Não criar ou desfazer movimentos reais apenas para teste; não reinstalar gatilhos.
+
+
+Reteste v146 (inclui v145): publicar backend e frontend uma única vez. Confirmar v146 no diagnóstico, salvar e editar aguardando confirmação; depois alternar filtros rapidamente e navegar/retornar. Conferir itens, somatória e ausência de duplicação. Exportar preparar*, plano*, aplicar*, atualizacao*, contagens e esperasConsultas. Comparar tempos sem somar subetapas novamente. Contagem de células não prova confirmação; verificar Salvo e pendências. Não reativar gatilhos.
+
+
+Reteste v145: publicar backend e frontend, atualizar app e confirmar versão v145 no diagnóstico. Criar um lançamento e editar outro, aguardando Salvo; conferir registro único, valores e parcelas. Exportar diagnóstico com as subetapas preparar* e aplicar* para analisar gargalos. Não reinstalar rotinas nem repetir envios confirmados. Os subtempos estão contidos nos totais e não devem ser somados novamente. Ensaios de interrupção/recuperação continuam somente na cópia descartável.
+
+
 Reteste v144: após atualizar backend e frontend, medir Novo, edição e filtros; conferir valores, competência, ordem do Histórico, somatória, parcelas e terceiros. Nova operação deve enxergar mudanças de outro aparelho. Testes de alteração de arquivo anual/fórmula e recuperação interrompida continuam na cópia descartável. Não reinstalar gatilho. Comparar tempos do executor e duração no app, sem atribuir variação de uma amostra integralmente à otimização.
 
 

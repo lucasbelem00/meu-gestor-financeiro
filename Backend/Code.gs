@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -2168,6 +2168,7 @@ function getDadosCompletos() {
       formasPagamento: listaFormasPagto,
       versoesConfiguracao: {formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:versaoConfiguracaoGestor_(ss,'categorias')},
       alertasVencimento: diasAteVencimento,
+      pixAgendados: lancamentosValidos.filter(i=>i.raw[9]==='Agendado'&&ehPixGestor_(i.raw[2])).map(i=>({registroId:i.raw[11],compraId:i.raw[12],versao:Number(i.raw[13]||1),linha:i.idx+2,data:formatarCelulaRegistroGestor_(i.raw[0],'dd/MM/yyyy'),descricao:i.disp[1],forma:nomeFormaLeituraGestor_(i.raw[2],ss),categoria:i.disp[3],valorRaw:extractNum(i.raw[7]),mesFatura:formatarCelulaRegistroGestor_(i.raw[8],'MM/yyyy'),status:i.raw[9],tags:i.disp[10],parcela:limparApostrofo(i.disp[6])})),
       cartaoMaisFrequente: cartaoMaisFrequente,
       lancamentos: ultimosLancamentos,
       temMaisLancamentos: lancamentosValidos.length > 50 || arquivosAnuais.length>0,
@@ -2454,7 +2455,10 @@ function editarLancamentoLinhaWebInterno_(dados) {
     if (idx < 0) throw new Error('Lançamento não localizado. Atualize a página e tente novamente.');
     dados = Object.assign({}, dados, { formaPagto: validarFormaAtualGestor_(dados.formaPagto, { formaAnterior: disp[idx][2] }), categoria: validarCategoriaAtualGestor_(dados.categoria) });
 
-    validarTransicaoStatusEdicaoGestor_(raw[idx][9],dados.status,false);
+    if(dados.confirmarPagamentoImediato===true){
+      const antes=raw[idx],data=parseDataBR(dados.dataCompra),parcela=parseNumParcela(limparApostrofo(disp[idx][6]));
+      if(!ehPagamentoImediatoGestor_(antes[2])||!ehPagamentoImediatoGestor_(dados.formaPagto)||!['Em Aberto','Agendado'].includes(String(antes[9]))||dados.status!=='Pago'||parcela.total!==1||limparApostrofo(disp[idx][6])==='∞/∞'||!data||data.getTime()>getHojeSeguro().getTime())throw Error('Confirme somente um Pix ou pagamento à vista pendente, com data de hoje ou passada. Cartões e recorrências usam suas próprias ações.');
+    }else validarTransicaoStatusEdicaoGestor_(raw[idx][9],dados.status,false);
     const alvo = disp[idx];
     const parcAlvo = limparApostrofo(alvo[6]);
     const infoAlvo = parseNumParcela(parcAlvo);
@@ -3903,8 +3907,10 @@ function validarAlteracoesSeriesGestor_(aba,ctx) {
   });
 }
 
-function finalizarPlanoGestor_(ctx) {
+function finalizarPlanoGestor_(ctx, detalhes) {
+  const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
   const mudancas = [];
+  medir('planoMudancasMs',function(){
   Object.keys(ctx.ss.abas).forEach(function (nome) {
     const aba = ctx.ss.abas[nome];
     if (ehAbaRegistrosGestor_(nome)) {
@@ -3930,8 +3936,9 @@ function finalizarPlanoGestor_(ctx) {
       mudancas.push(mudanca);
     }
   });
+  });
   ctx.financeiroAlterado=mudancas.some(m=>ehAbaRegistrosGestor_(m.nome));
-  return desdobrarPlanoAnualGestor_(ctx,mudancas).concat(ctx.anexosTecnicos || []);
+  return medir('planoAnualMs',()=>desdobrarPlanoAnualGestor_(ctx,mudancas)).concat(ctx.anexosTecnicos || []);
 }
 function abrirDiarioGestor_(ss) {
   let sh = ss.getSheetByName(ABA_DIARIO_GESTOR_);
@@ -4048,17 +4055,20 @@ function formatarMoedasPlanoGestor_(sh,linhas) {
   if(typeof sh.getRangeList==='function')sh.getRangeList(['E2:E'+linhas,'H2:H'+linhas,'R2:R'+linhas]).setNumberFormat(FORMATO_MOEDA_PLANILHA);
   else for(const coluna of [5,8,18])sh.getRange(2,coluna,linhas-1,1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
 }
-function aplicarPlanoGestor_(ss, plano) {
+function aplicarPlanoGestor_(ss, plano, detalhes) {
+  const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
+  medir('aplicarDestinosMs',function(){
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   conferirDestinosRestauracaoGestor_(plano,ss);
   recuperarTextosTransferenciaAnualGestor_(ss,plano);
   recuperarDatasTextoPlanoGestor_(ss,plano);
+  });
   (plano.mudancas || []).forEach(function (m) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     const leituraDestino={};
-    const destino=destinoMudancaAnualGestor_(ss,m,plano,leituraDestino);
+    const destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));
     let sh = destino.getSheetByName(m.nome);
-    const atual = leituraDestino.valores || lerEstadoAbaGestor_(sh), hash = hashEstadoGestor_(atual);
+    const atual = medir('aplicarLeituraMs',()=>leituraDestino.valores || lerEstadoAbaGestor_(sh)), hash = hashEstadoGestor_(atual);
     // Aprovação explícita só reconhece linhas já aplicadas. Nunca reescreve
     // outras linhas para fazê-las coincidir com uma fotografia antiga.
     const aprovado=plano.conferenciaAprovada;
@@ -4077,7 +4087,7 @@ function aplicarPlanoGestor_(ss, plano) {
     const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if ((ehAbaRegistrosGestor_(m.nome)||m.nome==='Anotações'||m.nome==='Planejamento') && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
     if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
-    atualizarValidacaoStatusLancamentosGestor_(sh, Math.max(m.linhas, atual.length));
+    medir('aplicarFormatosMs',()=>atualizarValidacaoStatusLancamentosGestor_(sh, Math.max(m.linhas, atual.length)));
     // Mantém a conferência integral, mas escreve somente os blocos alterados.
     // Planos antigos continuam compatíveis; a recuperação reenvia os mesmos blocos.
     const indices = Array.from(new Set((m.alteracoes || []).map(function(a) { return a[0]; }).concat(
@@ -4086,20 +4096,24 @@ function aplicarPlanoGestor_(ss, plano) {
     for (let k=0; k<indices.length;) {
       const inicio=indices[k]; let fim=inicio; k++;
       while (k<indices.length && indices[k]===fim+1) { fim=indices[k]; k++; }
-      conferirDestinosRestauracaoGestor_(plano,ss);
-      conferirDestinosAnuaisPlanoGestor_(ss,plano);
-      sh.getRange(inicio+1,1,fim-inicio+1,cols).setValues(valores.slice(inicio,fim+1));
+      medir('aplicarDestinosMs',function(){conferirDestinosRestauracaoGestor_(plano,ss);conferirDestinosAnuaisPlanoGestor_(ss,plano);});
+      medir('aplicarEscritaMs',()=>sh.getRange(inicio+1,1,fim-inicio+1,cols).setValues(valores.slice(inicio,fim+1)));
+      if(detalhes){detalhes.blocosEscritos=(detalhes.blocosEscritos||0)+1;detalhes.celulasEscritas=(detalhes.celulasEscritas||0)+(fim-inicio+1)*cols;}
     }
+    medir('aplicarFormatosMs',function(){
     if (ehAbaRegistrosGestor_(m.nome)) formatarMoedasPlanoGestor_(sh,m.linhas);
     aplicarFormatosRestauracaoGestor_(sh, m);
     if (m.nome === ABA_RESTAURACOES_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if(m.nome==='Formas de Pagamento'&&typeof sh.hideColumns==='function'){const cab=sh.getRange(6,1,1,Math.max(1,m.colunas)).getValues()[0];cab.forEach((v,i)=>{if([CABECALHO_TIPO_FORMA_GESTOR_,CABECALHO_IDENTIDADE_FORMA_GESTOR_].includes(v))sh.hideColumns(i+1);});}
-    SpreadsheetApp.flush();
-    if (hashEstadoGestor_(lerEstadoAbaGestor_(sh)) !== m.depois) throw new Error('A gravação na aba ' + m.nome + ' ainda não corresponde à operação preparada. Ela permanece pendente para conferência.');
+    });
+    medir('aplicarFlushMs',()=>SpreadsheetApp.flush());
+    medir('aplicarConferenciaMs',function(){if (hashEstadoGestor_(lerEstadoAbaGestor_(sh)) !== m.depois) throw new Error('A gravação na aba ' + m.nome + ' ainda não corresponde à operação preparada. Ela permanece pendente para conferência.');});
   });
+  medir('aplicarDestinosMs',function(){
   conferirDestinosRestauracaoGestor_(plano,ss);
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
+  });
 }
 function controlesIncompletosRecuperaveisGestor_(atual, mudanca) {
   // Completar apenas controles vazios de linhas cujo conteúdo financeiro já
@@ -4358,19 +4372,21 @@ function aplicarAnexoTecnicoGestor_(ss, m) {
   SpreadsheetApp.flush();
 }
 
-function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade) {
+function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
   if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb'].includes(ctx.action))return null;
   const anterior=CONTEXTO_GESTOR_,somenteLeitura=ctx.somenteLeitura;
+  const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
   try {
-    const estados=new Map(Object.entries(ctx.ss.abas).map(function([nome,aba]){return [nome,hashEstadoGestor_(aba.valores)];}));
+    const estados=medir('atualizacaoPrepararMs',()=>new Map(Object.entries(ctx.ss.abas).map(function([nome,aba]){return [nome,hashEstadoGestor_(aba.valores)];})));
     // A operação já está confirmada. Este retrato é apenas uma atualização da
     // tela: não executa manutenção nem acrescenta novas mudanças ao plano.
     ctx.somenteLeitura=true;CONTEXTO_GESTOR_=ctx;
     // A consulta habitual pode gerar uma ocorrência ao virar o mês. Ensaiar
     // somente no contexto virtual; se houver mudança, usar a consulta normal
     // com seu próprio plano recuperável, sem devolver um retrato incompleto.
-    if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞'))processarAssinaturasAutomaticas(ctx.ss.getSheetByName('Lançamentos'));
-    const dados=getDadosCompletos();
+    medir('atualizacaoRecorrenciasMs',function(){if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞'))processarAssinaturasAutomaticas(ctx.ss.getSheetByName('Lançamentos'));});
+    const dados=medir('atualizacaoDadosMs',()=>getDadosCompletos());
+    const inicioConferencia=Date.now();try{
     if(!dados||dados.erro||dados.error||dados.protocoloGestor!==18)return null;
     // Fórmulas particulares em entradas podem ter recalculado depois da
     // escrita real. Não promover valores calculados da fotografia anterior.
@@ -4388,6 +4404,7 @@ function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade) {
     // Limite conservador sem transferir outro payload grande pelo proxy.
     if(JSON.stringify(atualizacao).length*2>700000)return null;
     return atualizacao;
+    }finally{if(detalhes)detalhes.atualizacaoConferenciaMs=(detalhes.atualizacaoConferenciaMs||0)+Math.max(0,Date.now()-inicioConferencia);}
   } catch(_) { return null; }
   finally {CONTEXTO_GESTOR_=anterior;ctx.somenteLeitura=somenteLeitura;}
 }
@@ -4400,16 +4417,17 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   HASHES_EXECUCAO_GESTOR_ = new Map();
   let resultadoIncerto = false;
   try {
-    const real = obterPlanilhaGestor_();retomarManutencaoProtecaoGestor_(real);
-    const diario = abrirDiarioGestor_(real);
+    const real = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararBaseMs',()=>obterPlanilhaGestor_());
+    medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararManutencaoMs',()=>retomarManutencaoProtecaoGestor_(real));
+    const diario = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararDiarioMs',()=>abrirDiarioGestor_(real));
     if (!leitura && param && param.requestId) {
-      const cancelada = localizarCabecalhosOperacaoGestor_(diario,acao+':'+param.requestId).some(function (linha) { return diario.getRange(linha,3).getValue()==='CANCELADO'; });
+      const cancelada = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararCancelamentoMs',()=>localizarCabecalhosOperacaoGestor_(diario,acao+':'+param.requestId).some(function (linha) { return diario.getRange(linha,3).getValue()==='CANCELADO'; }));
       if (cancelada) { const erro=new Error('Este envio foi cancelado com segurança. Confira os campos antes de criar um novo lançamento.'); erro.codigo='OPERACAO_CANCELADA'; throw erro; }
     }
-    const pendentes = localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO');
+    const pendentes = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararPendenciasMs',()=>localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO'));
     resultadoIncerto = pendentes.length > 0;
     const pendenciasIntegridade=[];
-    for(const linha of pendentes) {
+    const inicioRecuperacao=Date.now();try{for(const linha of pendentes) {
       let entrada;
       try {
         entrada=lerOperacaoTecnicaGestor_(diario,linha);
@@ -4420,11 +4438,13 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
         if(!leitura || !permitidas.includes(acao)) throw e;
         pendenciasIntegridade.push(entrada?resumirPendenciaDiarioGestor_(real,entrada):pendenciaDiarioInvalidoGestor_(diario,linha,e)); break;
       }
-    }
+    }}finally{detalhesGravacaoGestor.prepararRecuperacaoMs=Math.max(0,Date.now()-inicioRecuperacao);}
     resultadoIncerto = false;
+    let id,fingerprint;
+    const inicioReenvio=Date.now();try{
     const requestId = !leitura && param && !Array.isArray(param) ? String(param.requestId || '') : '';
     if (!leitura && (!/^[A-Za-z0-9_.:-]{8,160}$/.test(requestId))) throw new Error('Atualize o app antes de gravar: falta o identificador seguro da operação.');
-    const id = acao + ':' + (requestId || gerarIdGestor_()), fingerprint = hashGestor_(param || null);
+    id = acao + ':' + (requestId || gerarIdGestor_()); fingerprint = hashGestor_(param || null);
     if (!leitura && acao !== 'restaurarBackupDadosWeb') {
       const epoca = epocaRestauracaoGestor_();
       if (epoca && (!param || param.baseRestauracao !== epoca)) throw new Error('A planilha foi restaurada desde a preparação deste envio. Atualize o app e confira esta pendência antes de tentar novamente.');
@@ -4436,6 +4456,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       if (cabecalho[1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.');
       return lerOperacaoTecnicaGestor_(diario, linha).plano.resultado;
     }
+    }finally{detalhesGravacaoGestor.prepararReenvioMs=Math.max(0,Date.now()-inicioReenvio);}
     const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real, somenteLeitura:pendenciasIntegridade.length>0 };
     ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
     preparacaoMsGestor=Date.now()-inicioTempoGestor-esperaLockMsGestor;const inicioExecucaoGestor=Date.now();
@@ -4451,7 +4472,8 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       if(ctx.ss.abas['Lançamentos']) resultado.integridade.series=pendenciasSeriesGestor_(ctx);
     }
     if(ctx.somenteLeitura) { planoMsGestor=Date.now()-inicioPlanoGestor; return resultado; }
-    const mudancas = finalizarPlanoGestor_(ctx);
+    const mudancas = finalizarPlanoGestor_(ctx,detalhesGravacaoGestor);
+    detalhesGravacaoGestor.abasPlano=mudancas.length;
     if (acao === 'restaurarBackupDadosWeb') mudancas.sort(function (a,b) { return (a.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0) - (b.nome === ABA_RESTAURACOES_GESTOR_ ? -1 : 0); });
     if (leitura && mudancas.length === 0) { confirmarManutencaoLeituraGestor_(ctx); planoMsGestor=Date.now()-inicioPlanoGestor; return resultado; }
     planoMsGestor=Date.now()-inicioPlanoGestor;gravacaoInicioGestor=Date.now();
@@ -4470,12 +4492,12 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     if(ctx.financeiroAlterado)resumoAdiado=solicitarResumoAssincronoGestor_(acao,ctx);
     diario.getRange(inicio, 3).setValue('PRONTO'); SpreadsheetApp.flush();
     });
-    medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'aplicacaoMs',function(){aplicarPlanoGestor_(real, plano);});
+    medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'aplicacaoMs',function(){aplicarPlanoGestor_(real, plano,detalhesGravacaoGestor);});
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'confirmacaoMs',function(){diario.getRange(inicio, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush();});
     if(ctx.financeiroAlterado&&!resumoAdiado&&typeof atualizarResumoNativoGestor_==='function')medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'resumoMs',function(){try{atualizarResumoNativoGestor_(real,detalhesGravacaoGestor);}catch(e){const c=configProtecaoGestor_();c.erroRelatorios='Resumo da planilha: '+String(e.message||e).slice(0,250);salvarConfigProtecaoGestor_(c);}});
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'manutencaoMs',function(){confirmarManutencaoLeituraGestor_(ctx);});
     if(!leitura&&param?.incluirAtualizacaoDados===true&&resultado&&typeof resultado==='object'&&!Array.isArray(resultado)){
-      const atualizacao=medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'atualizacaoMs',function(){return montarAtualizacaoDadosConfirmadaGestor_(ctx,resultado.integridade);});
+      const atualizacao=medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'atualizacaoMs',function(){return montarAtualizacaoDadosConfirmadaGestor_(ctx,resultado.integridade,detalhesGravacaoGestor);});
       if(atualizacao)resultado.atualizacaoDados=atualizacao;
     }
     return resultado;

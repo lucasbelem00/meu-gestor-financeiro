@@ -43,6 +43,16 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+test('espera local mede só o intervalo na fila sem guardar filtros e sem mudar os envios',async()=>{
+ let instante=10;const chamadas=[];const c=coordenador({agora:()=>instante,executar:(acao,p)=>new Promise(resolve=>chamadas.push({p,resolve}))});
+ const a=c.chamar('filtrarLancamentosWeb',{termo:'privado-a'});await aguardar();
+ const b=c.chamar('filtrarLancamentosWeb',{termo:'privado-b'});await aguardar();assert.equal(chamadas.length,1);
+ instante=60;chamadas[0].resolve({itens:[1]});await a;await aguardar();assert.equal(chamadas.length,2);
+ instante=90;chamadas[1].resolve({itens:[2]});await b;
+ const m=c.metricas();assert.equal(m.esperasConsultas.length,1);assert.equal(m.esperasConsultas[0].duracaoMs,50);assert.equal(m.esperasConsultas[0].motivo,'historico');assert(!JSON.stringify(m).includes('privado'));
+ m.esperasConsultas[0].duracaoMs=0;assert.equal(c.metricas().esperasConsultas[0].duracaoMs,50);
+});
+
 test('filtros diferentes não acumulam envios; só o último filtro visual pendente é enviado',async()=>{
  const chamadas=[];let atual=1;const c=coordenador({executar:(acao,param)=>new Promise(resolve=>chamadas.push({acao,param,resolve}))});
  const a=c.consultarHistorico({termo:'a'},()=>atual===1),cancelarA=assert.rejects(a,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();
@@ -128,7 +138,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v144');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v147');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

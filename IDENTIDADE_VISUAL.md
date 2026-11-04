@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+Atualização 04/11/2026, v147: orientações secundárias de Status e Mês Fatura usam Ajuda recolhida junto ao rótulo. Perfil dos gastos mantém apenas os cards clicáveis, sem atalho inferior repetido. Pix agendados usam 💠, data informada e cores situacionais existentes no Painel/Agenda; o texto indica ausência de confirmação, sem presumir débito não pago. Clique abre revisão, nunca baixa financeira automática. Confirmação de Pix/à vista no editor exige opção explícita e revisão antes de salvar.
+
+
 Estas convenções devem ser mantidas nas novas alterações, títulos, navegação e mensagens referentes aos mesmos recursos. Ícone acompanha texto; nunca é a única indicação da ação.
 
 Nome único do produto: **Gestor de Gastos**, incluindo título da janela e manifesto de instalação. A ação de consultar os totais e registrar o pagamento ao banco chama-se **Conferir fatura** no Painel e Mensal. Atividade e sincronização concentra o histórico das operações, confirmações e recuperação.
