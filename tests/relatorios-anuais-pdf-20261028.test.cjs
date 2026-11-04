@@ -9,6 +9,22 @@ function ambiente(dados=fixture()){
 }
 const pdfs=a=>[...a.arquivos.values()].filter(f=>f.mime==='application/pdf');
 
+test('resumo resolve todas as formas com uma leitura local e observa renomeação na próxima chamada',()=>{
+ const a=ambiente(fixture(Array.from({length:12},(_,i)=>personal('Compra '+i,10+i)),[loan('Ana','A Receber',20,'Cartao')]));
+ const folha=a.db.sheets['Formas de Pagamento'],original=folha.getDataRange;let leituras=0;
+ folha.getDataRange=function(){leituras++;return original.call(this);};
+ const antes=a.ctx.registrosResumoNativoGestor_(a.db);
+ assert.equal(antes.length,13);assert.equal(leituras,1);assert(antes.every(r=>r.forma==='Cartao'));
+ // Localizar a coluna pelo resultado do validador mantém o teste independente
+ // da posição técnica reservada no cadastro.
+ const col=a.ctx.validarIdentidadesFormasGestor_(folha.rows).coluna-1;
+ const linha=folha.rows.slice(6).find(r=>r[1]==='Cartao'),identidade=JSON.parse(linha[col]);
+ identidade.aliases=Array.from(new Set(identidade.aliases.concat('Cartao','Novo nome')));linha[col]=JSON.stringify(identidade);linha[1]='Novo nome';
+ leituras=0;const depois=a.ctx.registrosResumoNativoGestor_(a.db);
+ assert.equal(leituras,1);assert(depois.every(r=>r.forma==='Novo nome'));
+ assert.equal(depois.reduce((s,r)=>s+r.total,0),antes.reduce((s,r)=>s+r.total,0));
+});
+
 test('resumo lê fórmulas em lote e não regrava fórmulas já atualizadas',()=>{
  const a=ambiente(fixture([personal()])),dash=a.db.sheets['Dashboard & Resumo'];
  formulaIndicador(a,'C17',"=SUMIFS('Lançamentos'!H:H;'Lançamentos'!D:D;B17;'Lançamentos'!I:I;TEXT(TODAY();\"mm/yyyy\");'Lançamentos'!J:J;\"<>Assinatura Cancelada\")");

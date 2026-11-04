@@ -6449,6 +6449,11 @@ const CAB_RELATORIOS_PDF_GESTOR_=['Identificação','Período','Hash dos dados',
 
 function registrosResumoNativoGestor_(ss){
   const categorias=listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo')),registros=[],ids=new Set();
+  // Snapshot exclusivo desta leitura: fora do contexto transacional, resolver
+  // cada registro individualmente relia o cadastro inteiro no Google Sheets.
+  const folhaFormas=ss.getSheetByName('Formas de Pagamento');
+  const formasResumo=folhaFormas?validarIdentidadesFormasGestor_(folhaFormas.getDataRange().getValues()).chaves:new Map();
+  const nomeFormaResumo=forma=>formasResumo.get(chaveFormaGestor_(forma))?.nome||limparApostrofo(forma);
   const incluir=function(nome,r){
     if(!r.some(v=>v!==''&&v!=null))return;
     const id=String(r[11]||'');if(!id||ids.has(id))throw Error('O resumo encontrou registro sem identificação ou repetido. Atualize os dados antes de gerar relatórios.');ids.add(id);
@@ -6456,7 +6461,7 @@ function registrosResumoNativoGestor_(ss){
     if(!info.m)throw Error('Competência inválida no resumo. Nenhum período será omitido.');
     if(isStatusCancelado(r[9])||total<=0)return;
     const pago=centavosGestor_(valorPagoBancoGestor_(r,emp));
-    registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaLeituraGestor_(r[emp?3:2],ss),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',perfilGasto:emp?null:lerPerfilGastoGestor_(r),total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
+    registros.push({id:id,ano:info.a,mes:mes,forma:nomeFormaResumo(r[emp?3:2]),categoria:emp?'Empréstimos a terceiros':resolverCategoria(r[3],categorias),origem:emp?'Terceiros':'Pessoal',perfilGasto:emp?null:lerPerfilGastoGestor_(r),total:total,pago:pago,saldo:total-pago,recebido:emp&&r[9]==='Recebido'?total:0,aReceber:emp&&r[9]!=='Recebido'?total:0});
   };
   for(const nome of ['Lançamentos','Empréstimos']){
     const valores=typeof ativoAnualGestor_==='function'&&ativoAnualGestor_(ss)?matrizFinanceiraAnualGestor_(ss,nome):ss.getSheetByName(nome)?.getDataRange().getValues()||[];

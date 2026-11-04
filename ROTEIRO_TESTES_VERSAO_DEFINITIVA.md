@@ -95,6 +95,8 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+Refinamento do cadastro de formas no resumo (03/11/2026): atualizar apenas backend na mesma implantação; HTML/manifesto/segredos permanecem. No próximo lançamento real, copiar diagnóstico e comparar resumoMs com 8.971 ms da amostra anterior, reconhecendo variação do Google. Conferir resumo, totais, forma exibida e ausência de pendência. Renomeações/aliases e nomes históricos continuam cobertos por regressões; não renomear cartões reais só para medir desempenho.
+
 Pacote v132 (resumo): após publicar backend e frontend juntos, conferir Dashboard & Resumo e os relatórios com um lançamento real, edição/pagamento normal e categoria renomeada quando necessário. Fórmulas particulares devem continuar intactas; não criar nem apagar dados reais apenas para medir. Copiar diagnóstico e comparar detalhesGravacao com a medição anterior; subetapas estão dentro de gravacaoMs. Preservados PRONTO/CONFIRMADO, flush e recuperação. O teste local de acessos prova redução de operações, não o ganho em segundos no Google.
 
 Diagnóstico v131: publicar Backend/Code.gs na mesma implantação Apps Script e frontend sincronizado na Vercel, mantendo destino/token/permissões. Usar um lançamento real necessário, abrir Mensal/Anual e copiar Diagnóstico. Conferir temposServidor com ação e durações (ms) correspondentes, separado de eventos.duracaoMs. Não repetir lançamento só para medir. Cache não produz nova medição de servidor; ações fora do executor transacional podem não fornecer etapas. Verificar resultado financeiro normal e preservação de pendências; nenhuma trava foi removida. Falta de medição não significa duração zero.

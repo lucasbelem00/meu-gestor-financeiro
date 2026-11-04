@@ -11,6 +11,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Resumo/relatórios: registrosResumoNativoGestor_ lê e valida identidades/aliases de formas uma vez por montagem, em shared/relatorios.js, reutilizando o mapa somente na função. Elimina releitura por registro fora do contexto transacional (ex.: resumo pós-gravação). Não é cache entre chamadas; próxima montagem observa alterações no cadastro e mantém validação de ambiguidades. Incorporado pelo gerador em Backend/Code.gs.
+
 Fonte da otimização do resumo: shared/relatorios.js. O gerador incorpora esse módulo em Backend/Code.gs; editar o bloco gerado sozinho não preserva a alteração no próximo build.
 
 Otimização v132: atualizarResumoNativoGestor_ lê valores/categorias em matriz, relê fórmulas em matriz após persistir metadados e não reescreve fórmula já igual à gerada. Somente templates reconhecidos/aceitos são substituídos; nenhuma escrita sobre intervalo amplo do Dashboard. reconhecerFormulaPadraoResumoGestor_ aceita snapshot opcional de valores, mantendo comportamento para outros chamadores. Diagnóstico opcional detalhesGravacao inclui diarioMs, aplicacaoMs, confirmacaoMs, resumoMs e manutencaoMs; são subetapas de gravacaoMs, não tempos a somar novamente ao total.
