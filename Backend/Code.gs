@@ -4025,6 +4025,12 @@ function atualizarValidacaoStatusLancamentosGestor_(sh, linhas) {
   sh.getRange(2, 10, linhas - 1, 1).setDataValidation(regra);
 }
 
+function formatarMoedasPlanoGestor_(sh,linhas) {
+  if(linhas<2)return;
+  // Mesmo formato e mesmas células; RangeList agrupa os três comandos no Sheets.
+  if(typeof sh.getRangeList==='function')sh.getRangeList(['E2:E'+linhas,'H2:H'+linhas,'R2:R'+linhas]).setNumberFormat(FORMATO_MOEDA_PLANILHA);
+  else for(const coluna of [5,8,18])sh.getRange(2,coluna,linhas-1,1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
+}
 function aplicarPlanoGestor_(ss, plano) {
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   conferirDestinosRestauracaoGestor_(plano,ss);
@@ -4066,7 +4072,7 @@ function aplicarPlanoGestor_(ss, plano) {
       conferirDestinosAnuaisPlanoGestor_(ss,plano);
       sh.getRange(inicio+1,1,fim-inicio+1,cols).setValues(valores.slice(inicio,fim+1));
     }
-    if (ehAbaRegistrosGestor_(m.nome) && m.linhas > 1) { sh.getRange(2, 5, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 8, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); sh.getRange(2, 18, m.linhas - 1, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA); }
+    if (ehAbaRegistrosGestor_(m.nome)) formatarMoedasPlanoGestor_(sh,m.linhas);
     aplicarFormatosRestauracaoGestor_(sh, m);
     if (m.nome === ABA_RESTAURACOES_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
@@ -6194,7 +6200,8 @@ function dadosAnoGestor_(e){
   const ctx=CONTEXTO_GESTOR_,chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
   if(ctx){ctx.cacheAnosConferidos=ctx.cacheAnosConferidos||new Map();if(ctx.cacheAnosConferidos.has(chave))return copiarGestor_(ctx.cacheAnosConferidos.get(chave));}
   const ss=SpreadsheetApp.openById(e.id),info=ss.getSheetByName('Leia-me');
-  if(!info||info.getRange(2,2).getValue()!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(info.getRange(3,2).getValue())!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
+  const identidade=info?info.getRange(2,2,2,1).getValues():[];
+  if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
   if(e.estado==='FECHADO'&&hashGestor_(dados)!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;
 }
@@ -6229,7 +6236,9 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   // Reuso opcional e restrito à montagem que possui a mesma base. Nunca
   // persistir este objeto nem reutilizá-lo depois de aplicar uma gravação.
   const leitura=leituraLocal?.ss===ss?leituraLocal:null;
-  const original=ss.getSheetByName(nome),cab=cabFinanceiroAnualGestor_(ss,nome),mapa=new Map();
+  // Cabeçalho e registros vêm da mesma leitura, restrita a esta montagem.
+  // A próxima chamada lê a planilha novamente, inclusive após uma gravação.
+  const original=ss.getSheetByName(nome),valoresOriginais=original?original.getDataRange().getValues():[],cab=normalizarMatrizProtecaoGestor_([valoresOriginais[0]||Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0],mapa=new Map();
   const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
   for(const e of leitura?leitura.catalogo:catalogoAnosGestor_(ss)){
     let dados;try{const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;if(leitura?.anos.has(chave))dados=copiarGestor_(leitura.anos.get(chave));else{dados=dadosAnoGestor_(e);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
@@ -6240,7 +6249,7 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
     const antes=mapa.get(String(r[1]));if(r[3]!=='NOVO'&&(!antes||hashGestor_(antes)!==r[3])){if(CONTEXTO_GESTOR_?.anosIndisponiveis?.has(Number(r[2])))continue;throw Error('O ajuste não corresponde ao registro do ano fechado.');}
     if(r[4]==='EXCLUIDO')mapa.delete(String(r[1]));else {let valor;try{valor=desserializarGestor_(JSON.parse(r[5]));}catch(_){throw Error('Conteúdo do ajuste anual inválido.');}if(valor[11]!==r[1])throw Error('Identidade do ajuste incompatível.');mapa.set(String(r[1]),valor);}
   }
-  if(original)for(const r of original.getDataRange().getValues().slice(1))incluir(r);
+  for(const r of valoresOriginais.slice(1))incluir(r);
   return [cab,...mapa.values()];
 }
 function folhaLeituraAnualGestor_(ss,nome){
@@ -6513,16 +6522,17 @@ function reconhecerFormulaPadraoResumoGestor_(formula,linha,coluna,ss,valoresDas
   return null;
 }
 function gravarResumoConferidoGestor_(sh,linhas){
-  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),formulas=intervalo.getFormulas(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
+  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
   // Comparar conteúdo real, não apenas o hash guardado: corrupção e fórmulas
   // inseridas na aba derivada continuam sendo reparadas pela gravação completa.
   const dataValida=typeof atuais[2]?.[1]==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(atuais[2][1])&&Number.isFinite(Date.parse(atuais[2][1]));
   const igual=dataValida&&Math.max(atuais.length,linhas.length)===linhas.length&&linhas.every((r,i)=>Array.from({length:cols},(_,j)=>j).every(j=>{
-    if(formulas[i]?.[j])return false;
     if(i===2&&j===1)return true;
     return (atuais[i]?.[j]??'')===(r[j]??'');
   }));
-  if(igual)return false;
+  // Se os valores já divergiram, a regravação é obrigatória. Só consultar
+  // fórmulas quando os valores iguais permitiriam dispensar essa gravação.
+  if(igual&&!intervalo.getFormulas().some(r=>r.some(Boolean)))return false;
   gravarMatrizProtecaoGestor_(sh,linhas);return true;
 }
 function atualizarResumoNativoGestor_(ss,tempos){

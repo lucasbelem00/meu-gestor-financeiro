@@ -6,6 +6,8 @@ Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os te
 
 ## 1. Preparar o teste
 
+Reteste de desempenho do refinamento backend de 04/11/2026: atualizar Code.gs na mesma implantação; sem mudança no frontend v136 ou nas permissões. Após publicar, abrir Painel, Mensal e Anual; cadastrar um gasto de teste e editar sua descrição. Conferir valor, competência, ausência de duplicação e formatação monetária na planilha; exportar diagnóstico depois de a edição e a atualização posterior terminarem. Comparar tempos do app e subtempos do resumo com a rodada anterior. Os 1.043 testes locais aprovados não medem latência real do Google. Não alterar um ano fechado real para ensaiar corrupção; usar somente cópia descartável.
+
 - [ ] Baixar e guardar um backup JSON completo e confirmar que o arquivo abre e não está vazio. Guardar também uma cópia da planilha anterior à atualização.
 - [ ] Confirmar que o projeto Apps Script de teste aponta, pela propriedade `GESTOR_PLANILHA_ID`, para a **Cópia de Gestor de Gastos**, e não para a definitiva.
 - [ ] Atualizar `Backend/Code.gs` e os HTMLs distribuídos, publicar a nova versão do Apps Script e atualizar a interface no endereço de testes usado pelo app. Não copiar tokens, IDs nem gatilhos de teste para a definitiva.

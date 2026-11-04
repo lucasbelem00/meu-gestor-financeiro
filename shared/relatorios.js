@@ -63,16 +63,17 @@ function reconhecerFormulaPadraoResumoGestor_(formula,linha,coluna,ss,valoresDas
   return null;
 }
 function gravarResumoConferidoGestor_(sh,linhas){
-  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),formulas=intervalo.getFormulas(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
+  const intervalo=sh.getDataRange(),atuais=intervalo.getValues(),cols=CAB_RESUMO_NATIVO_GESTOR_.length;
   // Comparar conteúdo real, não apenas o hash guardado: corrupção e fórmulas
   // inseridas na aba derivada continuam sendo reparadas pela gravação completa.
   const dataValida=typeof atuais[2]?.[1]==='string'&&/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(atuais[2][1])&&Number.isFinite(Date.parse(atuais[2][1]));
   const igual=dataValida&&Math.max(atuais.length,linhas.length)===linhas.length&&linhas.every((r,i)=>Array.from({length:cols},(_,j)=>j).every(j=>{
-    if(formulas[i]?.[j])return false;
     if(i===2&&j===1)return true;
     return (atuais[i]?.[j]??'')===(r[j]??'');
   }));
-  if(igual)return false;
+  // Se os valores já divergiram, a regravação é obrigatória. Só consultar
+  // fórmulas quando os valores iguais permitiriam dispensar essa gravação.
+  if(igual&&!intervalo.getFormulas().some(r=>r.some(Boolean)))return false;
   gravarMatrizProtecaoGestor_(sh,linhas);return true;
 }
 function atualizarResumoNativoGestor_(ss,tempos){

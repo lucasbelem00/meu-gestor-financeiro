@@ -1,6 +1,6 @@
 # Mapa do código do Gestor de Gastos
 
-Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
+Atualizado em 04/11/2026. Este mapa descreve o pacote local de continuidade, protocolo 18. A publicação e a ativação na conta Google são etapas separadas.
 
 ## Ambientes
 
@@ -10,6 +10,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 - Não copiar dados, propriedades de destino ou gatilhos de teste para a definitiva sem conferir o ambiente. Um teste de restauração deve usar uma cópia descartável.
 
 ## Caminho de uma ação
+
+Refinamento backend de 04/11/2026 (frontend v136 preservado): shared/anual.js lê cabeçalho e registros locais na mesma matriz e confere identidade anual B2:B3 em bloco, sem cache entre chamadas. shared/relatorios.js adia leitura de fórmulas do resumo até os valores iguais permitirem evitar escrita; divergências continuam reparadas. Em Backend/Code.gs, formatarMoedasPlanoGestor_ agrupa a formatação E/H/R na aplicação do plano por RangeList, com fallback para objetos sem esse método. Trava, diário, flush e hash pós-gravação mantidos. Afeta integrações dos módulos financeiros, relatórios e organização anual. Fontes shared continuam incorporadas pelo gerador; publicar somente Code.gs para disponibilizar este refinamento. Referência da API de formatação: https://developers.google.com/apps-script/reference/spreadsheet/range-list#setNumberFormat(String).
 
 Resumo v136 (shared/relatorios.js): gravarResumoConferidoGestor_ compara valores e fórmulas reais da aba derivada para evitar somente gravação idêntica; conteúdo divergente usa gravarMatrizProtecaoGestor_. Dashboard é consultado em faixas limitadas às posições que formulaGerenciadaResumoGestor_ reconhece. atualizarResumoNativoGestor_ aceita objeto opcional de tempos, preenchido na atualização pós-gravação. Envelope/diagnóstico exportam subtempos do resumo por lista branca, sem parâmetros financeiros. Sem cache novo ou mudança no plano recuperável.
 
