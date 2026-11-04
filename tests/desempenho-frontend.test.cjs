@@ -153,15 +153,37 @@ test('duas atualizações simultâneas executam uma consulta e um render real', 
   assert.equal(await p1,true);await p2;assert.equal(a.renderizados.length,1);assert.equal(a.renderizados[0].saldo,100);
 });
 
-test('nova atualização após pagamento não compartilha o render antigo', async () => {
+test('nova atualização após pagamento substitui o render antigo sem uma quarta consulta', async () => {
   const chamadas=[];const a=ambiente(acao=>new Promise(resolve=>chamadas.push({acao,resolve})),true);
   const anterior=a.ctx.carregarDados();await aguardar();
   const pago=a.ctx.apiCall('registrarPagamentoFaturaWeb',{});await aguardar();chamadas[1].resolve({confirmado:true});await pago;
   const atual=a.ctx.carregarDados();await aguardar();assert.notEqual(anterior,atual);assert.equal(chamadas.length,3);
   chamadas[2].resolve({saldo:0});assert.equal(await atual,true);
-  chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,4);
-  chamadas[3].resolve({saldo:0});assert.equal(await anterior,false);
+  chamadas[0].resolve({saldo:100});assert.equal(await anterior,false);assert.equal(chamadas.length,3);
   assert.equal(a.renderizados.length,1);assert.equal(a.renderizados[0].saldo,0);
+});
+
+test('recargas visuais aguardam gravação e compartilham consulta e render depois dela',async()=>{
+ const chamadas=[];const a=ambiente(acao=>new Promise((resolve,reject)=>chamadas.push({acao,resolve,reject})),true);
+ const salvar=a.ctx.apiCall('salvarCategoriasWeb',{}),primeira=a.ctx.carregarDados(),segunda=a.ctx.carregarDados();
+ await aguardar();assert.equal(chamadas.length,1);assert.equal(a.renderizados.length,0);
+ chamadas[0].resolve({confirmado:true});await salvar;await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].acao,'getDadosCompletos');
+ chamadas[1].resolve({saldo:40});assert.deepEqual(await Promise.all([primeira,segunda]),[true,true]);assert.equal(a.renderizados.length,1);
+});
+
+test('recarga visual após falha de gravação consulta novamente sem repetir o envio',async()=>{
+ const chamadas=[];const a=ambiente(acao=>new Promise((resolve,reject)=>chamadas.push({acao,resolve,reject})),true);
+ const salvar=a.ctx.apiCall('salvarCategoriasWeb',{}),falhou=assert.rejects(salvar,/rede/),dados=a.ctx.carregarDados();
+ await aguardar();assert.equal(chamadas.length,1);chamadas[0].reject(Error('rede'));await falhou;await aguardar();
+ assert.equal(chamadas.length,2);chamadas[1].resolve({saldo:40});assert.equal(await dados,true);assert.equal(a.renderizados.length,1);
+});
+
+test('resposta completa nova não é reaproveitada após outra invalidação',async()=>{
+ const chamadas=[];const c=coordenador({executar:acao=>new Promise(resolve=>chamadas.push({acao,resolve}))});
+ const antiga=c.chamar('getDadosCompletos');await aguardar();c.invalidar();
+ const nova=c.chamar('getDadosCompletos');await aguardar();chamadas[1].resolve({saldo:20});assert.equal((await nova).saldo,20);
+ c.invalidar();chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,3);
+ chamadas[2].resolve({saldo:10});assert.equal((await antiga).saldo,10);
 });
 
 test('gráficos de tela oculta são criados ao abrir, usando somente a última configuração', () => {

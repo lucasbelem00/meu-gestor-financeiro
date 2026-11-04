@@ -6,6 +6,8 @@ Use as caixas para anotar o resultado real. Elas estão desmarcadas porque os te
 
 ## 1. Preparar o teste
 
+Reteste frontend v137 (04/11/2026): publicar o frontend e atualizar o app instalado; Code.gs não mudou neste pacote. Salvar categorias e solicitar atualização durante o envio; a recarga visual deve aguardar a confirmação sem duplicar a gravação. Repetir com edição de gasto e conferir um único registro com os dados finais. Aguardar a atualização da tela antes de exportar diagnóstico e comparar envios/descartes/tempos. Se houver falha de envio, conferir pendências pelo app, preservando o mesmo identificador; a recarga não deve ficar presa nem reenviar a gravação. Testes locais: 1.046 aprovados, sem substituir a conferência na conta real.
+
 Reteste de desempenho do refinamento backend de 04/11/2026: atualizar Code.gs na mesma implantação; sem mudança no frontend v136 ou nas permissões. Após publicar, abrir Painel, Mensal e Anual; cadastrar um gasto de teste e editar sua descrição. Conferir valor, competência, ausência de duplicação e formatação monetária na planilha; exportar diagnóstico depois de a edição e a atualização posterior terminarem. Comparar tempos do app e subtempos do resumo com a rodada anterior. Os 1.043 testes locais aprovados não medem latência real do Google. Não alterar um ano fechado real para ensaiar corrupção; usar somente cópia descartável.
 
 - [ ] Baixar e guardar um backup JSON completo e confirmar que o arquivo abre e não está vazio. Guardar também uma cópia da planilha anterior à atualização.

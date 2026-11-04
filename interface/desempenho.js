@@ -15,6 +15,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const cache = new Map(), consultas = new Map();
   const cargasCompletas = new Set();
   const mutacoesPendentes = new Set();
+  let respostaCompletaAtual = null;
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
   let geracao = 0, bytes = 0;
 
@@ -35,6 +36,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     geracao++;
     metricas.invalidacoes++;
     cache.clear(); bytes = 0;
+    respostaCompletaAtual = null;
     // Promessas anteriores seguem observadas por seus solicitantes, sem serem
     // reaproveitadas por consultas iniciadas depois desta invalidação.
     consultas.clear();
@@ -90,7 +92,13 @@ function criarCoordenadorLeiturasGestor(opcoes) {
           // O novo número pertence à resposta compartilhada, não a cada leitor.
           invalidar(); versaoResposta = geracao;
         }
-        return { valor, instante: agora(), versaoResposta };
+        const resposta = { valor, instante: agora(), versaoResposta };
+        // Só auxilia leitores antigos ainda em voo. Uma chamada nova continua
+        // consultando a rede, sem cache de resultado para getDadosCompletos.
+        if(acao==='getDadosCompletos'&&versaoResposta===geracao&&cargasCompletas.size>1&&valor&&!valor.erro&&!valor.error&&!valor.integridade?.bloqueada){
+          respostaCompletaAtual={chave,resposta};
+        }
+        return resposta;
       });
       consultas.set(chaveEnvio, promessa);
       if(acao==='getDadosCompletos'){
@@ -102,6 +110,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     return promessa.then(({valor, instante, versaoResposta}) => {
       if (versaoResposta !== geracao) {
         metricas.descartadas++;
+        if(acao==='getDadosCompletos'&&respostaCompletaAtual?.chave===chave&&respostaCompletaAtual.resposta.versaoResposta===geracao){
+          metricas.compartilhadas++;
+          const atual=respostaCompletaAtual.resposta;
+          return resultado(atual.valor,atual.instante,'rede',acao);
+        }
         // Não repete uma falha de rede nem qualquer gravação. Só refaz uma
         // leitura bem-sucedida que atravessou uma alteração dos dados.
         if (repeticoes < 2) return consultar(acao, param, extras, repeticoes + 1);
@@ -112,7 +125,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
         try { guardar(chave, valor, instante); } catch (_) {}
       }
       return resultado(valor, instante, 'rede', acao);
-    });
+    }).finally(()=>{if(acao==='getDadosCompletos'&&!cargasCompletas.size)respostaCompletaAtual=null;});
   }
   function chamar(acao, param, ...extras) {
     if (leituras.has(acao)) {
@@ -127,6 +140,9 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   }
   return {
     chamar, invalidar,
+    // Só recargas visuais usam esta espera. A API de confirmação/protocolo
+    // continua livre para evitar dependência circular dentro das gravações.
+    aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
     metricas: () => ({ ...metricas, entradas: cache.size, bytes, pendentes: consultas.size })
   };
@@ -219,6 +235,8 @@ if (typeof carregarMensalAntesCoordenacaoDesempenhoGestor === 'function') {
 const carregarDadosAntesCoordenacaoGestor = window.carregarDados;
 let recargaCoordenadaDesempenhoGestor = null;
 window.carregarDados = function(...args) {
+  const mutacoes = coordenadorLeiturasDesempenhoGestor.aguardarMutacoes();
+  if(mutacoes)return mutacoes.then(()=>window.carregarDados(...args));
   const versao = coordenadorLeiturasDesempenhoGestor.geracao();
   if (recargaCoordenadaDesempenhoGestor?.versao === versao) return recargaCoordenadaDesempenhoGestor.promessa;
   const atual = { versao, promessa: null };
