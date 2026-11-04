@@ -11,6 +11,8 @@ Atualizado em 03/11/2026. Este mapa descreve o pacote local de continuidade, pro
 
 ## Caminho de uma ação
 
+Concorrência v133: adquirirLockOperacaoGestor_ classifica indisponibilidade da trava do executor como SERVICO_OCUPADO, com espera limitada (leitura 10 s, escrita 30 s) e medição estado=ocupado. Nenhum dado é acessado antes da aquisição nem trava alheia liberada. doPost/apiCallServidor incluem tempos opcionais também em falhas; transportes validam/coletam antes de verificar sucesso. Não cria retentativa automática ou mudança no diário de recuperação.
+
 Resumo/relatórios: registrosResumoNativoGestor_ lê e valida identidades/aliases de formas uma vez por montagem, em shared/relatorios.js, reutilizando o mapa somente na função. Elimina releitura por registro fora do contexto transacional (ex.: resumo pós-gravação). Não é cache entre chamadas; próxima montagem observa alterações no cadastro e mantém validação de ambiguidades. Incorporado pelo gerador em Backend/Code.gs.
 
 Fonte da otimização do resumo: shared/relatorios.js. O gerador incorpora esse módulo em Backend/Code.gs; editar o bloco gerado sozinho não preserva a alteração no próximo build.

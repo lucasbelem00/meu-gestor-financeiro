@@ -25,6 +25,19 @@ function medirEtapaGravacaoGestor_(detalhes, etapa, executar) {
   finally { detalhes[etapa]=(detalhes[etapa]||0)+Math.max(0,Date.now()-inicio); }
 }
 
+function adquirirLockOperacaoGestor_(lock, acao, leitura) {
+  const inicio=Date.now();
+  if(lock.tryLock(leitura?10000:30000))return;
+  registrarTemposRespostaGestor_(acao,inicio,Date.now()-inicio,0,0,0,0);
+  if(TEMPOS_RESPOSTA_GESTOR_)TEMPOS_RESPOSTA_GESTOR_.estado='ocupado';
+  const erro=new Error('Outra operação está em andamento na planilha. Aguarde um pouco e tente novamente.');
+  erro.codigo='SERVICO_OCUPADO';
+  // Esta tentativa não começou, mas sem a trava não podemos conferir se uma
+  // tentativa anterior do mesmo requestId está sendo aplicada. Preservar envio.
+  if(!leitura)erro.resultadoIncerto=true;
+  throw erro;
+}
+
 // Executar manualmente no editor, pela conta responsável pela implantação.
 // Não expor no catálogo da API: consentimento exige interação no Google.
 function prepararAutorizacaoInicialGestor() {
@@ -2200,7 +2213,7 @@ function doPost(e) {
     const result = executarAcaoApi_(payload.action, payload.param);
     return output.setContent(JSON.stringify({ sucesso: true, dados: result, relogioGestor: referenciaRelogioServidorGestor_(), temposGestor: TEMPOS_RESPOSTA_GESTOR_ }));
   } catch (err) {
-    return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true, codigo: err.codigo || 'FALHA_OPERACAO' }));
+    return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true, codigo: err.codigo || 'FALHA_OPERACAO', temposGestor: TEMPOS_RESPOSTA_GESTOR_ }));
   }
 }
 
@@ -2214,7 +2227,7 @@ function apiCallServidor(action, param) {
     }
     return JSON.stringify({ sucesso: true, dados: executarAcaoApi_(action, param), relogioGestor: referenciaRelogioServidorGestor_(), temposGestor: TEMPOS_RESPOSTA_GESTOR_ });
   } catch (err) {
-    return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err), resultadoIncerto: !!(err && err.resultadoIncerto), codigo: err && err.codigo || 'FALHA_OPERACAO' });
+    return JSON.stringify({ sucesso: false, erro: err && err.message ? err.message : String(err), resultadoIncerto: !!(err && err.resultadoIncerto), codigo: err && err.codigo || 'FALHA_OPERACAO', temposGestor: TEMPOS_RESPOSTA_GESTOR_ });
   }
 }
 
@@ -4324,7 +4337,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   if (CONTEXTO_GESTOR_) return executar();
   const detalhesGravacaoGestor={};
   const inicioTempoGestor = Date.now();let preparacaoMsGestor=0,execucaoMsGestor=0,planoMsGestor=0,gravacaoInicioGestor=0;
-  const lock = LockService.getScriptLock(); lock.waitLock(30000);
+  const lock = LockService.getScriptLock(); adquirirLockOperacaoGestor_(lock,acao,leitura);
   const esperaLockMsGestor = Date.now()-inicioTempoGestor;
   HASHES_EXECUCAO_GESTOR_ = new Map();
   let resultadoIncerto = false;

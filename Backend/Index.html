@@ -1800,6 +1800,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           .withSuccessHandler((resposta) => {
             try {
               const resultado = JSON.parse(resposta);
+              if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, resultado.temposGestor);
               if (!resultado.sucesso) {
                 const falha = new Error(resultado.erro || 'Erro no servidor da planilha.');
                 falha.doServidor = true;
@@ -1808,7 +1809,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 throw falha;
               }
               if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(resultado.relogioGestor);
-              if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, resultado.temposGestor);
               resolve(resultado.dados);
             } catch (erro) {
               reject(erro);
@@ -7364,9 +7364,9 @@ try {
           if (!response.ok) { var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
           var data = await response.json();
           clearTimeout(timer);
+          if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, data.temposGestor);
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.codigo = data.codigo; e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
           if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(data.relogioGestor);
-          if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, data.temposGestor);
           registrarIdentidadesGestor(action, data.dados, true);
           return data.dados;
         } catch (err) {
@@ -8073,6 +8073,7 @@ function renderizarHistoricoAtividadeGestor() {
 function normalizarTemposServidorGestor(action, meta) {
   if (!meta || meta.versao !== 1 || meta.acao !== action || !/^[A-Za-z]{1,80}$/.test(action)) return null;
   const tempos = { versao: 1, acao: action };
+  if(meta.estado==='ocupado')tempos.estado='ocupado';
   for (const campo of ['totalMs','esperaLockMs','preparacaoMs','execucaoMs','planoMs','gravacaoMs','outrosMs']) {
     if (typeof meta[campo] !== 'number' || !Number.isFinite(meta[campo]) || meta[campo] < 0 || meta[campo] > 3600000) return null;
     tempos[campo] = Math.round(meta[campo]);

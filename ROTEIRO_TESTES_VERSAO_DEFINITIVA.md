@@ -95,6 +95,10 @@ Não é possível provar a passagem real do tempo só clicando nas abas. A virad
 
 ## 8. Liberar a definitiva
 
+Escrita com SERVICO_OCUPADO deve preservar envio para conferência: uma tentativa anterior do mesmo requestId pode estar em execução. Testes devem distinguir essa situação da consulta ocupada; não apagar journal/reenviar como novo lançamento. O pacote v133 tem tratamento local e testes, ainda requer publicação dos dois lados.
+
+Concorrência v133: publicar Code.gs e frontend; em projeto de testes simular trava ocupada e conferir SERVICO_OCUPADO, estado=ocupado no Diagnóstico e nenhuma escrita/liberação de trava alheia. Após término da operação, repetir consulta manualmente e conferir dados. Não provocar bloqueio ou interromper execução na definitiva. Não repetir gravação com resultado incerto; conferir confirmação por Atividade. Execução prolongada observada em 03/11/2026 foi limitada pelo Google aos seis minutos; origem interna continua sem comprovação.
+
 Refinamento do cadastro de formas no resumo (03/11/2026): atualizar apenas backend na mesma implantação; HTML/manifesto/segredos permanecem. No próximo lançamento real, copiar diagnóstico e comparar resumoMs com 8.971 ms da amostra anterior, reconhecendo variação do Google. Conferir resumo, totais, forma exibida e ausência de pendência. Renomeações/aliases e nomes históricos continuam cobertos por regressões; não renomear cartões reais só para medir desempenho.
 
 Pacote v132 (resumo): após publicar backend e frontend juntos, conferir Dashboard & Resumo e os relatórios com um lançamento real, edição/pagamento normal e categoria renomeada quando necessário. Fórmulas particulares devem continuar intactas; não criar nem apagar dados reais apenas para medir. Copiar diagnóstico e comparar detalhesGravacao com a medição anterior; subetapas estão dentro de gravacaoMs. Preservados PRONTO/CONFIRMADO, flush e recuperação. O teste local de acessos prova redução de operações, não o ganho em segundos no Google.

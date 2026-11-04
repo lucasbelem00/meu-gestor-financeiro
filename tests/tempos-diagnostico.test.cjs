@@ -2,6 +2,22 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),fs=requir
 const backend=fs.readFileSync('Backend/Code.gs','utf8'),html=fs.readFileSync('index.html','utf8');
 const helper=backend.slice(backend.indexOf('function registrarTemposRespostaGestor_'),backend.indexOf('// Executar manualmente'));
 const front=html.slice(html.indexOf('function normalizarTemposServidorGestor'),html.indexOf('function registrarDiagnosticoAtividadeGestor'));
+test('trava ocupada informa código próprio antes de ler ou gravar e não libera trava alheia',()=>{
+  const limites=[];let liberacoes=0,acessos=0;
+  const lock={tryLock(ms){limites.push(ms);return false;},releaseLock(){liberacoes++;}};
+  const c=vm.createContext({Date,console:{log(){}},LockService:{getScriptLock:()=>lock},obterPlanilhaGestor_(){acessos++;throw Error('não deveria ler');}});
+  const executor=backend.slice(backend.indexOf('function executarOperacaoGestor_('),backend.indexOf('function assinaturaManutencaoLeituraGestor_'));
+  vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null,CONTEXTO_GESTOR_=null;'+helper+executor,c);
+  for(const leitura of [true,false])assert.throws(()=>c.executarOperacaoGestor_(leitura?'obterRelatorioAnual':'salvarLancamentoWeb',{},()=>{acessos++;},leitura),e=>e.codigo==='SERVICO_OCUPADO'&&!!e.resultadoIncerto===!leitura);
+  assert.deepEqual(limites,[10000,30000]);assert.equal(acessos,0);assert.equal(liberacoes,0);
+  const m=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
+  vm.runInContext(front,c);assert.equal(c.normalizarTemposServidorGestor(m.acao,m).estado,'ocupado');
+});
+test('trava disponível mantém execução normal sem espera extra ou repetição',()=>{
+  let chamadas=0;const c=vm.createContext({Date,console:{log(){}}});vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null;'+helper,c);
+  assert.equal(c.adquirirLockOperacaoGestor_({tryLock(ms){assert.equal(ms,10000);chamadas++;return true;}},'obterRelatorioMes',true),undefined);
+  assert.equal(chamadas,1);assert.equal(vm.runInContext('TEMPOS_RESPOSTA_GESTOR_',c),null);
+});
 test('tempos incluem apenas ação e durações e sobrevivem a falha do log',()=>{
   const c=vm.createContext({Date:{now:()=>1000},console:{log(){throw Error('log indisponível');}}});
   vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null;'+helper,c);
