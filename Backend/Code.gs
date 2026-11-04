@@ -65,7 +65,12 @@ function obterPlanilhaGestor_() {
 }
 
 function getTimezone() {
-  return Session.getScriptTimeZone() || 'America/Sao_Paulo';
+  // Configuração estável durante este executor; nunca sobrevive à requisição.
+  const memo=typeof HASHES_EXECUCAO_GESTOR_!=='undefined'?HASHES_EXECUCAO_GESTOR_:null;
+  if(memo?.fusoGestor)return memo.fusoGestor;
+  const fuso=Session.getScriptTimeZone() || 'America/Sao_Paulo';
+  if(memo)memo.fusoGestor=fuso;
+  return fuso;
 }
 
 // Campo opcional do envelope: nunca faz uma gravação confirmada falhar.
@@ -3228,6 +3233,7 @@ function lerLancamentosParaRelatorio(anosArquivo) {
   const lido = lerRegistrosConsultaProtecaoGestor_('Lançamentos',anosArquivo);
   const nomesCfg = listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo'));
   const linhas = [];
+  const datasOrdenacao=new Map();
   lido.raw.forEach(function (r, i) {
     const d = lido.disp[i].slice();
     // Datas do Sheets podem estar com máscaras diferentes. O período e a
@@ -3239,7 +3245,7 @@ function lerLancamentosParaRelatorio(anosArquivo) {
     if (!desc) return;
     const parc = limparApostrofo(d[6]);
     const infoParc = parseNumParcela(parc);
-    linhas.push({
+    const linha={
       idx: lido.refs[i].linha-2, arquivado:lido.refs[i].arquivado, d: d, r: r, desc: desc,
       forma: nomeFormaLeituraGestor_(d[2], ss), tipoForma: tipoFormaGestor_(d[2], ss),
       cat: String(d[3] || '').trim() || 'Sem Categoria',
@@ -3252,9 +3258,11 @@ function lerLancamentosParaRelatorio(anosArquivo) {
       tags: String(d[10] || '').trim(),
       data: limparApostrofo(d[0]),
       chave: String(r[12] || r[11] || ('linha-' + i))
-    });
+    };
+    datasOrdenacao.set(linha,parseDataBR(linha.data)?.getTime()||0);
+    linhas.push(linha);
   });
-  return linhas.sort(function(a,b){return (parseDataBR(a.data)?.getTime()||0)-(parseDataBR(b.data)?.getTime()||0) || a.infoMes.time-b.infoMes.time || a.infoParc.atual-b.infoParc.atual;});
+  return linhas.sort(function(a,b){return datasOrdenacao.get(a)-datasOrdenacao.get(b) || a.infoMes.time-b.infoMes.time || a.infoParc.atual-b.infoParc.atual;});
 }
 
 function calcularResumoParcelas(linhas) {
@@ -3784,9 +3792,13 @@ function lerEstadoAbaGestor_(sh) {
 }
 function criarPlanilhaVirtualGestor_(ss, contexto) {
   const abas = Object.create(null);
+  let leituraFinanceira=null;
   function abrir(nome, criar) {
     if (abas[nome]) return abas[nome];
-    const real = folhaLeituraAnualGestor_(ss,nome);
+    // As duas abas financeiras pertencem à mesma fotografia inicial sob lock.
+    // A aplicação do plano continua conferindo os destinos reais novamente.
+    if(ehAbaRegistrosGestor_(nome)&&!leituraFinanceira&&ativoAnualGestor_(ss))leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()};
+    const real = folhaLeituraAnualGestor_(ss,nome,leituraFinanceira);
     if (!real && !criar) return null;
     const rangeReal = real && real.getLastRow() ? real.getDataRange() : null;
     const calculados = rangeReal ? rangeReal.getValues() : [], formulas = rangeReal ? rangeReal.getFormulas() : [];
@@ -6301,9 +6313,9 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   for(const r of valoresOriginais.slice(1))incluir(r);
   return [cab,...mapa.values()];
 }
-function folhaLeituraAnualGestor_(ss,nome){
+function folhaLeituraAnualGestor_(ss,nome,leituraLocal){
   if(!ehAbaRegistrosGestor_(nome)||!ativoAnualGestor_(ss))return ss.getSheetByName(nome);
-  const valores=matrizFinanceiraAnualGestor_(ss,nome),colunas=Math.max(COLUNAS_GESTOR_,...valores.map(r=>r.length));
+  const valores=matrizFinanceiraAnualGestor_(ss,nome,leituraLocal),colunas=Math.max(COLUNAS_GESTOR_,...valores.map(r=>r.length));
   const folha={getName:()=>nome,getLastRow:()=>valores.length};
   folha.getRange=function(l,c,n=1,m=1){if(typeof l==='string'){const a=l.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);if(!a)throw Error('Intervalo anual inválido.');const num=s=>s.split('').reduce((x,y)=>x*26+y.charCodeAt(0)-64,0);l=Number(a[2]);c=num(a[1]);n=a[4]?Number(a[4])-l+1:1;m=a[3]?num(a[3])-c+1:1;}
     const ler=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>copiarGestor_(valores[l-1+i]?.[c-1+j]??'')));

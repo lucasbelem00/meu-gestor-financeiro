@@ -75,9 +75,9 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   for(const r of valoresOriginais.slice(1))incluir(r);
   return [cab,...mapa.values()];
 }
-function folhaLeituraAnualGestor_(ss,nome){
+function folhaLeituraAnualGestor_(ss,nome,leituraLocal){
   if(!ehAbaRegistrosGestor_(nome)||!ativoAnualGestor_(ss))return ss.getSheetByName(nome);
-  const valores=matrizFinanceiraAnualGestor_(ss,nome),colunas=Math.max(COLUNAS_GESTOR_,...valores.map(r=>r.length));
+  const valores=matrizFinanceiraAnualGestor_(ss,nome,leituraLocal),colunas=Math.max(COLUNAS_GESTOR_,...valores.map(r=>r.length));
   const folha={getName:()=>nome,getLastRow:()=>valores.length};
   folha.getRange=function(l,c,n=1,m=1){if(typeof l==='string'){const a=l.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);if(!a)throw Error('Intervalo anual inválido.');const num=s=>s.split('').reduce((x,y)=>x*26+y.charCodeAt(0)-64,0);l=Number(a[2]);c=num(a[1]);n=a[4]?Number(a[4])-l+1:1;m=a[3]?num(a[3])-c+1:1;}
     const ler=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>copiarGestor_(valores[l-1+i]?.[c-1+j]??'')));

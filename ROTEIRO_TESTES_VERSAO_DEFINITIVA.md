@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v144: após atualizar backend e frontend, medir Novo, edição e filtros; conferir valores, competência, ordem do Histórico, somatória, parcelas e terceiros. Nova operação deve enxergar mudanças de outro aparelho. Testes de alteração de arquivo anual/fórmula e recuperação interrompida continuam na cópia descartável. Não reinstalar gatilho. Comparar tempos do executor e duração no app, sem atribuir variação de uma amostra integralmente à otimização.
+
+
 Reteste v143 (módulos 2/5/6/10): publicar backend e frontend, sem reinstalar o gatilho. Alterar rapidamente busca/filtros do Histórico, sair para outra aba e retornar: somente o filtro vigente deve aparecer, com itens e soma coerentes; conferir paginação e copiar resumo. Salvar/editar e trocar de aba deve continuar confirmando uma única gravação. Exportar diagnóstico e verificar v143, filtrosSuperados e intervalos do servidor, comparando a última execução do resumo. Consulta já enviada ou outro aparelho ainda podem gerar espera; não repetir salvamentos por demora de leitura. A ativação e conclusão do resumo em segundo plano já foram observadas na conta antes deste pacote.
 
 
