@@ -43,6 +43,17 @@ function coordenador(opcoes = {}) {
   return ctx.criarCoordenadorLeiturasGestor({leituras:new Set(leituras),cacheaveis:['obterRelatorioMes','obterRelatorioAnual'],...opcoes});
 }
 
+test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',async()=>{
+ const a=ambiente(async()=>({total:10}));
+ a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
+ await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v138');
+ assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
+ assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
+ c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
+ for(let i=0;i<30;i++)a.eventos.focus();assert.equal(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes.length,20);
+});
+
 test('Histórico espera edição pendente e compartilha consulta após a confirmação sem reenviar edição',async()=>{
  const chamadas=[];const c=coordenador({executar:(acao,param)=>new Promise((resolve,reject)=>chamadas.push({acao,param,resolve,reject}))});
  const editar=c.chamar('editarLancamentoLinhaWeb',{requestId:'mesmo-envio'}),a=c.chamar('filtrarLancamentosWeb',{busca:'x'}),b=c.chamar('filtrarLancamentosWeb',{busca:'x'});

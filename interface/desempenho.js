@@ -17,6 +17,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const mutacoesPendentes = new Set();
   let respostaCompletaAtual = null;
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0 };
+  const motivosInvalidacao = new Set(['externa','mutacao_inicio','mutacao_fim','carga_completa','online','foco','armazenamento','visivel']);
+  const invalidacoesPorMotivo = {}, ultimasInvalidacoes = [], ultimosDescartes = [];
   let geracao = 0, bytes = 0;
 
   function copiar(valor) {
@@ -32,9 +34,12 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     const item = cache.get(chave);
     if (item) { bytes -= item.bytes; cache.delete(chave); }
   }
-  function invalidar() {
+  function invalidar(motivo = 'externa') {
     geracao++;
     metricas.invalidacoes++;
+    motivo=motivosInvalidacao.has(motivo)?motivo:'externa';
+    invalidacoesPorMotivo[motivo]=(invalidacoesPorMotivo[motivo]||0)+1;
+    ultimasInvalidacoes.push({instante:agora(),geracao,motivo});if(ultimasInvalidacoes.length>20)ultimasInvalidacoes.shift();
     cache.clear(); bytes = 0;
     respostaCompletaAtual = null;
     // Promessas anteriores seguem observadas por seus solicitantes, sem serem
@@ -90,7 +95,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
           // Uma consulta completa pode revelar mudanças de outro aparelho ou
           // novas ocorrências fixas. Seus relatórios anteriores perdem validade.
           // O novo número pertence à resposta compartilhada, não a cada leitor.
-          invalidar(); versaoResposta = geracao;
+          invalidar('carga_completa'); versaoResposta = geracao;
         }
         const resposta = { valor, instante: agora(), versaoResposta };
         // Só auxilia leitores antigos ainda em voo. Uma chamada nova continua
@@ -110,6 +115,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     return promessa.then(({valor, instante, versaoResposta}) => {
       if (versaoResposta !== geracao) {
         metricas.descartadas++;
+        ultimosDescartes.push({instante:agora(),acao,geracaoConsulta:versao,geracaoAtual:geracao});if(ultimosDescartes.length>10)ultimosDescartes.shift();
         if(acao==='getDadosCompletos'&&respostaCompletaAtual?.chave===chave&&respostaCompletaAtual.resposta.versaoResposta===geracao){
           metricas.compartilhadas++;
           const atual=respostaCompletaAtual.resposta;
@@ -132,8 +138,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       try { return consultar(acao, copiar(param), extras.map(copiar)); }
       catch (erro) { return Promise.reject(erro); }
     }
-    invalidar();
-    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).finally(invalidar);
+    invalidar('mutacao_inicio');
+    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).finally(()=>invalidar('mutacao_fim'));
     mutacoesPendentes.add(mutacao);
     mutacao.then(()=>mutacoesPendentes.delete(mutacao),()=>mutacoesPendentes.delete(mutacao));
     return mutacao;
@@ -144,7 +150,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v138', invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -171,7 +177,7 @@ window.apiCall = function(acao, param, ...extras) {
     throw erro;
   });
 };
-function invalidarLeiturasDesempenhoGestor() { coordenadorLeiturasDesempenhoGestor.invalidar(); }
+function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
 
 // Durante a troca de período, os números e botões do mês anterior ficam
@@ -286,13 +292,13 @@ if (typeof painelEmprestimosAntesCoordenacaoGestor === 'function') {
     return painelEmprestimosAntesCoordenacaoGestor(...args);
   };
 }
-window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor();const aviso=document.getElementById('avisoLeituraDadosGestor');revalidadorDiaGestor.verificar(aviso?.hidden===false);});
-window.addEventListener('focus',()=>{invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();});
+window.addEventListener('online',()=>{invalidarLeiturasDesempenhoGestor('online');const aviso=document.getElementById('avisoLeituraDadosGestor');revalidadorDiaGestor.verificar(aviso?.hidden===false);});
+window.addEventListener('focus',()=>{invalidarLeiturasDesempenhoGestor('foco');revalidadorDiaGestor.verificar();});
 window.addEventListener('storage', evento => {
-  if (evento.key === null || evento.key === 'gestorEpocaRestauracaoV1' || evento.key === 'cacheDadosGestorV11' || evento.key?.startsWith('gestorMutacaoV3:')) invalidarLeiturasDesempenhoGestor();
+  if (evento.key === null || evento.key === 'gestorEpocaRestauracaoV1' || evento.key === 'cacheDadosGestorV11' || evento.key?.startsWith('gestorMutacaoV3:')) invalidarLeiturasDesempenhoGestor('armazenamento');
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') {invalidarLeiturasDesempenhoGestor();revalidadorDiaGestor.verificar();}
+  if (document.visibilityState === 'visible') {invalidarLeiturasDesempenhoGestor('visivel');revalidadorDiaGestor.verificar();}
 });
 
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo

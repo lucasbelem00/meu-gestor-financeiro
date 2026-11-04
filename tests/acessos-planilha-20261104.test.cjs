@@ -1,5 +1,49 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {ambienteProtecao,fixture,personal}=require('./fixtures/protecao-mocks.cjs');
+const {ambienteProtecao,fixture,personal,clone}=require('./fixtures/protecao-mocks.cjs');
+
+function planoAnual(){
+ const a=ambienteProtecao(fixture([personal('Original',30)]));a.ativar();
+ const e=a.ctx.garantirAnoGestor_(a.db,2026),sh=a.planilhas.get(e.id).sheets['Lançamentos'];
+ sh.rows=clone(a.db.sheets['Lançamentos'].rows);a.db.sheets['Lançamentos'].rows=[clone(sh.rows[0])];
+ const depois=clone(sh.rows);depois[1][1]='Editado';
+ const m=a.ctx.mudancaMatrizAnualGestor_(a.db,'Lançamentos',depois,e);
+ return {...a,e,sh,plano:{mudancas:[m]}};
+}
+
+test('planejamento de inclusão e edição usa a fotografia conferida com plano idêntico e bloqueia conflito posterior',()=>{
+ for(const incluir of [false,true]){
+  const a=planoAnual(),conferidos=a.ctx.dadosAnoGestor_(a.e).abas.find(x=>x.nome==='Lançamentos').valores,depois=clone(conferidos);
+  if(incluir){const nova=clone(depois[1]);nova[11]='novo-registro-teste';nova[12]='nova-compra-teste';depois.push(nova);}else depois[1][1]='Descrição editada';
+  const ler=a.sh.getDataRange;let leituras=0;a.sh.getDataRange=function(){leituras++;return ler.call(this);};
+  const anterior=a.ctx.mudancaMatrizAnualGestor_(a.db,'Lançamentos',depois,a.e);assert.equal(leituras,1);
+  const novo=a.ctx.mudancaMatrizAnualGestor_(a.db,'Lançamentos',depois,a.e,conferidos);assert.equal(leituras,1);assert.equal(JSON.stringify(novo),JSON.stringify(anterior));
+  a.sh.rows[1][1]='Alteração externa';assert.throws(()=>a.ctx.aplicarPlanoGestor_(a.db,{mudancas:[novo]}),/não corresponde/);assert.equal(a.sh.rows[1][1],'Alteração externa');
+ }
+});
+
+test('aplicação anual reusa leitura recém-conferida e mantém leitura de verificação final',()=>{
+ const executar=reusar=>{
+  const a=planoAnual(),ler=a.sh.getDataRange,contagem={valores:0,formulas:0};
+  a.sh.getDataRange=function(){const r=ler.call(this),v=r.getValues,f=r.getFormulas;r.getValues=function(){contagem.valores++;return v.call(this);};r.getFormulas=function(){contagem.formulas++;return f.call(this);};return r;};
+  if(!reusar){const destino=a.ctx.destinoMudancaAnualGestor_;a.ctx.destinoMudancaAnualGestor_=(ss,m,p)=>destino(ss,m,p);}
+  a.ctx.aplicarPlanoGestor_(a.db,a.plano);assert.equal(a.sh.rows[1][1],'Editado');return contagem;
+ };
+ const antiga=executar(false),nova=executar(true);
+ assert.equal(antiga.valores-nova.valores,1);assert.equal(antiga.formulas-nova.formulas,1);assert(nova.valores>=2);
+});
+
+test('fotografia anual não dispensa rejeição de fórmulas e é renovada entre chamadas',()=>{
+ const a=planoAnual(),leitura={},m=a.plano.mudancas[0];
+ a.ctx.destinoMudancaAnualGestor_(a.db,m,a.plano,leitura);assert.equal(leitura.valores[1][1],'Original');
+ a.sh.rows[1][1]='Outra edição';a.ctx.destinoMudancaAnualGestor_(a.db,m,a.plano,leitura);assert.equal(leitura.valores[1][1],'Outra edição');
+ a.sh.getRange(2,2).setValue('=1+2');assert.throws(()=>a.ctx.aplicarPlanoGestor_(a.db,a.plano),/fórmulas/);
+});
+
+test('alteração após escrever continua impedindo confirmação do plano anual',()=>{
+ const a=planoAnual(),ler=a.sh.getRange;
+ a.sh.getRange=function(...args){const r=ler.apply(this,args),gravar=r.setValues;r.setValues=function(v){const x=gravar.call(this,v);a.sh.rows[1][1]='Divergente';return x;};return r;};
+ assert.throws(()=>a.ctx.aplicarPlanoGestor_(a.db,a.plano),/ainda não corresponde/);
+});
 
 test('matriz anual lê cabeçalho e dados locais uma vez e observa a próxima alteração',()=>{
  const a=ambienteProtecao(fixture([personal('Teste',30)]));a.ativar();

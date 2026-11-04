@@ -81,8 +81,10 @@ function folhaLeituraAnualGestor_(ss,nome){
     return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?Utilities.formatDate(v,getTimezone(),c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
   };folha.getDataRange=()=>folha.getRange(1,1,valores.length,colunas);return folha;
 }
-function mudancaMatrizAnualGestor_(ss,nome,depois,destino){
-  const banco=destino?SpreadsheetApp.openById(destino.id):ss,antes=lerEstadoAbaGestor_(banco.getSheetByName(nome));
+function mudancaMatrizAnualGestor_(ss,nome,depois,destino,antesConferido){
+  // Fotografia opcional obtida na conferência imediatamente anterior do ano.
+  // Serve somente ao planejamento; aplicarPlano revalida antes e depois de escrever.
+  const antes=antesConferido?copiarGestor_(antesConferido):lerEstadoAbaGestor_((destino?SpreadsheetApp.openById(destino.id):ss).getSheetByName(nome));
   if(hashEstadoGestor_(antes)===hashEstadoGestor_(depois))return null;
   const colunas=Math.max(1,...antes.map(r=>r.length),...depois.map(r=>r.length)),alteracoes=[];
   for(let i=0;i<Math.max(antes.length,depois.length);i++)if(hashEstadoGestor_([antes[i]||[]])!==hashEstadoGestor_([depois[i]||[]]))alteracoes.push([i,depois[i]||[]]);
@@ -156,8 +158,8 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
     for(const [id,o] of fechados)if(!vistos.has(id))ajustes.push([nome,id,o.ano,hashGestor_(o.r),'EXCLUIDO','']);
     for(const ano of porAno.keys())if(!catalogo.some(e=>e.ano===ano)){const e=garantirAnoGestor_(ss,ano);catalogo.push(e);}
     for(const e of catalogo.filter(e=>e.estado==='ABERTO')){
-      const cab=dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
-      const m=mudancaMatrizAnualGestor_(ss,nome,depois,e);if(m)novas.push(m);
+      const conferidos=dadosAnoGestor_(e).abas.find(a=>a.nome===nome).valores,cab=conferidos[0],depois=normalizarMatrizProtecaoGestor_([cab,...(porAno.get(e.ano)||[])],COLUNAS_GESTOR_);
+      const m=mudancaMatrizAnualGestor_(ss,nome,depois,e,conferidos);if(m)novas.push(m);
     }
     const m=mudancaMatrizAnualGestor_(ss,nome,[normalizarMatrizProtecaoGestor_([aba.valores[0]],COLUNAS_GESTOR_)[0]]);if(m)novas.push(m);
   }
@@ -165,12 +167,19 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   if(ctx.anosRestaurados){const m=mudancaMatrizAnualGestor_(ss,ABA_ANOS_GESTOR_,[CAB_ANOS_GESTOR_,...catalogo.map(linhaCatalogoAnoGestor_)]);if(m){m.anosPreparados=ctx.anosPreparados;novas.unshift(m);}}
   return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome)).concat(novas);
 }
-function destinoMudancaAnualGestor_(ss,m,plano){
+function destinoMudancaAnualGestor_(ss,m,plano,leituraDestino){
+  if(leituraDestino)leituraDestino.valores=null;
   if(!m.destinoAnual)return ss;
   if(!ehAbaRegistrosGestor_(m.nome)||!Number.isInteger(m.destinoAnual.ano))throw Error('Destino externo incompatível no diário.');
   let destinos=catalogoAnosGestor_(ss);const mudanca=plano?.mudancas.find(x=>x.nome===ABA_ANOS_GESTOR_);
   if(mudanca){const linhas=copiarGestor_(lerEstadoAbaGestor_(ss.getSheetByName(ABA_ANOS_GESTOR_)));mudanca.alteracoes.forEach(a=>linhas[a[0]]=a[1]);linhas.length=mudanca.linhas;destinos=linhas.slice(1).map(r=>({ano:Number(r[0]),id:r[1],estado:r[2]}));}
-  const e=destinos.find(e=>e.ano===m.destinoAnual.ano&&e.id===m.destinoAnual.id&&e.estado==='ABERTO');if(!e)throw Error('O destino anual da operação não está aberto ou não pertence ao catálogo.');dadosAnoGestor_(e);return SpreadsheetApp.openById(e.id);
+  const e=destinos.find(e=>e.ano===m.destinoAnual.ano&&e.id===m.destinoAnual.id&&e.estado==='ABERTO');if(!e)throw Error('O destino anual da operação não está aberto ou não pertence ao catálogo.');
+  const dados=dadosAnoGestor_(e);
+  // A conferência acabou de ler valores e recusar fórmulas. Reusar apenas
+  // essa fotografia na comparação anterior à escrita, fora do contexto virtual.
+  // A conferência posterior à escrita continua relendo a planilha real.
+  if(leituraDestino&&!CONTEXTO_GESTOR_)leituraDestino.valores=copiarGestor_(dados.abas.find(a=>a.nome===m.nome).valores);
+  return SpreadsheetApp.openById(e.id);
 }
 function conferirDestinosAnuaisPlanoGestor_(ss,plano){
   const m=plano?.mudancas.find(m=>m.nome===ABA_ANOS_GESTOR_);if(!m)return;
