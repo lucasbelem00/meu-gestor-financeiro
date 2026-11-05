@@ -30,7 +30,7 @@ test('consulta descarta resposta anterior a restauração e não substitui lista
  const a=tela();let responder;a.ctx.apiCall=()=>new Promise(r=>responder=r);const p=a.ctx.carregarModelosRecorrenciaGestor();a.salvos.set('gestorEpocaRestauracaoV1','nova');responder({itens:[modelo],assinaturas:[]});await p;assert.equal(vm.runInContext('modelosRecorrenciaGestor.length',a.ctx),0);assert.match(a.campos.get('estadoModelosRecorrenciaGestor').textContent,/restaurada/);
 });
 test('cards de terceiros usam identidade âmbar, sem HTML vindo dos nomes',async()=>{
- const a=tela();a.ctx.apiCall=async()=>({itens:[{...modelo,pessoa:'<script>teste</script>'}],assinaturas:[]});await a.ctx.carregarModelosRecorrenciaGestor();const card=a.campos.get('listaModelosRecorrenciaGestor').children[0];assert.match(card.children[0].className,/amber/);assert.match(card.children[0].textContent,/<script>/);assert(card.children.every(e=>e.innerHTML===undefined));assert.equal(card.children.at(-1).children[0].textContent,'✅ Revisar e registrar mês');
+ const a=tela();a.ctx.apiCall=async()=>({itens:[{...modelo,pessoa:'<script>teste</script>'}],assinaturas:[]});await a.ctx.carregarModelosRecorrenciaGestor();const card=a.campos.get('listaModelosRecorrenciaGestor').children[0];assert.match(card.children[0].className,/amber/);assert.match(card.children[0].textContent,/<script>/);assert(card.children.every(e=>e.innerHTML===undefined));assert(card.children.some(e=>e.tag==='button'&&e.textContent==='✅ Revisar e registrar mês'));assert.equal(card.children.at(-1).children[0].textContent,'✏️ Editar');
 });
 
 test('cadastro válido abre revisão e salva sem depender de função exclusiva do backend',async()=>{

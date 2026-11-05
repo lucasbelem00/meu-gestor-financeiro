@@ -1,5 +1,18 @@
 # Mapa do código do Gestor de Gastos
 
+v159 — Backend/Code.gs: blocosFormatacaoPlanoGestor_ agrupa índices de linhas do plano; atualizarValidacaoStatusLancamentosGestor_ e formatarMoedasPlanoGestor_ aceitam índices opcionais e retornam linhas trabalhadas. aplicarPlanoGestor_ usa esse recorte em gravação e recuperação já aplicada; restauração/cabeçalho/plano antigo preservam faixa completa. Contadores linhasFormatadas/linhasValidacaoStatus exportados pelo envelope e diagnóstico frontend.
+
+shared/anual.js: folhaLeituraAnualGestor_.getDisplayValues usa formatarDataLeituraGestor_. Planilha virtual em Backend/Code.gs faz o mesmo no fallback de Date. Cache continua limitado à requisição, sem mudança de dados/hashes. Título de detalhamento de terceiros usa 🗒️. Módulos 2/3/4/5/6/10; protocolo 19, interface/cache v159.
+
+
+v158 — index.html usa a classe CSS compartilhada cabecalho-data-fatura-gestor nos quatro cabeçalhos de data/competência dos dois cadastros. Ajuste visual sem mudança de função financeira; interface/cache v158 e protocolo 19.
+
+
+v157 — interface/recorrencias.js mantém ações/versões e agrupa layout de descrição/forma à esquerda e valor/modo à direita, com ações coloridas e revisão mensal destacada separadamente. index.html alinha cabeçalhos e entradas de Data/Mês Fatura em Novo empréstimo.
+
+scripts/identidade-instalacao.cjs gera identidade pública por ambiente, sem dados privados; scripts/publicar-estatico.cjs aplica transformação somente em dist. manifest.json é a identidade oficial base; icons/gestor.svg e PNGs gestor-v2-* são oficiais, gestor-preview.svg e gestor-preview-v2-* identificam testes. Nome/meta Apple/favicon/manifesto/cache coerentes por build; ID, início e API estáveis. Cache/interface v157, protocolo 19; Backend/Code.gs sem alteração nesta versão.
+
+
 v156 — módulos 2/3/4/5/9. shared/recorrencias.js: obterRecorrenciasWeb retorna modelos, assinaturas e mês; listarSeriesRecorrenciasGestor_ monta a apresentação enxuta sem executar getDadosCompletos. coletarSerieRecorrenciaGestor_ e completarSeriesRecorrenciasGestor_ são compartilhadas com a consulta completa, evitando lógicas divergentes de vigência/programações. Backend/Code.gs mantém integrações da projeção do Horizonte.
 
 interface/recorrencias.js: atualizarSeriesRecorrenciasGestor recebe séries da carga completa; montarCartoesSeriesRecorrenciasGestor preserva ações antigas; renderizarModelosRecorrenciaGestor compõe lista única de ativas e details de desativadas. carregarModelosRecorrenciaGestor atualiza ambos os tipos na mesma consulta e preserva estado anterior se falhar. index.html não mantém renderizador duplicado.

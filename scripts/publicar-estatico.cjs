@@ -9,6 +9,8 @@ if (fs.existsSync(destino)) {
 }
 fs.mkdirSync(destino, {recursive: true});
 // Somente arquivos públicos entram no diretório publicado. Backend e testes ficam fora.
-for (const nome of ['index.html','manifest.json','sw.js']) fs.copyFileSync(path.join(raiz,nome),path.join(destino,nome));
+const {prepararIdentidadeInstalacaoGestor}=require('./identidade-instalacao.cjs');
+const pub=prepararIdentidadeInstalacaoGestor({html:fs.readFileSync(path.join(raiz,'index.html'),'utf8'),manifesto:JSON.parse(fs.readFileSync(path.join(raiz,'manifest.json'),'utf8')),worker:fs.readFileSync(path.join(raiz,'sw.js'),'utf8')},process.env);
+fs.writeFileSync(path.join(destino,'index.html'),pub.html);fs.writeFileSync(path.join(destino,'manifest.json'),JSON.stringify(pub.manifesto,null,2)+'\n');fs.writeFileSync(path.join(destino,'sw.js'),pub.worker);
 fs.cpSync(path.join(raiz,'icons'),path.join(destino,'icons'),{recursive:true});
 console.log('Arquivos públicos preparados em dist/. A função /api continua na raiz do projeto.');

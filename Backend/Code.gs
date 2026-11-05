@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -3840,7 +3840,7 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
       if (linha < 1 || coluna < 1 || qtdLinhas < 1 || qtdCols < 1) throw new Error('Intervalo inválido.');
       const range = Object.create(null);
       range.getValues = function () { return Array.from({ length: qtdLinhas }, function (_, i) { return Array.from({ length: qtdCols }, function (_, j) { const rr = linha - 1 + i, cc = coluna - 1 + j; const original = !aba.alterados[rr + ':' + cc] && aba.calculados[rr] && aba.calculados[rr][cc] !== undefined; const valor = original ? aba.calculados[rr][cc] : ((aba.valores[rr] || [])[cc] === undefined ? '' : aba.valores[rr][cc]); if (!original && typeof valor === 'string' && valor.charAt(0) === '=') { const candidatos = []; aba.antes.forEach(function (l, i) { l.forEach(function (v, j) { if (v === valor && aba.calculados[i]) candidatos.push(aba.calculados[i][j]); }); }); if (!candidatos.length || candidatos.some(function (v) { return hashGestor_(v) !== hashGestor_(candidatos[0]); })) throw new Error('Uma fórmula exige recálculo da planilha. Reabra o app antes de continuar.'); return copiarGestor_(candidatos[0]); } return copiarGestor_(valor); }); }); };
-      range.getDisplayValues = function () { if (aba.exibidos === null) aba.exibidos = rangeReal ? rangeReal.getDisplayValues() : []; return range.getValues().map(function (r, i) { return r.map(function (v, j) { const key = (linha - 1 + i) + ':' + (coluna - 1 + j); if (!aba.alterados[key] && aba.exibidos[linha - 1 + i] && aba.exibidos[linha - 1 + i][coluna - 1 + j] !== undefined) return aba.exibidos[linha - 1 + i][coluna - 1 + j]; if (v instanceof Date) return Utilities.formatDate(v, getTimezone(), 'dd/MM/yyyy'); return String(v === null ? '' : v).replace(/^'/, ''); }); }); };
+      range.getDisplayValues = function () { if (aba.exibidos === null) aba.exibidos = rangeReal ? rangeReal.getDisplayValues() : []; return range.getValues().map(function (r, i) { return r.map(function (v, j) { const key = (linha - 1 + i) + ':' + (coluna - 1 + j); if (!aba.alterados[key] && aba.exibidos[linha - 1 + i] && aba.exibidos[linha - 1 + i][coluna - 1 + j] !== undefined) return aba.exibidos[linha - 1 + i][coluna - 1 + j]; if (v instanceof Date) return formatarDataLeituraGestor_(v,'dd/MM/yyyy'); return String(v === null ? '' : v).replace(/^'/, ''); }); }); };
       range.setValues = function (valores) { if (valores.some(function (r) { return r.some(function (v) { return typeof v === 'string' && v.length > 49000; }); })) throw new Error('Um campo está longo demais para a planilha. Reduza o texto para menos de 49 mil caracteres.'); if (valores.length !== qtdLinhas || valores.some(function (r) { return r.length !== qtdCols; })) throw new Error('Dimensões de gravação incompatíveis.'); valores.forEach(function (r, i) { aba.valores[linha - 1 + i] = aba.valores[linha - 1 + i] || []; r.forEach(function (v, j) { aba.valores[linha - 1 + i][coluna - 1 + j] = copiarGestor_(v); aba.alterados[(linha - 1 + i) + ':' + (coluna - 1 + j)] = true; }); }); aba.colunas = Math.max(aba.colunas, coluna + qtdCols - 1); if (ehAbaRegistrosGestor_(nome)) { migrarIdentidadesGestor_(aba, contexto); atualizarVersoesGestor_(aba, contexto); aba.valores.forEach(function (_, r) { for (let c = 11; c < COLUNAS_GESTOR_; c++) aba.alterados[r + ':' + c] = true; }); } return range; };
       range.setValue = function (v) { return range.setValues([[v]]); };
       range.clearContent = function () { return range.setValues(Array.from({ length: qtdLinhas }, function () { return Array(qtdCols).fill(''); })); };
@@ -4056,21 +4056,30 @@ function inclusaoIncompletaRecuperavelGestor_(atual, m) {
   return faltamCampos && hashEstadoGestor_(completo) === m.depois;
 }
 
-function atualizarValidacaoStatusLancamentosGestor_(sh, linhas) {
-  if (!sh || sh.getName() !== 'Lançamentos' || linhas < 2) return;
+// Linhas zero-based do plano -> intervalos reais; restaurações usam a faixa inteira.
+function blocosFormatacaoPlanoGestor_(linhas,indices){
+ if(linhas<2)return [];if(indices===undefined)return [{inicio:2,fim:linhas}];
+ const ids=Array.from(new Set(indices)).filter(i=>Number.isInteger(i)&&i>=1&&i<linhas).sort((a,b)=>a-b),blocos=[];
+ for(const i of ids){const ultimo=blocos[blocos.length-1];if(ultimo&&ultimo.fim===i)ultimo.fim=i+1;else blocos.push({inicio:i+1,fim:i+1});}
+ return blocos.length>6?[{inicio:2,fim:linhas}]:blocos;
+}
+function atualizarValidacaoStatusLancamentosGestor_(sh, linhas,indices) {
+  if (!sh || sh.getName() !== 'Lançamentos') return 0;
+  const blocos=blocosFormatacaoPlanoGestor_(linhas,indices);if(!blocos.length)return 0;
   const regra = SpreadsheetApp.newDataValidation()
     .requireValueInList(['Pago', 'Em Aberto', 'Agendado', 'Assinatura Ativa', 'Assinatura Paga', 'Assinatura Cancelada', 'Pago (Cancelada)', 'Ocorrência Pulada'], true)
     .setAllowInvalid(false).build();
-  sh.getRange(2, 10, linhas - 1, 1).setDataValidation(regra);
+  for(const b of blocos)sh.getRange(b.inicio,10,b.fim-b.inicio+1,1).setDataValidation(regra);
+  return blocos.reduce((n,b)=>n+b.fim-b.inicio+1,0);
 }
-
-function formatarMoedasPlanoGestor_(sh,linhas) {
-  if(linhas<2)return;
-  // Mesmo formato e mesmas células; RangeList agrupa os três comandos no Sheets.
-  if(typeof sh.getRangeList==='function')sh.getRangeList(['E2:E'+linhas,'H2:H'+linhas,'R2:R'+linhas]).setNumberFormat(FORMATO_MOEDA_PLANILHA);
-  else for(const coluna of [5,8,18])sh.getRange(2,coluna,linhas-1,1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
+function formatarMoedasPlanoGestor_(sh,linhas,indices) {
+  const blocos=blocosFormatacaoPlanoGestor_(linhas,indices);if(!blocos.length)return 0;
+  if(typeof sh.getRangeList==='function')sh.getRangeList(blocos.flatMap(b=>['E','H','R'].map(c=>c+b.inicio+':'+c+b.fim))).setNumberFormat(FORMATO_MOEDA_PLANILHA);
+  else for(const b of blocos)for(const coluna of [5,8,18])sh.getRange(b.inicio,coluna,b.fim-b.inicio+1,1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
+  return blocos.reduce((n,b)=>n+b.fim-b.inicio+1,0);
 }
 function aplicarPlanoGestor_(ss, plano, detalhes) {
+  const contar=(nome,qtd)=>{if(detalhes)detalhes[nome]=(detalhes[nome]||0)+(qtd||0);};
   const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
   medir('aplicarDestinosMs',function(){
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
@@ -4097,7 +4106,8 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     const aprovado=plano.conferenciaAprovada;
     if(aprovado && aprovado.versao===1 && aprovado.hashPlano===hashPlanoConferenciaGestor_(plano) &&
        aprovado.abas && aprovado.abas[m.nome]===hash && linhasPrevistasJaAplicadasGestor_(atual,m)) return;
-    if (hash === m.depois) { atualizarValidacaoStatusLancamentosGestor_(sh, m.linhas); aplicarFormatosRestauracaoGestor_(sh, m); return; }
+    const indicesFormato= m.formatosRestauracao||!m.alteracoes?.length||m.alteracoes.some(a=>a[0]===0)?undefined:m.alteracoes.map(a=>a[0]);
+    if (hash === m.depois) {contar('linhasValidacaoStatus',atualizarValidacaoStatusLancamentosGestor_(sh,m.linhas,indicesFormato));if(ehAbaRegistrosGestor_(m.nome))contar('linhasFormatadas',formatarMoedasPlanoGestor_(sh,m.linhas,indicesFormato));aplicarFormatosRestauracaoGestor_(sh,m);return;}
     if (hash !== m.antes && !estadoRecuperacaoBlocosGestor_(atual, m) && !inclusaoIncompletaRecuperavelGestor_(atual, m) && !controlesIncompletosRecuperaveisGestor_(atual, m)) {
       const erro = new Error('A aba ' + m.nome + ' não corresponde à gravação interrompida. A operação foi preservada para conferência, sem sobrescrever dados.');
       erro.codigo = 'RECUPERACAO_DIVERGENTE'; throw erro;
@@ -4110,7 +4120,7 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if ((ehAbaRegistrosGestor_(m.nome)||m.nome==='Anotações'||m.nome==='Planejamento') && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
     if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
     if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
-    medir('aplicarFormatosMs',()=>atualizarValidacaoStatusLancamentosGestor_(sh, Math.max(m.linhas, atual.length)));
+    medir('aplicarFormatosMs',()=>contar('linhasValidacaoStatus',atualizarValidacaoStatusLancamentosGestor_(sh,Math.max(m.linhas,atual.length),indicesFormato)));
     // Mantém a conferência integral, mas escreve somente os blocos alterados.
     // Planos antigos continuam compatíveis; a recuperação reenvia os mesmos blocos.
     const indices = Array.from(new Set((m.alteracoes || []).map(function(a) { return a[0]; }).concat(
@@ -4124,7 +4134,7 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
       if(detalhes){detalhes.blocosEscritos=(detalhes.blocosEscritos||0)+1;detalhes.celulasEscritas=(detalhes.celulasEscritas||0)+(fim-inicio+1)*cols;}
     }
     medir('aplicarFormatosMs',function(){
-    if (ehAbaRegistrosGestor_(m.nome)) formatarMoedasPlanoGestor_(sh,m.linhas);
+    if (ehAbaRegistrosGestor_(m.nome)) contar('linhasFormatadas',formatarMoedasPlanoGestor_(sh,m.linhas,indicesFormato));
     aplicarFormatosRestauracaoGestor_(sh, m);
     if (m.nome === ABA_RESTAURACOES_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
     if (m.nome === ABA_ATIVIDADE_GESTOR_ && typeof sh.hideSheet === 'function') sh.hideSheet();
@@ -6382,7 +6392,7 @@ function folhaLeituraAnualGestor_(ss,nome,leituraLocal){
   const folha={getName:()=>nome,getLastRow:()=>valores.length};
   folha.getRange=function(l,c,n=1,m=1){if(typeof l==='string'){const a=l.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);if(!a)throw Error('Intervalo anual inválido.');const num=s=>s.split('').reduce((x,y)=>x*26+y.charCodeAt(0)-64,0);l=Number(a[2]);c=num(a[1]);n=a[4]?Number(a[4])-l+1:1;m=a[3]?num(a[3])-c+1:1;}
     const ler=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>copiarGestor_(valores[l-1+i]?.[c-1+j]??'')));
-    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?Utilities.formatDate(v,getTimezone(),c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
+    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?formatarDataLeituraGestor_(v,c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
   };folha.getDataRange=()=>folha.getRange(1,1,valores.length,colunas);return folha;
 }
 function mudancaMatrizAnualGestor_(ss,nome,depois,destino,antesConferido){

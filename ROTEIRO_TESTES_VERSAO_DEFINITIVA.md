@@ -1,5 +1,24 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v159 — publicar Apps Script e frontend, sem reativar proteção. Fazer Novo e Edição num lançamento isolado; colher diagnóstico com linhasFormatadas/linhasValidacaoStatus e tempos de aplicar/flush/conferência. Em alteração de uma linha, deve trabalhar nela; se houver reordenação de várias linhas, índices devem cobrir essas linhas. Não exigir contagem 1 para toda operação.
+
+Conferir formato de moeda e menu de situação em inclusão, edição, exclusão, parcelas e recebimentos. Restauração/cabeçalho/migração ampla devem manter formato completo. Falha de formatação após gravar: reenvio deve completar apresentação sem duplicar dados, com confirmação protegida. Alteração externa em linha intacta continua bloqueando o plano. Validar Mensal/Anual e registros Date no fuso correto; não alterar datas/fatura para ganhar velocidade.
+
+Título Parcelas detalhadas de terceiros deve usar 🗒️; 📋 continua nas ações de cópia. Demais mudanças pendentes de publicação das v157/v158 seguem acumuladas. Medir desempenho real depois do deploy: testes de volume/conversões não comprovam segundos na conta.
+
+
+Reteste v158 — Novo e Novo empréstimo, celular e computador: Data e Mês Fatura devem começar e terminar na mesma altura; cabeçalhos com altura e margem iguais, sem aumentar Ontem/Hoje ou setas. Testar nome do mês em duas linhas em tela estreita, atalhos, digitação dia/mês e alteração manual do ano. Nenhuma mudança no cálculo da competência. Publicação somente frontend; backend financeiro segue o anterior.
+
+
+Reteste v157 — publicar frontend/build; backend financeiro continua v156/protocolo 19. Recorrências: comparar pessoal antiga, pessoal nova, terceiro automático/revisão e desativadas; conferir descrição/valor à esquerda/direita, badges, divisor e Editar/Pular/Desativar em cores iguais às anteriores. Quando há mês a revisar, input e confirmação não devem espremer os três botões. Testar ações e versão normalmente.
+
+Novo empréstimo no celular: Data e Mês da fatura devem começar/terminar na mesma altura, inclusive tela estreita; cabeçalhos não podem deslocar um input. Valor/Parcelas/Início e atalhos mantêm alinhamento.
+
+Publicar Main/produção e New/Preview: conferir manifesto servido, título, favicon e ícones disponíveis. Produção deve oferecer Gestor de Gastos/bolsa oficial; Preview, Gestor de Gastos — Preview/atalho Gestor Preview e faixa PREVIEW. Instalar/abrir no celular e computador e conferir também a abertura do app. Validar atualização de atalhos existentes sem supor que atualizar o HTML força o sistema operacional; se continuarem antigos, conferir os arquivos servidos antes de orientar reinstalação. Não apagar dados locais/pendências como tentativa de trocar ícone. Identidade de instalação e endereço/API devem permanecer estáveis por origem.
+
+Testes locais verificam os dois ambientes, tamanhos PNG e caminhos reais, ausência de modificação do corpo/API/arquivos-fonte pelo publicador e validação do ambiente. Ganho de desempenho financeiro da v156 continua a exigir amostras reais; v157 não altera regras ou gravação.
+
+
 Reteste v156 — atualizar Apps Script e frontend juntos; sem novas ativações. Abrir Recorrências com pessoal antiga, pessoal nova e terceiro: todos devem estar na mesma grade ativa, identificados em violeta/âmbar, duas colunas no computador e uma no celular. Desativadas só em seção recolhida com Retomar; nenhuma duplicação por reabrir a aba ou atualizar. Editar/Pular/Desativar antigas e novas devem manter comportamento e versões, inclusive série com mudança programada de valor e mês pulado.
 
 Atualizar deve ficar discreto, mostrar Atualizando… e bloquear repetição durante consulta; sair/voltar deve consultar os dois tipos juntos. Alterar em outro aparelho e atualizar: refletir valores novos. Falha/restauração durante consulta não deve trocar lista por resposta antiga; Apps Script anterior deve pedir atualização em vez de afirmar sucesso parcial. Recorrências antigas devem refletir a mesma condição vigente que o Painel, sem recalcular o Painel inteiro para abrir a aba.

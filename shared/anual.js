@@ -81,7 +81,7 @@ function folhaLeituraAnualGestor_(ss,nome,leituraLocal){
   const folha={getName:()=>nome,getLastRow:()=>valores.length};
   folha.getRange=function(l,c,n=1,m=1){if(typeof l==='string'){const a=l.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);if(!a)throw Error('Intervalo anual inválido.');const num=s=>s.split('').reduce((x,y)=>x*26+y.charCodeAt(0)-64,0);l=Number(a[2]);c=num(a[1]);n=a[4]?Number(a[4])-l+1:1;m=a[3]?num(a[3])-c+1:1;}
     const ler=()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>copiarGestor_(valores[l-1+i]?.[c-1+j]??'')));
-    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?Utilities.formatDate(v,getTimezone(),c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
+    return {getValues:ler,getValue:()=>ler()[0][0],getFormulas:()=>Array.from({length:n},()=>Array(m).fill('')),getNumberFormats:()=>Array.from({length:n},()=>Array(m).fill('General')),getDisplayValues:()=>ler().map(r=>r.map((v,j)=>v instanceof Date?formatarDataLeituraGestor_(v,c+j===1?'dd/MM/yyyy':c+j===7?'d/M':'MM/yyyy'):String(v??'').replace(/^'/,'')))};
   };folha.getDataRange=()=>folha.getRange(1,1,valores.length,colunas);return folha;
 }
 function mudancaMatrizAnualGestor_(ss,nome,depois,destino,antesConferido){

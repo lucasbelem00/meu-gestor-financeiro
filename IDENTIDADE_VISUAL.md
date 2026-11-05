@@ -1,5 +1,16 @@
 # Identidade visual do webapp
 
+v159 — 🗒️ Parcelas detalhadas de terceiros. Reservar 📋 às ações de copiar; nenhuma mudança no conteúdo financeiro da seção. Padrões de datas/cards/ícones instalados das v157/v158 mantidos.
+
+
+v158 — Data e Mês Fatura nos cadastros Novo e Novo empréstimo compartilham cabecalho-data-fatura-gestor: 28px de altura, margem inferior de 6px, label com line-height 1.15 e controles sem encolher. Campos 52px; tamanhos de Ontem/Hoje e setas preservados. Não aumentar botões para compensar diferença de cabeçalho.
+
+
+v157 — síntese do card antigo com a lista unificada: nome/forma/categoria à esquerda; valor e badge de modo à direita; próxima cobrança abaixo; divisor antes de Editar (violeta), Pular mês (âmbar) e Desativar (rosa). Identificação de terceiros em âmbar, pessoal violeta; revisão de valor devido tem botão próprio para não comprimir as três ações. Data e competência de Novo empréstimo têm controles de 52px, cabeçalhos de 28px, alinhamento e fonte compatíveis.
+
+Ícone instalado oficial: bolsa existente em gestor.svg/PNG gestor-v2-*. Preview: mesmo desenho vetorial com faixa PREVIEW e nome Gestor de Gastos — Preview/atalho Gestor Preview. Publicador seleciona por ambiente e ajusta título, metadados Apple, favicon, manifesto e cache apenas no dist. Sem trocar automaticamente o identificador/início do app. PNGs de 192/512 e Apple 180 versionados por nome; SVG de Preview preservado como fonte. Atualização em instalação já existente ainda deve ser testada no aparelho.
+
+
 v156 — Recorrências: um só título 📌 Recorrências ativas; grade neutra de uma coluna no celular e duas a partir de md. Pessoal identificado em violeta, terceiros em âmbar com 🤝 e nome; valor destacado em branco. Modo Automática/Revisão e próxima cobrança ficam claros sem repetir explicações extensas por card. Séries antigas e modelos novos não recebem seções visuais separadas; ações existentes são preservadas. Desativadas em seção recolhida com Retomar, ajuda em Como funciona. Atualizar discreto no cabeçalho, texto Atualizando… e disabled enquanto consulta. Atalhos de criação lado a lado, editor permanece separado da listagem.
 
 
