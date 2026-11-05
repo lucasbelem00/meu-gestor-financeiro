@@ -1,5 +1,11 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v163 — Depois de publicar backend e frontend, cadastrar Pix à vista fictício, conferir Pago e excluir pelo Histórico. Confirmar que some de Histórico/Mensal e pode ser restaurado por Desfazer da exclusão em Atividade, com valor e pagamento preservados. Exclusão não movimenta nem estorna o banco. Reenvio do mesmo pedido não duplica; versão antiga não deve apagar item alterado. Confirmar que cartão pago, Pix parcialmente pago, Pix parcelado pago e recorrência paga continuam bloqueados. Não usar pagamentos reais nesses testes. Repetir diagnóstico v163 após a rodada e conferir resumo atualizado.
+
+
+Reteste v162 — Publicar frontend e Apps Script. Em registro fictício sem pagamento, incluir, editar e excluir; confirmar cada ação. Não alterar pagamentos reais para contornar bloqueio. Alterar uma meta de categoria e salvar; verificar nome, meta, filtros e versão atualizados. Snapshot pode evitar getDadosCompletos adicional após categorias/exclusão; ausência, expiração, mudança em outro aparelho ou fórmula incompatível deve manter consulta normal. Medir tempos totais, atualizacaoMs, atualizacoesConfirmadas e resumoLeituraMs com suas quatro subetapas. Confirmar que resumo termina atualizado sem erro. Base com arquivo legado deve conferir conteúdo integral e bloquear adulteração mesmo sem comprovante do resumo derivado. Não esperar ganho de arquivo legado em base que não o possui. Esperas pela trava ainda precisam ser medidas.
+
+
 Reteste v161 — Publicar backend/frontend, sem reativar proteção. Medir Novo com uma parcela recente e outro gasto de data anterior; comparar parcelasIncluidas, linhasReordenadas, celulasEscritas e tempos de leitura, plano, aplicação e atualização. Não esperar uma única linha física ao inserir no passado. Editar um lançamento; abrir Painel/Mensal/Anual e colher diagnóstico v161. Abrir abas durante envio não deve duplicar ou perder confirmação. Validar cancelamento, reenvio do mesmo pedido, payload divergente e recuperação de PRONTO em testes isolados. Novos tempos de leitura são subetapas, não parcelas adicionais do total. Acompanhar concorrência com resumo/proteção: não considerar resolvido SERVICO_OCUPADO apenas por build/teste local. Confirmar resumo atualizado após a rotina, sem perder filas/rascunhos.
 
 

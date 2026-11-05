@@ -129,7 +129,7 @@ test('diagnóstico recente registra duração do worker sem incluir conteúdo pr
 test('etapas do resumo são numéricas e diagnóstico omite campos privados e inválidos',()=>{
  const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
  const s=JSON.parse(a.props.get('GESTOR_RESUMO_ASSINCRONO_V1'));
- assert.equal(Object.keys(s.ultimaExecucao.etapas).length,9);
+ assert.equal(Object.keys(s.ultimaExecucao.etapas).length,13);
  for(const v of Object.values(s.ultimaExecucao.etapas))assert(Number.isFinite(v)&&v>=0);
  s.ultimaExecucao.etapas.privado='não exportar';s.ultimaExecucao.etapas.resumoControleMs=-1;a.props.set('GESTOR_RESUMO_ASSINCRONO_V1',JSON.stringify(s));
  const e=estado(a).ultimaExecucao.etapas;assert.equal(e.privado,undefined);assert.equal(e.resumoControleMs,undefined);

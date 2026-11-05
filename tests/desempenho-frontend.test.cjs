@@ -100,8 +100,8 @@ test('erro tardio de consulta em tela deixada é substituído sem reenviar a con
 
 function snapshotConfirmado(saldo=20){return {versao:1,dados:{protocoloGestor:18,integridade:{bloqueada:false,pendencias:[]},epocaRestauracao:'',kpis:{totalAberto:saldo},faturas:{},lancamentos:[],formasPagamento:[],configCategorias:[],emprestimos:{itens:[]},versoesConfiguracao:{formas:'f',categorias:'c'}}};}
 
-test('Novo/Edição confirmados atualizam a tela uma vez sem consulta completa adicional',async()=>{
- for(const acao of ['salvarLancamentoWeb','editarLancamentoLinhaWeb']){
+test('Novo, edição, categorias e exclusão confirmados atualizam a tela uma vez sem consulta completa adicional',async()=>{
+ for(const acao of ['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb']){
   const chamadas=[],ingeridos=[];const a=ambiente(async nome=>{chamadas.push(nome);return nome===acao?{sucesso:true,atualizacaoDados:snapshotConfirmado()}:{saldo:99};},true,{receberEstadoDadosCompletosGestor:d=>ingeridos.push(d)});
   await a.ctx.apiCall(acao,{incluirAtualizacaoDados:true});
   assert.equal(a.renderizados.length,0);
@@ -112,7 +112,7 @@ test('Novo/Edição confirmados atualizam a tela uma vez sem consulta completa a
 });
 
 test('API interna não consome snapshot e resposta sem opt-in ou de outra ação usa rede normal',async()=>{
- for(const [acao,param] of [['salvarLancamentoWeb',{}],['salvarCategoriasWeb',{incluirAtualizacaoDados:true}]]){
+ for(const [acao,param] of [['salvarLancamentoWeb',{}],['salvarNotasWeb',{incluirAtualizacaoDados:true}]]){
   let completas=0;const a=ambiente(async nome=>nome==='getDadosCompletos'?(completas++,{saldo:99}):{atualizacaoDados:snapshotConfirmado()},true,{receberEstadoDadosCompletosGestor(){throw Error('não consumir');}});
   await a.ctx.apiCall(acao,param);assert.equal(await a.ctx.carregarDados(),true);assert.equal(completas,1);
  }
@@ -152,7 +152,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v161');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v163');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

@@ -1,5 +1,11 @@
 # Mapa do código do Gestor de Gastos
 
+v163 — excluirLancamentoWebInterno_ distingue Pix pessoal 1/1 integralmente pago de pagamentos que exigem desfazer previamente. Exceção depende de opt-in explícito e tipo real; guards de identidade/versão, totais remanescentes, plano anual e Atividade preservados. excluirLancamentoLocal inclui opt-in e aviso de que exclusão não faz estorno bancário. Módulos 2/3/5/6/10; protocolo 19/cache v163.
+
+
+v162 — Backend/Code.gs: montarAtualizacaoDadosConfirmadaGestor_ também aceita salvarCategoriasWeb e excluirLancamentoWeb. interface/desempenho.js usa as mesmas quatro ações no coordenador; index.html solicita opt-in nos dois fluxos adicionais. shared/relatorios.js divide leitura do resumo em quatro tempos e evita validar o resumo derivado do arquivo legado antes de ler/conferir seu conteúdo completo. Estado do resumo e diagnóstico permitem somente as novas métricas numéricas. Módulos 2/3/5/6/9/10; protocolo 19/cache v162.
+
+
 v161 — Backend/Code.gs: executor passa Map efêmero a localizarCabecalhosOperacaoGestor_; reaproveita cabeçalhos entre cancelamento/reenvio quando não houve PRONTO. Com recuperação, refaz leitura. propriedade_ e obterPlanilhaGestor_ reutilizam apenas identidade da base no memo por execução. criarPlanilhaVirtualGestor_ mede abrirAbaMs; organizarEAtualizarPlanilha conta posições reordenadas; sincronizarLoteWebInterno_ conta parcelas criadas. shared/anual.js mede leituras físicas de dadosAnoGestor_, sem contar acertos de cache. Backend e diagnóstico de index.html permitem os novos campos numéricos. Módulos 2/3/5/6/10, protocolo 19/cache v161.
 
 

@@ -11,7 +11,7 @@ function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties(
 function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
   try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};
     const e=s?.ultimaExecucao;if(e&&Number.isFinite(e.inicioServidorMs)&&e.inicioServidorMs>=0)estado.ultimaExecucao={inicioServidorMs:e.inicioServidorMs,fimServidorMs:Number.isFinite(e.fimServidorMs)?e.fimServidorMs:null,duracaoMs:Number.isFinite(e.duracaoMs)?e.duracaoMs:null};
-    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
+    if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
     if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
   catch(_){return {modo:'imediato',pendente:false,erro:'Confira a configuração do resumo em segundo plano.'};}
 }
@@ -88,6 +88,7 @@ const ABA_RELATORIOS_PDF_GESTOR_='_Gestor_RelatoriosPDF';
 const CAB_RELATORIOS_PDF_GESTOR_=['Identificação','Período','Hash dos dados','Estado','Arquivo ou nome','SHA256 PDF','Gerado em','Metadados JSON'];
 
 function registrosResumoNativoGestor_(ss,leituraLocal){
+  let marcoLeitura=Date.now();const medirLeitura=campo=>{const agora=Date.now();if(leituraLocal?.tempos)leituraLocal.tempos[campo]=Math.max(0,agora-marcoLeitura);marcoLeitura=agora;};
   const dash=ss.getSheetByName('Dashboard & Resumo'),valoresCategorias=dash?dash.getRange('B17:B41').getValues():[],categorias=valoresCategorias.map(r=>String(r[0]||'').trim()).filter(Boolean),registros=[],ids=new Set();
   if(leituraLocal){leituraLocal.ss=ss;leituraLocal.categorias=valoresCategorias.map(r=>r.slice());}
   // Snapshot exclusivo desta leitura: fora do contexto transacional, resolver
@@ -95,8 +96,10 @@ function registrosResumoNativoGestor_(ss,leituraLocal){
   const folhaFormas=ss.getSheetByName('Formas de Pagamento');
   const formasResumo=folhaFormas?validarIdentidadesFormasGestor_(folhaFormas.getDataRange().getValues()).chaves:new Map();
   const nomeFormaResumo=forma=>formasResumo.get(chaveFormaGestor_(forma))?.nome||limparApostrofo(forma);
+  medirLeitura('resumoCadastrosMs');
   const anual=typeof ativoAnualGestor_==='function'&&ativoAnualGestor_(ss);
   const leituraAnual=anual?{ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()}:null;
+  medirLeitura('resumoCatalogosMs');
   const incluir=function(nome,r){
     if(!r.some(v=>v!==''&&v!=null))return;
     const id=String(r[11]||'');if(!id||ids.has(id))throw Error('O resumo encontrou registro sem identificação ou repetido. Atualize os dados antes de gerar relatórios.');ids.add(id);
@@ -110,7 +113,10 @@ function registrosResumoNativoGestor_(ss,leituraLocal){
     const valores=anual?matrizFinanceiraAnualGestor_(ss,nome,leituraAnual):ss.getSheetByName(nome)?.getDataRange().getValues()||[];
     valores.slice(1).forEach(r=>incluir(nome,r));
   }
-  for(const e of catalogoAnualProtecaoGestor_(ss))for(const a of dadosArquivoAnualProtecaoGestor_(e).abas)a.valores.slice(1).forEach(r=>incluir(a.nome,r));
+  medirLeitura('resumoRegistrosMs');
+  // O conteúdo completo é conferido pelo hash; não reler para conferir apenas o resumo derivado.
+  for(const e of catalogoAnualProtecaoGestor_(ss,false))for(const a of dadosArquivoAnualProtecaoGestor_(e).abas)a.valores.slice(1).forEach(r=>incluir(a.nome,r));
+  medirLeitura('resumoLegadosMs');
   return registros.sort((a,b)=>a.id.localeCompare(b.id));
 }
 function agruparResumoNativoGestor_(registros){
@@ -169,7 +175,7 @@ function atualizarResumoNativoGestor_(ss,tempos){
     try{meta=JSON.parse(cab[2]||'{}');}catch(_){throw Error('Controle do resumo nativo inválido.');}if(meta.versao!==1||!Array.isArray(meta.migracoes)||meta.migracoes.length>61||meta.migracoes.some(m=>!m||!Number.isInteger(m.linha)||!Number.isInteger(m.coluna)||typeof m.gerada!=='string'||!formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,m.categoria)||m.gerada!==formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,m.categoria)||m.aceitas&&(!Array.isArray(m.aceitas)||m.aceitas.length>2||m.aceitas.some(f=>typeof f!=='string'||f.length>10000))))throw Error('Controle de fórmulas do resumo inválido.');
   }
   medir('resumoControleMs');
-  const leituraLocal={},registros=registrosResumoNativoGestor_(ss,leituraLocal);medir('resumoLeituraMs');
+  const leituraLocal={tempos:tempos},registros=registrosResumoNativoGestor_(ss,leituraLocal);medir('resumoLeituraMs');
   const grupos=agruparResumoNativoGestor_(registros),hash=hashGestor_(registros),dash=ss.getSheetByName('Dashboard & Resumo'),migracoes=meta.migracoes.slice();medir('resumoCalculoMs');
   const valoresDashboard=[],linhasDashboard=dash?Math.max(1,Math.min(41,dash.getLastRow())):0;
   if(dash&&linhasDashboard>=17){const categorias=leituraLocal.ss===ss&&leituraLocal.categorias?leituraLocal.categorias.slice(0,linhasDashboard-16):dash.getRange(17,2,linhasDashboard-16,1).getValues();categorias.forEach((r,i)=>{valoresDashboard[16+i]=['',r[0]];});}
