@@ -16,6 +16,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const limiteBytes = opcoes.limiteBytes ?? 1000000;
   const leituras = opcoes.leituras || new Set();
   const cacheaveis = new Set(opcoes.cacheaveis || []);
+  const leiturasDeTela=new Set(['filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb']);
   const cache = new Map(), consultas = new Map();
   const cargasCompletas = new Set();
   const mutacoesPendentes = new Set();
@@ -85,12 +86,12 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     if(continuar&&!continuar()){metricas.filtrosSuperados++;const e=new Error('Consulta substituída pela navegação ou por outro filtro.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
-    if(acao==='filtrarLancamentosWeb'&&mutacoesPendentes.size){
+    if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
       return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar));
     }
     // A resposta da carga completa invalida relatórios. Se ela já está em
     // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
-    if (cacheaveis.has(acao) && cargasCompletas.size) {
+    if ((cacheaveis.has(acao)||leiturasDeTela.has(acao)) && cargasCompletas.size) {
       return aguardarConsulta(cargasCompletas,'carga_completa',() => consultar(acao, param, extras, repeticoes,continuar));
     }
     const versao = geracao, chave = acao + ':' + chaveEstavel(param) + ':' + chaveEstavel(extras);
@@ -201,7 +202,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v165', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v166', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

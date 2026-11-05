@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const fonte = fs.readFileSync(path.join(__dirname, '../interface/desempenho.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 const aguardar = () => new Promise(resolve => setImmediate(resolve));
-const leituras = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'obterFaturaPagamentoWeb', 'previaRestauracaoBackupWeb'];
+const leituras = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'obterFaturaPagamentoWeb', 'previaRestauracaoBackupWeb','obterAtividadeWeb','obterRecorrenciasWeb'];
 
 function ambiente(executar, carregarReal = false, extras = {}) {
   const eventos = {}, graficos = [], telas = new Map(), renderizados = [], avisos = [];
@@ -152,7 +152,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v165');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v166');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -429,3 +429,8 @@ test('falha ou resposta atrasada não revela os números do mês anterior', asyn
   const status=a.indicadores.envoltorio.children[1];assert.match(status.querySelector('p').textContent,/12\/2026.*não estão disponíveis/);
   assert.equal(status.querySelector('button').textContent,'Tentar novamente');
 });
+
+
+test('Atividade e Recorrências aguardam carga inicial sem descarte e sem cache entre consultas',async()=>{for(const acao of ['obterAtividadeWeb','obterRecorrenciasWeb']){const chamadas=[],c=coordenador({executar:(n,p)=>new Promise((resolve,reject)=>chamadas.push({n,p,resolve,reject}))});const base=c.chamar('getDadosCompletos'),a=c.chamar(acao,{}),b=c.chamar(acao,{});await aguardar();assert.equal(chamadas.length,1);chamadas[0].resolve({atual:true});await base;await aguardar();assert.equal(chamadas.length,2);assert.equal(chamadas[1].n,acao);chamadas[1].resolve({itens:[]});await Promise.all([a,b]);assert.equal(c.metricas().descartadas,0);const nova=c.chamar(acao,{});await aguardar();assert.equal(chamadas.length,3);chamadas[2].resolve({itens:['atual']});assert.equal((await nova).itens[0],'atual');}});
+test('Atividade e Recorrências esperam gravação, mas consulta de protocolo permanece livre',async()=>{for(const acao of ['obterAtividadeWeb','obterRecorrenciasWeb']){const chamadas=[],c=coordenador({executar:(n,p)=>new Promise((resolve,reject)=>chamadas.push({n,p,resolve,reject}))});const envio=c.chamar('salvarLancamentoWeb',{requestId:'aguardar-gravacao-segura'}),painel=c.chamar(acao,{});await aguardar();assert.equal(chamadas.length,1);const protocolo=c.chamar('getDadosCompletos');await aguardar();assert.equal(chamadas.length,2);chamadas[1].resolve({atual:true});await protocolo;chamadas[0].resolve({confirmado:true});await envio;await aguardar();assert.equal(chamadas.length,3);assert.equal(chamadas[2].n,acao);chamadas[2].resolve({itens:[]});await painel;}});
+test('falha da carga inicial libera as leituras de tela sem repetir o erro nem travar a fila',async()=>{const chamadas=[],c=coordenador({executar:(n,p)=>new Promise((resolve,reject)=>chamadas.push({n,p,resolve,reject}))});const base=c.chamar('getDadosCompletos'),falhou=assert.rejects(base,/rede/),painel=c.chamar('obterAtividadeWeb',{});await aguardar();assert.equal(chamadas.length,1);chamadas[0].reject(Error('rede'));await falhou;await aguardar();assert.equal(chamadas.length,2);chamadas[1].resolve({itens:[]});await painel;assert.equal(c.metricas().pendentes,0);});

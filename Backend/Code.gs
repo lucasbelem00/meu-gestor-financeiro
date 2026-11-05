@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -25,6 +25,12 @@ function medirEtapaGravacaoGestor_(detalhes, etapa, executar) {
   const inicio=Date.now();
   try { return executar(); }
   finally { detalhes[etapa]=(detalhes[etapa]||0)+Math.max(0,Date.now()-inicio); }
+}
+
+// Subetapas numéricas por requisição; não alteram retorno nem erros da consulta.
+function medirEtapaConsultaGestor_(nome,executar){
+  const detalhes=CONTEXTO_GESTOR_?.detalhesGravacao;
+  return detalhes?medirEtapaGravacaoGestor_(detalhes,nome,executar):executar();
 }
 
 function adquirirLockOperacaoGestor_(lock, acao, leitura) {
@@ -3550,14 +3556,14 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
   const off = Math.max(0, parseInt(offset, 10) || 0);
   const lim = Math.min(500, Math.max(1, parseInt(limite, 10) || 50));
 
-  const todas = lerLancamentosParaRelatorio(f.ano?[Number(f.ano)]:f.mes?[Number(String(f.mes).split('/')[1])]:undefined);
+  const todas = medirEtapaConsultaGestor_('filtroLeituraMs',()=>lerLancamentosParaRelatorio(f.ano?[Number(f.ano)]:f.mes?[Number(String(f.mes).split('/')[1])]:undefined));
   const filtrosBase = Object.keys(f).filter(function(k) { return k !== 'versaoConsulta'; }).sort().map(function(k) { return [k,f[k]]; });
-  const versaoConsulta = hashGestor_([filtrosBase, todas.map(function(l) { return l.r; })]);
+  const versaoConsulta = medirEtapaConsultaGestor_('filtroVersaoMs',()=>hashGestor_([filtrosBase,todas.map(l=>l.r)]));
   if (off > 0 && f.versaoConsulta !== versaoConsulta) {
     const conflito = new Error('O Histórico mudou durante a consulta. Atualize a lista antes de continuar ou copiar o resumo.');
     conflito.codigo = 'CONSULTA_ALTERADA'; throw conflito;
   }
-  const resumo = calcularResumoParcelas(todas);
+  const resumo = medirEtapaConsultaGestor_('filtroResumoMs',()=>calcularResumoParcelas(todas));
   const hoje = getHojeSeguro();
   const mesAtual = pad2(hoje.getMonth() + 1) + '/' + hoje.getFullYear();
 
@@ -3572,7 +3578,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
   const formaFiltro=f.forma?chaveFormaGestor_(nomeFormaLeituraGestor_(f.forma)):'';
   const categoriaFiltro=f.categoria?normalizarTexto(f.categoria):'';
 
-  const filtrados = todas.filter(function (l) {
+  const filtrados = medirEtapaConsultaGestor_('filtroSelecaoMs',()=>todas.filter(function (l) {
     if (!correspondePerfilGastoGestor_(l.r,f)) return false;
     if (f.mes && l.mes !== f.mes) return false;
     if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
@@ -3591,7 +3597,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
       case 'apagar': if (isStatusPago(l.status) || isStatusCancelado(l.status)) return false; break;
       case 'parcelados': if (!(l.infoParc.total > 1 && l.parc !== '∞/∞')) return false; break;
       case 'fixos': if (l.parc !== '∞/∞') return false; break;
-      case 'pix': if (!ehPixGestor_(l.forma)) return false; break;
+      case 'pix': if (l.tipoForma!=='pix') return false; break;
     }
 
     if (tagsExigidas.length > 0) {
@@ -3604,7 +3610,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
       if (!grupos.some(function (g) { return g.every(function (p) { return palheiro.indexOf(p) >= 0; }); })) return false;
     }
     return true;
-  });
+  }));
 
   const maisRecentesPrimeiro = filtrados.slice().reverse();
   const soma = filtrados.reduce(function (acc, l) { return acc + (isStatusCancelado(l.status) ? 0 : l.valor); }, 0);
@@ -3612,7 +3618,7 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 
   return {
     versaoConsulta: versaoConsulta,
-    itens: pagina.map(function (l) { return itemLancamento(l, resumo, 'historico'); }),
+    itens: medirEtapaConsultaGestor_('filtroPaginaMs',()=>pagina.map(l=>itemLancamento(l,resumo,'historico'))),
     temMais: (off + lim) < maisRecentesPrimeiro.length,
     qtdTotal: filtrados.length,
     somaTotal: formatBRL(soma),
@@ -4989,20 +4995,20 @@ function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
 }
 
 function obterAtividadeWeb(param) {
-  const p = param || {}, indice=indiceEventosAtividadeGestor_();
+  const p = param || {}, indice=medirEtapaConsultaGestor_('atividadeIndiceMs',()=>indiceEventosAtividadeGestor_());
   let mapa=null;
   const termo = normalizarTexto(String(p.termo || '').slice(0, 200)), tipo = String(p.tipo || '');
   const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
   const cabecalhos=new Set(indice.linhas),linhasReversoes=indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,'desfazerAtividadeWeb').filter(function(l){return cabecalhos.has(l);}) : [];
   let pagina,total,reversoes;
   if(termo) {
-    const eventos=lerEventosAtividadeGestor_(undefined,indice),filtrados=eventos.slice().reverse().filter(function(e){return (!tipo||e.acao===tipo)&&normalizarTexto([e.titulo,JSON.stringify(e.resumo || {})].join(' ')).indexOf(termo)>=0;});
+    const eventos=medirEtapaConsultaGestor_('atividadeEventosMs',()=>lerEventosAtividadeGestor_(undefined,indice)),filtrados=eventos.slice().reverse().filter(function(e){return (!tipo||e.acao===tipo)&&normalizarTexto([e.titulo,JSON.stringify(e.resumo || {})].join(' ')).indexOf(termo)>=0;});
     total=filtrados.length;pagina=filtrados.slice(offset,offset+limite);reversoes=eventos.filter(function(e){return e.reverte;});
   }else {
     const linhas=tipo ? (indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,tipo).filter(function(l){return cabecalhos.has(l);}).sort(function(a,b){return b-a;}) : []) : indice.linhas.slice().reverse();
     total=linhas.length;
     const linhasPagina=linhas.slice(offset,offset+limite),selecionadas=Array.from(new Set(linhasPagina.concat(linhasReversoes))).sort((a,b)=>a-b);
-    const eventos=selecionadas.length?lerEventosAtividadeGestor_(selecionadas,indice):[];
+    const eventos=selecionadas.length?medirEtapaConsultaGestor_('atividadeEventosMs',()=>lerEventosAtividadeGestor_(selecionadas,indice)):[];
     if(eventos.length!==selecionadas.length)throw Error('Histórico de atividade incompleto. Preserve os registros e consulte novamente.');
     const porLinha=new Map(selecionadas.map((linha,i)=>[linha,eventos[i]]));
     pagina=linhasPagina.map(linha=>porLinha.get(linha));reversoes=linhasReversoes.map(linha=>porLinha.get(linha));
@@ -5010,8 +5016,8 @@ function obterAtividadeWeb(param) {
   const revertidos=new Set(reversoes.filter(function(e){return e.reverte;}).map(function(e){return e.reverte;}));
   return { total: total, temMais: offset + limite < total, itens: pagina.map(function (e) {
     // Ações não reversíveis/desfeitas não precisam consultar os registros financeiros.
-    if(e.reversivel&&!revertidos.has(e.id)&&!mapa)mapa=mapaRegistrosAtividadeGestor_();
-    const motivo = motivoBloqueioDesfazerGestor_(e, mapa, revertidos);
+    if(e.reversivel&&!e.recorrenciaIntegrada&&!revertidos.has(e.id)&&!mapa)mapa=medirEtapaConsultaGestor_('atividadeMapaMs',()=>mapaRegistrosAtividadeGestor_());
+    const motivo = medirEtapaConsultaGestor_('atividadeDisponibilidadeMs',()=>motivoBloqueioDesfazerGestor_(e,mapa,revertidos));
     const principal=e.alteracoes.find(function(a){return a.depois || a.antes;});
     const resumoExibido=principal?resumirRegistroAtividade_(principal.depois || principal.antes,principal.aba):copiarGestor_(e.resumo);
     return { id: e.id, titulo: e.titulo, acao: e.acao, data: e.data, resumo: resumoExibido, quantidade: e.quantidade, podeDesfazer: !motivo, motivo: motivo, desfeita: revertidos.has(e.id),

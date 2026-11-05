@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v166 — interface/desempenho.js: leiturasDeTela coordena filtro, Atividade e Recorrências após carga completa/mutações; getDadosCompletos interno não espera mutação. Backend/Code.gs: medirEtapaConsultaGestor_ fornece subetapas de filtros/Atividade; obterAtividadeWeb não carrega mapa para recorrência integrada já bloqueada; filtro usa tipo cadastrado resolvido em lerLancamentosParaRelatorio. index.html filtra métricas numéricas novas para diagnóstico. Módulos 2/3/5/6/8/10; protocolo 19/cache v166.
+
+
 v165 — Backend/Code.gs: obterAtividadeWeb combina página e reversões antes de lerEventosAtividadeGestor_; conserva mapa atual/Desfazer. index.html: atualizarSelecaoAtividadeGestor apenas sincroniza estado visual dos três painéis, separada da consulta; CSS gestor-interacao-controles atende botões/role=button/summary, sem observers adicionais. interface/recorrencias.js: wrapper setAba consulta apenas ao entrar, botão Atualizar preservado. Módulos 2/5/8/9; protocolo 19/cache v165.
 
 
