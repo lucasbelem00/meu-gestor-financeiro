@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v155 — 📌 Recorrente nos dois cadastros usa botão violeta compacto h-6, alinhado aos atalhos de parcelas; em Empréstimos fica abaixo do campo Valor. Criar recorrência nos dois editores é expansível, com menu Variável/Fixo, prévia e botão de confirmação; permanece no editor de origem. Em editar empréstimo, Data combinada e Aplicar data combinada ficam depois de Aplicar valor, antes das ações Recebimento parcial, Mover para pessoal e Criar recorrência. Inicialização antes da captura de assinaturas evita confundir reorganização visual com alteração de dados.
+
+
 v154 — cadastro de recorrência: manter 📌 Recorrente em violeta; ao ativar, revelar menu único Variável — revisar a cada mês / Fixo — repetir automaticamente e prévia curta em violeta, com dia e próxima data. Não repetir campos de início/dia existentes na data do gasto. Novo mantém tags; terceiros mantém Pessoa e observação, sem categoria pessoal. Atalhos ➕ Gasto pessoal e 🤝 De terceiros ficam próximos na aba Recorrências, com botões neutros; identificação dos terceiros na listagem continua âmbar. Envio atual é lançamento à vista; modelo controla repetições futuras.
 
 

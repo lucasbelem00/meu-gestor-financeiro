@@ -2,7 +2,7 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),vm=requir
 function tela(editores=false){
  const campos=new Map(),salvos=new Map(),confirmacoes=[],avisos=[];let n=0;
  function el(tag='div'){
-  const attrs=new Map(),e={tag,children:[],value:'',className:'',listeners:{},append(...v){for(const c of v){c.parentElement=this;this.children.push(c);}},replaceChildren(){this.children=[];},insertBefore(c,antes){c.parentElement=this;const i=this.children.indexOf(antes);if(i<0)this.children.push(c);else this.children.splice(i,0,c);},addEventListener(k,f){(this.listeners[k]??=[]).push(f);},setAttribute(k,v){attrs.set(k,String(v));},getAttribute:k=>attrs.get(k)??null,scrollIntoView(){},closest(t){return this.tag===t?this:this.parentElement?.closest(t);},querySelector(seletor){const todos=[];function visitar(n){for(const f of n.children){todos.push(f);visitar(f);}}visitar(this);return todos.find(n=>seletor==='form'?n.tag==='form':seletor==='button[type="submit"]'?n.tag==='button'&&n.type==='submit':seletor.startsWith('.')?n.className.split(' ').includes(seletor.slice(1)):n.getAttribute(seletor.slice(1,-1))!==null)||null;}};
+  const attrs=new Map(),e={tag,children:[],value:'',className:'',listeners:{},append(...v){for(const c of v){c.parentElement=this;this.children.push(c);}},replaceChildren(){this.children=[];},insertBefore(c,antes){const anterior=this.children.indexOf(c);if(anterior>=0)this.children.splice(anterior,1);c.parentElement=this;const i=this.children.indexOf(antes);if(i<0)this.children.push(c);else this.children.splice(i,0,c);},addEventListener(k,f){(this.listeners[k]??=[]).push(f);},setAttribute(k,v){attrs.set(k,String(v));},getAttribute:k=>attrs.get(k)??null,scrollIntoView(){},closest(t){return this.tag===t?this:this.parentElement?.closest(t);},querySelector(seletor){const todos=[];function visitar(n){for(const f of n.children){todos.push(f);visitar(f);}}visitar(this);return todos.find(n=>seletor==='form'?n.tag==='form':seletor==='button[type="submit"]'?n.tag==='button'&&n.type==='submit':seletor.startsWith('.')?n.className.split(' ').includes(seletor.slice(1)):n.getAttribute(seletor.slice(1,-1))!==null)||null;}};
   e.classList={contains:k=>e.className.split(' ').includes(k),add:k=>{if(!e.classList.contains(k))e.className+=' '+k;},remove:k=>{e.className=e.className.split(' ').filter(x=>x!==k).join(' ');},toggle(k,v){const tem=v===undefined?!e.classList.contains(k):v;tem?this.add(k):this.remove(k);}};
   Object.defineProperty(e,'id',{get(){return this._id;},set(v){this._id=v;campos.set(v,this);}});return e;
  }
@@ -69,4 +69,27 @@ test('atalhos de criação protegem rascunho, alterações durante confirmação
  a.ctx.abrirCadastroRecorrenteGestor(false);assert.equal(limpezas,0);assert.equal(a.confirmacoes.length,1);estado='alterado';a.confirmacoes[0][2]();assert.equal(limpezas,0);
  a.ctx.abrirCadastroRecorrenteGestor(false);a.confirmacoes[1][2]();assert.equal(limpezas,1);assert.equal(a.campos.get('checkAssinatura').checked,true);
  a.ctx.bloqueioFormularioRotinaGestor=()=>true;a.ctx.abrirCadastroRecorrenteGestor(false);assert.equal(limpezas,1);
+});
+
+test('Histórico e Empréstimos criam recorrência no próprio editor com modo e prévia, sem navegar',async()=>{
+ for(const terceiros of [false,true]){const a=tela(true),id=terceiros?'modalEdicaoEmp':'modalEdicaoLanc',nome=terceiros?'abrirModalEdicaoEmp':'abrirModalEdicaoLanc';let chamadas=[],navegacoes=0;
+ a.ctx.detalhesReferenciaGestor=()=>({registroId:'origem-001',versao:1});a.ctx.lerValorMoeda=Number;a.ctx.setAba=()=>navegacoes++;a.ctx.apiCall=async(acao,p)=>{chamadas.push({acao,p});return {sucesso:true};};
+ a.ctx[nome](...(terceiros?['ref','01/10/2026','Ana','Conta','Cartao',10,'10/2026','A Receber','1/1','']:['ref','01/10/2026','Conta','Cartao','Teste',10,'10/2026','Pago','','1/1']));
+ const area=a.campos.get(id).querySelector('form').children[0],painel=area.children[1],b=painel.children.at(-1);assert.match(area._previa.textContent,/01\/11\/2026/);assert.equal(b.disabled,false);
+ b.onclick();assert.equal(chamadas.length,0);await a.confirmacoes.at(-1)[2]();assert.equal(chamadas.length,1);assert.equal(chamadas[0].acao,'salvarRecorrenciaWeb');assert.equal(chamadas[0].p.origem,terceiros?'terceiros':'pessoal');assert.equal(chamadas[0].p.registroOrigem,'origem-001');assert.equal(chamadas[0].p.proximoMes,'11/2026');assert.equal(navegacoes,0);assert.equal(area.hidden,true);
+ }
+});
+test('criação no editor recusa edição não salva e confirmação antiga após troca de modo/base',async()=>{
+ const a=tela(true);a.ctx.detalhesReferenciaGestor=()=>({registroId:'origem-001',versao:1});a.ctx.lerValorMoeda=Number;let envios=0;a.ctx.apiCall=async()=>{envios++;};a.ctx.assinaturaFormularioRotinaGestor=()=> 'alterado';
+ a.ctx.abrirModalEdicaoLanc('ref','01/10/2026','Conta','Cartao','Teste',10,'10/2026','Pago','','1/1');
+ const modal=a.campos.get('modalEdicaoLanc'),area=modal.querySelector('form').children[0],b=area.children[1].children.at(-1);modal._assinaturaInicial='salvo';b.onclick();assert.equal(a.confirmacoes.length,0);
+ modal._assinaturaInicial='alterado';b.onclick();area._modo.value='automatico';await a.confirmacoes.at(-1)[2]();assert.equal(envios,0);
+ b.onclick();a.salvos.set('gestorEpocaRestauracaoV1','outra');await a.confirmacoes.at(-1)[2]();assert.equal(envios,0);
+});
+
+test('datas combinadas ficam após aplicar valor e antes das três ações expansíveis',()=>{
+ const a=tela(true),form=a.campos.get('modalEdicaoEmp').querySelector('form'),el=a.ctx.document.createElement;const valor=el('div'),parcial=el('div'),mover=el('div'),rec=el('div'),footer=el('div'),botao=el('button');parcial.append(botao);
+ const ldata=el('label'),data=el('input');data.id='inpEdEmpCombinada';ldata.append(data);const lescopo=el('label'),escopo=el('select');escopo.id='escopoDataCombinadaEmpGestor';lescopo.append(escopo);const ajuda=el('p');ajuda.id='ajudaEscopoDataEmpGestor';
+ form.replaceChildren();form.append(valor,parcial,mover,ldata,lescopo,ajuda,rec,footer);const query=form.querySelector;form.querySelector=function(s){return s==='[onclick="togglePainelDividirEmp()"]'?botao:query.call(this,s);};
+ a.ctx.organizarCamposDataEditorEmpGestor();assert.deepEqual(form.children,[valor,ldata,lescopo,ajuda,parcial,mover,rec,footer]);a.ctx.organizarCamposDataEditorEmpGestor();assert.equal(form.children.length,8);
 });

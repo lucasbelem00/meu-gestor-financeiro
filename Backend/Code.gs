@@ -2127,15 +2127,15 @@ function getDadosCompletos() {
       Object.keys(categoriasDoMes).forEach(function(c){mapCatTotal[c]=(mapCatTotal[c]||0)+categoriasDoMes[c]/100;});
       Object.keys(resumo.consumoCatMesCentavos).forEach(function(m){consumoCatPorMes[m]=consumoCatPorMes[m]||Object.create(null);Object.keys(resumo.consumoCatMesCentavos[m]).forEach(function(c){consumoCatPorMes[m][c]=(consumoCatPorMes[m][c]||0)+resumo.consumoCatMesCentavos[m][c]/100;});});
     });
-    let categorias = [], configCategorias = [], opcoesCategorias = [];
+    let categorias = [], configCategorias = [], opcoesCategorias = [], perfisCategorias=null;
     if (dashSheet) {
-      const catNamesRange = dashSheet.getRange('B17:B41').getValues();
-      const catMetasRange = dashSheet.getRange('D17:D41').getValues();
+      const cadastroCategorias = dashSheet.getRange('B17:D41').getValues();
       for (let i = 0; i < 25; i++) {
-        const nome = String(catNamesRange[i][0] || '').trim();
-        const meta = extractNum(catMetasRange[i][0]);
+        const nome = String(cadastroCategorias[i][0] || '').trim();
+        const meta = extractNum(cadastroCategorias[i][2]);
         if (nome) {
-          const perfil=perfilPadraoCategoriaGestor_(ss,nome);configCategorias.push({ nome: nome, meta: meta,tipoGasto:perfil.tipo,prioridadeGasto:perfil.prioridade });
+          if(!perfisCategorias)perfisCategorias=lerPerfisCategoriasGestor_(ss);
+          const perfil=perfisCategorias[chaveCategoria(nome)]||{tipo:'',prioridade:''};configCategorias.push({ nome: nome, meta: meta,tipoGasto:perfil.tipo,prioridadeGasto:perfil.prioridade });
           opcoesCategorias.push(nome);
           if (mapCatTotal[nome] > 0) {
             categorias.push({ nome: nome, total: mapCatTotal[nome] });
@@ -2193,7 +2193,7 @@ function getDadosCompletos() {
       perfilGastos:resumoPerfilGastosGestor_(lancamentosValidos,mesAtualStr),
       consumoCategoriasPorMes: consumoCatPorMes,
       formasPagamento: listaFormasPagto,
-      versoesConfiguracao: {formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:versaoConfiguracaoGestor_(ss,'categorias')},
+      versoesConfiguracao: {formas:versaoConfiguracaoGestor_(ss,'formas'),categorias:versaoConfiguracaoGestor_(ss,'categorias',perfisCategorias)},
       alertasVencimento: diasAteVencimento,
       pixAgendados: lancamentosValidos.filter(i=>i.raw[9]==='Agendado'&&ehPixGestor_(i.raw[2])).map(i=>({registroId:i.raw[11],compraId:i.raw[12],versao:Number(i.raw[13]||1),linha:i.idx+2,data:formatarCelulaRegistroGestor_(i.raw[0],'dd/MM/yyyy'),descricao:i.disp[1],forma:nomeFormaLeituraGestor_(i.raw[2],ss),categoria:i.disp[3],valorRaw:extractNum(i.raw[7]),mesFatura:formatarCelulaRegistroGestor_(i.raw[8],'MM/yyyy'),status:i.raw[9],tags:i.disp[10],parcela:limparApostrofo(i.disp[6])})),
       cartaoMaisFrequente: cartaoMaisFrequente,
@@ -2912,7 +2912,7 @@ function renomearFormaNasAbas(ss, de, para) {
   });
 }
 
-function versaoConfiguracaoGestor_(ss, grupo) {
+function versaoConfiguracaoGestor_(ss, grupo, perfisConferidos) {
   const sh = ss.getSheetByName(grupo === 'formas' ? 'Formas de Pagamento' : 'Dashboard & Resumo');
   if (!sh) return hashEstadoGestor_([]);
   function ler(rng) { const v=rng.getValues(), f=rng.getFormulas(); return v.map(function(r,i){return r.map(function(x,j){return f[i][j] || x;});}); }
@@ -2922,7 +2922,8 @@ function versaoConfiguracaoGestor_(ss, grupo) {
     const colunaIdentidade=validarIdentidadesFormasGestor_(sh.getDataRange().getValues()).coluna;
     return hashEstadoGestor_([linhas, colunaTipo && sh.getLastRow() >= 7 ? ler(sh.getRange(7,colunaTipo,sh.getLastRow()-6,1)) : [],colunaIdentidade&&sh.getLastRow()>=7?ler(sh.getRange(7,colunaIdentidade,sh.getLastRow()-6,1)):[]]);
   }
-  return hashEstadoGestor_([ler(sh.getRange('B17:B41')).map(function(r){return r[0];}),ler(sh.getRange('D17:D41')).map(function(r){return r[0];}),[JSON.stringify(lerPerfisCategoriasGestor_(ss))]]);
+  const cadastro=ler(sh.getRange('B17:D41'));
+  return hashEstadoGestor_([cadastro.map(function(r){return r[0];}),cadastro.map(function(r){return r[2];}),[JSON.stringify(perfisConferidos||lerPerfisCategoriasGestor_(ss))]]);
 }
 function validarVersaoConfiguracaoGestor_(ss, grupo, param) {
   if (!param || typeof param.versaoConfiguracao !== 'string' || param.versaoConfiguracao !== versaoConfiguracaoGestor_(ss, grupo)) throw new Error('A configuração mudou ou esta tela está desatualizada. Seu rascunho foi mantido. Atualize os dados e confira as alterações antes de salvar novamente.');

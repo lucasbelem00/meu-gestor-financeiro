@@ -1,5 +1,12 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v155 — publicar frontend e Apps Script juntos, sem nova ativação. Histórico e Empréstimos: Editar → Criar recorrência deve abrir modo/prévia dentro do modal, sem ir à aba Recorrências; gasto salvo é preservado. Testar Variável/Fixo, mês histórico, dia 31 e edição não salva; mudar modo/campos enquanto confirmação aberta deve recusar. Conferir pedido repetido/erro e lista ao abrir Recorrências posteriormente. Atalhos de criação do zero continuam levando a Novo/Novo empréstimo com Recorrente ligado.
+
+Conferir botão Recorrente abaixo de Valor no empréstimo, altura/estilo iguais aos atalhos; limpar e restaurar rascunho. Editor deve ordenar Aplicar valor → Data combinada → Aplicar data → três expansíveis; recebimento exclusivo não mostra recorrência. Digitar dia e mês nos quatro formulários: pular ano válido e focar descrição sem selecionar seu texto; ano manual continua disponível e inválido/ausente exige correção. Barra e mês incompleto/inválido não devem causar salto incorreto. Mudar data na edição continua sem mover automaticamente Mês Fatura.
+
+Desempenho: medir Novo, Editar, Painel e categorias após publicação; comparar diagnóstico, sem prometer ganho antes da medição. Testes locais verificam uma leitura de perfis por consulta, hash de configuração equivalente inclusive com fórmulas e recusa após mudança externa. Nenhuma redução das confirmações de gravação.
+
+
 Conferir Atividade após criação integrada: Desfazer isolado deve ficar indisponível e explicar a gestão separada do gasto e da repetição, preservando ambos.
 
 Reteste v154 — publicar Apps Script (protocolo 19) e frontend/cache v154; não reativar proteção. Em Recorrências, abrir Gasto pessoal e De terceiros, confirmar substituição de rascunho se houver. Conferir 📌 Recorrente, modos Variável/Fixo, prévia pela data e fatura; trocar data/modo, recarregar rascunho e limpar. Modo desligado não deve criar modelo. Ativado deve guardar gasto atual 1/1 e modelo a partir do mês seguinte, sem duplicar atual ou gerar atrasados ao lançar gasto histórico. Dia 31: conferir fevereiro e retorno ao dia 31.
