@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v164 — Publicar backend e frontend. Cadastrar gasto fictício sem pagamento no cartão ou Pix à vista e excluir após a confirmação. A exclusão deve sumir do app imediatamente após confirmação financeira; resumo pode aparecer pendente até a rotina. Conferir diagnóstico: resumoMs deve ser zero na exclusão elegível em segundo plano, e depois resumo atualizado/pendente false. Medir tempo total; não exigir redução fixa de três segundos em toda execução. Cartão pago continua bloqueado; Pix à vista pago conserva exceção v163. Reenvio não duplica; após PRONTO interrompido, worker não materializa dados parciais e só conclui depois da recuperação. Fórmula personalizada incompatível ou falha de persistência da tarefa mantém resumo síncrono. Não alterar dados reais para testar bloqueios.
+
+
 Reteste v163 — Depois de publicar backend e frontend, cadastrar Pix à vista fictício, conferir Pago e excluir pelo Histórico. Confirmar que some de Histórico/Mensal e pode ser restaurado por Desfazer da exclusão em Atividade, com valor e pagamento preservados. Exclusão não movimenta nem estorna o banco. Reenvio do mesmo pedido não duplica; versão antiga não deve apagar item alterado. Confirmar que cartão pago, Pix parcialmente pago, Pix parcelado pago e recorrência paga continuam bloqueados. Não usar pagamentos reais nesses testes. Repetir diagnóstico v163 após a rodada e conferir resumo atualizado.
 
 

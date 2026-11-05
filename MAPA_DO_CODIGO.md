@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v164 — shared/relatorios.js: exclusão pessoal incluída na elegibilidade de solicitarResumoAssincronoGestor_. Usa a mesma intenção durável, impedimento por fórmulas e rotina de recuperação existente. Exclusão financeira/journal continuam confirmados antes da resposta; somente materialização do resumo é adiada. Nenhuma ampliação para desfazer/restauração/manutenção ou liberação de cartão pago. Interface/cache v164, protocolo 19. Módulos 2/3/5/6/10.
+
+
 v163 — excluirLancamentoWebInterno_ distingue Pix pessoal 1/1 integralmente pago de pagamentos que exigem desfazer previamente. Exceção depende de opt-in explícito e tipo real; guards de identidade/versão, totais remanescentes, plano anual e Atividade preservados. excluirLancamentoLocal inclui opt-in e aviso de que exclusão não faz estorno bancário. Módulos 2/3/5/6/10; protocolo 19/cache v163.
 
 
