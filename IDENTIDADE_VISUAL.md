@@ -1,5 +1,12 @@
 # Identidade visual do webapp
 
+Complemento v160: Forma de Pagamento em Novo Empréstimo segue Novo em altura, espaçamento interno, borda, foco azul e transição; opção inicial “Selecione...” também no preenchimento após consulta. Opções e regras financeiras preservadas.
+
+Padrão v160 dos dois cadastros: Mês da Fatura, Descrição do Gasto e Forma de Pagamento. Apenas rótulos; IDs, regras de competência e contratos de envio preservados.
+
+v160 — Cadastros Novo e Empréstimo: cabeçalhos Data/competência sem altura fixa, campos alinhados pela base e separados do rótulo por 6px. Competências centralizadas nos dois. Novo: retirar altura fixa de 28px de Valor/Parcelas/Início e padding superior redundante; manter colunas, altura dos inputs e atalhos. Prévia de recorrência separada de Tags por 8px. Hoje/Ontem usam 10px nos dois cadastros. Não impor altura vazia para compensar rótulos nem comprimir seções de todos os modais indiscriminadamente.
+
+
 v159 — 🗒️ Parcelas detalhadas de terceiros. Reservar 📋 às ações de copiar; nenhuma mudança no conteúdo financeiro da seção. Padrões de datas/cards/ícones instalados das v157/v158 mantidos.
 
 

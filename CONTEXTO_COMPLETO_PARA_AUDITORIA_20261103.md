@@ -1,5 +1,21 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Complemento v160: Forma de Pagamento em Novo Empréstimo segue Novo em altura, espaçamento interno, borda, foco azul e transição; opção inicial “Selecione...” também no preenchimento após consulta. Opções e regras financeiras preservadas.
+
+Validação local v160: 1.199 testes aprovados, zero falhas (testes-v160-final.log); CSS e três interfaces sincronizados. Após padronizar os rótulos, geração e conferência dos nomes/espelhos concluídas. Dist preparado localmente; publicação remota e avaliação visual nos aparelhos pendentes.
+
+Padrão v160 dos dois cadastros: Mês da Fatura, Descrição do Gasto e Forma de Pagamento. Apenas rótulos; IDs, regras de competência e contratos de envio preservados.
+
+Revisão local 05/11/2026 — v160 (módulos 2/3/4/5): getDadosCompletos deixa de ler a apresentação de Formas sem uso, reaproveita as linhas de empréstimos para os alertas e utiliza o formatador de datas da requisição. A atualização visual opcional após confirmação rejeita antecipadamente contextos com fórmulas e recorrências que mudaram, mantendo as verificações finais e o recarregamento normal. Não altera confirmação, trava, journal, hashes ou regra financeira; ganho em segundos ainda depende de nova rodada real.
+
+Novo: competência centralizada; Date/Mês alinhados pela base, sem altura vazia de cabeçalho. Cabeçalhos de Valor/Parcelas/Início sem altura fixa e sem padding extra acima. Novo Empréstimo acompanha distância de 6px entre rótulo e campo e atalhos Hoje/Ontem com mesma fonte. Prévia de recorrência em Novo ganha 8px antes de Tags. Limpar Novo também apaga/oculta a sugestão e os dados de tags anteriores; limpeza bloqueada por envio incerto mantém tudo. Outros formulários conservam espaçamentos próprios de seções, sem redução global que comprima modais.
+
+Geração: sincronizar-rachadinha monta blocos em memória e grava cada destino uma vez, com repetição curta e limitada para arquivo ocupado no Windows. Interface/cache v160; protocolo 19. Código local, sem publicação remota ou validação visual nos aparelhos nesta rodada. Publicar backend e frontend, sem reativar proteção.
+
+
+Rodada real v159 recebida em 05/11/2026: contadores confirmaram 1 linha formatada e 1 linha validada tanto em Novo quanto em Edição, com 18 células escritas; a otimização de volume está ativa. Porém, no aparelho, salvar ~20,1s e editar ~19,7s não melhoraram nesta amostra frente a ~19,7s/~18,3s anteriores. Mensal ~6,9s e Anual ~9,1s ficaram menores; Recorrências ~12,8s ficou maior. Servidor: ~16,4s para ambos os salvamentos, espera de lock pequena (~0,07–0,16s), atualização completa após confirmar ainda ~2,5–2,8s. Não atribuir demora principal à renderização, que ficou em dezenas de milissegundos. Diagnóstico contém uma consulta com FALHA_COMUNICACAO; posteriores concluíram, sem pendências/bloqueio ao final e resumo atualizado sem erro. Próxima investigação: execução/leitura anual, aplicação/flush e atualização completa pós-gravação; preservar as conferências e distinguir atualização visual de confirmação financeira. Nenhuma nova alteração financeira aplicada só com base nesta rodada.
+
+
 Pacote local v159 — revisão de 05/11/2026 (módulos 2/3/4/5/6/10): foco em reduzir trabalho efetivo no Sheets, preservando confirmação. aplicarPlanoGestor_ deriva índices de formatação das alterações: moeda nas colunas E/H/R e validação da situação nas linhas afetadas, em vez de toda a tabela em cada edição/inclusão. Intervalos vizinhos são agrupados; mais de seis blocos usa faixa completa. Restauração, alteração de cabeçalho e planos sem índices usam o caminho integral anterior. Exclusões limitam moeda às linhas sobreviventes; validação também cobre linhas limpas, como antes.
 
 Hash integral anterior/posterior, fórmulas, conferência de destinos, PRONTO/CONFIRMADO, flush, lock, versão e requestId permanecem. Nenhum pagamento é confirmado antes da escrita/conferência real. Recuperação com valores já aplicados também reaplica moeda e validação antes de concluir, cobrindo falha de formato após setValues. Novos contadores numéricos linhasFormatadas/linhasValidacaoStatus no diagnóstico permitem conferir o volume efetivo, sem expor valores financeiros.

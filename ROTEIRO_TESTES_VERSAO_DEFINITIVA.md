@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v160 — Depois de publicar backend/frontend: comparar tempos reais de Novo/Edição/Mensal/Anual e confirmação, inclusive contexto com recorrência e com fórmula que exige recarregar dados. Confirmar ausência de duplicação. Em celular/computador conferir Data/Mês alinhados nos dois cadastros, competência centralizada, Valor/Parcelas/Início sem espaço extra e sem cortar valor. Ativar recorrência e conferir separação de Tags. Escolher descrição com tags anteriores, limpar formulário: sugestão deve sumir; envio incerto deve continuar impedindo limpar. Validar alturas e quebras nos modais existentes. Não confundir testes locais com validação publicada.
+
+
 Reteste v159 — publicar Apps Script e frontend, sem reativar proteção. Fazer Novo e Edição num lançamento isolado; colher diagnóstico com linhasFormatadas/linhasValidacaoStatus e tempos de aplicar/flush/conferência. Em alteração de uma linha, deve trabalhar nela; se houver reordenação de várias linhas, índices devem cobrir essas linhas. Não exigir contagem 1 para toda operação.
 
 Conferir formato de moeda e menu de situação em inclusão, edição, exclusão, parcelas e recebimentos. Restauração/cabeçalho/migração ampla devem manter formato completo. Falha de formatação após gravar: reenvio deve completar apresentação sem duplicar dados, com confirmação protegida. Alteração externa em linha intacta continua bloqueando o plano. Validar Mensal/Anual e registros Date no fuso correto; não alterar datas/fatura para ganhar velocidade.

@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v160 — getDadosCompletos reutiliza leitura de empréstimos e elimina display de Formas sem consumidor. montarAtualizacaoDadosConfirmadaGestor_ evita montar snapshot que seria descartado por fórmulas/recorrências alteradas; confirmação financeira preservada. limparFormularioNovoGasto limpa também atualizarSugestaoTagsFrequentes. scripts/sincronizar-rachadinha.cjs acumula fontes/destinos antes de gravar, uma vez por arquivo, com tentativas limitadas em EBUSY/EPERM. Novo/Empréstimo compartilham alinhamento inferior dos cabeçalhos. Protocolo 19/cache v160.
+
+
 v159 — Backend/Code.gs: blocosFormatacaoPlanoGestor_ agrupa índices de linhas do plano; atualizarValidacaoStatusLancamentosGestor_ e formatarMoedasPlanoGestor_ aceitam índices opcionais e retornam linhas trabalhadas. aplicarPlanoGestor_ usa esse recorte em gravação e recuperação já aplicada; restauração/cabeçalho/plano antigo preservam faixa completa. Contadores linhasFormatadas/linhasValidacaoStatus exportados pelo envelope e diagnóstico frontend.
 
 shared/anual.js: folhaLeituraAnualGestor_.getDisplayValues usa formatarDataLeituraGestor_. Planilha virtual em Backend/Code.gs faz o mesmo no fallback de Date. Cache continua limitado à requisição, sem mudança de dados/hashes. Título de detalhamento de terceiros usa 🗒️. Módulos 2/3/4/5/6/10; protocolo 19, interface/cache v159.

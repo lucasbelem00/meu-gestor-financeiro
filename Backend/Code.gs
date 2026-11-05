@@ -1552,7 +1552,6 @@ function getDadosCompletos() {
     if (pagtoSheet && pagtoSheet.getLastRow() >= 7) {
       const uL = pagtoSheet.getLastRow();
       const rawP = pagtoSheet.getRange(7, 2, uL - 6, 8).getValues();
-      const dispP = pagtoSheet.getRange(7, 2, uL - 6, 8).getDisplayValues();
       rawP.forEach((r, idx) => {
         if (r[0] && String(r[0]).trim() !== '') {
           let n = String(r[0]).trim();
@@ -1810,7 +1809,7 @@ function getDadosCompletos() {
       ultimosLancamentos = ultimosBrutos.map(item => {
         let r = item.raw, d = item.disp;
         if (!String(d[1] || '').trim()) return null;
-        let dt = r[0] instanceof Date ? Utilities.formatDate(r[0], getTimezone(), 'dd/MM/yyyy') : String(d[0]).replace(/^'/, '');
+        let dt = r[0] instanceof Date ? formatarDataLeituraGestor_(r[0],'dd/MM/yyyy') : String(d[0]).replace(/^'/, '');
         let val = formatBRL(extractNum(r[7]));
         let resParc = resumoParcelasCompra[item.chaveCompraUnica] || null;
         const itemHistorico=[dt, d[1], d[2], d[3], d[4], d[5], String(d[6]).replace(/^'/, ''), val, String(d[8]).replace(/^'/, ''), d[9], item.idx + 2, d[10], resParc, r[11], r[12], Number(r[13] || 1), r[14]];return completarLinhaConsultaGestor_(itemHistorico,r,'historico',false);
@@ -1836,13 +1835,14 @@ function getDadosCompletos() {
     let terceirosCartaoPorFormaMes = Object.create(null);
     let empKpiAReceberMes = 0, empKpiRecebidoMes = 0, empKpiTotalAReceberGeral = 0, empKpiLimiteOcupado = 0;
     let empKpiAtrasados = 0;
-    let freqPessoasEmp = Object.create(null);
+    let freqPessoasEmp = Object.create(null),registrosEmprestimosAlerta=[];
 
     if (empSheet && empSheet.getLastRow() > 1) {
       const uLEmp = empSheet.getLastRow();
       const rawEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getValues();
       const dispEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getDisplayValues();
 
+      registrosEmprestimosAlerta=rawEmp;
       rawEmp.forEach((r, idx) => {
         const d = valoresExibidosRegistroGestor_(r, dispEmp[idx]);
         const pessoa = String(d[1] || '').trim();
@@ -2053,7 +2053,7 @@ function getDadosCompletos() {
     });
 
     const itensAvisoFatura = lancamentosValidos.slice();
-    if (empSheet && empSheet.getLastRow() > 1) empSheet.getRange(2, 1, empSheet.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r) {
+    registrosEmprestimosAlerta.forEach(function (r) {
       if (!r[11] || isStatusCancelado(r[9])) return;
       const raw = r.slice(); raw[2] = r[3]; raw[8]=formatarCelulaRegistroGestor_(r[8],'MM/yyyy'); raw[9] = r[14] === 'Pago' ? 'Pago' : 'Em Aberto';
       itensAvisoFatura.push({ raw: raw, disp: raw.map(function (v) { return String(v == null ? '' : v); }) });
@@ -4418,6 +4418,8 @@ function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
     // somente no contexto virtual; se houver mudança, usar a consulta normal
     // com seu próprio plano recuperável, sem devolver um retrato incompleto.
     medir('atualizacaoRecorrenciasMs',function(){if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞'))processarAssinaturasAutomaticas(ctx.ss.getSheetByName('Lançamentos'));});
+    if(entradasCalculadasResumoGestor_(ctx))return null;
+    if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞')&&hashEstadoGestor_(ctx.ss.abas['Lançamentos'].valores)!==estados.get('Lançamentos'))return null;
     const dados=medir('atualizacaoDadosMs',()=>getDadosCompletos());
     const inicioConferencia=Date.now();try{
     if(!dados||dados.erro||dados.error||dados.protocoloGestor!==19)return null;
