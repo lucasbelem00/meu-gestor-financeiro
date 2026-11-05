@@ -59,7 +59,7 @@ function exibirRascunhoJaEnviadoGestor(tipo,estado){
 function dataPadraoRascunhoGestor(){const d=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();}
 const padroesDatasRascunhoGestor={novo:dataPadraoRascunhoGestor(),emp:dataPadraoRascunhoGestor()};
 function dadosFormularioRascunhoGestor(emp){
-  const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','chkPixParcelado'];
+  const ids=emp?['inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpData','inpEmpMesFat','inpEmpPessoa','inpEmpDesc','selEmpForma','inpEmpValor','inpEmpParc','inpEmpParcIni','inpEmpObs','inpEmpCombinada','checkRecorrenciaEmpGestor','modoRecorrenciaEmpGestor','chkPixRecebimento']:['inpDataDia','inpDataMes','inpDataAno','inpData','inpMesFat','inpDesc','selForma','selCat','inpValor','inpParc','inpParcIni','inpTags','perfil-novo-tipo','perfil-novo-prioridade','checkAssinatura','modoRecorrenciaNovoGestor','chkPixParcelado'];
   return {...(!emp&&typeof capturarEstadoMetadeGestor==='function'?{metade:capturarEstadoMetadeGestor()}:{}),campos:Object.fromEntries(ids.map(id=>{const e=document.getElementById(id);return [id,e?.type==='checkbox'?Boolean(e.checked):e?.value||''];})),camposManuais:ids.filter(id=>document.getElementById(id)?.dataset?.escolhaManual==='true'),dataAutomatica:padroesDatasRascunhoGestor[emp?'emp':'novo']};
 }
 function datasEscolhidasRascunhoGestor(tipo,dados){
@@ -116,7 +116,7 @@ function rascunhoFormularioVazioRotinaGestor(tipo,dados){
   if([dados?.desc,dados?.pessoa,dados?.forma,...textos.map(id=>c[id])].some(v=>String(v || '').trim()))return false;
   if(Number(String(dados?.valor || c[emp?'inpEmpValor':'inpValor'] || '').replace(/[^\d]/g,''))>0)return false;
   if(Number(c[emp?'inpEmpParc':'inpParc'] || dados?.parc || 1)!==1 || Number(c[emp?'inpEmpParcIni':'inpParcIni'] || 1)!==1)return false;
-  return ![c.checkAssinatura,c.chkPixParcelado,c.chkPixRecebimento].some(v=>v===true);
+  return ![c.checkAssinatura,c.checkRecorrenciaEmpGestor,c.chkPixParcelado,c.chkPixRecebimento].some(v=>v===true);
 }
 function rascunhoVazioRotinaGestor(tipo,dados){return tipo==='racha'?rascunhoRachaVazioRotinaGestor(dados):rascunhoFormularioVazioRotinaGestor(tipo,dados);}
 function guardarRascunhoRotinaGestor(tipo,dados,obrigatorio=false){

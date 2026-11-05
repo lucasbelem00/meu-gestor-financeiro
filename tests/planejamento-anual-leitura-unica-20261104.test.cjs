@@ -41,3 +41,22 @@ test('cabeçalho anual lê só a primeira linha e preserva normalização e aba 
  sh.getMaxColumns=()=>3;assert.equal(a.ctx.cabFinanceiroAnualGestor_(a.db,'Lançamentos')[3],'');
  assert(a.ctx.cabFinanceiroAnualGestor_(a.db,'Ausente').every(v=>v===''));
 });
+
+function abrirVirtual(a){
+ const ctx={action:'editarLancamentoLinhaWeb',param:{},ssReal:a.db,idsIniciais:new Set(),registrosIniciais:Object.create(null)};ctx.ss=a.ctx.criarPlanilhaVirtualGestor_(a.db,ctx);ctx.ss.getSheetByName('Lançamentos');return ctx;
+}
+test('planejamento aproveita uma vez a leitura inicial do ano aberto, e a próxima montagem relê',()=>{
+ const a=ambiente(),ler=a.ctx.dadosAnoGestor_;let leituras=0;a.ctx.dadosAnoGestor_=e=>{leituras++;return ler(e);};
+ const ctx=abrirVirtual(a);assert.equal(leituras,1);ctx.ss.getSheetByName('Lançamentos').getRange(2,2).setValue('Atualizado');
+ const plano=a.ctx.desdobrarPlanoAnualGestor_(ctx,[{nome:'Lançamentos'}]);assert.equal(leituras,1);assert.equal(ctx.leituraFinanceiraInicial,undefined);assert(plano.some(m=>m.destinoAnual));
+ a.ctx.desdobrarPlanoAnualGestor_(ctx,[{nome:'Lançamentos'}]);assert.equal(leituras,2);
+});
+test('mudança externa no ano aberto depois da leitura inicial é recusada na aplicação, sem sobrescrever',()=>{
+ const a=ambiente(),ctx=abrirVirtual(a);ctx.ss.getSheetByName('Lançamentos').getRange(2,2).setValue('Atualizado');a.banco.sheets['Lançamentos'].rows[1][7]=999;
+ const plano=a.ctx.desdobrarPlanoAnualGestor_(ctx,[{nome:'Lançamentos'}]);assert.throws(()=>a.ctx.aplicarPlanoGestor_(a.db,{mudancas:plano}));assert.equal(a.banco.sheets['Lançamentos'].rows[1][7],999);
+});
+test('ano fechado é reconferido mesmo existindo fotografia inicial da mesma operação',()=>{
+ const a=ambiente(),dados=a.ctx.dadosAnoGestor_(a.e),r=a.db.sheets['_Gestor_Anos'].rows.find(r=>r[0]===2026);r[2]='FECHADO';r[3]=a.ctx.hashGestor_(dados);
+ const ctx=abrirVirtual(a);assert(ctx.leituraFinanceiraInicial);a.banco.sheets['Lançamentos'].rows[1][7]=999;
+ assert.throws(()=>a.ctx.desdobrarPlanoAnualGestor_(ctx,[{nome:'Lançamentos'}]),/ano fechado.*alterado/);
+});

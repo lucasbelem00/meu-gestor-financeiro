@@ -157,11 +157,36 @@ function limparPrecosGestor(confirmado=false,assinatura=null){
  lista.replaceChildren();document.getElementById('precos-resultado').replaceChildren();adicionarPrecoGestor();adicionarPrecoGestor();lista.querySelector('[data-preco="nome"]')?.focus();
 }
 function atualizarRemocaoPrecosGestor(){const lista=document.getElementById('precos-opcoes');for(const b of lista.querySelectorAll('[data-remover-preco]'))b.disabled=lista.children.length<=2;const adicionar=document.getElementById('btnAdicionarOpcaoPrecoGestor');if(adicionar){adicionar.disabled=lista.children.length>=12;adicionar.textContent=adicionar.disabled?'Limite de 12 opções':'+ Adicionar opção';}}
+function assinaturaComparadorPrecosGestor(){return JSON.stringify(Array.from(document.getElementById('precos-opcoes').querySelectorAll('[data-preco]')).map(e=>[e.dataset.preco,e.value]));}
+function conferirResultadoPrecosAtualGestor(assinatura){
+ if(assinatura===assinaturaComparadorPrecosGestor())return true;
+ mostrarAviso('Compare novamente','Os produtos ou valores mudaram. Gere o resultado atualizado antes de usar a opção.');return false;
+}
+function copiarMelhorPrecoGestor(opcao,assinatura,empate=false){
+ if(!conferirResultadoPrecosAtualGestor(assinatura))return;
+ const unidade={g:'g',kg:'kg',ml:'mL',l:'L',un:'unidade'}[opcao.unidade];
+ const mensagem=['⚖️ Comparação de preços',empate?'Empate no melhor preço por quantidade':'Melhor preço por quantidade',opcao.nome.trim()||'Opção '+opcao.ordem,'','Preço do conjunto: '+formatBRL(ConferenciaLocalGestor.moeda(opcao.preco)/100),'Conteúdo: '+opcao.pacotes+' × '+opcao.quantidade+' '+unidade,'Preço por '+opcao.base+': '+formatBRL(opcao.taxa/100)].join('\n');
+ return copiarTextoAreaTransferencia(mensagem,'Resultado copiado.');
+}
+function preencherNovoComPrecoGestor(opcao,assinatura){
+ if(!conferirResultadoPrecosAtualGestor(assinatura))return;
+ if(bloqueioFormularioRotinaGestor(false)){mostrarAviso('Há um envio em andamento','Conclua a confirmação do lançamento antes de preencher outra compra.');return;}
+ const form=document.getElementById('formLancamento'),antes=assinaturaFormularioRotinaGestor(form);
+ const epoca=()=>{try{return localStorage.getItem('gestorEpocaRestauracaoV1')||'';}catch(_){return null;}},origem=epoca();
+ const aplicar=()=>{
+  if(!conferirResultadoPrecosAtualGestor(assinatura))return;
+  if(bloqueioFormularioRotinaGestor(false)||origem!==epoca()||assinaturaFormularioRotinaGestor(form)!==antes){mostrarAviso('Os dados mudaram','O formulário atual foi preservado. Confira e use o resultado novamente.');return;}
+  const valor=ConferenciaLocalGestor.moeda(opcao.preco)/100;
+  limparFormularioNovoGasto();document.getElementById('inpDesc').value=opcao.nome.trim()||'Produto comparado';definirValorMoeda('inpValor',valor);atualizarLayoutParcelas();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();
+  mostrarAviso('Compra preenchida','Foi usado o preço total do conjunto. Confira data, forma e categoria antes de salvar. Nenhum lançamento foi registrado.');
+ };
+ if(haRascunhoFormularioGestor(false))mostrarConfirmacao('Substituir o rascunho?','Já existem campos preenchidos no Novo. Substituir pela opção comparada? Os outros campos voltarão ao padrão para sua revisão.',aplicar,false,'Preencher Novo','neutral');else aplicar();
+}
 function calcularPrecosGestor(){
  const saida=document.getElementById('precos-resultado');saida.replaceChildren();
  try{
   const op=[...document.getElementById('precos-opcoes').children].map((c,i)=>Object.fromEntries([...c.querySelectorAll('[data-preco]')].map(e=>[e.dataset.preco,e.value]).concat([['ordem',i+1]])));
-  const itens=ConferenciaLocalGestor.compararPrecos(op),melhor=itens[0].taxa,empatados=itens.filter(o=>Math.abs(o.taxa-melhor)<1e-7).length;let abriuOutras=false;
+  const itens=ConferenciaLocalGestor.compararPrecos(op),melhor=itens[0].taxa,empatados=itens.filter(o=>Math.abs(o.taxa-melhor)<1e-7).length,assinatura=assinaturaComparadorPrecosGestor();let abriuOutras=false;
   saida.append(elConferenciaGestor('h3','Melhor preço por quantidade','text-lg font-bold text-sky-300'));
   for(const o of itens){
    const empate=Math.abs(o.taxa-melhor)<1e-7;
@@ -171,6 +196,9 @@ function calcularPrecosGestor(){
    const unidade={g:'g',kg:'kg',ml:'mL',l:'L',un:'unidade'}[o.unidade];
    card.append(elConferenciaGestor('p','Conjunto: '+formatBRL(ConferenciaLocalGestor.moeda(o.preco)/100)+' • '+o.pacotes+(Number(o.pacotes)===1?' embalagem de ':' embalagens de ')+o.quantidade+' '+unidade,'text-sm text-slate-300'));
    if(empate&&empatados>1)card.append(elConferenciaGestor('p','Empate no menor preço por quantidade.','text-sm text-sky-200'));
+   if(empate){const acoes=elConferenciaGestor('div','','grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2');
+    for(const [texto,acao]of [['📋 Copiar resultado',()=>copiarMelhorPrecoGestor(o,assinatura,empatados>1)],['➕ Preencher Novo',()=>preencherNovoComPrecoGestor(o,assinatura)]]){const b=elConferenciaGestor('button',texto,'rounded-xl border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-200 text-sm font-bold px-3 py-2.5 text-center');b.type='button';b.onclick=acao;acoes.append(b);}card.append(acoes);
+   }
    if(!empate){const diferenca=o.taxa-melhor,percentual=((o.taxa/melhor-1)*100).toLocaleString('pt-BR',{maximumFractionDigits:1});card.append(elConferenciaGestor('p',(diferenca<1?'Menos de R$ 0,01':formatBRL(diferenca/100))+' a mais por '+o.base,'text-sm text-amber-300'),elConferenciaGestor('p',percentual+'% acima da melhor opção.','text-sm text-slate-300'));}
    saida.append(card);
   }

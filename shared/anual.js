@@ -141,6 +141,7 @@ function recuperarTextosTransferenciaAnualGestor_(ss,plano){
   }
 }
 function desdobrarPlanoAnualGestor_(ctx,mudancas){
+  const inicial=ctx.leituraFinanceiraInicial;delete ctx.leituraFinanceiraInicial;
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
   if(ctx.action==='previaRestauracaoBackupWeb'&&ctx.anosIndisponiveis?.size)return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome));
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
@@ -149,7 +150,15 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Fotografia exclusiva desta construção de plano. As duas origens usam o
   // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova
   // chamada e a aplicação do plano conferem os destinos reais novamente.
-  const anosConferidos=new Map(),lerAno=e=>{
+  const anosConferidos=new Map();
+  // Somente anos ABERTOS já lidos nesta operação. O hash anterior continua
+  // sendo o da fotografia original; aplicarPlano relê e recusa edição externa.
+  // Fechados são reconferidos aqui, sem reaproveitar sua leitura inicial.
+  if(inicial?.ss===ss&&inicial.anos instanceof Map)for(const e of catalogo.filter(e=>e.estado==='ABERTO')){
+    const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
+    if(inicial.anos.has(chave))anosConferidos.set(chave,copiarGestor_(inicial.anos.get(chave)));
+  }
+  const lerAno=e=>{
     const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
     if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
     return copiarGestor_(anosConferidos.get(chave));

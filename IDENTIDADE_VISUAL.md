@@ -1,5 +1,14 @@
 # Identidade visual do webapp
 
+v154 — cadastro de recorrência: manter 📌 Recorrente em violeta; ao ativar, revelar menu único Variável — revisar a cada mês / Fixo — repetir automaticamente e prévia curta em violeta, com dia e próxima data. Não repetir campos de início/dia existentes na data do gasto. Novo mantém tags; terceiros mantém Pessoa e observação, sem categoria pessoal. Atalhos ➕ Gasto pessoal e 🤝 De terceiros ficam próximos na aba Recorrências, com botões neutros; identificação dos terceiros na listagem continua âmbar. Envio atual é lançamento à vista; modelo controla repetições futuras.
+
+
+Ajuste v153 — Novo usa 🟢 Fatura aberta na data do gasto e 🚀 Fatura fechada na data do gasto, seguidos pela fatura sugerida; emojis indicam o enquadramento daquela compra, não situação atual de período antigo. Comparador: ações 📋 Copiar resultado e ➕ Preencher Novo em grade de uma coluna no celular e duas em sm, dentro de cada card vencedor, com fundo/borda discretos em azul. Em empate, cada opção vencedora tem seus próprios botões. Não transformar Preencher em salvamento automático; informar que o preço transferido é o total do conjunto.
+
+
+Recorrências v152 — 04/11/2026: seção Criar recorrência deve seguir o componente expansível dos conversores do editor, dentro do formulário antes de Cancelar/Salvar. Usar o violeta de Recorrência ativa: bg-violet-500/20, text-violet-300 e border-violet-400/40, com hover discreto. Conteúdo recolhido oferece explicação e Configurar recorrência. Manter chevron lateral e rótulo central, aria-expanded/aria-controls; não repetir botão após rodapé. Pessoal e terceiros usam esse mesmo padrão para a ação; a identificação de origem Terceiros na listagem continua âmbar.
+
+
 Ajustes v151 — 04/11/2026: atalho Usar tags anteriores imediatamente após o campo Tags e antes dos chips, como ação secundária compacta. Empréstimo segue Novo: Valor/Parcelas/Início numa linha com mais largura para Valor, Início estreito, botão À vista h-6 abaixo; observação ocupa outra linha. Parcela 1 mantém dado numérico e mostra À vista fora do foco. Conferir fatura usa btn-periodo-gestor com chevrons SVG centralizados; cartão e competência empilhados no celular. Criar recorrência sai dos cards e entra em Editar; fundo neutro, origem de terceiros em âmbar. Formulário usa apenas Recorrência no texto público, exibe Pessoa ou Categoria conforme origem e recolhe ajuste da fatura. Controles indisponíveis durante envio mantêm estado visual disabled; mensagens de confirmação continuam distinguindo envio de atualização de tela.
 
 

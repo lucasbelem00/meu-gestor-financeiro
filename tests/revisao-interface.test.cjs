@@ -63,3 +63,11 @@ test('timeout informado pelo proxy também não dispara uma segunda espera',asyn
  carregarCatalogo(ctx);vm.runInContext(trecho("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),ctx);
  await assert.rejects(ctx.apiCall('obterRelatorioMes','10/2026'),/504/);assert.equal(chamadas,1);
 });
+
+test('recorrência integrada recusa servidor anterior em gasto, empréstimo e fila; protocolo novo permite',()=>{
+ const ctx=vm.createContext({protocoloServidorGestor:18,detalhesReferenciaGestor:()=>null});vm.runInContext(trecho('    function prepararMutacaoGestor(','    async function comTravaAbasGestor('),ctx);
+ for(const acao of ['salvarLancamentoWeb','salvarEmprestimoWeb'])assert.throws(()=>ctx.prepararMutacaoGestor(acao,{recorrenciaModo:'revisao'}),/Atualize o Apps Script/);
+ assert.throws(()=>ctx.prepararMutacaoGestor('sincronizarLoteWeb',[{recorrenciaModo:'revisao'}]),/Atualize o Apps Script/);
+ ctx.protocoloServidorGestor=19;assert.equal(ctx.prepararMutacaoGestor('salvarLancamentoWeb',{recorrenciaModo:'revisao'}).recorrenciaModo,'revisao');
+ const fila=[{recorrenciaModo:'automatico'}];assert.equal(ctx.prepararMutacaoGestor('sincronizarLoteWeb',fila),fila);
+});

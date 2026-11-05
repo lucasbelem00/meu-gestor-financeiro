@@ -158,6 +158,22 @@ function validarPeriodoParcelasGestor_(valor,quantidade=1,inicial=1){
   if(!anoCompetenciaValidoGestor_(ultimoAno))throw Error('As parcelas ultrapassam o ano máximo permitido ('+ANO_MAX_COMPETENCIA_GESTOR_+'). Confira o mês da primeira fatura e as parcelas.');
   return texto;
 }
+
+// Mesmo cálculo no formulário e no servidor; não gera cobranças retroativas.
+function planoRecorrenciaCadastroGestor(data,competencia,hoje){
+ const v=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(data||'')),f=interpretarCompetenciaGestor(competencia);
+ if(!v||!f.m)throw Error('Confira a data e o mês da fatura.');
+ const dia=Number(v[1]),mes=Number(v[2]),ano=Number(v[3]),d=new Date(ano,mes-1,dia);
+ if(d.getDate()!==dia||d.getMonth()!==mes-1||d.getFullYear()!==ano)throw Error('Data do gasto inválida.');
+ const defasagem=(f.a-ano)*12+f.m-mes;
+ if(defasagem<0||defasagem>2)throw Error('Para recorrência, a fatura deve ficar no mesmo mês da cobrança ou até dois meses depois.');
+ const atual=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());let proximo=new Date(ano,mes,1),omitidos=0;
+ const ocorrencia=()=>new Date(proximo.getFullYear(),proximo.getMonth(),Math.min(dia,new Date(proximo.getFullYear(),proximo.getMonth()+1,0).getDate()));
+ while(ocorrencia()<atual){proximo.setMonth(proximo.getMonth()+1);omitidos++;}
+ if(proximo.getFullYear()>2199||proximo.getFullYear()<2000)throw Error('Ano da próxima recorrência fora do limite.');
+ const fmt=d=>String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
+ return {dia,defasagem,proximoMes:String(proximo.getMonth()+1).padStart(2,'0')+'/'+proximo.getFullYear(),dataProxima:fmt(ocorrencia()),omitidos};
+}
 // FIM COMPETENCIAS GERADAS
 
 function validarDataCalendarioWeb_(valor, rotulo) {
@@ -201,6 +217,7 @@ function validarLancamentoWeb_(dados, indice) {
   }
   if(centavosGestor_(valor)<parcelas)throw new Error(contexto+'Cada parcela deve ter pelo menos um centavo.');
   validarPeriodoParcelasGestor_(dados.mesPrimeiraFatura,parcelas,parcelaInicial);
+  validarRecorrenciaCadastroGestor_(dados);
 }
 
 function parseNumParcela(parcStr) {
@@ -1329,6 +1346,7 @@ function limparFormulario() {
 }
 
 function sincronizarLoteWebInterno_(loteOffline,parcelasInternasCentavos) {
+  if(loteOffline.some(d=>d.recorrenciaModo!==undefined)&&(!CONTEXTO_GESTOR_||CONTEXTO_GESTOR_.somenteLeitura))throw Error('Salve a recorrência pelo envio protegido do app.');
   const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
@@ -1416,6 +1434,7 @@ function sincronizarLoteWebInterno_(loteOffline,parcelasInternasCentavos) {
       lancSheet.getRange(prox, 8, novasLinhasGerais.length, 1).setNumberFormat('R$#,##0.00;$(R$#,##0.00);"-"');
       organizarEAtualizarPlanilha(lancSheet, pagtoSheet);
     }
+    loteOffline.forEach(d=>criarRecorrenciaCadastroGestor_(d,'pessoal'));
     return { sucesso: true, qtd: loteOffline.length };
   } catch (e) {
     throw new Error('Falha ao sincronizar lote: ' + e.message);
@@ -2157,7 +2176,7 @@ function getDadosCompletos() {
     const listaNotas = estadoNotas.anotacoes;
 
     return {
-      protocoloGestor:18,
+      protocoloGestor:19,
       resumoPlanilha:situacaoResumoPlanilhaGestor_(),
       arquivosAnuais:arquivosAnuais.map(function(e){return {ano:e.ano,assinatura:e.hash,quantidade:e.resumo.quantidade,meses:e.resumo.meses};}),
       historicoTecnico: estatisticasHistoricoTecnicoGestor_(),
@@ -2789,6 +2808,8 @@ function formaEmprestimoConsomeLimite_(forma) {
 // ============================================================================
 
 function salvarEmprestimoWebInterno_(dados,parcelasInternasCentavos) {
+  if(dados.recorrenciaModo!==undefined&&(!CONTEXTO_GESTOR_||CONTEXTO_GESTOR_.somenteLeitura))throw Error('Salve a recorrência pelo envio protegido do app.');
+  validarRecorrenciaCadastroGestor_(dados);
   const lock = obterLockGestor_();
   try {
     lock.waitLock(15000);
@@ -2853,6 +2874,7 @@ function salvarEmprestimoWebInterno_(dados,parcelasInternasCentavos) {
     empSheet.getRange(prox, 5, linhas.length, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
     empSheet.getRange(prox, 8, linhas.length, 1).setNumberFormat(FORMATO_MOEDA_PLANILHA);
     organizarAbaEmprestimos(empSheet);
+    criarRecorrenciaCadastroGestor_(dados,'terceiros');
     return { sucesso: true, qtd: linhas.length };
   } catch (e) {
     throw new Error(e.message);
@@ -3814,7 +3836,10 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
     if (abas[nome]) return abas[nome];
     // As duas abas financeiras pertencem à mesma fotografia inicial sob lock.
     // A aplicação do plano continua conferindo os destinos reais novamente.
-    if(ehAbaRegistrosGestor_(nome)&&!leituraFinanceira&&ativoAnualGestor_(ss))leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()};
+    if(ehAbaRegistrosGestor_(nome)&&!leituraFinanceira&&ativoAnualGestor_(ss)){
+      leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()};
+      contexto.leituraFinanceiraInicial=leituraFinanceira;
+    }
     const real = folhaLeituraAnualGestor_(ss,nome,leituraFinanceira);
     if (!real && !criar) return null;
     const rangeReal = real && real.getLastRow() ? real.getDataRange() : null;
@@ -4408,7 +4433,7 @@ function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
     medir('atualizacaoRecorrenciasMs',function(){if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞'))processarAssinaturasAutomaticas(ctx.ss.getSheetByName('Lançamentos'));});
     const dados=medir('atualizacaoDadosMs',()=>getDadosCompletos());
     const inicioConferencia=Date.now();try{
-    if(!dados||dados.erro||dados.error||dados.protocoloGestor!==18)return null;
+    if(!dados||dados.erro||dados.error||dados.protocoloGestor!==19)return null;
     // Fórmulas particulares em entradas podem ter recalculado depois da
     // escrita real. Não promover valores calculados da fotografia anterior.
     if(entradasCalculadasResumoGestor_(ctx))return null;
@@ -4869,7 +4894,8 @@ function registrarAtividadeGestor_(ctx) {
   const resumo = registro ? resumirRegistroAtividade_(registro, amostra.aba) : null;
   const evento = { id: id, acao: ctx.action, titulo: rotulo, data: new Date().toISOString(), resumo: resumo, quantidade: alteracoes.length,
     reverte: ctx.action === 'desfazerAtividadeWeb' ? String(ctx.param.eventoId) : '',
-    reversivel: ACOES_DESFAZER_GESTOR_.indexOf(ctx.action) >= 0 && alteracoes.length > 0, alteracoes: alteracoes };
+    recorrenciaIntegrada: ctx.param.recorrenciaModo !== undefined,
+    reversivel: ctx.param.recorrenciaModo === undefined && ACOES_DESFAZER_GESTOR_.indexOf(ctx.action) >= 0 && alteracoes.length > 0, alteracoes: alteracoes };
   const texto = JSON.stringify(serializarGestor_(evento)), partes = texto.match(/[\s\S]{1,12000}/g) || [''];
   const valores = [[id, evento.data, ctx.action, rotulo, 'EVENTO', partes.length]].concat(partes.map(function (p, i) { return [id, '', '', '', 'PARTE ' + (i + 1), JSON.stringify(p)]; }));
   if (sh) {
@@ -4930,6 +4956,7 @@ function mapaRegistrosAtividadeGestor_() {
 }
 
 function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
+  if (evento.recorrenciaIntegrada) return 'Gasto e recorrência foram criados juntos. Gerencie a repetição em Recorrências e o gasto no Histórico, separadamente.';
   if (!evento.reversivel) return 'Esta ação não oferece desfazer.';
   if (revertidos.has(evento.id)) return 'Esta ação já foi desfeita.';
   for (const a of evento.alteracoes) {
@@ -5254,7 +5281,7 @@ function previaRestauracaoBackupWeb(param) {
     if(anuais.preservadas.length&&anuais.legiveis.length)avisos.push('Os registros anuais de '+anuais.preservadas.join(', ')+' também serão preservados.');
     if(anuais.necessaria)avisos.push('Recuperação de arquivos ou catálogo anual: a cópia anterior guardará o conteúdo legível, a matriz original do catálogo e o diagnóstico. O JSON selecionado reconstruirá os anos conferidos.');
     if(backup.recuperacaoOrigem)avisos.push('Esta cópia anterior foi gerada durante uma recuperação: pode não conter todos os anos originais. Consulte o diagnóstico preservado no arquivo antes de prosseguir.');
-    return { protocoloGestor:18, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
+    return { protocoloGestor:19, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
       const sh=ss.getSheetByName(aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
       return {nome:aba.nome,atual:resumirAbaRestauracaoGestor_(aba.nome,atual),backup:resumirAbaRestauracaoGestor_(aba.nome,aba.valores),diferencas:diferencasAbaRestauracaoGestor_(aba.nome,atual,aba.valores)};
     }) };
@@ -6145,7 +6172,7 @@ function configurarProtecaoAutomaticaGestor(pastaUrl){
 function obterStatusProtecaoWeb(){
   const c=configProtecaoGestor_(),ss=realProtecaoGestor_();
   const instalada=c.ativo===true&&c.planilhaId===propriedade_(CHAVE_ID_PLANILHA_GESTOR)&&ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='rotinaProtecaoProgramadaGestor';});
-  return {resumoPlanilha:situacaoResumoPlanilhaGestor_(true),protocoloGestor:18,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoApresentacaoAnual:c.avisoApresentacaoAnual||'',avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
+  return {resumoPlanilha:situacaoResumoPlanilhaGestor_(true),protocoloGestor:19,ativacaoAnual:statusAtivacaoAnualGestor_(),avisoApresentacaoAnual:c.avisoApresentacaoAnual||'',avisoBackupAssistido:c.avisoBackupAssistido||'',ultimaCopiaPreservada:c.ultimaCopiaPreservada||null,planilha:ss.getName(),organizacaoAnual:ativoAnualGestor_(ss),relatoriosPDF:c.relatoriosPDF||null,anos:catalogoAnosGestor_(ss).map(e=>({ano:e.ano,estado:e.estado,url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'})),pdfAutomatico:c.pdfAutomatico===true,erroRelatorios:c.erroRelatorios||'',ativo:c.ativo===true,rotinaInstalada:instalada,pastaId:c.pastaId||'',pastaUrl:c.pastaId?'https://drive.google.com/drive/folders/'+c.pastaId:'',ultimoBackup:c.ultimoBackup||null,ultimaManutencao:c.ultimaManutencao||null,ultimoErro:c.ultimoErro||'',arquivos:catalogoAnualProtecaoGestor_(ss).map(function(e){return {ano:e.ano,id:e.id,quantidade:e.resumo.quantidade,pessoal:formatBRL(e.resumo.pessoalCentavos/100),url:'https://docs.google.com/spreadsheets/d/'+e.id+'/edit'};})};
 }
 function executarBackupProtegidoWeb(param){return comLockProtecaoGestor_(function(ss){const c=configProtecaoGestor_();if(!c.ativo)throw Error('Ative a proteção no Apps Script antes de gerar cópias no Drive.');return backupMensalProtecaoGestor_(ss,pastaProtecaoGestor_(),param&&param.requestId);});}
 function previaManutencaoProtegidaWeb(){return comLockProtecaoGestor_(function(ss){conferirSemPendenciasProtecaoGestor_(ss);if(ativoAnualGestor_(ss))return {assinatura:assinaturaManutencaoAnualGestor_(ss),quantidade:0,anos:catalogoAnosGestor_(ss).filter(e=>e.estado==='ABERTO'&&e.ano<getHojeSeguro().getFullYear()).map(e=>e.ano),regra:'Organização por competência: prepara o ano atual, confere os destinos e fecha anos passados. Saldos antigos continuam vinculados por ajustes sem alterar o retrato fechado.'};const plano=planejarArquivoAnualProtecaoGestor_(ss,getHojeSeguro().getFullYear()-1);return {assinatura:hashGestor_(['Lançamentos','Empréstimos',ABA_DIARIO_GESTOR_,ABA_ATIVIDADE_GESTOR_,ABA_ARQUIVOS_ANUAIS_GESTOR_].map(function(n){return [n,lerEstadoAbaGestor_(ss.getSheetByName(n))];})),quantidade:plano.selecionados.size,anos:plano.anos.map(function(a){return a.ano;}),regra:'Somente compras integralmente encerradas de anos anteriores. Fixos, pendências e compras com parcelas futuras permanecem na principal. Histórico técnico confirmado há mais de 180 dias pode ser compactado; nenhum comprovante de identificação é apagado.'};});}
@@ -6430,6 +6457,7 @@ function recuperarTextosTransferenciaAnualGestor_(ss,plano){
   }
 }
 function desdobrarPlanoAnualGestor_(ctx,mudancas){
+  const inicial=ctx.leituraFinanceiraInicial;delete ctx.leituraFinanceiraInicial;
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
   if(ctx.action==='previaRestauracaoBackupWeb'&&ctx.anosIndisponiveis?.size)return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome));
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
@@ -6438,7 +6466,15 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Fotografia exclusiva desta construção de plano. As duas origens usam o
   // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova
   // chamada e a aplicação do plano conferem os destinos reais novamente.
-  const anosConferidos=new Map(),lerAno=e=>{
+  const anosConferidos=new Map();
+  // Somente anos ABERTOS já lidos nesta operação. O hash anterior continua
+  // sendo o da fotografia original; aplicarPlano relê e recusa edição externa.
+  // Fechados são reconferidos aqui, sem reaproveitar sua leitura inicial.
+  if(inicial?.ss===ss&&inicial.anos instanceof Map)for(const e of catalogo.filter(e=>e.estado==='ABERTO')){
+    const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
+    if(inicial.anos.has(chave))anosConferidos.set(chave,copiarGestor_(inicial.anos.get(chave)));
+  }
+  const lerAno=e=>{
     const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
     if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
     return copiarGestor_(anosConferidos.get(chave));
@@ -7291,6 +7327,19 @@ function rotinaModelosRecorrenciaGestor(){
   const c=configProtecaoGestor_();if(!c.ativo||c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))return {criados:0};
   if(!listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()).some(m=>m.ativo&&m.modo==='automatico'&&dataModeloRecorrenciaGestor_(m).getTime()<=getHojeSeguro().getTime()))return {criados:0};
   return executarOperacaoGestor_('processarModelosRecorrenciaGestor',{requestId:gerarIdGestor_(),baseRestauracao:epocaRestauracaoGestor_()},()=>({criados:processarModelosAutomaticosGestor_()}),false);
+}
+
+function validarRecorrenciaCadastroGestor_(dados){
+ if(dados.recorrenciaModo===undefined)return;
+ if(!['revisao','automatico'].includes(dados.recorrenciaModo)||dados.isAssinatura||Number(dados.numParcelas)!==1||Number(dados.parcelaInicial||1)!==1||dados.pixParcelado)throw Error('Recorrência deve ser um lançamento à vista, sem parcelamento.');
+ planoRecorrenciaCadastroGestor(dados.dataCompra,dados.mesPrimeiraFatura,getHojeSeguro());
+}
+function criarRecorrenciaCadastroGestor_(dados,origem){
+ if(dados.recorrenciaModo===undefined)return;
+ validarRecorrenciaCadastroGestor_(dados);
+ if(!CONTEXTO_GESTOR_||CONTEXTO_GESTOR_.somenteLeitura)throw Error('Salve a recorrência pelo envio protegido do app.');
+ const plano=planoRecorrenciaCadastroGestor(dados.dataCompra,dados.mesPrimeiraFatura,getHojeSeguro());
+ return salvarRecorrenciaWeb({origem,modo:dados.recorrenciaModo,descricao:dados.descricao,forma:dados.formaPagto,categoria:dados.categoria,pessoa:dados.pessoa,valor:dados.valorTotal,tags:dados.tags,perfilGasto:dados.perfilGasto,...plano});
 }
 // FIM MODULO RECORRENCIAS GERADO
 

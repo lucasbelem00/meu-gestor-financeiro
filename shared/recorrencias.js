@@ -90,3 +90,16 @@ function rotinaModelosRecorrenciaGestor(){
   if(!listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()).some(m=>m.ativo&&m.modo==='automatico'&&dataModeloRecorrenciaGestor_(m).getTime()<=getHojeSeguro().getTime()))return {criados:0};
   return executarOperacaoGestor_('processarModelosRecorrenciaGestor',{requestId:gerarIdGestor_(),baseRestauracao:epocaRestauracaoGestor_()},()=>({criados:processarModelosAutomaticosGestor_()}),false);
 }
+
+function validarRecorrenciaCadastroGestor_(dados){
+ if(dados.recorrenciaModo===undefined)return;
+ if(!['revisao','automatico'].includes(dados.recorrenciaModo)||dados.isAssinatura||Number(dados.numParcelas)!==1||Number(dados.parcelaInicial||1)!==1||dados.pixParcelado)throw Error('Recorrência deve ser um lançamento à vista, sem parcelamento.');
+ planoRecorrenciaCadastroGestor(dados.dataCompra,dados.mesPrimeiraFatura,getHojeSeguro());
+}
+function criarRecorrenciaCadastroGestor_(dados,origem){
+ if(dados.recorrenciaModo===undefined)return;
+ validarRecorrenciaCadastroGestor_(dados);
+ if(!CONTEXTO_GESTOR_||CONTEXTO_GESTOR_.somenteLeitura)throw Error('Salve a recorrência pelo envio protegido do app.');
+ const plano=planoRecorrenciaCadastroGestor(dados.dataCompra,dados.mesPrimeiraFatura,getHojeSeguro());
+ return salvarRecorrenciaWeb({origem,modo:dados.recorrenciaModo,descricao:dados.descricao,forma:dados.formaPagto,categoria:dados.categoria,pessoa:dados.pessoa,valor:dados.valorTotal,tags:dados.tags,perfilGasto:dados.perfilGasto,...plano});
+}
