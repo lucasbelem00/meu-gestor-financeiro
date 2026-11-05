@@ -1,5 +1,9 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Complemento visual v160: mês da fatura centralizado entre as setas no modal Conferir fatura; seletor de cartão mantém alinhamento à esquerda e largura disponível. Sem alteração nas consultas, datas ou pagamentos.
+
+Ajuste adicional v160: cabeçalhos Data/Mês da Fatura dos dois cadastros usam a mesma fonte de 11px e espaçamento normal entre letras. Novo tinha 12px com tracking extra, causando quebra diferente. Data de Novo centralizada também no computador; removido sm:justify-start apenas do cadastro, sem alterar o editor ou o comportamento móvel. Quebra natural continua permitida em telas estreitas para evitar sobreposição às setas.
+
 Complemento v160: Forma de Pagamento em Novo Empréstimo segue Novo em altura, espaçamento interno, borda, foco azul e transição; opção inicial “Selecione...” também no preenchimento após consulta. Opções e regras financeiras preservadas.
 
 Validação local v160: 1.199 testes aprovados, zero falhas (testes-v160-final.log); CSS e três interfaces sincronizados. Após padronizar os rótulos, geração e conferência dos nomes/espelhos concluídas. Dist preparado localmente; publicação remota e avaliação visual nos aparelhos pendentes.
