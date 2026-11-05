@@ -5000,7 +5000,12 @@ function obterAtividadeWeb(param) {
     total=filtrados.length;pagina=filtrados.slice(offset,offset+limite);reversoes=eventos.filter(function(e){return e.reverte;});
   }else {
     const linhas=tipo ? (indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,tipo).filter(function(l){return cabecalhos.has(l);}).sort(function(a,b){return b-a;}) : []) : indice.linhas.slice().reverse();
-    total=linhas.length;pagina=lerEventosAtividadeGestor_(linhas.slice(offset,offset+limite),indice).reverse();reversoes=lerEventosAtividadeGestor_(linhasReversoes,indice);
+    total=linhas.length;
+    const linhasPagina=linhas.slice(offset,offset+limite),selecionadas=Array.from(new Set(linhasPagina.concat(linhasReversoes))).sort((a,b)=>a-b);
+    const eventos=selecionadas.length?lerEventosAtividadeGestor_(selecionadas,indice):[];
+    if(eventos.length!==selecionadas.length)throw Error('Histórico de atividade incompleto. Preserve os registros e consulte novamente.');
+    const porLinha=new Map(selecionadas.map((linha,i)=>[linha,eventos[i]]));
+    pagina=linhasPagina.map(linha=>porLinha.get(linha));reversoes=linhasReversoes.map(linha=>porLinha.get(linha));
   }
   const revertidos=new Set(reversoes.filter(function(e){return e.reverte;}).map(function(e){return e.reverte;}));
   return { total: total, temMais: offset + limite < total, itens: pagina.map(function (e) {

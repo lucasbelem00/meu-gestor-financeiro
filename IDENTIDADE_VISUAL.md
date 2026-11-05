@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v165 — Interação comum: mouse realça discretamente botão/summary com brilho sem substituir a cor semântica; pressionar dá retorno breve, sem escala/deslocamento. Hover só em hover:hover/pointer:fine, evitando realce preso no toque. Foco de teclado: contorno azul claro 2px afastado 3px. Disabled/aria-disabled não recebem hover/press; preferência de movimento reduzido remove transição. Atividade: seleção azul persistente e aria-pressed nos três painéis desde Pendentes inicial, sincronizados nas renderizações. Realce passageiro não muda seleção nem regras de pagamento.
+
+
 Complemento visual v160: mês da fatura centralizado entre as setas no modal Conferir fatura; seletor de cartão mantém alinhamento à esquerda e largura disponível. Sem alteração nas consultas, datas ou pagamentos.
 
 Ajuste adicional v160: cabeçalhos Data/Mês da Fatura dos dois cadastros usam a mesma fonte de 11px e espaçamento normal entre letras. Novo tinha 12px com tracking extra, causando quebra diferente. Data de Novo centralizada também no computador; removido sm:justify-start apenas do cadastro, sem alterar o editor ou o comportamento móvel. Quebra natural continua permitida em telas estreitas para evitar sobreposição às setas.

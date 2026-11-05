@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v165 — Publicar Apps Script/frontend. No computador, passar cursor em Pendentes/Histórico/Diagnóstico e demais ações neutras, coloridas, navegação e expansíveis; comparar hover com seleção azul persistente. Usar Tab/Enter/Espaço: foco visível e ação única. No celular, tocar não deve deixar hover preso nem deslocar botões; carregando/disabled continua bloqueado. Voltar a Atividade deve indicar o painel exibido. Histórico: validar ordem, pesquisa, Carregar mais, ações desfeitas e recusa de Desfazer após mudança externa. Medir obterAtividadeWeb sem pesquisa, especialmente página com reversões. Recorrências: entrar consulta servidor, selecionar a mesma tela não repete; sair/voltar e Atualizar consultam novamente. Mudança em outro aparelho deve aparecer na nova consulta. Não interpretar a otimização de reentrada como garantia da primeira abertura.
+
+
 Reteste v164 — Publicar backend e frontend. Cadastrar gasto fictício sem pagamento no cartão ou Pix à vista e excluir após a confirmação. A exclusão deve sumir do app imediatamente após confirmação financeira; resumo pode aparecer pendente até a rotina. Conferir diagnóstico: resumoMs deve ser zero na exclusão elegível em segundo plano, e depois resumo atualizado/pendente false. Medir tempo total; não exigir redução fixa de três segundos em toda execução. Cartão pago continua bloqueado; Pix à vista pago conserva exceção v163. Reenvio não duplica; após PRONTO interrompido, worker não materializa dados parciais e só conclui depois da recuperação. Fórmula personalizada incompatível ou falha de persistência da tarefa mantém resumo síncrono. Não alterar dados reais para testar bloqueios.
 
 

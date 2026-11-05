@@ -77,7 +77,7 @@ function restaurarEditorModeloRecorrenciaGestor(){
   if(salvo?.modelo?.epoca===epocaModeloRecorrenciaGestor()&&salvo.campos){abrirEditorRecorrenciaGestor(salvo.modelo);for(const [id,v]of Object.entries(salvo.campos)){const e=document.getElementById(id);if(e&&id.startsWith('modelo-rec-')&&typeof v==='string')e.value=v;}}
 }
 const abaAntesModelosRecorrenciaGestor=window.setAba;
-window.setAba=function(aba,...args){const r=abaAntesModelosRecorrenciaGestor(aba,...args);if(aba==='assinaturas')carregarModelosRecorrenciaGestor();return r;};
+window.setAba=function(aba,...args){const entrando=aba==='assinaturas'&&abaAtivaAtual!=='assinaturas';const r=abaAntesModelosRecorrenciaGestor(aba,...args);if(entrando)carregarModelosRecorrenciaGestor();return r;};
 
 function atualizarOrigemEditorRecorrenciaGestor(){
   const origem=document.getElementById('modelo-rec-origem')?.value;

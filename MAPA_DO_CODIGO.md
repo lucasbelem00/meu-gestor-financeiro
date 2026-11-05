@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v165 — Backend/Code.gs: obterAtividadeWeb combina página e reversões antes de lerEventosAtividadeGestor_; conserva mapa atual/Desfazer. index.html: atualizarSelecaoAtividadeGestor apenas sincroniza estado visual dos três painéis, separada da consulta; CSS gestor-interacao-controles atende botões/role=button/summary, sem observers adicionais. interface/recorrencias.js: wrapper setAba consulta apenas ao entrar, botão Atualizar preservado. Módulos 2/5/8/9; protocolo 19/cache v165.
+
+
 v164 — shared/relatorios.js: exclusão pessoal incluída na elegibilidade de solicitarResumoAssincronoGestor_. Usa a mesma intenção durável, impedimento por fórmulas e rotina de recuperação existente. Exclusão financeira/journal continuam confirmados antes da resposta; somente materialização do resumo é adiada. Nenhuma ampliação para desfazer/restauração/manutenção ou liberação de cartão pago. Interface/cache v164, protocolo 19. Módulos 2/3/5/6/10.
 
 
