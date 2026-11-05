@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v161 — Publicar backend/frontend, sem reativar proteção. Medir Novo com uma parcela recente e outro gasto de data anterior; comparar parcelasIncluidas, linhasReordenadas, celulasEscritas e tempos de leitura, plano, aplicação e atualização. Não esperar uma única linha física ao inserir no passado. Editar um lançamento; abrir Painel/Mensal/Anual e colher diagnóstico v161. Abrir abas durante envio não deve duplicar ou perder confirmação. Validar cancelamento, reenvio do mesmo pedido, payload divergente e recuperação de PRONTO em testes isolados. Novos tempos de leitura são subetapas, não parcelas adicionais do total. Acompanhar concorrência com resumo/proteção: não considerar resolvido SERVICO_OCUPADO apenas por build/teste local. Confirmar resumo atualizado após a rotina, sem perder filas/rascunhos.
+
+
 Reteste v160 — Depois de publicar backend/frontend: comparar tempos reais de Novo/Edição/Mensal/Anual e confirmação, inclusive contexto com recorrência e com fórmula que exige recarregar dados. Confirmar ausência de duplicação. Em celular/computador conferir Data/Mês alinhados nos dois cadastros, competência centralizada, Valor/Parcelas/Início sem espaço extra e sem cortar valor. Ativar recorrência e conferir separação de Tags. Escolher descrição com tags anteriores, limpar formulário: sugestão deve sumir; envio incerto deve continuar impedindo limpar. Validar alturas e quebras nos modais existentes. Não confundir testes locais com validação publicada.
 
 

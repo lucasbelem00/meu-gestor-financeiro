@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -56,8 +56,7 @@ function prepararAutorizacaoInicialGestor() {
 
 function obterPlanilhaGestor_() {
   if (CONTEXTO_GESTOR_) return CONTEXTO_GESTOR_.ss;
-  const id = PropertiesService.getScriptProperties()
-    .getProperty(CHAVE_ID_PLANILHA_GESTOR);
+  const id = propriedade_(CHAVE_ID_PLANILHA_GESTOR);
   if (!id || !String(id).trim()) {
     throw new Error('Planilha não configurada. Defina a propriedade de script GESTOR_PLANILHA_ID com o ID da planilha correta.');
   }
@@ -679,6 +678,7 @@ function organizarEAtualizarPlanilha(lancSheet, pagtoSheet) {
     }
   }
 
+  if(CONTEXTO_GESTOR_?.detalhesGravacao)CONTEXTO_GESTOR_.detalhesGravacao.linhasReordenadas=(CONTEXTO_GESTOR_.detalhesGravacao.linhasReordenadas||0)+linhasOrdenadas.filter((r,i)=>r.idxOriginal!==i).length;
   if (mudouOrdem || alterouStatus) {
     const novosValores = linhasOrdenadas.map(item => {
       if (item.vazia) return Array(COLUNAS_GESTOR_).fill('');
@@ -1430,6 +1430,7 @@ function sincronizarLoteWebInterno_(loteOffline,parcelasInternasCentavos) {
       }
     });
 
+    if(CONTEXTO_GESTOR_?.detalhesGravacao)CONTEXTO_GESTOR_.detalhesGravacao.parcelasIncluidas=(CONTEXTO_GESTOR_.detalhesGravacao.parcelasIncluidas||0)+novasLinhasGerais.length;
     if (novasLinhasGerais.length > 0) {
       const prox = Math.max(2, lancSheet.getLastRow() + 1);
       lancSheet.getRange(prox, 1, novasLinhasGerais.length, COLUNAS_GESTOR_).setValues(novasLinhasGerais);
@@ -2283,7 +2284,12 @@ function montarBackupDadosGestor_(ss,param,recuperacao) {
 }
 
 function propriedade_(nome) {
-  return PropertiesService.getScriptProperties().getProperty(nome) || '';
+  // Somente a identidade estável da base; configurações e permissões continuam frescas.
+  const memo=typeof HASHES_EXECUCAO_GESTOR_!=='undefined'?HASHES_EXECUCAO_GESTOR_:null;
+  if(nome===CHAVE_ID_PLANILHA_GESTOR&&memo?.has('baseControleId'))return memo.get('baseControleId');
+  const valor=PropertiesService.getScriptProperties().getProperty(nome)||'';
+  if(nome===CHAVE_ID_PLANILHA_GESTOR&&memo)memo.set('baseControleId',valor);
+  return valor;
 }
 
 function executarAcaoApiInterna_(action, param) {
@@ -3817,7 +3823,7 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
       leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map()};
       contexto.leituraFinanceiraInicial=leituraFinanceira;
     }
-    const real = folhaLeituraAnualGestor_(ss,nome,leituraFinanceira);
+    const real = contexto.detalhesGravacao?medirEtapaGravacaoGestor_(contexto.detalhesGravacao,'abrirAbaMs',()=>folhaLeituraAnualGestor_(ss,nome,leituraFinanceira)):folhaLeituraAnualGestor_(ss,nome,leituraFinanceira);
     if (!real && !criar) return null;
     const rangeReal = real && real.getLastRow() ? real.getDataRange() : null;
     const calculados = rangeReal ? rangeReal.getValues() : [], formulas = rangeReal ? rangeReal.getFormulas() : [];
@@ -4379,13 +4385,13 @@ function validarCabecalhoOperacaoGestor_(cabecalho) {
       !Number.isInteger(Number(cabecalho[3])) || (['CANCELADO','ARQUIVADO'].includes(cabecalho[2]) ? Number(cabecalho[3])!==0 : Number(cabecalho[3])<1)) throw erroDiarioGestor_('DIARIO_CABECALHO_INVALIDO');
 }
 
-function localizarCabecalhosOperacaoGestor_(sh, operacaoId) {
+function localizarCabecalhosOperacaoGestor_(sh, operacaoId, cabecalhosLidos) {
   const correspondentes=localizarLinhasTecnicasGestor_(sh,1,operacaoId), cabecalhos=[];
   correspondentes.forEach(function (linha) {
     const r=sh.getRange(linha,1,1,6).getValues()[0];
     if (r[2]==='PARTE') return;
     validarCabecalhoOperacaoGestor_(r);
-    cabecalhos.push(linha);
+    cabecalhos.push(linha);if(cabecalhosLidos)cabecalhosLidos.set(linha,r);
   });
   // Partes sem nenhum cabeçalho não equivalem a uma operação inexistente.
   if (correspondentes.length && !cabecalhos.length) throw erroDiarioGestor_('DIARIO_CABECALHO_AUSENTE');
@@ -4455,8 +4461,12 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     const real = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararBaseMs',()=>obterPlanilhaGestor_());
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararManutencaoMs',()=>retomarManutencaoProtecaoGestor_(real));
     const diario = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararDiarioMs',()=>abrirDiarioGestor_(real));
+    const cabecalhosPedidoGestor=new Map();let linhasPedidoGestor=null;
     if (!leitura && param && param.requestId) {
-      const cancelada = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararCancelamentoMs',()=>localizarCabecalhosOperacaoGestor_(diario,acao+':'+param.requestId).some(function (linha) { return diario.getRange(linha,3).getValue()==='CANCELADO'; }));
+      const cancelada = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararCancelamentoMs',()=>{
+        linhasPedidoGestor=localizarCabecalhosOperacaoGestor_(diario,acao+':'+param.requestId,cabecalhosPedidoGestor);
+        return linhasPedidoGestor.some(linha=>cabecalhosPedidoGestor.get(linha)[2]==='CANCELADO');
+      });
       if (cancelada) { const erro=new Error('Este envio foi cancelado com segurança. Confira os campos antes de criar um novo lançamento.'); erro.codigo='OPERACAO_CANCELADA'; throw erro; }
     }
     const pendentes = medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'prepararPendenciasMs',()=>localizarLinhasTecnicasGestor_(diario, 3, 'PRONTO'));
@@ -4484,15 +4494,18 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
       const epoca = epocaRestauracaoGestor_();
       if (epoca && (!param || param.baseRestauracao !== epoca)) throw new Error('A planilha foi restaurada desde a preparação deste envio. Atualize o app e confira esta pendência antes de tentar novamente.');
     }
-    const anteriores = leitura ? [] : localizarCabecalhosOperacaoGestor_(diario, id);
+    // Sob a mesma trava e sem recuperação, o diário não mudou desde a busca inicial.
+    // Qualquer PRONTO exige nova leitura, pois sua recuperação pode confirmar o pedido.
+    const reutilizarPedido=!pendentes.length&&linhasPedidoGestor!==null;
+    const anteriores = leitura ? [] : reutilizarPedido?linhasPedidoGestor:localizarCabecalhosOperacaoGestor_(diario, id);
     for (const linha of anteriores) {
-      const cabecalho = diario.getRange(linha, 1, 1, 6).getValues()[0];
+      const cabecalho = reutilizarPedido?cabecalhosPedidoGestor.get(linha):diario.getRange(linha, 1, 1, 6).getValues()[0];
       if (!['CONFIRMADO','ARQUIVADO'].includes(cabecalho[2])) continue;
       if (cabecalho[1] !== fingerprint) throw new Error('Esta operação já foi usada com outros dados. Atualize a tela antes de tentar novamente.');
       return lerOperacaoTecnicaGestor_(diario, linha).plano.resultado;
     }
     }finally{detalhesGravacaoGestor.prepararReenvioMs=Math.max(0,Date.now()-inicioReenvio);}
-    const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real, somenteLeitura:pendenciasIntegridade.length>0 };
+    const ctx = { action: acao, param: param || {}, idsIniciais: new Set(), registrosIniciais: Object.create(null), ss: null, ssReal: real, detalhesGravacao:detalhesGravacaoGestor, somenteLeitura:pendenciasIntegridade.length>0 };
     ctx.ss = criarPlanilhaVirtualGestor_(real, ctx); CONTEXTO_GESTOR_ = ctx;
     preparacaoMsGestor=Date.now()-inicioTempoGestor-esperaLockMsGestor;const inicioExecucaoGestor=Date.now();
     let resultado;
@@ -6332,11 +6345,13 @@ function linhaCatalogoAnoGestor_(e){return [e.ano,e.id,e.estado,e.hash||'',e.fec
 function dadosAnoGestor_(e){
   const ctx=CONTEXTO_GESTOR_,chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
   if(ctx){ctx.cacheAnosConferidos=ctx.cacheAnosConferidos||new Map();if(ctx.cacheAnosConferidos.has(chave))return copiarGestor_(ctx.cacheAnosConferidos.get(chave));}
+  const inicioLeitura=Date.now();try{
   const ss=SpreadsheetApp.openById(e.id),info=ss.getSheetByName('Leia-me');
   const identidade=info?info.getRange(2,2,2,1).getValues():[];
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
   if(e.estado==='FECHADO'&&hashGestor_(dados)!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;
+  }finally{if(ctx?.detalhesGravacao){const t=ctx.detalhesGravacao;t.leituraAnosMs=(t.leituraAnosMs||0)+Math.max(0,Date.now()-inicioLeitura);t.anosLidos=(t.anosLidos||0)+1;}}
 }
 function cabFinanceiroAnualGestor_(ss,nome){
   const sh=ss.getSheetByName(nome),colunas=sh&&typeof sh.getMaxColumns==='function'?Math.min(COLUNAS_GESTOR_,sh.getMaxColumns()):COLUNAS_GESTOR_;

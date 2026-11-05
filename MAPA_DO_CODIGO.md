@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v161 — Backend/Code.gs: executor passa Map efêmero a localizarCabecalhosOperacaoGestor_; reaproveita cabeçalhos entre cancelamento/reenvio quando não houve PRONTO. Com recuperação, refaz leitura. propriedade_ e obterPlanilhaGestor_ reutilizam apenas identidade da base no memo por execução. criarPlanilhaVirtualGestor_ mede abrirAbaMs; organizarEAtualizarPlanilha conta posições reordenadas; sincronizarLoteWebInterno_ conta parcelas criadas. shared/anual.js mede leituras físicas de dadosAnoGestor_, sem contar acertos de cache. Backend e diagnóstico de index.html permitem os novos campos numéricos. Módulos 2/3/5/6/10, protocolo 19/cache v161.
+
+
 v160 — getDadosCompletos reutiliza leitura de empréstimos e elimina display de Formas sem consumidor. montarAtualizacaoDadosConfirmadaGestor_ evita montar snapshot que seria descartado por fórmulas/recorrências alteradas; confirmação financeira preservada. limparFormularioNovoGasto limpa também atualizarSugestaoTagsFrequentes. scripts/sincronizar-rachadinha.cjs acumula fontes/destinos antes de gravar, uma vez por arquivo, com tentativas limitadas em EBUSY/EPERM. Novo/Empréstimo compartilham alinhamento inferior dos cabeçalhos. Protocolo 19/cache v160.
 
 
