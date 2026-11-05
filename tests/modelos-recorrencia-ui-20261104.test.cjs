@@ -27,15 +27,15 @@ test('editor guarda e restaura rascunho, incluindo digitação incompleta; resta
  const a=tela();a.ctx.abrirEditorRecorrenciaGestor(modelo);a.campos.get('modelo-rec-valor').value='1,';a.ctx.guardarModeloRecorrenciaRascunhoGestor();vm.runInContext('editorRecorrenciaGestor=null',a.ctx);a.ctx.restaurarEditorModeloRecorrenciaGestor();assert.equal(a.campos.get('modelo-rec-valor').value,'1,');a.salvos.set('gestorEpocaRestauracaoV1','nova');a.ctx.salvarEditorRecorrenciaGestor();assert.match(a.avisos.at(-1)[1],/restaurada/);
 });
 test('consulta descarta resposta anterior a restauração e não substitui lista atual',async()=>{
- const a=tela();let responder;a.ctx.apiCall=()=>new Promise(r=>responder=r);const p=a.ctx.carregarModelosRecorrenciaGestor();a.salvos.set('gestorEpocaRestauracaoV1','nova');responder({itens:[modelo]});await p;assert.equal(vm.runInContext('modelosRecorrenciaGestor.length',a.ctx),0);assert.match(a.campos.get('estadoModelosRecorrenciaGestor').textContent,/restaurada/);
+ const a=tela();let responder;a.ctx.apiCall=()=>new Promise(r=>responder=r);const p=a.ctx.carregarModelosRecorrenciaGestor();a.salvos.set('gestorEpocaRestauracaoV1','nova');responder({itens:[modelo],assinaturas:[]});await p;assert.equal(vm.runInContext('modelosRecorrenciaGestor.length',a.ctx),0);assert.match(a.campos.get('estadoModelosRecorrenciaGestor').textContent,/restaurada/);
 });
 test('cards de terceiros usam identidade âmbar, sem HTML vindo dos nomes',async()=>{
- const a=tela();a.ctx.apiCall=async()=>({itens:[{...modelo,pessoa:'<script>teste</script>'}]});await a.ctx.carregarModelosRecorrenciaGestor();const card=a.campos.get('listaModelosRecorrenciaGestor').children[0];assert.match(card.children[0].className,/amber/);assert.match(card.children[0].textContent,/<script>/);assert(card.children.every(e=>e.innerHTML===undefined));assert.equal(card.children.find(e=>e.tag==='div').children[0].textContent,'✅ Revisar e registrar mês');
+ const a=tela();a.ctx.apiCall=async()=>({itens:[{...modelo,pessoa:'<script>teste</script>'}],assinaturas:[]});await a.ctx.carregarModelosRecorrenciaGestor();const card=a.campos.get('listaModelosRecorrenciaGestor').children[0];assert.match(card.children[0].className,/amber/);assert.match(card.children[0].textContent,/<script>/);assert(card.children.every(e=>e.innerHTML===undefined));assert.equal(card.children.at(-1).children[0].textContent,'✅ Revisar e registrar mês');
 });
 
 test('cadastro válido abre revisão e salva sem depender de função exclusiva do backend',async()=>{
  const a=tela(),envios=[];assert.equal(a.ctx.parseMesFat,undefined);
- a.ctx.apiCall=async(acao,p)=>{envios.push([acao,p]);return acao==='obterRecorrenciasWeb'?{itens:[]}:{sucesso:true};};
+ a.ctx.apiCall=async(acao,p)=>{envios.push([acao,p]);return acao==='obterRecorrenciasWeb'?{itens:[],assinaturas:[]}:{sucesso:true};};
  a.ctx.abrirEditorRecorrenciaGestor({...modelo,id:null,versao:null});a.ctx.salvarEditorRecorrenciaGestor();
  assert.equal(a.avisos.length,0);assert.equal(a.confirmacoes.length,1);assert.equal(envios.length,0);
  a.confirmacoes[0][2]();await new Promise(r=>setImmediate(r));
@@ -92,4 +92,13 @@ test('datas combinadas ficam após aplicar valor e antes das três ações expan
  const ldata=el('label'),data=el('input');data.id='inpEdEmpCombinada';ldata.append(data);const lescopo=el('label'),escopo=el('select');escopo.id='escopoDataCombinadaEmpGestor';lescopo.append(escopo);const ajuda=el('p');ajuda.id='ajudaEscopoDataEmpGestor';
  form.replaceChildren();form.append(valor,parcial,mover,ldata,lescopo,ajuda,rec,footer);const query=form.querySelector;form.querySelector=function(s){return s==='[onclick="togglePainelDividirEmp()"]'?botao:query.call(this,s);};
  a.ctx.organizarCamposDataEditorEmpGestor();assert.deepEqual(form.children,[valor,ldata,lescopo,ajuda,parcial,mover,rec,footer]);a.ctx.organizarCamposDataEditorEmpGestor();assert.equal(form.children.length,8);
+});
+
+test('lista unificada separa desativadas e preserva identidade âmbar e violeta no mesmo grid',async()=>{
+ const a=tela(),inativas=a.ctx.document.createElement('div');inativas.id='lista-assinaturas-inativas';a.ctx.apiCall=async()=>({assinaturas:[],itens:[modelo,{...modelo,id:'pessoal-001',origem:'pessoal',pessoa:''},{...modelo,id:'inativa-001',ativo:false}]});await a.ctx.carregarModelosRecorrenciaGestor();
+ const cards=a.campos.get('listaModelosRecorrenciaGestor').children;assert.equal(cards.length,2);assert.match(cards[0].children[0].className,/amber/);assert.match(cards[1].children[0].className,/violet/);assert.equal(inativas.children.length,1);assert.equal(inativas.children[0].children.at(-1).children[0].textContent,'▶️ Retomar');
+});
+test('Atualizar bloqueia cliques concorrentes, atualiza os dois tipos e preserva lista se consulta falhar',async()=>{
+ const a=tela(),btn=a.ctx.document.createElement('button');btn.id='btnAtualizarRecorrenciasGestor';let responder,chamadas=0;a.ctx.apiCall=()=>{chamadas++;return new Promise(r=>responder=r);};const p=a.ctx.carregarModelosRecorrenciaGestor();a.ctx.carregarModelosRecorrenciaGestor();assert.equal(chamadas,1);assert.equal(btn.textContent,'Atualizando…');responder({itens:[modelo],assinaturas:[]});await p;assert.equal(btn.textContent,'↻ Atualizar');assert.equal(a.campos.get('listaModelosRecorrenciaGestor').children.length,1);
+ a.ctx.apiCall=async()=>{throw Error('Falha de consulta');};await a.ctx.carregarModelosRecorrenciaGestor();assert.equal(a.campos.get('listaModelosRecorrenciaGestor').children.length,1);assert.match(a.campos.get('estadoModelosRecorrenciaGestor').textContent,/Falha/);
 });

@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v156 — Recorrências: um só título 📌 Recorrências ativas; grade neutra de uma coluna no celular e duas a partir de md. Pessoal identificado em violeta, terceiros em âmbar com 🤝 e nome; valor destacado em branco. Modo Automática/Revisão e próxima cobrança ficam claros sem repetir explicações extensas por card. Séries antigas e modelos novos não recebem seções visuais separadas; ações existentes são preservadas. Desativadas em seção recolhida com Retomar, ajuda em Como funciona. Atualizar discreto no cabeçalho, texto Atualizando… e disabled enquanto consulta. Atalhos de criação lado a lado, editor permanece separado da listagem.
+
+
 v155 — 📌 Recorrente nos dois cadastros usa botão violeta compacto h-6, alinhado aos atalhos de parcelas; em Empréstimos fica abaixo do campo Valor. Criar recorrência nos dois editores é expansível, com menu Variável/Fixo, prévia e botão de confirmação; permanece no editor de origem. Em editar empréstimo, Data combinada e Aplicar data combinada ficam depois de Aplicar valor, antes das ações Recebimento parcial, Mover para pessoal e Criar recorrência. Inicialização antes da captura de assinaturas evita confundir reorganização visual com alteração de dados.
 
 

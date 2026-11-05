@@ -1,5 +1,12 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v156 — atualizar Apps Script e frontend juntos; sem novas ativações. Abrir Recorrências com pessoal antiga, pessoal nova e terceiro: todos devem estar na mesma grade ativa, identificados em violeta/âmbar, duas colunas no computador e uma no celular. Desativadas só em seção recolhida com Retomar; nenhuma duplicação por reabrir a aba ou atualizar. Editar/Pular/Desativar antigas e novas devem manter comportamento e versões, inclusive série com mudança programada de valor e mês pulado.
+
+Atualizar deve ficar discreto, mostrar Atualizando… e bloquear repetição durante consulta; sair/voltar deve consultar os dois tipos juntos. Alterar em outro aparelho e atualizar: refletir valores novos. Falha/restauração durante consulta não deve trocar lista por resposta antiga; Apps Script anterior deve pedir atualização em vez de afirmar sucesso parcial. Recorrências antigas devem refletir a mesma condição vigente que o Painel, sem recalcular o Painel inteiro para abrir a aba.
+
+Medir Novo/Edição/Mensal/Anual e Recorrências; comparar diagnóstico v155 com v156 sem atribuir ganho antes da medição. Regressões verificam interpretação de série uma vez por conteúdo na execução, cópia não contaminável, mudança de metadado reconhecida e formato de Date reaproveitado sem atravessar requisições, sem alterar data original, fuso ou hashes. Conferências de fórmula/ano fechado e confirmação de gravação permanecem exigidas.
+
+
 Reteste v155 — publicar frontend e Apps Script juntos, sem nova ativação. Histórico e Empréstimos: Editar → Criar recorrência deve abrir modo/prévia dentro do modal, sem ir à aba Recorrências; gasto salvo é preservado. Testar Variável/Fixo, mês histórico, dia 31 e edição não salva; mudar modo/campos enquanto confirmação aberta deve recusar. Conferir pedido repetido/erro e lista ao abrir Recorrências posteriormente. Atalhos de criação do zero continuam levando a Novo/Novo empréstimo com Recorrente ligado.
 
 Conferir botão Recorrente abaixo de Valor no empréstimo, altura/estilo iguais aos atalhos; limpar e restaurar rascunho. Editor deve ordenar Aplicar valor → Data combinada → Aplicar data → três expansíveis; recebimento exclusivo não mostra recorrência. Digitar dia e mês nos quatro formulários: pular ano válido e focar descrição sem selecionar seu texto; ano manual continua disponível e inválido/ausente exige correção. Barra e mês incompleto/inválido não devem causar salto incorreto. Mudar data na edição continua sem mover automaticamente Mês Fatura.

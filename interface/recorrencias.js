@@ -3,22 +3,22 @@ let modelosRecorrenciaGestor=[],recorrenciasOcupadasGestor=false,editorRecorrenc
 const epocaModeloRecorrenciaGestor=()=>{try{return localStorage.getItem('gestorEpocaRestauracaoV1')||'';}catch(_){return '';}};
 function elementoRecorrenciaGestor(tag,texto,classe=''){const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;}
 function estadoRecorrenciaGestor(texto){const e=document.getElementById('estadoModelosRecorrenciaGestor');if(e)e.textContent=texto;}
-function bloquearRecorrenciasGestor(){document.querySelectorAll('#modelosRecorrenciaGestor button,#modelosRecorrenciaGestor input,#modelosRecorrenciaGestor select').forEach(e=>e.disabled=recorrenciasOcupadasGestor);}
+function bloquearRecorrenciasGestor(){document.querySelectorAll('#modelosRecorrenciaGestor button,#modelosRecorrenciaGestor input,#modelosRecorrenciaGestor select').forEach(e=>e.disabled=recorrenciasOcupadasGestor);const b=document.getElementById('btnAtualizarRecorrenciasGestor');if(b){b.textContent=recorrenciasOcupadasGestor?'Atualizando…':'↻ Atualizar';b.setAttribute('aria-busy',String(recorrenciasOcupadasGestor));}}
 async function carregarModelosRecorrenciaGestor(){
   if(recorrenciasOcupadasGestor)return;recorrenciasOcupadasGestor=true;bloquearRecorrenciasGestor();
   const epoca=epocaModeloRecorrenciaGestor();estadoRecorrenciaGestor('Consultando recorrências…');
-  try{const r=await apiCall('obterRecorrenciasWeb',{},1);if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada. Consulte novamente.');modelosRecorrenciaGestor=r.itens;renderizarModelosRecorrenciaGestor();estadoRecorrenciaGestor(r.erroAutomatico?'Registro automático a conferir: '+r.erroAutomatico:'Revisão mensal: confirme o valor antes de registrar. Automático: a rotina diária registra na data da cobrança.');}
+  try{const r=await apiCall('obterRecorrenciasWeb',{},1);if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada. Consulte novamente.');if(!Array.isArray(r.itens)||!Array.isArray(r.assinaturas))throw Error('Atualize o Apps Script para consultar todas as recorrências juntas.');modelosRecorrenciaGestor=r.itens;seriesRecorrenciasGestor=r.assinaturas;mesSeriesRecorrenciasGestor=r.mesAtual||mesSeriesRecorrenciasGestor;renderizarModelosRecorrenciaGestor();estadoRecorrenciaGestor(r.erroAutomatico?'Registro automático a conferir: '+r.erroAutomatico:'Recorrências atualizadas.');}
   catch(e){estadoRecorrenciaGestor(e.message);}finally{recorrenciasOcupadasGestor=false;bloquearRecorrenciasGestor();restaurarEditorModeloRecorrenciaGestor();}
 }
 function renderizarModelosRecorrenciaGestor(){
   const lista=document.getElementById('listaModelosRecorrenciaGestor');if(!lista)return;lista.replaceChildren();
+  const inativas=document.getElementById('lista-assinaturas-inativas');if(inativas)inativas.replaceChildren();
+  const antigas=montarCartoesSeriesRecorrenciasGestor({assinaturas:seriesRecorrenciasGestor,faturas:{mesAtual:mesSeriesRecorrenciasGestor}});if(antigas.ativas)lista.innerHTML=antigas.ativas;if(inativas&&antigas.inativas)inativas.innerHTML=antigas.inativas;
   for(const m of modelosRecorrenciaGestor){
-    const c=elementoRecorrenciaGestor('article','','card-glass p-4 space-y-3 min-w-0');
-    c.append(elementoRecorrenciaGestor('p',m.origem==='terceiros'?'🤝 Terceiros · '+m.pessoa:'📌 Pessoal',m.origem==='terceiros'?'text-sm font-bold text-amber-300':'text-sm font-bold text-sky-300'));
-    c.append(elementoRecorrenciaGestor('h3',m.descricao,'font-bold text-white break-words'));
-    c.append(elementoRecorrenciaGestor('p',formatBRL(m.valorCentavos/100)+' · '+m.forma,'text-sm text-slate-200'));
-    c.append(elementoRecorrenciaGestor('p',!m.ativo?'Desativada':(m.modo==='revisao'?'Aguardando revisão':'Registro automático')+' · Próximo mês: '+m.proximoMes+' · Dia '+m.dia,'text-xs text-slate-200'));
-    if(m.origem==='terceiros')c.append(elementoRecorrenciaGestor('p','Confirmar o mês cria um valor a receber em Empréstimos. Não registra recebimento da pessoa.','text-xs text-slate-300'));
+    const c=elementoRecorrenciaGestor('article','','card-glass p-4 space-y-3 min-w-0 flex flex-col');
+    c.append(elementoRecorrenciaGestor('p',m.origem==='terceiros'?'🤝 Terceiros · '+m.pessoa:'📌 Pessoal',m.origem==='terceiros'?'text-sm font-bold text-amber-300':'text-sm font-bold text-violet-300'));
+    const topo=elementoRecorrenciaGestor('div','','flex items-start justify-between gap-3');topo.append(elementoRecorrenciaGestor('h3',m.descricao,'font-bold text-white break-words min-w-0'),elementoRecorrenciaGestor('p',formatBRL(m.valorCentavos/100),'font-bold text-lg text-white whitespace-nowrap'));c.append(topo);c.append(elementoRecorrenciaGestor('p',m.forma,'text-xs text-slate-300'));
+    c.append(elementoRecorrenciaGestor('p',!m.ativo?'Desativada':(m.modo==='revisao'?'Aguardando revisão':'Automática')+' · Próxima cobrança: '+dataProximaRecorrenciaVisualGestor(m),'text-xs text-slate-200'));
     const botoes=elementoRecorrenciaGestor('div','','flex flex-wrap gap-2');
     const botao=(texto,fn)=>{const b=elementoRecorrenciaGestor('button',texto,'rounded-xl border border-slate-600 bg-slate-800 px-3 py-2 text-xs text-white font-bold');b.type='button';b.onclick=fn;botoes.append(b);};
     if(m.ativo){
@@ -27,9 +27,10 @@ function renderizarModelosRecorrenciaGestor(){
       botao('⏸️ Pular mês',()=>revisarMesRecorrenciaGestor(m,'',true));botao('✏️ Editar',()=>abrirEditorRecorrenciaGestor(m));
       botao('⏹️ Desativar',()=>confirmarModeloRecorrenciaGestor('Desativar recorrência?','Os meses já registrados serão preservados.',()=>enviarModeloRecorrenciaGestor('salvarRecorrenciaWeb',{id:m.id,versao:m.versao,desativar:true})));
     }else botao('▶️ Retomar',()=>abrirEditorRecorrenciaGestor({...m,id:null,versao:null,proximoMes:mesInicialModeloRecorrenciaGestor()}));
-    c.append(botoes);lista.append(c);
+    c.append(botoes);(m.ativo||!inativas?lista:inativas).append(c);
   }
-  if(!modelosRecorrenciaGestor.length)lista.append(elementoRecorrenciaGestor('p','Nenhuma recorrência adicional cadastrada. As recorrências automáticas existentes continuam abaixo.','text-sm text-slate-300'));
+  if(!antigas.ativas&&!modelosRecorrenciaGestor.some(m=>m.ativo))lista.append(elementoRecorrenciaGestor('p','Nenhuma recorrência ativa.','text-sm text-slate-300'));
+  if(inativas&&!antigas.inativas&&!modelosRecorrenciaGestor.some(m=>!m.ativo))inativas.append(elementoRecorrenciaGestor('p','Nenhuma recorrência desativada.','text-sm text-slate-300'));
 }
 function mesInicialModeloRecorrenciaGestor(){const h=hojeCivilGestor();return String(h.getMonth()+1).padStart(2,'0')+'/'+h.getFullYear();}
 function assinaturaEditorRecorrenciaGestor(){return JSON.stringify([epocaModeloRecorrenciaGestor(),editorRecorrenciaGestor,modelosRecorrenciaGestor,Array.from(document.querySelectorAll('#modelosRecorrenciaGestor input,#modelosRecorrenciaGestor select')).map(e=>[e.id,e.value])]);}
@@ -171,3 +172,32 @@ function organizarCamposDataEditorEmpGestor(){
  const form=document.getElementById('modalEdicaoEmp')?.querySelector('form'),antes=form?.querySelector('[onclick="togglePainelDividirEmp()"]')?.parentElement;
  if(antes)for(const e of [document.getElementById('inpEdEmpCombinada')?.closest('label'),document.getElementById('escopoDataCombinadaEmpGestor')?.closest('label'),document.getElementById('ajudaEscopoDataEmpGestor')])if(e)form.insertBefore(e,antes);
 }
+
+let seriesRecorrenciasGestor=[],mesSeriesRecorrenciasGestor='';
+function atualizarSeriesRecorrenciasGestor(series,mes){seriesRecorrenciasGestor=series;mesSeriesRecorrenciasGestor=mes;renderizarModelosRecorrenciaGestor();}
+function montarCartoesSeriesRecorrenciasGestor(dados){
+      let htmlAtivas = '', htmlInativas = '';
+      if (dados.assinaturas && dados.assinaturas.length > 0) {
+        const ativas = dados.assinaturas.filter(a => a.controleInvalido || (!a.encerrada && (a.status === 'Assinatura Ativa' || a.status === 'Assinatura Paga')));
+        const inativas = dados.assinaturas.filter(a => !a.controleInvalido && (a.encerrada || (a.status !== 'Assinatura Ativa' && a.status !== 'Assinatura Paga')));
+        ativas.forEach(a => {
+          if (a.controleInvalido) {
+            htmlAtivas += `<div class="card-glass p-4 border-amber-400/40"><h3 class="text-white font-bold text-base">${escaparHTML(a.descricao)}</h3><p class="text-sm text-slate-200 mt-1">${escaparHTML(a.forma)} • ${escaparHTML(a.valor)}</p><p class="text-xs text-amber-200 mt-2">Controle da recorrência a conferir. Valores registrados estão preservados; a projeção desta série está suspensa.</p><button type="button" ${acaoHTML('abrirAtividadeGestor', [])} class="mt-3 rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">🔎 Conferir em Atividade</button></div>`;
+            return;
+          }
+          const exibida=a.vigente||a;
+
+          const catVisor = getCategoriaExibicao(exibida.categoria);
+          const jaPaga = (exibida.status === 'Assinatura Paga');
+          const badgeCor = obterClasseBadgeStatus(jaPaga?'Assinatura Paga':'Assinatura Ativa');
+          htmlAtivas += `<div class="card-glass p-4 flex flex-col gap-3 min-w-0"><p class="text-sm font-bold text-violet-300">📌 Pessoal · Automática</p><div class="flex justify-between items-start gap-3"><div class="min-w-0"><h3 class="text-white font-bold text-base">${escaparHTML(exibida.descricao)}</h3><p class="text-slate-400 text-xs mt-1 bg-slate-900/50 inline-block px-2 py-1 rounded border border-slate-700/50">${iconeFormaPagamentoVisualGestor(exibida.forma)} ${escaparHTML(exibida.forma)} • 🏷 ${escaparHTML(catVisor)}</p></div><div class="text-right"><div class="text-white font-bold text-lg whitespace-nowrap">${escaparHTML(exibida.valor)}</div><span class="inline-block mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${badgeCor}">${!a.vigente&&a.programadas?.length?'Programada':exibida.mes&&exibida.mes!==dados.faturas?.mesAtual?'Condição vigente':exibida.pulada?'Pulado neste mês':jaPaga?'Paga no Mês':'Ativa / A Pagar'}</span></div></div>${textosProgramacoesFixasGestor(a).map(texto=>'<p class="text-xs text-sky-200">'+escaparHTML(texto)+'</p>').join('')}<div class="flex gap-2 mt-1 pt-3 border-t border-slate-700/50"><button type="button" ${acaoHTML('abrirModalEdicaoAss', [exibida.descricao, exibida.forma, exibida.categoria, exibida.valor, { registroId: exibida.registroId, compraId: exibida.compraId, versao: exibida.versao }])} class="flex-1 text-indigo-400 bg-indigo-900/20 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">✏️ Editar</button><button type="button" ${acaoHTML('pularMesFixoLocalGestor', [exibida.descricao, exibida.forma, {registroId:exibida.registroId,compraId:exibida.compraId,versao:exibida.versao}])} class="flex-1 text-amber-200 bg-amber-900/20 border border-amber-500/20 hover:bg-amber-700 hover:text-white text-xs font-bold py-2.5 px-2 rounded-xl transition">⏸️ Pular mês</button><button type="button" ${acaoHTML('cancelarAssinaturaLocal', [a.descricao, a.forma, { registroId: a.registroId, compraId: a.compraId, versao: a.versao }])} class="flex-1 text-rose-400 bg-rose-900/20 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-xs font-bold py-2.5 rounded-xl transition">⏹️ Desativar</button></div></div>`;
+        });
+        inativas.forEach(a => {
+          htmlInativas += `<div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-4 flex justify-between items-center gap-3"><div class="min-w-0 flex-1 break-words"><h3 class="text-slate-300 font-bold text-sm">${escaparHTML(a.descricao)}</h3><p class="text-slate-400 text-[10px] uppercase font-bold mt-0.5">${escaparHTML(a.forma)} • ${escaparHTML(a.valor)}</p></div><div class="shrink-0 flex flex-col items-end gap-2"><span class="px-2 py-1 rounded text-[9px] font-bold uppercase bg-slate-800 text-slate-500">Desativada</span><button type="button" ${acaoHTML('abrirRetomadaAssinaturaGestor', [a])} class="rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold px-3 py-2">▶️ Retomar</button></div></div>`;
+        });
+      }
+      return {ativas:htmlAtivas,inativas:htmlInativas};
+
+}
+
+function dataProximaRecorrenciaVisualGestor(m){const p=interpretarCompetenciaGestor(m.proximoMes);if(!p.m)return m.proximoMes;const dia=Math.min(m.dia,new Date(p.a,p.m,0).getDate());return String(dia).padStart(2,'0')+'/'+m.proximoMes;}

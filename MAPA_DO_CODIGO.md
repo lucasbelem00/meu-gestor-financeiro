@@ -1,5 +1,12 @@
 # Mapa do código do Gestor de Gastos
 
+v156 — módulos 2/3/4/5/9. shared/recorrencias.js: obterRecorrenciasWeb retorna modelos, assinaturas e mês; listarSeriesRecorrenciasGestor_ monta a apresentação enxuta sem executar getDadosCompletos. coletarSerieRecorrenciaGestor_ e completarSeriesRecorrenciasGestor_ são compartilhadas com a consulta completa, evitando lógicas divergentes de vigência/programações. Backend/Code.gs mantém integrações da projeção do Horizonte.
+
+interface/recorrencias.js: atualizarSeriesRecorrenciasGestor recebe séries da carga completa; montarCartoesSeriesRecorrenciasGestor preserva ações antigas; renderizarModelosRecorrenciaGestor compõe lista única de ativas e details de desativadas. carregarModelosRecorrenciaGestor atualiza ambos os tipos na mesma consulta e preserva estado anterior se falhar. index.html não mantém renderizador duplicado.
+
+Backend/Code.gs: serieRecorrenteGestor_ tem memo por conteúdo em ctx.cacheSeriesLeitura, devolvendo cópias; formatarDataLeituraGestor_ tem memo de formato por instante/fuso no mapa de execução, usado pelos parsers/formatador de leitura. Limites de 1.000 e descarte no fim do executor, sem estado persistente ou relaxamento de validação. Interface/cache v156, protocolo 19.
+
+
 v155 — interface/recorrencias.js: instalarAtalhoRecorrenciaEdicaoGestor cria formulário mínimo dentro dos dois editores, com modo/prévia e envio protegido direto a salvarRecorrenciaWeb; guardas de origem, assinatura, sessão, época e requestId. organizarCamposDataEditorEmpGestor organiza promessa/escopo antes das ações na inicialização. alternarRecorrenciaEmpGestor usa botão compacto ligado ao checkbox técnico persistido. Removida ponte de encaminhamento ao formulário completo. interface/rotina.js oculta recorrência no modo exclusivo de recebimento.
 
 index.html: destinoAposParteDataGestor controla foco dos quatro formulários, preservando ano e descrição. Backend/Code.gs: getDadosCompletos agrupa B17:D41 e lê perfis uma vez; versaoConfiguracaoGestor_ aceita mapa opcional apenas para a mesma montagem de resposta, agrupa nomes/metas sem mudar hash/fórmulas. validarVersaoConfiguracaoGestor_ continua sem esse argumento e relê estado atual. Módulos 2/3/4/5/9; cache/interface v155 e protocolo 19.

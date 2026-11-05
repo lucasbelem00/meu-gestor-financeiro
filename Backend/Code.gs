@@ -111,7 +111,7 @@ function normalizarTexto(str) {
 function parseDataBR(str) {
   if (str instanceof Date) {
     if (!Number.isFinite(str.getTime())) return null;
-    str = Utilities.formatDate(str, getTimezone(), 'dd/MM/yyyy');
+    str = formatarDataLeituraGestor_(str,'dd/MM/yyyy');
   }
   const p = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(str || '').replace(/^'/, '').trim());
   if (!p) return null;
@@ -124,7 +124,7 @@ function parseMesFat(str) {
   // Converte apenas para leitura, no fuso do projeto; não altera a célula nem o hash.
   if (str instanceof Date) {
     if (!Number.isFinite(str.getTime())) return { m: 0, a: 0, time: 0 };
-    str = Utilities.formatDate(str, getTimezone(), 'MM/yyyy');
+    str = formatarDataLeituraGestor_(str,'MM/yyyy');
   }
   const limpa = String(str || '').replace(/^'/, '').trim();
   const ctx=typeof CONTEXTO_GESTOR_!=='undefined'?CONTEXTO_GESTOR_:null;
@@ -342,10 +342,13 @@ function atualizarStatusAutomaticoInterno_() {
 function serieRecorrenteGestor_(linha) {
   const texto = String((linha || [])[15] || ''), prefixo = 'gestor-serie-v1:';
   if (texto.indexOf(prefixo) !== 0) return { legado: texto };
+  const ctx=typeof CONTEXTO_GESTOR_!=='undefined'?CONTEXTO_GESTOR_:null,cache=ctx?(ctx.cacheSeriesLeitura||(ctx.cacheSeriesLeitura=new Map())):null;
+  if(cache?.has(texto))return copiarGestor_(cache.get(texto));
   try {
     const info = JSON.parse(texto.substring(prefixo.length));
     if (!info || typeof info !== 'object' || Array.isArray(info) || (info.diaReferencia !== undefined && (!Number.isInteger(info.diaReferencia) || info.diaReferencia < 1 || info.diaReferencia > 31)) || (info.encerrada !== undefined && typeof info.encerrada !== 'boolean')) throw new Error('Controle inválido');
     if (info.encerramentoMes !== undefined) validarMesFaturaWeb_(info.encerramentoMes);
+    if(cache&&cache.size<1000)cache.set(texto,copiarGestor_(info));
     return info;
   } catch (_) { return { invalida: true }; }
 }
@@ -1727,27 +1730,7 @@ function getDadosCompletos() {
           }
         }
 
-        if (parcela === '∞/∞') {
-          const chaveAss = String(r[12] || `${descNorm}_${normalizarTexto(chaveForma)}`);
-          if (!listaAssinaturas[chaveAss] || infoFat.time >= listaAssinaturas[chaveAss].timeRef) {
-            listaAssinaturas[chaveAss] = {
-              linhaBase: idx + 2,
-              registroId: r[11], compraId: r[12], versao: Number(r[13] || 1),
-              descricao: descStr,
-              forma: chaveForma,
-              categoria: catStr,
-              valor: valorFmt,
-              valorRaw: valor,
-              status: statusRaw==='Ocorrência Pulada'?'Assinatura Ativa':statusRaw,
-              pulada: statusRaw==='Ocorrência Pulada',
-              controleInvalido: seriesInvalidas.has(chaveAss),
-              encerrada: serieRecorrenteGestor_(r).encerrada === true,
-              mesEncerramento: serieRecorrenteGestor_(r).encerramentoMes || '',
-              mesUltimaFat: mesFat,
-              timeRef: infoFat.time
-            };
-          }
-        }
+        if(parcela==='∞/∞')coletarSerieRecorrenciaGestor_(listaAssinaturas,r,idx,descStr,chaveForma,catStr,valorFmt,valor,statusRaw,mesFat,infoFat,descNorm,seriesInvalidas);
 
         if (!cancelado && valor > 0) {
           calcGeral += valor;
@@ -1972,14 +1955,7 @@ function getDadosCompletos() {
 
     const linhasSeriesProjecao = new Map();
     lancamentosValidos.forEach(function(l){const r=l.raw;if(limparApostrofo(r[6])==='∞/∞'){const id=String(r[12]);if(!linhasSeriesProjecao.has(id))linhasSeriesProjecao.set(id,[]);linhasSeriesProjecao.get(id).push(r);}});
-    Object.values(listaAssinaturas).forEach(function(ass){
-      const serie=(linhasSeriesProjecao.get(String(ass.compraId))||[]).slice().sort(function(a,b){return parseMesFat(formatarCelulaRegistroGestor_(a[8],'MM/yyyy')).time-parseMesFat(formatarCelulaRegistroGestor_(b[8],'MM/yyyy')).time;});
-      if(!ass.controleInvalido && serie.length)Object.assign(ass,dadosRetomadaSerieGestor_(serie));
-      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
-      const atual=referenciaRecorrenteNoMesGestor_(serie,mesAtualStr);ass.vigente=atual?apresentar(atual):null;ass.programadas=[];
-      const condicao=function(r){return hashGestor_([r[1],r[2],r[3],extractNum(r[7])]);};let anterior=atual;
-      serie.filter(function(r){return parseMesFat(formatarCelulaRegistroGestor_(r[8],'MM/yyyy')).time>timeMesAtual;}).forEach(function(r){if(!anterior||condicao(r)!==condicao(anterior))ass.programadas.push(apresentar(r));anterior=r;});
-    });
+    completarSeriesRecorrenciasGestor_(listaAssinaturas,linhasSeriesProjecao,mesAtualStr,timeMesAtual);
     Object.values(listaAssinaturas).forEach(ass => {
       const stLower = String(ass.status || '').toLowerCase();
       const isAtiva = !ass.controleInvalido && !ass.encerrada && (stLower === 'assinatura ativa' || stLower === 'assinatura paga');
@@ -4850,11 +4826,19 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
 };
 const ACOES_DESFAZER_GESTOR_ = ['pularMesFixoWeb', 'registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
 
+// Apenas leitura: cache limitado a este executor, sem alterar célula ou hash.
+function formatarDataLeituraGestor_(data,formato){
+ const tempo=data.getTime();if(!Number.isFinite(tempo))throw Error('Data inválida no registro.');
+ const memo=typeof HASHES_EXECUCAO_GESTOR_!=='undefined'?HASHES_EXECUCAO_GESTOR_:null,fuso=getTimezone();
+ const cache=memo?(memo.formatosDataGestor||(memo.formatosDataGestor=new Map())):null,chave=tempo+'|'+fuso+'|'+formato;
+ if(cache?.has(chave))return cache.get(chave);
+ const texto=Utilities.formatDate(data,fuso,formato);if(cache&&cache.size<1000)cache.set(chave,texto);return texto;
+}
 function formatarCelulaRegistroGestor_(valor, formato) {
   if (!(valor instanceof Date)) return limparApostrofo(valor);
   if (!Number.isFinite(valor.getTime())) throw new Error('Há uma data inválida no registro. Confira a planilha antes de registrar o pagamento.');
   // Formata somente a leitura; o conteúdo original permanece no hash e no diário.
-  return Utilities.formatDate(valor, getTimezone(), formato);
+  return formatarDataLeituraGestor_(valor,formato);
 }
 
 function valoresExibidosRegistroGestor_(raw, exibidos) {
@@ -7266,7 +7250,7 @@ function listarModelosRecorrenciaGestor_(linhas){return linhas.slice(1).map(r=>(
 function conferirModeloPessoalDuplicadoGestor_(descricao,forma){
   if(listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()).some(m=>m.ativo&&m.origem==='pessoal'&&normalizarTexto(m.descricao)===normalizarTexto(descricao)&&chaveFormaGestor_(m.forma)===chaveFormaGestor_(forma)))throw Error('Já existe um modelo ativo desta recorrência. Edite o modelo em Recorrências antes de criar outra série.');
 }
-function obterRecorrenciasWeb(){return executarOperacaoGestor_('obterRecorrenciasWeb',{},()=>({itens:listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()),erroAutomatico:configProtecaoGestor_().erroRecorrencias||''}),true);}
+function obterRecorrenciasWeb(){return executarOperacaoGestor_('obterRecorrenciasWeb',{},()=>({itens:listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()),assinaturas:listarSeriesRecorrenciasGestor_(),mesAtual:formatarCelulaRegistroGestor_(getHojeSeguro(),'MM/yyyy'),erroAutomatico:configProtecaoGestor_().erroRecorrencias||''}),true);}
 function dataModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes);return new Date(p.a,p.m-1,Math.min(m.dia,new Date(p.a,p.m,0).getDate()));}
 function competenciaModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes),d=new Date(p.a,p.m-1+m.defasagem,1);return pad2(d.getMonth()+1)+'/'+d.getFullYear();}
 function avancarModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes),d=new Date(p.a,p.m,1);m.proximoMes=pad2(d.getMonth()+1)+'/'+d.getFullYear();}
@@ -7341,6 +7325,50 @@ function criarRecorrenciaCadastroGestor_(dados,origem){
  if(!CONTEXTO_GESTOR_||CONTEXTO_GESTOR_.somenteLeitura)throw Error('Salve a recorrência pelo envio protegido do app.');
  const plano=planoRecorrenciaCadastroGestor(dados.dataCompra,dados.mesPrimeiraFatura,getHojeSeguro());
  return salvarRecorrenciaWeb({origem,modo:dados.recorrenciaModo,descricao:dados.descricao,forma:dados.formaPagto,categoria:dados.categoria,pessoa:dados.pessoa,valor:dados.valorTotal,tags:dados.tags,perfilGasto:dados.perfilGasto,...plano});
+}
+
+// Mesma apresentação das séries antigas no Painel e na consulta enxuta.
+function coletarSerieRecorrenciaGestor_(listaAssinaturas,r,idx,descStr,chaveForma,catStr,valorFmt,valor,statusRaw,mesFat,infoFat,descNorm,seriesInvalidas){
+
+          const chaveAss = String(r[12] || `${descNorm}_${normalizarTexto(chaveForma)}`);
+          if (!listaAssinaturas[chaveAss] || infoFat.time >= listaAssinaturas[chaveAss].timeRef) {
+            listaAssinaturas[chaveAss] = {
+              linhaBase: idx + 2,
+              registroId: r[11], compraId: r[12], versao: Number(r[13] || 1),
+              descricao: descStr,
+              forma: chaveForma,
+              categoria: catStr,
+              valor: valorFmt,
+              valorRaw: valor,
+              status: statusRaw==='Ocorrência Pulada'?'Assinatura Ativa':statusRaw,
+              pulada: statusRaw==='Ocorrência Pulada',
+              controleInvalido: seriesInvalidas.has(chaveAss),
+              encerrada: serieRecorrenteGestor_(r).encerrada === true,
+              mesEncerramento: serieRecorrenteGestor_(r).encerramentoMes || '',
+              mesUltimaFat: mesFat,
+              timeRef: infoFat.time
+            };
+          }
+
+}
+function completarSeriesRecorrenciasGestor_(listaAssinaturas,linhasSeriesProjecao,mesAtualStr,timeMesAtual){
+    Object.values(listaAssinaturas).forEach(function(ass){
+      const serie=(linhasSeriesProjecao.get(String(ass.compraId))||[]).slice().sort(function(a,b){return parseMesFat(formatarCelulaRegistroGestor_(a[8],'MM/yyyy')).time-parseMesFat(formatarCelulaRegistroGestor_(b[8],'MM/yyyy')).time;});
+      if(!ass.controleInvalido && serie.length)Object.assign(ass,dadosRetomadaSerieGestor_(serie));
+      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
+      const atual=referenciaRecorrenteNoMesGestor_(serie,mesAtualStr);ass.vigente=atual?apresentar(atual):null;ass.programadas=[];
+      const condicao=function(r){return hashGestor_([r[1],r[2],r[3],extractNum(r[7])]);};let anterior=atual;
+      serie.filter(function(r){return parseMesFat(formatarCelulaRegistroGestor_(r[8],'MM/yyyy')).time>timeMesAtual;}).forEach(function(r){if(!anterior||condicao(r)!==condicao(anterior))ass.programadas.push(apresentar(r));anterior=r;});
+    });
+
+}
+function listarSeriesRecorrenciasGestor_(){
+ const ss=obterPlanilhaGestor_(),sh=ss.getSheetByName('Lançamentos');if(!sh||sh.getLastRow()<2)return [];
+ const rows=sh.getRange(2,1,sh.getLastRow()-1,COLUNAS_GESTOR_).getValues(),lista=Object.create(null),series=new Map(),invalidas=new Set(rows.filter(r=>limparApostrofo(r[6])==='∞/∞'&&serieRecorrenteGestor_(r).invalida).map(r=>String(r[12]||(normalizarTexto(r[1])+'_'+normalizarTexto(r[2])))));
+ rows.forEach((r,idx)=>{if(limparApostrofo(r[6])!=='∞/∞')return;const desc=String(limparApostrofo(r[1])||'').trim();if(!desc)return;const forma=nomeFormaLeituraGestor_(r[2],ss),mes=formatarCelulaRegistroGestor_(r[8],'MM/yyyy'),valor=extractNum(r[7]);
+ coletarSerieRecorrenciaGestor_(lista,r,idx,desc,forma,String(limparApostrofo(r[3])||'').trim(),formatBRL(valor),valor,String(r[9]||'').trim(),mes,parseMesFat(mes),normalizarTexto(desc),invalidas);
+ const id=String(r[12]);if(!series.has(id))series.set(id,[]);series.get(id).push(r);});
+ const hoje=getHojeSeguro(),mes=pad2(hoje.getMonth()+1)+'/'+hoje.getFullYear();completarSeriesRecorrenciasGestor_(lista,series,mes,parseMesFat(mes).time);return Object.values(lista);
 }
 // FIM MODULO RECORRENCIAS GERADO
 
