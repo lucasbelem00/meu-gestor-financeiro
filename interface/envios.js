@@ -1,16 +1,26 @@
 // Estado visual temporário; nunca substitui requestId, journal ou versão do servidor.
+function controleSaidaDuranteEnvioGestor(e){
+  if(e.tagName!=='BUTTON')return false;
+  const acao=e.getAttribute?.('onclick')||'',texto=String(e.textContent||'').replace(/^[✕×]\s*/,'').trim();
+  return /\b(fechar\w*|cancelar\w*|setAba|voltar)\s*\(/i.test(acao)||/^(Cancelar|Fechar|Voltar)$/i.test(texto)||e.hasAttribute?.('data-menu-aba')||e.classList?.contains('tab-btn-global');
+}
+function reiniciarControlesEditorEnvioGestor(raiz){
+  const bloco=raiz?._bloqueioControlesEnvioGestor;if(!bloco)return;
+  bloco.campos.forEach(([e,antes])=>{e.disabled=antes;});delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');
+}
 function bloquearControlesEnvioGestor(raiz){
   if(!raiz?.querySelectorAll)return ()=>{};
-  const sessao=raiz._sessaoEdicao,campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).map(e=>[e,e.disabled]);
+  const sessao=raiz._sessaoEdicao,campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).filter(e=>!controleSaidaDuranteEnvioGestor(e)).map(e=>[e,e.disabled]);
+  const bloco={campos};raiz._bloqueioControlesEnvioGestor=bloco;
   campos.forEach(([e])=>e.disabled=true);raiz.setAttribute?.('aria-busy','true');
-  return ()=>{raiz.removeAttribute?.('aria-busy');if(raiz._sessaoEdicao!==sessao)return;campos.forEach(([e,antes])=>{e.disabled=antes;});};
+  return ()=>{if(raiz._bloqueioControlesEnvioGestor!==bloco)return;delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');if(raiz._sessaoEdicao!==sessao)return;campos.forEach(([e,antes])=>{e.disabled=antes;});};
 }
 const enviosVisuaisGestor=new Set(),apiAntesBloqueioVisualGestor=window.apiCall;
 window.apiCall=async function(acao,p,...resto){
   if(CATALOGO_ACOES_GESTOR[acao]?.tipo!=='financeira')return apiAntesBloqueioVisualGestor(acao,p,...resto);
   const raizes=Array.from(document.querySelectorAll?.('[role="dialog"],[id^="view-"]')||[]).filter(e=>!e.classList.contains('hidden')&&!e.closest?.('[inert]'));
   const form=document.activeElement?.closest?.('form');if(form&&!form.closest?.('.hidden,[inert]'))raizes.push(form);
-  const unicas=[...new Set(raizes)];
+  const unicas=[...new Set(raizes)].filter(e=>!raizes.some(pai=>pai!==e&&pai.contains?.(e)));
   if(unicas.some(e=>enviosVisuaisGestor.has(e)))throw Error('Aguarde a confirmação do envio em andamento.');
   unicas.forEach(e=>enviosVisuaisGestor.add(e));const liberar=unicas.map(bloquearControlesEnvioGestor);
   try{return await apiAntesBloqueioVisualGestor(acao,p,...resto);}finally{liberar.forEach(f=>f());unicas.forEach(e=>enviosVisuaisGestor.delete(e));}

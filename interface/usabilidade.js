@@ -175,7 +175,14 @@ function resumoParcelasSimuladorGestor(s) {
   return [...contagens].map(([v,q])=>q+'x de '+formatBRL(v)).join(' + ');
 }
 function alternarProjecaoSimuladorGestor(){simuladorExpandidoGestor=!simuladorExpandidoGestor;rodarSimuladorCompra();}
+function atualizarRotuloParcelasSimuladorGestor(){
+  const c=document.getElementById('simParcelas'),r=document.getElementById('rotuloAVistaSimuladorGestor');if(!c||!r)return;
+  const mostrar=document.activeElement!==c&&Number(c.value||1)===1;r.hidden=!mostrar;r.classList.toggle('hidden',!mostrar);if(c.style)c.style.color=mostrar?'transparent':'';
+}
+function iniciarEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(Number(c.value||1)===1)c.value='';atualizarRotuloParcelasSimuladorGestor();}
+function concluirEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(!c.value||Number(c.value)===1)c.value='1';rodarSimuladorCompra();}
 function rodarSimuladorCompra() {
+  atualizarRotuloParcelasSimuladorGestor();
   const box=document.getElementById('boxResultadoSimulador');if(!box)return;
   let s;try{s=lerSimulacaoGestor();}catch(e){box.textContent=e.message;return;}
   const cartoes=formasGlobais.filter(f=>formaEhCartaoGestor(f)&&!f.arquivado);

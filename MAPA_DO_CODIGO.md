@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v171 — interface/faturas.js: consultarResumoFaturaCoordenadoGestor serializa consultas resumidas e descarta apenas seleções aguardando superadas; não gerencia mutações. interface/desempenho.js: registrarConsultaHistoricoAplicadaGestor/atualizarHistoricoAoEntrarGestor preservam lista/paginação recente por filtros/geração/TTL; interface/protecao.js integra retorno sem zerar lista. interface/envios.js: exclusão de raízes sobrepostas, saídas disponíveis e token de bloqueio por sessão; interface/rotina.js reinicia controles herdados ao abrir editor e diferencia confirmação parcial/integral. interface/usabilidade.js controla rótulo À vista no simulador; index.html fornece overlay e atalho Planejamento. interface/recorrencias.js esclarece preservação do empréstimo original. Protocolo 19/cache v171; módulos 2/3/4/5/6/7/8/10.
+
+
 v170 — Backend/Code.gs: lerAbaCompleta usa exibirValoresLidosGestor_ quando intervalo é virtual; criarPlanilhaVirtualGestor_ separa formatação de valores da obtenção/cópia da matriz, preservando API getDisplayValues. Aba real usa apresentação nativa. shared/anual.js: informarOrigemAnualResultadoGestor_ usa apenas catálogo da fotografia inicial correspondente para montar metadados, sem alterar desdobramento/aplicação/reconferência. Inclui v168/v169. Módulos 2/3/4/5/6/10; protocolo 19/cache v170.
 
 

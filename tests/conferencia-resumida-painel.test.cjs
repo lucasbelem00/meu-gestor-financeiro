@@ -41,6 +41,23 @@ function tela(){
  const c=vm.createContext({Date,Map,window:{},renderizarDados(){},geracaoLeituraGestor:1,requisicaoPagamentoGestor:0,faturaConferidaGestor:null,pagamentoFaturaEmCursoGestor:false,navigator:{onLine:true},document:{getElementById:el},formatBRL:n=>'R$ '+n,lerValorMoeda:v=>Number(campos.has(v)?el(v).value:v),elementoAtividadeGestor:()=>({append(){}}),mostrarConfirmacao:(...a)=>confirmacoes.push(a),mostrarAviso(){},apiCall:(a,p)=>new Promise((resolve,reject)=>chamadas.push({a,p,resolve,reject}))});c.window=c;vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);vm.runInContext(fs.readFileSync('interface/faturas.js','utf8'),c);el('cartaoPagamentoFaturaGestor').value='Cartao';el('mesPagamentoFaturaGestor').value='10/2026';return {c,el,chamadas,confirmacoes};
 }
 const resumo={...alvo,total:308,pago:0,restante:308,pessoal:100,terceiros:208,quantidade:2};
+test('conferência mantém um envio em voo e consulta somente o último mês aguardando',async()=>{
+ const a=tela(),primeira=a.c.conferirPagamentoFaturaGestor();
+ a.el('mesPagamentoFaturaGestor').value='11/2026';const descartada=a.c.conferirPagamentoFaturaGestor();
+ a.el('mesPagamentoFaturaGestor').value='12/2026';const ultima=a.c.conferirPagamentoFaturaGestor();
+ assert.equal(a.chamadas.length,1);a.chamadas[0].resolve(resumo);await primeira;await descartada;await new Promise(r=>setImmediate(r));
+ assert.equal(a.chamadas.length,2);assert.equal(a.chamadas[1].p.mesFatura,'12/2026');
+ a.chamadas[1].resolve({...resumo,mesFatura:'12/2026',total:450});await ultima;
+ assert.equal(a.c.faturaConferidaGestor.total,450);assert.equal(a.chamadas.length,2);
+});
+test('mesma conferência em andamento é compartilhada; falha anterior libera seleção mais nova',async()=>{
+ const a=tela(),p=a.c.conferirPagamentoFaturaGestor(),q=a.c.conferirPagamentoFaturaGestor(true);
+ assert.equal(a.chamadas.length,1);a.chamadas[0].resolve(resumo);await Promise.all([p,q]);assert.equal(a.c.faturaConferidaGestor.total,308);
+ a.el('mesPagamentoFaturaGestor').value='11/2026';const r=a.c.conferirPagamentoFaturaGestor();
+ a.el('mesPagamentoFaturaGestor').value='12/2026';const t=a.c.conferirPagamentoFaturaGestor();
+ a.chamadas[1].reject(Error('Falha antiga'));await r;await new Promise(r=>setImmediate(r));assert.equal(a.chamadas.length,3);
+ a.chamadas[2].resolve({...resumo,mesFatura:'12/2026'});await t;assert.equal(a.c.faturaConferidaGestor.mesFatura,'12/2026');
+});
 test('prévia mostra espera imediatamente e bloqueia clique repetido até sucesso ou falha',async()=>{
  for(const falhar of [false,true]){
  const a=tela();a.c.faturaConferidaGestor=clone(resumo);a.el('valorPagamentoFaturaGestor').value='100';
@@ -58,7 +75,7 @@ test('reabrir usa resumo recente; atualização forçada e mudança de dados con
  a.c.geracaoLeituraGestor++;p=a.c.conferirPagamentoFaturaGestor();assert.equal(a.chamadas.length,3);a.chamadas[2].reject(Error('Sem conexão'));await p;assert(a.el('salvarPagamentoFaturaGestor').disabled);assert.equal(a.c.faturaConferidaGestor,null);
 });
 test('resposta de outro mês não substitui a consulta atual; comparar não registra pagamento',async()=>{
- const a=tela(),p=a.c.conferirPagamentoFaturaGestor();a.el('mesPagamentoFaturaGestor').value='11/2026';const q=a.c.conferirPagamentoFaturaGestor();a.chamadas[1].resolve({...resumo,mesFatura:'11/2026',total:400});await q;a.chamadas[0].resolve(resumo);await p;assert.equal(a.c.faturaConferidaGestor.total,400);
+ const a=tela(),p=a.c.conferirPagamentoFaturaGestor();a.el('mesPagamentoFaturaGestor').value='11/2026';const q=a.c.conferirPagamentoFaturaGestor();assert.equal(a.chamadas.length,1);a.chamadas[0].resolve(resumo);await p;await new Promise(r=>setImmediate(r));a.chamadas[1].resolve({...resumo,mesFatura:'11/2026',total:400});await q;assert.equal(a.c.faturaConferidaGestor.total,400);
  a.el('totalBancoConferenciaGestor').value='400';a.c.atualizarComparacaoFaturaGestor();assert.match(a.el('resultadoComparacaoFaturaGestor').textContent,/totais conferem/);assert.equal(a.chamadas.length,2);assert.equal(a.confirmacoes.length,0);
 });
 test('alterar valor enquanto a prévia carrega não oferece confirmação de um valor anterior',async()=>{

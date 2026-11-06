@@ -1,5 +1,12 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v171 — Conferir fatura: trocar rapidamente cartão/mês pelas setas e seletor; só uma consulta resumida em voo e última seleção aguardando precisa ser enviada. Mesma seleção em voo compartilha consulta; Atualizar após terminar envia novamente. Erro da primeira não prende a última; fechar/reabrir modal não mostra resultado anterior nem libera pagamento sem prévia atual. Durante alteração financeira, geração distinta não deve compartilhar autorização antiga. Comparar contagem de obterFaturaPagamentoWeb, SERVICO_OCUPADO e espera de trava.
+
+Histórico: voltar rapidamente conserva lista/páginas carregadas se não houve mudança. Após 15s ou mudança financeira/foco/filtros, reconferir mantendo cards anteriores e aviso explícito. Carregar mais e nova busca não se confundem. Em edição, salvar, fechar/cancelar e reabrir outro item: não herdar disabled; resposta anterior não altera sessão nova. Duplo envio segue impedido. Conferir Voltar no celular e teclado; fechar durante envio não é estorno e pendência continua visível em Atividade se faltar confirmação.
+
+Empréstimos: informar saldo inteiro de uma parcela e receber confirmação integral; informar valor menor e receber confirmação parcial com restante; ambas exigem concordância e não pagam banco. Criar recorrência preserva uma única dívida original e prepara somente próximos meses. Simulador: 1 exibe À vista, foco permite digitar 2+, saída vazia restaura 1, atalhos 3/6/12 atualizam número e resultado. Planejamento → Simular mantém confirmação existente; atalho de volta não cria compra nem altera meta automaticamente. Validação visual/real v171 ainda pendente.
+
+
 Reteste acumulado v170 — Publicar backend/frontend juntos e executar cenários v168/v169. Conferir datas, moedas e textos em Novo/Edição/Histórico/Mensal/Anual, incluindo registros de planilha com formatação e fórmulas legítimas já suportadas. Alterações virtuais precisam aparecer na prévia sem modificar planilha antes da confirmação. Datas da compra/parcela/fatura continuam normalizadas, ano fechado preserva informação de retrato. Outro aparelho e alteração externa entre prévia e confirmação continuam causando reconferência/recusa adequada. Medir filtroLeituraMs/execução/preparação junto dos contadores v169; reaproveitar matriz em memória não significa dispensar leitura do servidor.
 
 

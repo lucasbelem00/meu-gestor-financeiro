@@ -665,7 +665,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <button onclick="copiarResumoFiltroWhats()" class="w-full sm:w-auto bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs font-bold transition active:scale-95 flex items-center justify-center gap-1.5">📲 Prévia para WhatsApp</button>
       </div>
 
-      <p id="estadoConsultaHistoricoGestor" class="hidden text-xs text-slate-300 mb-3" role="status" aria-live="polite"></p>
+      <p id="estadoConsultaHistoricoGestor" class="hidden text-xs font-semibold text-sky-200 bg-slate-800 border border-sky-500/30 rounded-xl px-3 py-2 mb-3" role="status" aria-live="polite"></p>
       <div id="lista-lancamentos" class="grid grid-cols-1 md:grid-cols-2 gap-3 transition-all duration-300"></div>
       <div id="boxCarregarMais" class="hidden text-center mt-6 pb-4">
          <button onclick="carregarMaisLancamentos()" class="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-6 py-3 rounded-xl text-sm font-bold shadow-sm transition active:scale-95">Carregar mais antigas 👇</button>
@@ -1244,6 +1244,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras</h2>
+            <button type="button" onclick="setAba('planejamento')" class="text-xs text-sky-300 underline mt-1">🎯 Metas e compras planejadas</button>
             <p class="text-xs text-slate-400 mt-0.5">Calcula parcelas e compara o impacto nos seus cartões.</p>
           </div>
           <div class="flex items-center gap-2">
@@ -1270,7 +1271,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 <button type="button" onclick="setParcelasSimulador(12)" class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300 border border-slate-700 font-bold transition active:scale-95">12x</button>
               </div>
             </div>
-            <input type="number" id="simParcelas" value="1" min="1" max="600" step="1" oninput="rodarSimuladorCompra()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500">
+            <div class="relative"><input type="number" id="simParcelas" value="1" style="color:transparent" onfocus="iniciarEdicaoParcelasSimuladorGestor()" onblur="concluirEdicaoParcelasSimuladorGestor()" min="1" max="600" step="1" oninput="rodarSimuladorCompra()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold text-sm text-center outline-none focus:border-sky-500"><span id="rotuloAVistaSimuladorGestor" aria-hidden="true" class="pointer-events-none absolute inset-0 flex items-center justify-center font-bold text-white">À vista</span></div>
           </div>
 
           <div class="flex flex-col justify-end">
@@ -1499,7 +1500,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </button>
           <div id="painelDividirEmpCampos" class="hidden mt-2 p-3.5 rounded-xl bg-slate-900/80 border border-amber-500/30 space-y-2.5">
             <input type="text" id="inpDividirEmpValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="Valor recebido agora (R$)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-emerald-400 font-bold text-sm outline-none focus:border-amber-400">
-            <button type="button" onclick="executarDividirParcelaEmp()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">➖ Registrar recebimento parcial</button>
+            <button type="button" onclick="executarDividirParcelaEmp()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-lg text-xs transition active:scale-95 shadow-md">💰 Registrar recebimento</button>
           </div>
 
           <button type="button" onclick="togglePainelMoverPessoal()" class="w-full bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/30 text-blue-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition">
@@ -3661,7 +3662,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       filtrosAtuais.status = estadoIntegracaoInterfaceGestor.pxEl('filtStatus').value;
       estadoIntegracaoInterfaceGestor.pxVersaoConsultaHistorico = null;
       offsetAtual = 0;
-      informarEstadoConsultaHistoricoGestor('Consultando… Os resultados anteriores continuam abaixo até a atualização.');
+      informarEstadoConsultaHistoricoGestor('⏳ Atualizando lançamentos… Os resultados anteriores permanecem abaixo.');
       estadoIntegracaoInterfaceGestor.pxEl('boxCarregarMais').classList.add('hidden');
       fecharModalFiltros();
       chamarFiltroBackend(false);
@@ -3711,6 +3712,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           if (meuId !== estadoIntegracaoInterfaceGestor.pxReqFiltroId) return;
           estadoIntegracaoInterfaceGestor.pxVersaoConsultaHistorico = res.versaoConsulta;
           offsetAtual = offsetSolicitado;
+          if(typeof registrarConsultaHistoricoAplicadaGestor==='function')registrarConsultaHistoricoAplicadaGestor(filtrosConsulta);
           if (!append) estadoIntegracaoInterfaceGestor.pxEl('lista-lancamentos').innerHTML = '';
           renderTabelaLancamentos(res.itens, !!append);
           if (preservarLista) requestAnimationFrame(() => {if((typeof abaAtivaAtual==='undefined' || abaAtivaAtual==='lancamentos') && (window.geracaoNavegacaoGestor || 0)===geracaoDaConsulta)window.scrollTo({ top: posicaoPreservada, behavior: 'instant' });});
@@ -4466,7 +4468,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
         valorRecebido: valorRec
       }).then(res => {
         if(document.getElementById('modalEdicaoEmp')._sessaoEdicao===sessao){fecharModalEdicaoEmp(true);restaurarBotoesEditorEmpGestor();} carregarDados(); mostrarAviso('Sucesso', `Recebimento registrado. Restam ${formatBRL(res.restante)} a receber.`);
-      }).catch(err => { mostrarAviso('Erro', err.message); btn.textContent = 'Confirmar Recebimento Parcial'; btn.disabled = false; });
+      }).catch(err => { mostrarAviso('Erro', err.message); if(document.getElementById('modalEdicaoEmp')._sessaoEdicao===sessao){btn.textContent = '💰 Registrar recebimento'; btn.disabled = false;} });
     }
 
     function togglePainelMoverPessoal() {
@@ -5356,7 +5358,14 @@ function resumoParcelasSimuladorGestor(s) {
   return [...contagens].map(([v,q])=>q+'x de '+formatBRL(v)).join(' + ');
 }
 function alternarProjecaoSimuladorGestor(){simuladorExpandidoGestor=!simuladorExpandidoGestor;rodarSimuladorCompra();}
+function atualizarRotuloParcelasSimuladorGestor(){
+  const c=document.getElementById('simParcelas'),r=document.getElementById('rotuloAVistaSimuladorGestor');if(!c||!r)return;
+  const mostrar=document.activeElement!==c&&Number(c.value||1)===1;r.hidden=!mostrar;r.classList.toggle('hidden',!mostrar);if(c.style)c.style.color=mostrar?'transparent':'';
+}
+function iniciarEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(Number(c.value||1)===1)c.value='';atualizarRotuloParcelasSimuladorGestor();}
+function concluirEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(!c.value||Number(c.value)===1)c.value='1';rodarSimuladorCompra();}
 function rodarSimuladorCompra() {
+  atualizarRotuloParcelasSimuladorGestor();
   const box=document.getElementById('boxResultadoSimulador');if(!box)return;
   let s;try{s=lerSimulacaoGestor();}catch(e){box.textContent=e.message;return;}
   const cartoes=formasGlobais.filter(f=>formaEhCartaoGestor(f)&&!f.arquivado);
@@ -8285,6 +8294,21 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
   select.focus(); await conferirPagamentoFaturaGestor();
 }
 function fecharPagamentoFaturaGestor() { const modal=document.getElementById('modalPagamentoFaturaGestor'); modal.classList.add('hidden'); ++requisicaoPagamentoGestor; if(modal._focoAnterior?.isConnected && !modal._focoAnterior.disabled) modal._focoAnterior.focus({preventScroll:true}); }
+// Uma consulta em voo; seleções superadas aguardando não chegam ao servidor.
+let consultaResumoFaturaGestor=null;
+async function consultarResumoFaturaCoordenadoGestor(param,vigente){
+  const chave=JSON.stringify([param.forma,param.mesFatura,typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor]);
+  while(consultaResumoFaturaGestor){
+    const anterior=consultaResumoFaturaGestor;
+    if(anterior.chave===chave)return anterior.promessa;
+    try{await anterior.promessa;}catch(_){}
+    if(!vigente())throw Object.assign(Error('Consulta substituída.'),{codigo:'CONSULTA_SUBSTITUIDA'});
+  }
+  if(!vigente())throw Object.assign(Error('Consulta substituída.'),{codigo:'CONSULTA_SUBSTITUIDA'});
+  const item={chave,promessa:null};
+  item.promessa=(async()=>{try{return await apiCall('obterFaturaPagamentoWeb',param);}finally{if(consultaResumoFaturaGestor===item)consultaResumoFaturaGestor=null;}})();
+  consultaResumoFaturaGestor=item;return item.promessa;
+}
 async function conferirPagamentoFaturaGestor(forcar=false) {
   mostrarEsperaPreviaPagamentoGestor(false);
   const contexto=document.getElementById('cartaoPagamentoFaturaGestor').value+'|'+document.getElementById('mesPagamentoFaturaGestor').value;
@@ -8302,7 +8326,7 @@ async function conferirPagamentoFaturaGestor(forcar=false) {
   estado.textContent = 'Conferindo a fatura…';
   const geracao=geracaoLeituraGestor;
   try {
-    const resposta = await apiCall('obterFaturaPagamentoWeb', {forma,mesFatura:mes,resumo:true});
+    const resposta = await consultarResumoFaturaCoordenadoGestor({forma,mesFatura:mes,resumo:true},()=>req===requisicaoPagamentoGestor);
     if (req !== requisicaoPagamentoGestor) return;
     const f=normalizarResumoFaturaGestor(resposta);faturaConferidaGestor=f;
     const instante=Date.now();if(geracao===geracaoLeituraGestor){if(resumosFaturasGestor.size>=8)resumosFaturasGestor.delete(resumosFaturasGestor.keys().next().value);resumosFaturasGestor.set(contexto,{fatura:f,instante,geracao});}
@@ -9143,7 +9167,7 @@ function recuperarRascunhoRotinaGestor(tipo,chave,valor){
     if(emp){atualizarLayoutParcelasEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();}else{if(typeof restaurarEstadoMetadeGestor==='function')restaurarEstadoMetadeGestor(valor.dados);atualizarLayoutParcelas();atualizarPreviewParcelas();salvarRascunho();}mostrarAviso('Rascunho recuperado','Confira os campos antes de enviar.');};
   mostrarConfirmacao('Recuperar rascunho?','Os campos serão preenchidos com esta cópia. Se houver outro preenchimento, ele continuará disponível nos rascunhos.',aplicar,false,'Recuperar campos','neutral');
 }
-function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','➖ Registrar recebimento parcial'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
+function restaurarBotoesEditorEmpGestor(){for(const [seletor,texto]of [['#painelDividirEmpCampos button','💰 Registrar recebimento'],['#painelMoverPessoalCampos button','Transferir para Histórico Pessoal']]){const b=document.querySelector(seletor);if(b){b.disabled=false;b.textContent=texto;}}}
 function camposFocaveisEditorGestor(modal){return Array.from(modal.querySelectorAll('button,input:not([type="hidden"]),select,textarea,a[href],[tabindex]')).filter(e=>!e.disabled&&e.tabIndex>=0&&e.getClientRects().length&&!e.closest('[hidden],.hidden,[inert]'));}
 function configurarAcessibilidadeEditorGestor(modal){
   if(!modal?.setAttribute||!modal.querySelectorAll)return;
@@ -9174,7 +9198,7 @@ function modoRecebimentoEditorRotinaGestor(modal,ativo){
 }
 function protegerEditorRotinaGestor(abrir,fechar,id){
   const originalAbrir=window[abrir],originalFechar=window[fechar];
-  window[abrir]=function(...args){const m=document.getElementById(id),origem=document.activeElement;if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data.slice(6)+'-'+data.slice(3,5)+'-'+data.slice(0,2):'';const escopo=document.getElementById('escopoDataCombinadaEmpGestor');if(escopo)escopo.value='parcela';const ajuda=document.getElementById('ajudaEscopoDataEmpGestor');if(ajuda)ajuda.hidden=true;m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));focarEditorGestor(m,origem);return r;};
+  window[abrir]=function(...args){const m=document.getElementById(id),origem=document.activeElement;if(typeof reiniciarControlesEditorEnvioGestor==='function')reiniciarControlesEditorEnvioGestor(m);if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data.slice(6)+'-'+data.slice(3,5)+'-'+data.slice(0,2):'';const escopo=document.getElementById('escopoDataCombinadaEmpGestor');if(escopo)escopo.value='parcela';const ajuda=document.getElementById('ajudaEscopoDataEmpGestor');if(ajuda)ajuda.hidden=true;m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));focarEditorGestor(m,origem);return r;};
   window[fechar]=function(forcar=false){const m=document.getElementById(id),form=m.querySelector('form'),visivel=!m.classList.contains('hidden');if(forcar || !visivel || !m._assinaturaInicial || m._assinaturaInicial===assinaturaFormularioRotinaGestor(form)){originalFechar();if(visivel)devolverFocoEditorGestor(m);return;}
     const sessao=m._sessaoEdicao,atual=assinaturaFormularioRotinaGestor(form);mostrarConfirmacao('Descartar alterações da edição?','As mudanças ainda não enviadas serão descartadas. Uma operação que já foi enviada continua protegida em Atividade.',()=>{if(m._sessaoEdicao!==sessao||assinaturaFormularioRotinaGestor(form)!==atual){mostrarAviso('A edição mudou','Confira os campos antes de fechar.');return;}originalFechar();devolverFocoEditorGestor(m);},false,'Descartar alterações','neutral');};
 }
@@ -9188,14 +9212,14 @@ alternarStatusItemEmprestimo=function(linha,pessoa,descricao,parcela){
   modoRecebimentoEditorRotinaGestor(document.getElementById('modalEdicaoEmp'),true);
   const painel=document.getElementById('painelDividirEmpCampos');painel.classList.remove('hidden');definirValorMoeda('inpDividirEmpValor',it.valorRaw);const modal=document.getElementById('modalEdicaoEmp');modal._assinaturaInicial=assinaturaFormularioRotinaGestor(modal.querySelector('form'));atualizarPreviaRecebimentoRotinaGestor();document.getElementById('inpDividirEmpValor').focus();
 };
-function atualizarPreviaRecebimentoRotinaGestor(){const p=document.getElementById('previaRecebimentoRotina');if(!p)return;const total=Number(document.getElementById('modalEdicaoEmp')._dadosOriginaisEdicao?.valorParcela || 0),valor=lerValorMoeda('inpDividirEmpValor');p.textContent=document.getElementById('inpEdEmpPessoa').value+' · '+document.getElementById('inpEdEmpDescOrig').value+' · Recebendo '+formatBRL(valor)+' · Restarão '+formatBRL(Math.max(0,total-valor))+'. Receber da pessoa não paga a fatura do cartão.';}
+function atualizarPreviaRecebimentoRotinaGestor(){const b=document.querySelector?.('#painelDividirEmpCampos button');if(b&&!b.disabled)b.textContent='💰 Registrar recebimento';const p=document.getElementById('previaRecebimentoRotina');if(!p)return;const total=Number(document.getElementById('modalEdicaoEmp')._dadosOriginaisEdicao?.valorParcela || 0),valor=lerValorMoeda('inpDividirEmpValor');p.textContent=document.getElementById('inpEdEmpPessoa').value+' · '+document.getElementById('inpEdEmpDescOrig').value+' · Recebendo '+formatBRL(valor)+' · Restarão '+formatBRL(Math.max(0,total-valor))+'. Receber da pessoa não paga a fatura do cartão.';}
 const parcialAnteriorRotinaGestor=executarDividirParcelaEmp;
 executarDividirParcelaEmp=function(){const m=document.getElementById('modalEdicaoEmp');if(m._dadosOriginaisEdicao?.status==='Recebido'){mostrarAviso('Parcela já recebida','Confira o recebimento existente antes de registrar outro.');return;}if(m._assinaturaEditorRecebimento!==assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'))){mostrarAviso('Salve as alterações primeiro','A edição do empréstimo e o recebimento são ações separadas. Salve ou descarte a edição antes de registrar a devolução.');return;}const recebido=Math.round(lerValorMoeda('inpDividirEmpValor')*100),total=Math.round(Number(m._dadosOriginaisEdicao?.valorParcela || 0)*100);if(recebido<=0||recebido>total){mostrarAviso('Confira o valor','Informe o valor recebido, até o saldo desta parcela.');return;}
   const sessao=m._sessaoEdicao,assinatura=assinaturaFormularioRotinaGestor(m.querySelector('form'));
-  mostrarConfirmacao('Registrar recebimento?',document.getElementById('inpEdEmpPessoa').value+' devolveu '+formatBRL(recebido/100)+'? Restarão '+formatBRL((total-recebido)/100)+'. O pagamento ao banco permanece independente.',()=>{
+  mostrarConfirmacao(recebido<total?'Registrar recebimento parcial?':'Registrar recebimento integral?',document.getElementById('inpEdEmpPessoa').value+' devolveu '+formatBRL(recebido/100)+'? Restarão '+formatBRL((total-recebido)/100)+'. O pagamento ao banco permanece independente.',()=>{
     if(sessao!==m._sessaoEdicao||assinatura!==assinaturaFormularioRotinaGestor(m.querySelector('form'))){mostrarAviso('Os campos mudaram','Confira o recebimento novamente.');return;}
     if(recebido===total){const linha=document.getElementById('inpEdEmpLinha').value;salvarStatusEmprestimoComAtualizacao(linha,document.getElementById('inpEdEmpPessoa').value,document.getElementById('inpEdEmpDescOrig').value,document.getElementById('inpEdEmpParcelaStr').value,true).then(ok=>{if(ok&&m._sessaoEdicao===sessao)fecharModalEdicaoEmp(true);});}else parcialAnteriorRotinaGestor();
-  },false,'Registrar recebimento','success');
+  },false,recebido<total?'Confirmar recebimento parcial':'Confirmar recebimento integral','success');
 };
 function mostrarRecebidosEmpGestor(){document.getElementById('selFiltroStatusEmp').value='Recebido';renderizarPainelEmprestimos();}
 function limparFiltrosEmpGestor(){for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp']){const e=document.getElementById(id);if(e)e.value='';}renderizarPainelEmprestimos();}
@@ -9563,11 +9587,11 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
       if(!intacto()){mostrarAviso('Salve a edição primeiro','Salve ou descarte a edição antes de criar a recorrência com os dados salvos.');return;}
       if(!plano)return;const modo=area._modo.value;
       const p={origem:tipo,modo,descricao:args[terceiros?3:2],pessoa:terceiros?args[2]:'',forma:args[terceiros?4:3],categoria:terceiros?'':args[4],valor:lerValorMoeda(args[5]),dia:plano.dia,proximoMes:plano.proximoMes,defasagem:plano.defasagem,tags:terceiros?'':args[8]||'',perfilGasto:terceiros?null:args[10]||null,registroOrigem:ref.registroId,versaoOrigem:ref.versao};
-      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+'. O lançamento atual será preservado.',async()=>{
+      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+'. O lançamento atual permanece em Empréstimos para registrar a devolução. A recorrência prepara somente os próximos meses.',async()=>{
         if(!intacto()||modo!==area._modo.value||area._enviando){mostrarAviso('Os dados mudaram','Confira os campos e tente novamente.');return;}
         const chave=JSON.stringify([epoca,p]);if(area._pedido?.chave!==chave)area._pedido={chave,param:{...p,requestId:novoRequestIdGestor()}};
         area._enviando=true;botao.disabled=true;area._modo.disabled=true;
-        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada','Os próximos meses estão preparados. O lançamento original foi preservado.');}}
+        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada','Os próximos meses estão em Recorrências. O empréstimo deste mês permanece para registrar o recebimento; não foi duplicado.');}}
         catch(e){mostrarAviso('Confira a recorrência',e.message+' Consulte Atividade antes de repetir um envio sem confirmação.');}
         finally{area._enviando=false;if(m._sessaoEdicao===sessao){botao.disabled=false;area._modo.disabled=false;}}
       },false,'Criar recorrência','neutral');
@@ -9876,7 +9900,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v170', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v171', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -9930,6 +9954,16 @@ window.apiCall = function(acao, param, ...extras) {
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
 let retomarFiltroHistoricoGestor=false;
+let consultaHistoricoAplicadaGestor=null;
+function chaveFiltrosHistoricoEntradaGestor(f){const c={...f};delete c.versaoConsulta;return JSON.stringify(c);}
+function registrarConsultaHistoricoAplicadaGestor(f){consultaHistoricoAplicadaGestor={chave:chaveFiltrosHistoricoEntradaGestor(f),geracao:typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor,instante:Date.now()};}
+function atualizarHistoricoAoEntrarGestor(){
+  if(typeof retomarFiltroHistoricoGestor!=='undefined')retomarFiltroHistoricoGestor=false;
+  if(typeof estadoIntegracaoInterfaceGestor!=='undefined'&&estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento)return;
+  const c=consultaHistoricoAplicadaGestor,lista=document.getElementById('lista-lancamentos'),idade=c?Date.now()-c.instante:-1;
+  if(c&&idade>=0&&idade<15000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
+  chamarFiltroBackend(false,true);
+}
 function consultarHistoricoVisivelGestor(param,continuar){
   if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='lancamentos')retomarFiltroHistoricoGestor=false;
   return coordenadorLeiturasDesempenhoGestor.consultarHistorico(param,()=>continuar()&&(typeof abaAtivaAtual==='undefined'||abaAtivaAtual==='lancamentos')).catch(e=>{
@@ -10820,18 +10854,28 @@ window.addEventListener?.('storage',e=>{if(e.key===null||e.key==='gestorEpocaRes
 // FIM INTERFACE CONFERENCIA GERADA
 // INICIO INTERFACE ENVIOS GERADA
 // Estado visual temporário; nunca substitui requestId, journal ou versão do servidor.
+function controleSaidaDuranteEnvioGestor(e){
+  if(e.tagName!=='BUTTON')return false;
+  const acao=e.getAttribute?.('onclick')||'',texto=String(e.textContent||'').replace(/^[✕×]\s*/,'').trim();
+  return /\b(fechar\w*|cancelar\w*|setAba|voltar)\s*\(/i.test(acao)||/^(Cancelar|Fechar|Voltar)$/i.test(texto)||e.hasAttribute?.('data-menu-aba')||e.classList?.contains('tab-btn-global');
+}
+function reiniciarControlesEditorEnvioGestor(raiz){
+  const bloco=raiz?._bloqueioControlesEnvioGestor;if(!bloco)return;
+  bloco.campos.forEach(([e,antes])=>{e.disabled=antes;});delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');
+}
 function bloquearControlesEnvioGestor(raiz){
   if(!raiz?.querySelectorAll)return ()=>{};
-  const sessao=raiz._sessaoEdicao,campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).map(e=>[e,e.disabled]);
+  const sessao=raiz._sessaoEdicao,campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).filter(e=>!controleSaidaDuranteEnvioGestor(e)).map(e=>[e,e.disabled]);
+  const bloco={campos};raiz._bloqueioControlesEnvioGestor=bloco;
   campos.forEach(([e])=>e.disabled=true);raiz.setAttribute?.('aria-busy','true');
-  return ()=>{raiz.removeAttribute?.('aria-busy');if(raiz._sessaoEdicao!==sessao)return;campos.forEach(([e,antes])=>{e.disabled=antes;});};
+  return ()=>{if(raiz._bloqueioControlesEnvioGestor!==bloco)return;delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');if(raiz._sessaoEdicao!==sessao)return;campos.forEach(([e,antes])=>{e.disabled=antes;});};
 }
 const enviosVisuaisGestor=new Set(),apiAntesBloqueioVisualGestor=window.apiCall;
 window.apiCall=async function(acao,p,...resto){
   if(CATALOGO_ACOES_GESTOR[acao]?.tipo!=='financeira')return apiAntesBloqueioVisualGestor(acao,p,...resto);
   const raizes=Array.from(document.querySelectorAll?.('[role="dialog"],[id^="view-"]')||[]).filter(e=>!e.classList.contains('hidden')&&!e.closest?.('[inert]'));
   const form=document.activeElement?.closest?.('form');if(form&&!form.closest?.('.hidden,[inert]'))raizes.push(form);
-  const unicas=[...new Set(raizes)];
+  const unicas=[...new Set(raizes)].filter(e=>!raizes.some(pai=>pai!==e&&pai.contains?.(e)));
   if(unicas.some(e=>enviosVisuaisGestor.has(e)))throw Error('Aguarde a confirmação do envio em andamento.');
   unicas.forEach(e=>enviosVisuaisGestor.add(e));const liberar=unicas.map(bloquearControlesEnvioGestor);
   try{return await apiAntesBloqueioVisualGestor(acao,p,...resto);}finally{liberar.forEach(f=>f());unicas.forEach(e=>enviosVisuaisGestor.delete(e));}
@@ -10909,7 +10953,7 @@ window.renderizarDados=function(dados){
   arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
 };
 const setAbaAntesArquivosProtecaoGestor=window.setAba;
-window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length)chamarFiltroBackend(false,false);return r;};
+window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length){if(typeof atualizarHistoricoAoEntrarGestor==='function')atualizarHistoricoAoEntrarGestor();else chamarFiltroBackend(false,true);}return r;};
 function linkSeguroProtecaoGestor(url){return /^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(String(url||''))?url:'';}
 function abaCompletaCSVProtecaoGestor(dados,nome){
   const origem=dados.abas.find(a=>a.nome===nome);if(!origem)return null;

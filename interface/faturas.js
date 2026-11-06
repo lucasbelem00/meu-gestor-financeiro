@@ -54,6 +54,21 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
   select.focus(); await conferirPagamentoFaturaGestor();
 }
 function fecharPagamentoFaturaGestor() { const modal=document.getElementById('modalPagamentoFaturaGestor'); modal.classList.add('hidden'); ++requisicaoPagamentoGestor; if(modal._focoAnterior?.isConnected && !modal._focoAnterior.disabled) modal._focoAnterior.focus({preventScroll:true}); }
+// Uma consulta em voo; seleções superadas aguardando não chegam ao servidor.
+let consultaResumoFaturaGestor=null;
+async function consultarResumoFaturaCoordenadoGestor(param,vigente){
+  const chave=JSON.stringify([param.forma,param.mesFatura,typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor]);
+  while(consultaResumoFaturaGestor){
+    const anterior=consultaResumoFaturaGestor;
+    if(anterior.chave===chave)return anterior.promessa;
+    try{await anterior.promessa;}catch(_){}
+    if(!vigente())throw Object.assign(Error('Consulta substituída.'),{codigo:'CONSULTA_SUBSTITUIDA'});
+  }
+  if(!vigente())throw Object.assign(Error('Consulta substituída.'),{codigo:'CONSULTA_SUBSTITUIDA'});
+  const item={chave,promessa:null};
+  item.promessa=(async()=>{try{return await apiCall('obterFaturaPagamentoWeb',param);}finally{if(consultaResumoFaturaGestor===item)consultaResumoFaturaGestor=null;}})();
+  consultaResumoFaturaGestor=item;return item.promessa;
+}
 async function conferirPagamentoFaturaGestor(forcar=false) {
   mostrarEsperaPreviaPagamentoGestor(false);
   const contexto=document.getElementById('cartaoPagamentoFaturaGestor').value+'|'+document.getElementById('mesPagamentoFaturaGestor').value;
@@ -71,7 +86,7 @@ async function conferirPagamentoFaturaGestor(forcar=false) {
   estado.textContent = 'Conferindo a fatura…';
   const geracao=geracaoLeituraGestor;
   try {
-    const resposta = await apiCall('obterFaturaPagamentoWeb', {forma,mesFatura:mes,resumo:true});
+    const resposta = await consultarResumoFaturaCoordenadoGestor({forma,mesFatura:mes,resumo:true},()=>req===requisicaoPagamentoGestor);
     if (req !== requisicaoPagamentoGestor) return;
     const f=normalizarResumoFaturaGestor(resposta);faturaConferidaGestor=f;
     const instante=Date.now();if(geracao===geracaoLeituraGestor){if(resumosFaturasGestor.size>=8)resumosFaturasGestor.delete(resumosFaturasGestor.keys().next().value);resumosFaturasGestor.set(contexto,{fatura:f,instante,geracao});}

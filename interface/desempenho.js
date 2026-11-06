@@ -222,7 +222,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v170', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v171', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -276,6 +276,16 @@ window.apiCall = function(acao, param, ...extras) {
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
 let retomarFiltroHistoricoGestor=false;
+let consultaHistoricoAplicadaGestor=null;
+function chaveFiltrosHistoricoEntradaGestor(f){const c={...f};delete c.versaoConsulta;return JSON.stringify(c);}
+function registrarConsultaHistoricoAplicadaGestor(f){consultaHistoricoAplicadaGestor={chave:chaveFiltrosHistoricoEntradaGestor(f),geracao:typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor,instante:Date.now()};}
+function atualizarHistoricoAoEntrarGestor(){
+  if(typeof retomarFiltroHistoricoGestor!=='undefined')retomarFiltroHistoricoGestor=false;
+  if(typeof estadoIntegracaoInterfaceGestor!=='undefined'&&estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento)return;
+  const c=consultaHistoricoAplicadaGestor,lista=document.getElementById('lista-lancamentos'),idade=c?Date.now()-c.instante:-1;
+  if(c&&idade>=0&&idade<15000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
+  chamarFiltroBackend(false,true);
+}
 function consultarHistoricoVisivelGestor(param,continuar){
   if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='lancamentos')retomarFiltroHistoricoGestor=false;
   return coordenadorLeiturasDesempenhoGestor.consultarHistorico(param,()=>continuar()&&(typeof abaAtivaAtual==='undefined'||abaAtivaAtual==='lancamentos')).catch(e=>{
