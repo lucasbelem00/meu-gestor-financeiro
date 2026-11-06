@@ -10,6 +10,48 @@ function conferir(a,r){
  assert.equal(d.integridade.bloqueada,false);
 }
 function editar(a,r,extras={}){return api(a,'editarLancamentoLinhaWeb',{incluirAtualizacaoDados:true,requestId:'snapshot-editar-001',registroId:r[11],compraId:r[12],versao:r[13],linha:2,descOriginal:r[1],mesOriginal:r[8],parcelaOriginal:r[6],descricao:'Descrição atualizada',dataCompra:'16/10/2026',formaPagto:'Cartao',categoria:'Teste',valorParcela:r[7],mesFatura:r[8],status:r[9],tags:'#teste',...extras});}
+test('edição devolve primeira página filtrada equivalente à nova consulta, com soma correta e reconferência antes de paginar',()=>{
+ const a=iniciar(fixture([personal('Original',30),personal('Outro',20)])),r=clone(a.db.sheets['Lançamentos'].rows[1]);
+ const consulta={filtros:{termo:'Atualizada',status:'Em Aberto'},offset:0,limite:50};
+ const res=editar(a,r,{historicoAtual:consulta}),h=res.atualizacaoDados.historico;
+ assert.equal(JSON.stringify(h.consulta),JSON.stringify(consulta));const atual=api(a,'filtrarLancamentosWeb',consulta);assert.equal(h.resposta.versaoConsulta,null);assert.equal(h.requerReconsultaPaginacao,true);delete atual.versaoConsulta;const exibida={...h.resposta};delete exibida.versaoConsulta;assert.equal(JSON.stringify(exibida),JSON.stringify(atual));
+ assert.equal(h.resposta.qtdTotal,1);assert(!JSON.stringify(a.db.sheets['_Gestor_Operacoes'].rows).includes('atualizacaoDados'));
+});
+test('exclusão devolve seleção sem item excluído e pedido de outra página não cria atalho',()=>{
+ for(const offset of [0,50]){
+ const a=iniciar(fixture([personal('Excluir',30),personal('Outro',20)])),r=a.db.sheets['Lançamentos'].rows[1],consulta={filtros:{termo:'Excluir'},offset,limite:50};
+ const res=api(a,'excluirLancamentoWeb',{registroId:r[11],compraId:r[12],versao:r[13],linha:2,descricao:r[1],mesFatura:r[8],parcela:r[6],incluirAtualizacaoDados:true,historicoAtual:consulta,requestId:'snapshot-excluir-historico-001'});
+ assert(res.atualizacaoDados);if(offset===0){assert.equal(res.atualizacaoDados.historico.resposta.qtdTotal,0);assert.equal(res.atualizacaoDados.historico.resposta.itens.length,0);}else assert.equal(res.atualizacaoDados.historico,undefined);
+ }
+});
+
+for(const acao of ['registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'])test(acao+' devolve atualização confirmada equivalente à consulta real e preserva reenvio',()=>{
+ const terceiro=loan('Pessoa','A Receber',100,'Cartao');terceiro[0]='02/10/2026';const a=iniciar(fixture([personal('Pessoal',80)],[terceiro]));
+ const r=clone(a.db.sheets['Empréstimos'].rows[1]);let p;
+ if(acao==='registrarPagamentoFaturaWeb')p={...api(a,'previaPagamentoFaturaWeb',{forma:'Cartao',mesFatura:'10/2026',valor:100,resumo:true})};
+ else p={linha:2,registroId:r[11],compraId:r[12],versao:r[13],pessoa:r[1],descricao:r[2],mesFatura:r[8],parcela:r[6],statusDesejado:'Recebido',valorRecebido:40};
+ Object.assign(p,{incluirAtualizacaoDados:true,requestId:'snapshot-pagamentos-'+acao});
+ const res=api(a,acao,p);conferir(a,res);assert(!JSON.stringify(a.db.sheets['_Gestor_Operacoes'].rows).includes('atualizacaoDados'));
+ if(acao==='registrarPagamentoFaturaWeb')assert.equal(a.db.sheets['Empréstimos'].rows[1][9],'A Receber');
+ else assert.equal(a.ctx.obterFaturaPagamentoWeb({forma:'Cartao',mesFatura:'10/2026'}).pago,0);
+ const antes=JSON.stringify([a.db.sheets['Lançamentos'].rows,a.db.sheets['Empréstimos'].rows]);
+ const repetido=api(a,acao,p);assert.equal(repetido.atualizacaoDados,undefined);assert.equal(JSON.stringify([a.db.sheets['Lançamentos'].rows,a.db.sheets['Empréstimos'].rows]),antes);
+});
+test('falha acessória na atualização do pagamento conserva confirmação financeira sem duplicar',()=>{
+ const a=iniciar(fixture([personal('Pessoal',100)])),p={...api(a,'previaPagamentoFaturaWeb',{forma:'Cartao',mesFatura:'10/2026',valor:100,resumo:true}),incluirAtualizacaoDados:true,requestId:'snapshot-pagamento-falha-001'},ler=a.ctx.getDadosCompletos;
+ a.ctx.getDadosCompletos=()=>{throw Error('Falha acessória');};const r=api(a,'registrarPagamentoFaturaWeb',p);assert.equal(r.atualizacaoDados,undefined);assert.equal(r.pago,100);
+ a.ctx.getDadosCompletos=ler;api(a,'registrarPagamentoFaturaWeb',p);assert.equal(a.ctx.obterFaturaPagamentoWeb(p).pago,100);
+});
+test('pagamento com atualização confirmada exige menos leituras reais que pagar e consultar tudo novamente',()=>{
+ function executar(opt){
+  const terceiro=loan('Pessoa','A Receber',100,'Cartao');terceiro[0]='02/10/2026';const a=iniciar(fixture([personal('Pessoal',80)],[terceiro]));
+  const p={...api(a,'previaPagamentoFaturaWeb',{forma:'Cartao',mesFatura:'10/2026',valor:100,resumo:true}),incluirAtualizacaoDados:opt,requestId:'pagamento-medicao-snapshot'};let leituras=0;
+  for(const sh of Object.values(a.db.sheets)){const obter=sh.getRange;sh.getRange=function(...args){const r=obter.apply(this,args);for(const k of ['getValues','getFormulas','getDisplayValues','getValue']){const ler=r[k];if(ler)r[k]=function(){leituras++;return ler.apply(this,arguments);};}return r;};}
+  const r=api(a,'registrarPagamentoFaturaWeb',p),dados=opt?r.atualizacaoDados?.dados:api(a,'getDadosCompletos');assert(dados);return {leituras,dados};
+ }
+ const novo=executar(true),anterior=executar(false);assert(novo.leituras<anterior.leituras,'leituras devem cair: '+novo.leituras+' / '+anterior.leituras);
+ for(const k of ['kpis','faturas'])assert.equal(JSON.stringify(novo.dados[k]),JSON.stringify(anterior.dados[k]),k);
+});
 
 test('novo devolve retrato completo confirmado sem persistir retrato no diário nem duplicar reenvio',()=>{
  const a=iniciar(),p={...launch,incluirAtualizacaoDados:true,requestId:'snapshot-novo-001'};

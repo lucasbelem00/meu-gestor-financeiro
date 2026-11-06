@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v172 — Atualização confirmada do executor contempla pagamento/recebimentos; interface/desempenho.js aceita retrato e primeira página opcional de Histórico após edição/exclusão, por filtro/geração/prazo e uso único. Continuação reconfere versão física. interface/envios.js compartilha bloqueio reentrante por raiz com liberação idempotente. interface/usabilidade.js valida/solicita transferência de simulação; interface/planejamento.js reconfere conflito e persiste rascunho antes de navegar. Esquema de oito colunas preservado, sem salvar financeiro automaticamente. Módulos 2/3/4/5/7/8; protocolo 19.
+
+
 v171 — interface/faturas.js: consultarResumoFaturaCoordenadoGestor serializa consultas resumidas e descarta apenas seleções aguardando superadas; não gerencia mutações. interface/desempenho.js: registrarConsultaHistoricoAplicadaGestor/atualizarHistoricoAoEntrarGestor preservam lista/paginação recente por filtros/geração/TTL; interface/protecao.js integra retorno sem zerar lista. interface/envios.js: exclusão de raízes sobrepostas, saídas disponíveis e token de bloqueio por sessão; interface/rotina.js reinicia controles herdados ao abrir editor e diferencia confirmação parcial/integral. interface/usabilidade.js controla rótulo À vista no simulador; index.html fornece overlay e atalho Planejamento. interface/recorrencias.js esclarece preservação do empréstimo original. Protocolo 19/cache v171; módulos 2/3/4/5/6/7/8/10.
 
 

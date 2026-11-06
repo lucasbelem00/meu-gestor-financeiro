@@ -28,3 +28,16 @@ test('resposta antiga não substitui resultados nem desbloqueia a consulta mais 
  envios[1].resolve({itens:['corretos'],temMais:false});await p2;
  assert.equal(els['lista-lancamentos'].innerHTML,'corretos');assert.equal(els['lista-lancamentos'].inert,false);
 });
+
+test('primeira página confirmada dispensa rede; Carregar mais reconfere versão antes de paginar',async()=>{
+ const {ctx,els,envios}=ambiente();let consumos=0;
+ ctx.requestAnimationFrame=f=>f();ctx.window.scrollTo=()=>{};
+ ctx.consumirHistoricoAtualizacaoGestor=()=>++consumos===1?{itens:['confirmado'],versaoConsulta:null,qtdTotal:51,temMais:true}:null;
+ await ctx.chamarFiltroBackend(false);assert.equal(envios.length,0);assert.equal(els['lista-lancamentos'].innerHTML,'confirmado');
+ const p=ctx.chamarFiltroBackend(true);assert.equal(envios.length,1);
+ envios[0].resolve({itens:['reconferido'],versaoConsulta:'real',qtdTotal:51,temMais:true});
+ await new Promise(r=>setImmediate(r));assert.equal(envios.length,2);
+ envios[1].resolve({itens:['pagina2'],versaoConsulta:'real',qtdTotal:51,temMais:false});await p;
+ assert.equal(ctx.offsetAtual,50);assert.equal(ctx.estadoIntegracaoInterfaceGestor.pxVersaoConsultaHistorico,'real');
+ assert.equal(els['lista-lancamentos'].innerHTML,'reconferido,pagina2');
+});

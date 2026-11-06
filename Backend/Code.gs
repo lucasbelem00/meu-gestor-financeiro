@@ -4434,7 +4434,7 @@ function aplicarAnexoTecnicoGestor_(ss, m) {
 }
 
 function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
-  if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb'].includes(ctx.action))return null;
+  if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'].includes(ctx.action))return null;
   const anterior=CONTEXTO_GESTOR_,somenteLeitura=ctx.somenteLeitura;
   const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
   try {
@@ -4449,6 +4449,12 @@ function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
     if(entradasCalculadasResumoGestor_(ctx))return null;
     if(ctx.ss.abas['Lançamentos']?.valores.some(r=>limparApostrofo(r[6])==='∞/∞')&&hashEstadoGestor_(ctx.ss.abas['Lançamentos'].valores)!==estados.get('Lançamentos'))return null;
     const dados=medir('atualizacaoDadosMs',()=>getDadosCompletos());
+    let historico=null;const pedido=ctx.param?.historicoAtual;
+    if(pedido&&['editarLancamentoLinhaWeb','excluirLancamentoWeb'].includes(ctx.action)&&pedido.offset===0&&pedido.limite===50&&pedido.filtros&&typeof pedido.filtros==='object'&&!Array.isArray(pedido.filtros)&&JSON.stringify(pedido.filtros).length<=3000){
+      const filtros=copiarGestor_(pedido.filtros);delete filtros.versaoConsulta;
+      historico={consulta:{filtros,offset:0,limite:50},resposta:filtrarLancamentosWeb(filtros,0,50)};
+    }
+
     const inicioConferencia=Date.now();try{
     if(!dados||dados.erro||dados.error||dados.protocoloGestor!==19)return null;
     // Fórmulas particulares em entradas podem ter recalculado depois da
@@ -4463,7 +4469,8 @@ function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
     informarOrigemAnualResultadoGestor_(dados,ctx);
     dados.integridade=copiarGestor_(integridade||{bloqueada:false,pendencias:[]});
     if(ctx.ss.abas['Lançamentos'])dados.integridade.series=pendenciasSeriesGestor_(ctx);
-    const atualizacao={versao:1,dados:dados};
+    if(historico){informarOrigemAnualResultadoGestor_(historico.resposta,ctx);historico.resposta.integridade=copiarGestor_(dados.integridade);historico.resposta.versaoConsulta=null;historico.requerReconsultaPaginacao=true;}
+    const atualizacao={versao:1,dados:dados};if(historico)atualizacao.historico=historico;
     // Limite conservador sem transferir outro payload grande pelo proxy.
     if(JSON.stringify(atualizacao).length*2>700000)return null;
     return atualizacao;

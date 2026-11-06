@@ -10,10 +10,16 @@ function reiniciarControlesEditorEnvioGestor(raiz){
 }
 function bloquearControlesEnvioGestor(raiz){
   if(!raiz?.querySelectorAll)return ()=>{};
-  const sessao=raiz._sessaoEdicao,campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).filter(e=>!controleSaidaDuranteEnvioGestor(e)).map(e=>[e,e.disabled]);
-  const bloco={campos};raiz._bloqueioControlesEnvioGestor=bloco;
-  campos.forEach(([e])=>e.disabled=true);raiz.setAttribute?.('aria-busy','true');
-  return ()=>{if(raiz._bloqueioControlesEnvioGestor!==bloco)return;delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');if(raiz._sessaoEdicao!==sessao)return;campos.forEach(([e,antes])=>{e.disabled=antes;});};
+  let bloco=raiz._bloqueioControlesEnvioGestor;
+  if(!bloco){
+    const campos=Array.from(raiz.querySelectorAll('button,input,select,textarea')).filter(e=>!controleSaidaDuranteEnvioGestor(e)).map(e=>[e,e.disabled]);
+    bloco={campos,sessao:raiz._sessaoEdicao,usuarios:0};raiz._bloqueioControlesEnvioGestor=bloco;
+    campos.forEach(([e])=>e.disabled=true);raiz.setAttribute?.('aria-busy','true');
+  }
+  bloco.usuarios++;let liberado=false;
+  return ()=>{if(liberado)return;liberado=true;if(raiz._bloqueioControlesEnvioGestor!==bloco)return;
+    if(--bloco.usuarios>0)return;delete raiz._bloqueioControlesEnvioGestor;raiz.removeAttribute?.('aria-busy');
+    if(raiz._sessaoEdicao!==bloco.sessao)return;bloco.campos.forEach(([e,antes])=>{e.disabled=antes;});};
 }
 const enviosVisuaisGestor=new Set(),apiAntesBloqueioVisualGestor=window.apiCall;
 window.apiCall=async function(acao,p,...resto){

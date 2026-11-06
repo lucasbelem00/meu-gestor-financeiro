@@ -33,7 +33,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     });
   }
   let respostaCompletaAtual = null;
-  let atualizacaoConfirmada = null;
+  let atualizacaoConfirmada = null, historicoConfirmado = null;
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0, filtrosSuperados:0, ocupadas:0, retentativasOcupado:0, ocupadasEsgotadas:0 };
   const motivosInvalidacao = new Set(['externa','mutacao_inicio','mutacao_fim','carga_completa','online','foco','armazenamento','visivel']);
   const invalidacoesPorMotivo = {}, ultimasInvalidacoes = [], ultimosDescartes = [];
@@ -60,7 +60,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     ultimasInvalidacoes.push({instante:agora(),geracao,motivo});if(ultimasInvalidacoes.length>20)ultimasInvalidacoes.shift();
     cache.clear(); bytes = 0;
     respostaCompletaAtual = null;
-    atualizacaoConfirmada = null;
+    atualizacaoConfirmada = null;historicoConfirmado=null;
     // Promessas anteriores seguem observadas por seus solicitantes, sem serem
     // reaproveitadas por consultas iniciadas depois desta invalidação.
     consultas.clear();
@@ -195,13 +195,13 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       // Qualquer outra alteração/retomada durante o envio exige consulta normal.
       try{
         const snapshot=respostaConfirmada?.atualizacaoDados,d=snapshot?.dados;
-        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb'].includes(acao)&&snapshot?.versao===1&&
+        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'].includes(acao)&&snapshot?.versao===1&&
           d&&typeof d==='object'&&!Array.isArray(d)&&Number(d.protocoloGestor)>=18&&!d.erro&&!d.error&&
           d.integridade&&d.integridade.bloqueada===false&&typeof d.epocaRestauracao==='string'&&
           d.kpis&&d.faturas&&Array.isArray(d.lancamentos)&&Array.isArray(d.formasPagamento)&&
           Array.isArray(d.configCategorias)&&Array.isArray(d.emprestimos?.itens)&&d.versoesConfiguracao){
           const serializado=JSON.stringify(d);
-          if(serializado.length*2<=limiteBytes)atualizacaoConfirmada={geracao,instante:agora(),dados:JSON.parse(serializado)};
+          if(serializado.length*2<=limiteBytes)atualizacaoConfirmada={geracao,instante:agora(),dados:JSON.parse(serializado),historico:copiar(snapshot.historico)};
         }
       }catch(_){/* Acessório opcional nunca transforma confirmação em erro. */}
     });
@@ -215,14 +215,22 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     consumirAtualizacaoConfirmada:()=>{
       const item=atualizacaoConfirmada;atualizacaoConfirmada=null;
       if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
+      historicoConfirmado=item.historico?{...item.historico,geracao,instante:item.instante}:null;
       return copiar(item.dados);
+    },
+    consumirHistoricoConfirmado:param=>{
+      const item=historicoConfirmado;historicoConfirmado=null;
+      if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
+      if(chaveEstavel(item.consulta)!==chaveEstavel(param))return null;
+      const r=item.resposta;if(!r||!Array.isArray(r.itens)||r.itens.length>50||!(typeof r.versaoConsulta==='string'||r.versaoConsulta===null&&item.requerReconsultaPaginacao===true)||!Number.isInteger(r.qtdTotal)||r.qtdTotal<0)return null;
+      historicoConfirmado=null;metricas.historicosConfirmados=(metricas.historicosConfirmados||0)+1;return copiar(r);
     },
     registrarAtualizacaoConfirmada:()=>{metricas.atualizacoesConfirmadas++;},
     // Só recargas visuais usam esta espera. A API de confirmação/protocolo
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v171', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v172', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -276,6 +284,11 @@ window.apiCall = function(acao, param, ...extras) {
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
 let retomarFiltroHistoricoGestor=false;
+function capturarHistoricoAtualizacaoGestor(){
+  if(typeof abaAtivaAtual==='undefined'||abaAtivaAtual!=='lancamentos'||typeof offsetAtual==='undefined'||offsetAtual!==0||typeof filtrosAtuais==='undefined')return null;
+  const filtros=JSON.parse(JSON.stringify(filtrosAtuais));delete filtros.versaoConsulta;return {filtros,offset:0,limite:50};
+}
+function consumirHistoricoAtualizacaoGestor(param){return coordenadorLeiturasDesempenhoGestor.consumirHistoricoConfirmado(param);}
 let consultaHistoricoAplicadaGestor=null;
 function chaveFiltrosHistoricoEntradaGestor(f){const c={...f};delete c.versaoConsulta;return JSON.stringify(c);}
 function registrarConsultaHistoricoAplicadaGestor(f){consultaHistoricoAplicadaGestor={chave:chaveFiltrosHistoricoEntradaGestor(f),geracao:typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor,instante:Date.now()};}

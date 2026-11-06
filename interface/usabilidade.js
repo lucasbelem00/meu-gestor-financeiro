@@ -235,6 +235,21 @@ function haRascunhoFormularioGestor(emp) {
 }
 function transformarSimulacaoEmEmprestimo(){transferirSimulacaoGestor(true);}
 function transformarSimulacaoEmLancamento(){transferirSimulacaoGestor(false);}
+function levarSimulacaoAoPlanejamentoGestor(){
+ try{
+  const ler=()=>({simulacao:lerSimulacaoGestor(),nome:String(document.getElementById('simDescricao')?.value||'').trim()});
+  const origem=ler(),assinatura=JSON.stringify(origem),estado=estadoTransferenciaPlanejamentoGestor();
+  if(estado.ocupado)throw Error('Conclua a operação em Planejamento antes de transferir a simulação.');
+  const partes=origem.simulacao.data.split('/'),data=partes[2]+'-'+partes[1]+'-'+partes[0];
+  mostrarConfirmacao('Levar simulação ao planejamento?',
+   (origem.nome||'Compra simulada')+' · '+formatBRL(origem.simulacao.valor)+' · '+origem.simulacao.data+'.\n\nSerão preenchidos nome, valor total e prazo. Você poderá escolher Compra planejada ou Meta e revisar antes de salvar. Parcelas e cartão permanecem no simulador; nenhum gasto será registrado.'+(estado.rascunho?'\n\nO rascunho atual do planejamento será substituído; os itens salvos permanecem.':''),()=>{
+    try{if(JSON.stringify(ler())!==assinatura)throw Error('A simulação mudou. Confira os valores e transfira novamente.');
+     receberSimulacaoPlanejamentoGestor({nome:origem.nome||'Compra simulada',centavos:centavosInterfaceGestor(origem.simulacao.valor),data},estado);
+     mostrarAviso('Planejamento preenchido','Revise nome, valor, prazo e tipo antes de salvar. Nenhum gasto foi lançado.');
+    }catch(e){mostrarAviso('Não foi transferido',e.message);}
+   },false,estado.rascunho?'Substituir rascunho':'Preencher planejamento','neutral');
+ }catch(e){mostrarAviso('Confira a simulação',e.message);}
+}
 
 function numeroExpressaoCalcGestor(n){const s=String(n);if(!/[eE]/.test(s))return s;const [mant,e]=s.toLowerCase().split('e'),neg=mant.startsWith('-'),limpo=mant.replace('-',''),partes=limpo.split('.'),digits=partes.join(''),pos=partes[0].length+Number(e);return (neg?'-':'')+(pos<=0?'0.'+'0'.repeat(-pos)+digits:pos>=digits.length?digits+'0'.repeat(pos-digits.length):digits.slice(0,pos)+'.'+digits.slice(pos));}
 function calcDigito(d){if(calcAposIgualGestor){calcExprStr='';calcAposIgualGestor=false;}if(d==='.'&&(!calcExprStr||/[+\-*/(]$/.test(calcExprStr)))calcExprStr+='0';calcExprStr+=d;atualizarVisorCalc();}

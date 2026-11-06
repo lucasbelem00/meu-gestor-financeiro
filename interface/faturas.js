@@ -126,7 +126,7 @@ async function confirmarPagamentoFaturaGestor() {
     campos.forEach(c => { c.campo.disabled = true; });
     const referencia=previa.forma+' · '+previa.mesFatura;
     try {
-      const r = await apiCall('registrarPagamentoFaturaWeb', { forma: previa.forma, mesFatura: previa.mesFatura, versaoFatura: previa.versaoFatura, regra:previa.regra, valor:previa.valor });
+      const r = await apiCall('registrarPagamentoFaturaWeb', { incluirAtualizacaoDados:true, forma: previa.forma, mesFatura: previa.mesFatura, versaoFatura: previa.versaoFatura, regra:previa.regra, valor:previa.valor });
       mostrarAviso('Pagamento registrado — '+referencia, 'Saldo restante: ' + formatBRL(r.restante) + '. Você pode conferir ou desfazer em Atividade.');
       if(mesmaSessao()){restaurarCampos();fecharPagamentoFaturaGestor();}
       try{await carregarDados();}catch(e){mostrarAviso('Pagamento registrado — '+referencia,'Não foi possível atualizar a tela. Confira os dados novamente. '+e.message);}

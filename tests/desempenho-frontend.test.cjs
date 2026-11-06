@@ -121,9 +121,18 @@ test('erro tardio de consulta em tela deixada é substituído sem reenviar a con
 });
 
 function snapshotConfirmado(saldo=20){return {versao:1,dados:{protocoloGestor:18,integridade:{bloqueada:false,pendencias:[]},epocaRestauracao:'',kpis:{totalAberto:saldo},faturas:{},lancamentos:[],formasPagamento:[],configCategorias:[],emprestimos:{itens:[]},versoesConfiguracao:{formas:'f',categorias:'c'}}};}
+test('página filtrada confirmada só atende uma vez os mesmos filtros e geração',async()=>{
+ const consulta={filtros:{termo:'x'},offset:0,limite:50},snapshot=snapshotConfirmado();snapshot.historico={consulta,requerReconsultaPaginacao:true,resposta:{itens:[],qtdTotal:0,versaoConsulta:null,temMais:false}};
+ for(const caso of ['igual','filtro','geracao']){
+ const c=coordenador({executar:async()=>({atualizacaoDados:snapshot})});await c.chamar('editarLancamentoLinhaWeb',{incluirAtualizacaoDados:true});assert(c.consumirAtualizacaoConfirmada());
+ if(caso==='geracao')c.invalidar('armazenamento');
+ const p=caso==='filtro'?{...consulta,filtros:{termo:'y'}}:consulta,r=c.consumirHistoricoConfirmado(p);
+ assert.equal(Boolean(r),caso==='igual');assert.equal(c.consumirHistoricoConfirmado(consulta),null);
+ }
+});
 
 test('Novo, edição, categorias e exclusão confirmados atualizam a tela uma vez sem consulta completa adicional',async()=>{
- for(const acao of ['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb']){
+ for(const acao of ['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb']){
   const chamadas=[],ingeridos=[];const a=ambiente(async nome=>{chamadas.push(nome);return nome===acao?{sucesso:true,atualizacaoDados:snapshotConfirmado()}:{saldo:99};},true,{receberEstadoDadosCompletosGestor:d=>ingeridos.push(d)});
   await a.ctx.apiCall(acao,{incluirAtualizacaoDados:true});
   assert.equal(a.renderizados.length,0);
@@ -174,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v171');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v172');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

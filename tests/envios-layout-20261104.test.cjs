@@ -29,6 +29,10 @@ test('modal e formulário contido não aplicam bloqueio duplo que deixaria contr
  a.c.document.activeElement={closest:()=>form};await a.c.apiCall('salvar',{});
  assert.equal(a.controles[0].disabled,false);assert.equal(a.controles[1].disabled,true);
 });
+test('dois bloqueios explícitos da mesma raiz são liberados só ao encerrar ambos, sem herdar disabled',()=>{
+ const a=ambiente(),um=a.c.bloquearControlesEnvioGestor(a.modal),dois=a.c.bloquearControlesEnvioGestor(a.modal);
+ dois();dois();assert.equal(a.controles[0].disabled,true);um();assert.equal(a.controles[0].disabled,false);assert.equal(a.controles[1].disabled,true);
+});
 test('À vista visual preserva número e ao terminar edição vazia restaura uma parcela',()=>{
  const a=ambiente(),campo=a.get('inpEmpParc'),rotulo=a.get('rotuloAVistaEmpGestor');campo.value='1';a.c.atualizarRotuloParcelasEmpGestor();assert.equal(rotulo.hidden,false);assert.equal(campo.value,'1');
  a.c.document.activeElement=campo;a.c.iniciarEdicaoParcelasEmpGestor();assert.equal(campo.value,'');assert.equal(rotulo.hidden,true);a.c.document.activeElement=null;a.c.concluirEdicaoParcelasEmpGestor();assert.equal(campo.value,'1');

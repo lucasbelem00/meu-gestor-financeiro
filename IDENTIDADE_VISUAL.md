@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v172 — Simulador apresenta Compra (opcional) e 🎯 Levar ao planejamento. Confirmação explica dados transferidos; destino abre formulário revisável, sem criar lançamento. Valores, cores de situação e identidade das abas preservados.
+
+
 v171 — Histórico mostra aviso “⏳ Atualizando lançamentos…” em caixa discreta azul, acima dos cards preservados. Campos de parcelas do simulador seguem Novo/Empréstimos: À vista representa numericamente 1 sem foco e dá lugar a números ao editar. Recebimento usa botão genérico “💰 Registrar recebimento”; confirmação explicita parcial/integral e saldo restante. Fechar/Cancelar continuam disponíveis durante envio, sem sugerir cancelamento bancário. Simulador inclui atalho textual para Metas e compras planejadas, preservando o caminho já existente de simular uma estimativa. Recorrência de terceiros esclarece o papel do original e dos próximos meses, sem nova cor ou entidade financeira.
 
 
