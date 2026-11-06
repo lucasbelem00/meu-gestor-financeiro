@@ -1,5 +1,14 @@
 # Mapa do código do Gestor de Gastos
 
+v170 — Backend/Code.gs: lerAbaCompleta usa exibirValoresLidosGestor_ quando intervalo é virtual; criarPlanilhaVirtualGestor_ separa formatação de valores da obtenção/cópia da matriz, preservando API getDisplayValues. Aba real usa apresentação nativa. shared/anual.js: informarOrigemAnualResultadoGestor_ usa apenas catálogo da fotografia inicial correspondente para montar metadados, sem alterar desdobramento/aplicação/reconferência. Inclui v168/v169. Módulos 2/3/4/5/6/10; protocolo 19/cache v170.
+
+
+v169 — Backend/Code.gs: abrirPlanilhaPorIdGestor_ conserva referência Spreadsheet no memo do executor, usada por obterPlanilhaGestor_ e shared/anual.js/shared/protecao.js; leituras e conferências permanecem reais. Executor exporta contagens planilhasAbertas/planilhasReutilizadas e duração abrirPlanilhaMs no diagnóstico. colunaTipoFormaGestor_ aceita fotografia opcional para tipoFormaGestor_, sem reusar dados entre requisições. lerMetasCategorias lê bloco B17:D41 único; obterFaturaPagamentoWeb normaliza alvo uma vez e lê última linha uma vez por aba. index.html aceita somente as métricas numéricas novas. Inclui v168; módulos 2/3/4/5/6/9/10, protocolo 19/cache v169.
+
+
+v168 — shared/relatorios.js inclui registrarPagamentoFaturaWeb na elegibilidade do resumo derivado adiado, mantendo intenção durável/fallback. interface/faturas.js: mostrarEsperaPreviaPagamentoGestor controla botão/aviso acessível antes da consulta de distribuição, restaura somente sessão correspondente. interface/desempenho.js: aguardarVisibilidadeConsultaGestor/retomarVisibilidadeConsultaGestor compartilham espera de tela oculta; coordenador aguarda apenas leituras de tela, sem bloquear protocolo/mutações e sem retirar invalidação de retomada. index.html fornece região estadoPreviaPagamentoGestor. Módulos 2/3/4/5/6/10; protocolo 19/cache v168.
+
+
 v167 — interface/desempenho.js: consultas permitidas repetem SERVICO_OCUPADO com duas pausas limitadas, cancelamento por tela/busca e métricas ocupadas/retentativasOcupado/ocupadasEsgotadas/esperasConsultas. index.html: informarEstadoConsultaHistoricoGestor conserva lista anterior, identifica espera/falha e bloqueia ações até resposta válida. shared/relatorios.js: marcarUsoRecenteAppGestor_ e usoRecenteAppGestor_ são prioridade consultiva por timestamp no cache, sem finanças; adiarResumoPorUsoGestor_ preserva intenção; adiarProtecaoProgramadaPorUsoGestor_ e retomarProtecaoProgramadaPorUsoGestor agendam retomada limitada. shared/protecao.js consulta prioridade somente na rotina programada; manual permanece imediato. Backend/Code.gs integra marcação antes do lock e recebe blocos gerados. Módulos 2/3/5/6/8/10; protocolo 19/cache v167.
 
 

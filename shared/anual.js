@@ -20,7 +20,7 @@ function dadosAnoGestor_(e){
   const ctx=CONTEXTO_GESTOR_,chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
   if(ctx){ctx.cacheAnosConferidos=ctx.cacheAnosConferidos||new Map();if(ctx.cacheAnosConferidos.has(chave))return copiarGestor_(ctx.cacheAnosConferidos.get(chave));}
   const inicioLeitura=Date.now();try{
-  const ss=SpreadsheetApp.openById(e.id),info=ss.getSheetByName('Leia-me');
+  const ss=abrirPlanilhaPorIdGestor_(e.id),info=ss.getSheetByName('Leia-me');
   const identidade=info?info.getRange(2,2,2,1).getValues():[];
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
@@ -34,7 +34,7 @@ function cabFinanceiroAnualGestor_(ss,nome){
 function novaPlanilhaAnoGestor_(ss,pasta,ano,lote,dados,estadoVisual='ABERTO'){
   const nome='Gestor '+ano+' — '+hashGestor_(propriedade_(CHAVE_ID_PLANILHA_GESTOR)).slice(0,10)+' — '+lote;
   const candidatos=pasta.getFilesByName(nome);let destino;
-  if(candidatos.hasNext()){const f=candidatos.next();if(candidatos.hasNext())throw Error('Há destinos anuais repetidos. Preserve os arquivos.');destino=SpreadsheetApp.openById(f.getId());}
+  if(candidatos.hasNext()){const f=candidatos.next();if(candidatos.hasNext())throw Error('Há destinos anuais repetidos. Preserve os arquivos.');destino=abrirPlanilhaPorIdGestor_(f.getId());}
   else {destino=SpreadsheetApp.create(nome);if(destino.setSpreadsheetTimeZone)destino.setSpreadsheetTimeZone(ss.getSpreadsheetTimeZone());if(destino.setSpreadsheetLocale&&ss.getSpreadsheetLocale)destino.setSpreadsheetLocale(ss.getSpreadsheetLocale());const inicial=destino.getSheets()[0];if(inicial&&inicial.getLastRow()===0&&inicial.setName)inicial.setName('Dashboard & Resumo');DriveApp.getFileById(destino.getId()).moveTo(pasta);}
   const existentes=destino.getSheetByName('Leia-me');
   if(existentes&&(existentes.getRange(2,2).getValue()!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(existentes.getRange(3,2).getValue())!==ano))throw Error('A preparação anual encontrou outro destino.');
@@ -89,7 +89,7 @@ function folhaLeituraAnualGestor_(ss,nome,leituraLocal){
 function mudancaMatrizAnualGestor_(ss,nome,depois,destino,antesConferido){
   // Fotografia opcional obtida na conferência imediatamente anterior do ano.
   // Serve somente ao planejamento; aplicarPlano revalida antes e depois de escrever.
-  const antes=antesConferido?copiarGestor_(antesConferido):lerEstadoAbaGestor_((destino?SpreadsheetApp.openById(destino.id):ss).getSheetByName(nome));
+  const antes=antesConferido?copiarGestor_(antesConferido):lerEstadoAbaGestor_((destino?abrirPlanilhaPorIdGestor_(destino.id):ss).getSheetByName(nome));
   if(hashEstadoGestor_(antes)===hashEstadoGestor_(depois))return null;
   const colunas=Math.max(1,...antes.map(r=>r.length),...depois.map(r=>r.length)),alteracoes=[];
   for(let i=0;i<Math.max(antes.length,depois.length);i++)if(hashEstadoGestor_([antes[i]||[]])!==hashEstadoGestor_([depois[i]||[]]))alteracoes.push([i,depois[i]||[]]);
@@ -201,7 +201,7 @@ function destinoMudancaAnualGestor_(ss,m,plano,leituraDestino){
   // essa fotografia na comparação anterior à escrita, fora do contexto virtual.
   // A conferência posterior à escrita continua relendo a planilha real.
   if(leituraDestino&&!CONTEXTO_GESTOR_)leituraDestino.valores=copiarGestor_(dados.abas.find(a=>a.nome===m.nome).valores);
-  return SpreadsheetApp.openById(e.id);
+  return abrirPlanilhaPorIdGestor_(e.id);
 }
 function conferirDestinosAnuaisPlanoGestor_(ss,plano){
   const m=plano?.mudancas.find(m=>m.nome===ABA_ANOS_GESTOR_);if(!m)return;
@@ -210,7 +210,7 @@ function conferirDestinosAnuaisPlanoGestor_(ss,plano){
   const anos=new Set(),ids=new Set();for(const r of linhas.slice(1)){
     if(!Number.isInteger(r[0])||r[0]<ANO_MIN_COMPETENCIA_GESTOR_||r[0]>ANO_MAX_COMPETENCIA_GESTOR_||anos.has(r[0])||ids.has(r[1])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||!['ABERTO','FECHADO'].includes(r[2]))throw Error('O destino da restauração anual é incompatível.');
     anos.add(r[0]);ids.add(r[1]);dadosAnoGestor_({ano:r[0],id:r[1],estado:r[2],hash:r[3]});
-    if(m.anosPreparados){const preparado=m.anosPreparados.find(e=>e.ano===r[0]&&e.id===r[1]);if(!preparado||!Array.isArray(preparado.abas)||preparado.abas.length!==2)throw Error('Falta a conferência integral do destino anual preparado.');const banco=SpreadsheetApp.openById(r[1]);for(const a of preparado.abas){const atual=lerEstadoAbaGestor_(banco.getSheetByName(a.nome)),hash=hashEstadoGestor_(atual),mudanca=plano.mudancas.find(x=>x.destinoAnual?.id===r[1]&&x.nome===a.nome);if(!ehAbaRegistrosGestor_(a.nome)||(!mudanca&&hash!==a.hash)||(mudanca&&(mudanca.antes!==a.hash||hash!==mudanca.antes&&hash!==mudanca.depois&&!estadoRecuperacaoBlocosGestor_(atual,mudanca))))throw Error('O destino anual preparado foi alterado depois da conferência. A restauração foi preservada sem substituir os demais dados.');}}
+    if(m.anosPreparados){const preparado=m.anosPreparados.find(e=>e.ano===r[0]&&e.id===r[1]);if(!preparado||!Array.isArray(preparado.abas)||preparado.abas.length!==2)throw Error('Falta a conferência integral do destino anual preparado.');const banco=abrirPlanilhaPorIdGestor_(r[1]);for(const a of preparado.abas){const atual=lerEstadoAbaGestor_(banco.getSheetByName(a.nome)),hash=hashEstadoGestor_(atual),mudanca=plano.mudancas.find(x=>x.destinoAnual?.id===r[1]&&x.nome===a.nome);if(!ehAbaRegistrosGestor_(a.nome)||(!mudanca&&hash!==a.hash)||(mudanca&&(mudanca.antes!==a.hash||hash!==mudanca.antes&&hash!==mudanca.depois&&!estadoRecuperacaoBlocosGestor_(atual,mudanca))))throw Error('O destino anual preparado foi alterado depois da conferência. A restauração foi preservada sem substituir os demais dados.');}}
   }
 }
 function gravarPlanoOrganizacaoAnualGestor_(ss){
@@ -254,7 +254,7 @@ function cicloAnualGestor_(ss,pasta){
     const d=dadosAnoGestor_(e);e.estado='FECHADO';e.hash=hashGestor_(d);e.fechadoEm=new Date().toISOString();
     const tabela=ss.getSheetByName(ABA_ANOS_GESTOR_),linha=localizarLinhasTecnicasGestor_(tabela,1,String(e.ano))[0];if(!linha)throw Error('Ano ausente no fechamento.');tabela.getRange(linha,1,1,6).setValues([linhaCatalogoAnoGestor_(e)]);SpreadsheetApp.flush();
   }
-  let avisos=0;for(const e of catalogo)if(!tentarApresentacaoAnoGestor_(ss,SpreadsheetApp.openById(e.id),e.ano,e.estado).sucesso)avisos++;
+  let avisos=0;for(const e of catalogo)if(!tentarApresentacaoAnoGestor_(ss,abrirPlanilhaPorIdGestor_(e.id),e.ano,e.estado).sucesso)avisos++;
   if(!avisos){const c=configProtecaoGestor_();c.avisoApresentacaoAnual='';salvarConfigProtecaoGestor_(c);}
   return {sucesso:true,anos:catalogo.map(e=>({ano:e.ano,estado:e.estado}))};
 }
@@ -264,7 +264,7 @@ function backupOrganizacaoAnualGestor_(backup,ss){
   // O retrato no Drive continua intacto; só a cópia JSON recebe o formato de
   // datas já aceito pelo restaurador. Date.toJSON() perderia essa informação.
   const fuso=backup.fusoHorario||getTimezone();
-  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{const d=dadosAnoGestor_(e);return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:{ano:d.ano,abas:d.abas.map(a=>({nome:a.nome,valores:valoresCelulasBackupGestor_(a.valores,fuso)}))}};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=SpreadsheetApp.openById(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:valoresCelulasBackupGestor_(d.getSheetByName(n)?.getDataRange().getValues()||[],fuso)}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
+  const indisponiveis=[],catalogo=catalogoAnosGestor_(ss),anos=catalogo.map(function(e){try{const d=dadosAnoGestor_(e);return {ano:e.ano,estado:e.estado,fechadoEm:e.fechadoEm,dados:{ano:d.ano,abas:d.abas.map(a=>({nome:a.nome,valores:valoresCelulasBackupGestor_(a.valores,fuso)}))}};}catch(erro){if(CONTEXTO_GESTOR_?.action!=='restaurarBackupDadosWeb')throw erro;let original;try{const d=abrirPlanilhaPorIdGestor_(e.id);original=['Lançamentos','Empréstimos'].map(n=>({nome:n,valores:valoresCelulasBackupGestor_(d.getSheetByName(n)?.getDataRange().getValues()||[],fuso)}));}catch(_){}indisponiveis.push({ano:e.ano,id:e.id,erro:String(erro.message||erro),original:original});return null;}}).filter(Boolean);
   const resultado=Object.assign({},backup,{formato:'gestor-financeiro-backup-v3',anos:anos});if(indisponiveis.length)resultado.recuperacaoAnos={aviso:'Cópia parcial anterior à recuperação; preserve também o JSON completo utilizado.',catalogo:catalogo,indisponiveis:indisponiveis,ajustes:ajustesAnuaisGestor_(ss)};resultado.hashOrganizacao=assinaturaBackupAnualGestor_(resultado);return resultado;
 }
 function assinaturaBackupAnualGestor_(b){return hashGestor_({abas:b.abas.filter(a=>a.nome!=='_Gestor_Atividade').map(a=>({nome:a.nome,valores:a.valores,formulas:a.formulas||[]})),arquivosAnuais:b.arquivosAnuais||[],anos:b.anos});}
@@ -285,7 +285,7 @@ function prepararRestauracaoAnosGestor_(abas,ss){
   const real=CONTEXTO_GESTOR_.ssReal,pasta=pastaProtecaoGestor_(),lote='restaurar-'+CONTEXTO_GESTOR_.param.requestId,entradas=[];
   for(const a of abas.anos||[]){const e=novaPlanilhaAnoGestor_(real,pasta,a.ano,lote,a.dados,a.estado);e.estado=a.estado;e.fechadoEm=a.fechadoEm;if(e.estado==='FECHADO')e.hash=hashGestor_(a.dados);entradas.push(e);}
   CONTEXTO_GESTOR_.anosRestaurados=entradas;
-  CONTEXTO_GESTOR_.anosPreparados=entradas.map(e=>({ano:e.ano,id:e.id,abas:['Lançamentos','Empréstimos'].map(nome=>({nome:nome,hash:hashEstadoGestor_(lerEstadoAbaGestor_(SpreadsheetApp.openById(e.id).getSheetByName(nome)))}))}));
+  CONTEXTO_GESTOR_.anosPreparados=entradas.map(e=>({ano:e.ano,id:e.id,abas:['Lançamentos','Empréstimos'].map(nome=>({nome:nome,hash:hashEstadoGestor_(lerEstadoAbaGestor_(abrirPlanilhaPorIdGestor_(e.id).getSheetByName(nome)))}))}));
 }
 function diagnosticoRecuperacaoAnosGestor_(ss,backup){
   const catalogo=catalogoAnosGestor_(ss),indisponiveis=[],estados=[];
@@ -295,7 +295,9 @@ function diagnosticoRecuperacaoAnosGestor_(ss,backup){
 }
 function informarOrigemAnualResultadoGestor_(resultado,ctx){
   if(!resultado||typeof resultado!=='object'||!ativoAnualGestor_(ctx.ssReal)||ctx.anosIndisponiveis?.size)return;
-  const mapa=new Map(),fechados=new Map(catalogoAnosGestor_(ctx.ssReal).filter(e=>e.estado==='FECHADO').map(e=>[e.ano,e]));
+  // Metadados da mesma fotografia financeira; a aplicação do plano reconfere os destinos.
+  const inicial=ctx.leituraFinanceiraInicial,catalogo=inicial?.ss===ctx.ssReal?inicial.catalogo:catalogoAnosGestor_(ctx.ssReal);
+  const mapa=new Map(),fechados=new Map(catalogo.filter(e=>e.estado==='FECHADO').map(e=>[e.ano,e]));
   for(const e of fechados.values()){
     const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash,dados=ctx.cacheAnosConferidos?.get(chave)||dadosAnoGestor_(e);
     for(const a of dados.abas)for(const r of a.valores.slice(1))mapa.set(String(r[11]),{r:r,e:e,emprestimo:a.nome==='Empréstimos'});

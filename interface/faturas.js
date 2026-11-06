@@ -55,6 +55,7 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
 }
 function fecharPagamentoFaturaGestor() { const modal=document.getElementById('modalPagamentoFaturaGestor'); modal.classList.add('hidden'); ++requisicaoPagamentoGestor; if(modal._focoAnterior?.isConnected && !modal._focoAnterior.disabled) modal._focoAnterior.focus({preventScroll:true}); }
 async function conferirPagamentoFaturaGestor(forcar=false) {
+  mostrarEsperaPreviaPagamentoGestor(false);
   const contexto=document.getElementById('cartaoPagamentoFaturaGestor').value+'|'+document.getElementById('mesPagamentoFaturaGestor').value;
   const modal=document.getElementById('modalPagamentoFaturaGestor');if(modal._contextoPagamento!==contexto){document.getElementById('valorPagamentoFaturaGestor').value='';document.getElementById('totalBancoConferenciaGestor').value='';modal._contextoPagamento=contexto;}
   const req = ++requisicaoPagamentoGestor; faturaConferidaGestor = null;
@@ -80,6 +81,11 @@ async function conferirPagamentoFaturaGestor(forcar=false) {
 }
 function usarSaldoPagamentoFaturaGestor() { if (faturaConferidaGestor) definirValorMoeda('valorPagamentoFaturaGestor', faturaConferidaGestor.restante); }
 function contextoConfirmacaoFaturaGestor(){return JSON.stringify([requisicaoPagamentoGestor,document.getElementById('cartaoPagamentoFaturaGestor').value,document.getElementById('mesPagamentoFaturaGestor').value,Math.round(lerValorMoeda('valorPagamentoFaturaGestor')*100)]);}
+function mostrarEsperaPreviaPagamentoGestor(aguardando){
+  const b=document.getElementById('salvarPagamentoFaturaGestor'),e=document.getElementById('estadoPreviaPagamentoGestor');
+  if(b){b.textContent=aguardando?'⏳ Conferindo…':'💸 Registrar pagamento';b.setAttribute?.('aria-busy',String(aguardando));if(aguardando)b.disabled=true;}
+  if(e){e.hidden=!aguardando;e.textContent=aguardando?'Conferindo a distribuição do pagamento. Aguarde a prévia antes de confirmar.':'';}
+}
 async function confirmarPagamentoFaturaGestor() {
   if (pagamentoFaturaEmCursoGestor || !faturaConferidaGestor) return;
   const f = { ...faturaConferidaGestor }, valor = lerValorMoeda('valorPagamentoFaturaGestor');
@@ -88,9 +94,11 @@ async function confirmarPagamentoFaturaGestor() {
   const requisicao=requisicaoPagamentoGestor;
   const contexto=contextoConfirmacaoFaturaGestor();
   let previa;
+  const botaoPrevia=document.getElementById('salvarPagamentoFaturaGestor'),desabilitadoAntes=botaoPrevia.disabled;
+  mostrarEsperaPreviaPagamentoGestor(true);
   try {previa=await apiCall('previaPagamentoFaturaWeb',{forma:f.forma,mesFatura:f.mesFatura,valor,resumo:true},1);}
   catch(e) {mostrarAviso('Prévia indisponível',e.message);return;}
-  finally {pagamentoFaturaEmCursoGestor=false;}
+  finally {pagamentoFaturaEmCursoGestor=false;if(requisicao===requisicaoPagamentoGestor){mostrarEsperaPreviaPagamentoGestor(false);botaoPrevia.disabled=desabilitadoAntes;}}
   if(requisicao!==requisicaoPagamentoGestor||contexto!==contextoConfirmacaoFaturaGestor()) {mostrarAviso('Confira novamente','Os campos da fatura mudaram durante a consulta. Confira o valor e peça uma nova prévia.');return;}
   const distribuicao=previa.distribuicao||{quantidade:previa.aplicacoes.length,pessoal:previa.aplicacoes.filter(i=>i.aba==='Lançamentos').reduce((s,i)=>s+i.aplicar,0),terceiros:previa.aplicacoes.filter(i=>i.aba==='Empréstimos').reduce((s,i)=>s+i.aplicar,0)};
   const mensagem='Registrar '+formatBRL(previa.valor)+' na fatura '+previa.mesFatura+' de '+previa.forma+'?\n\nDistribuição em '+distribuicao.quantidade+' lançamento(s): seus gastos '+formatBRL(distribuicao.pessoal)+'; gastos de terceiros '+formatBRL(distribuicao.terceiros)+'.\n\nOrdem: data da compra e número da parcela, incluindo seus gastos e os de terceiros. Em empate, a ordem de cada registro é mantida.\n\nPagar o banco não marca o empréstimo como recebido. Receber da pessoa também não paga o banco.';

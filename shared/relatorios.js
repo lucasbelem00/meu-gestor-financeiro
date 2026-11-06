@@ -71,7 +71,7 @@ function entradasCalculadasResumoGestor_(ctx){
   return false;
 }
 function solicitarResumoAssincronoGestor_(acao,ctx){
-  if(!['confirmarMesRecorrenciaWeb','processarModelosRecorrenciaGestor','salvarLancamentoWeb','editarLancamentoLinhaWeb','excluirLancamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao))return false;
+  if(!['registrarPagamentoFaturaWeb','confirmarMesRecorrenciaWeb','processarModelosRecorrenciaGestor','salvarLancamentoWeb','editarLancamentoLinhaWeb','excluirLancamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao))return false;
   try{
     const s=lerResumoAssincronoGestor_();if(!s?.ativo)return false;
     if(entradasCalculadasResumoGestor_(ctx))return false;

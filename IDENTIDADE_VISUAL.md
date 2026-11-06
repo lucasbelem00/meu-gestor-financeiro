@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v168 — Conferir fatura: após pedir pagamento, botão mostra “⏳ Conferindo…” e fica desabilitado enquanto a prévia é consultada. Mensagem discreta abaixo, role=status/aria-live=polite, orienta aguardar a distribuição; desaparece ao concluir/abrir outra consulta. Confirmação financeira só aparece depois de prévia válida. Novo Empréstimo usa “Observação (Opcional)” por extenso.
+
+
 v167 — Histórico: mensagem discreta acima da lista com role=status/aria-live informa consulta em andamento, ocupação ou resultados anteriores. Mantém cards visíveis para evitar tela vazia, mas lista inert impede ações sobre busca ainda não confirmada. Soma anterior fica escondida ao trocar filtro. Aviso desaparece somente após sucesso válido; nenhuma cor de pagamento ou status financeiro foi alterada.
 
 

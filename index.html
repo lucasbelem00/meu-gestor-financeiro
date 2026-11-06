@@ -1053,7 +1053,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               </div>
 
               <div id="boxEmpObs" class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Observação (Opc.)</label>
+                <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Observação (Opcional)</label>
                 <input type="text" id="inpEmpObs" placeholder="Ex.: Devolver por transferência" oninput="salvarRascunhoEmp()" class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white outline-none focus:border-amber-500">
               </div>
             </div>
@@ -1560,6 +1560,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <div><label for="valorPagamentoFaturaGestor" class="block text-xs text-slate-300 mb-1">Valor pago agora ao banco</label><input id="valorPagamentoFaturaGestor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" placeholder="R$ 0,00" class="w-full rounded-xl bg-slate-900 border border-slate-600 px-3 py-3 font-bold text-white" required><button type="button" onclick="usarSaldoPagamentoFaturaGestor()" class="mt-2 text-xs text-emerald-200 underline">Usar saldo total em aberto</button></div>
         <p class="text-xs text-slate-300">O pagamento é distribuído entre os itens da fatura para calcular o saldo e o limite. Isso não indica quem reembolsou você. Juros e encargos devem ser registrados como despesas separadas.</p>
         <button type="submit" id="salvarPagamentoFaturaGestor" class="w-full bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 rounded-xl px-3 py-3 text-sm font-bold text-white">💸 Registrar pagamento</button>
+        <p id="estadoPreviaPagamentoGestor" hidden role="status" aria-live="polite" class="text-xs text-slate-300"></p>
       </form>
     </div>
   </div>
@@ -8179,7 +8180,7 @@ function normalizarTemposServidorGestor(action, meta) {
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs']){
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs']){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -8285,6 +8286,7 @@ async function abrirConferenciaFaturaGestor(forma, mes) {
 }
 function fecharPagamentoFaturaGestor() { const modal=document.getElementById('modalPagamentoFaturaGestor'); modal.classList.add('hidden'); ++requisicaoPagamentoGestor; if(modal._focoAnterior?.isConnected && !modal._focoAnterior.disabled) modal._focoAnterior.focus({preventScroll:true}); }
 async function conferirPagamentoFaturaGestor(forcar=false) {
+  mostrarEsperaPreviaPagamentoGestor(false);
   const contexto=document.getElementById('cartaoPagamentoFaturaGestor').value+'|'+document.getElementById('mesPagamentoFaturaGestor').value;
   const modal=document.getElementById('modalPagamentoFaturaGestor');if(modal._contextoPagamento!==contexto){document.getElementById('valorPagamentoFaturaGestor').value='';document.getElementById('totalBancoConferenciaGestor').value='';modal._contextoPagamento=contexto;}
   const req = ++requisicaoPagamentoGestor; faturaConferidaGestor = null;
@@ -8310,6 +8312,11 @@ async function conferirPagamentoFaturaGestor(forcar=false) {
 }
 function usarSaldoPagamentoFaturaGestor() { if (faturaConferidaGestor) definirValorMoeda('valorPagamentoFaturaGestor', faturaConferidaGestor.restante); }
 function contextoConfirmacaoFaturaGestor(){return JSON.stringify([requisicaoPagamentoGestor,document.getElementById('cartaoPagamentoFaturaGestor').value,document.getElementById('mesPagamentoFaturaGestor').value,Math.round(lerValorMoeda('valorPagamentoFaturaGestor')*100)]);}
+function mostrarEsperaPreviaPagamentoGestor(aguardando){
+  const b=document.getElementById('salvarPagamentoFaturaGestor'),e=document.getElementById('estadoPreviaPagamentoGestor');
+  if(b){b.textContent=aguardando?'⏳ Conferindo…':'💸 Registrar pagamento';b.setAttribute?.('aria-busy',String(aguardando));if(aguardando)b.disabled=true;}
+  if(e){e.hidden=!aguardando;e.textContent=aguardando?'Conferindo a distribuição do pagamento. Aguarde a prévia antes de confirmar.':'';}
+}
 async function confirmarPagamentoFaturaGestor() {
   if (pagamentoFaturaEmCursoGestor || !faturaConferidaGestor) return;
   const f = { ...faturaConferidaGestor }, valor = lerValorMoeda('valorPagamentoFaturaGestor');
@@ -8318,9 +8325,11 @@ async function confirmarPagamentoFaturaGestor() {
   const requisicao=requisicaoPagamentoGestor;
   const contexto=contextoConfirmacaoFaturaGestor();
   let previa;
+  const botaoPrevia=document.getElementById('salvarPagamentoFaturaGestor'),desabilitadoAntes=botaoPrevia.disabled;
+  mostrarEsperaPreviaPagamentoGestor(true);
   try {previa=await apiCall('previaPagamentoFaturaWeb',{forma:f.forma,mesFatura:f.mesFatura,valor,resumo:true},1);}
   catch(e) {mostrarAviso('Prévia indisponível',e.message);return;}
-  finally {pagamentoFaturaEmCursoGestor=false;}
+  finally {pagamentoFaturaEmCursoGestor=false;if(requisicao===requisicaoPagamentoGestor){mostrarEsperaPreviaPagamentoGestor(false);botaoPrevia.disabled=desabilitadoAntes;}}
   if(requisicao!==requisicaoPagamentoGestor||contexto!==contextoConfirmacaoFaturaGestor()) {mostrarAviso('Confira novamente','Os campos da fatura mudaram durante a consulta. Confira o valor e peça uma nova prévia.');return;}
   const distribuicao=previa.distribuicao||{quantidade:previa.aplicacoes.length,pessoal:previa.aplicacoes.filter(i=>i.aba==='Lançamentos').reduce((s,i)=>s+i.aplicar,0),terceiros:previa.aplicacoes.filter(i=>i.aba==='Empréstimos').reduce((s,i)=>s+i.aplicar,0)};
   const mensagem='Registrar '+formatBRL(previa.valor)+' na fatura '+previa.mesFatura+' de '+previa.forma+'?\n\nDistribuição em '+distribuicao.quantidade+' lançamento(s): seus gastos '+formatBRL(distribuicao.pessoal)+'; gastos de terceiros '+formatBRL(distribuicao.terceiros)+'.\n\nOrdem: data da compra e número da parcela, incluindo seus gastos e os de terceiros. Em empate, a ordem de cada registro é mantida.\n\nPagar o banco não marca o empréstimo como recebido. Receber da pessoa também não paga o banco.';
@@ -9731,6 +9740,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   }
   function consultar(acao, param, extras, repeticoes = 0, continuar = null, tentativasOcupadas = 0) {
     if(continuar&&!continuar()){metricas.filtrosSuperados++;const e=new Error('Consulta substituída pela navegação ou por outro filtro.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
+    // Somente leituras de tela aguardam retorno; protocolo e mutações seguem livres.
+    if(leiturasDeTela.has(acao)||cacheaveis.has(acao)){
+      const visibilidade=opcoes.aguardarVisibilidade?.();
+      if(visibilidade)return aguardarConsulta([visibilidade],'tela_oculta',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
+    }
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
     if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
@@ -9862,7 +9876,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v167', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v170', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -9885,7 +9899,18 @@ function avisarEsperaConsultaGestor(acao){
   const id={obterAtividadeWeb:'estadoHistoricoAtividade',obterRecorrenciasWeb:'estadoModelosRecorrenciaGestor'}[acao];
   const e=id&&document.getElementById?.(id);if(e)e.textContent=texto;
 }
+let esperaVisibilidadeConsultaGestor=null,liberarVisibilidadeConsultaGestor=null;
+function aguardarVisibilidadeConsultaGestor(){
+  if(document.visibilityState!=='hidden')return null;
+  if(!esperaVisibilidadeConsultaGestor)esperaVisibilidadeConsultaGestor=new Promise(resolve=>{liberarVisibilidadeConsultaGestor=resolve;});
+  return esperaVisibilidadeConsultaGestor;
+}
+function retomarVisibilidadeConsultaGestor(){
+  if(document.visibilityState!=='visible')return;
+  const liberar=liberarVisibilidadeConsultaGestor;esperaVisibilidadeConsultaGestor=null;liberarVisibilidadeConsultaGestor=null;liberar?.();
+}
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
+  aguardarVisibilidade:aguardarVisibilidadeConsultaGestor,
   podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
   executar: (...args) => apiAntesCoordenacaoDesempenhoGestor(...args),
   leituras: leiturasDesempenhoGestor,
@@ -10086,7 +10111,7 @@ window.addEventListener('storage', evento => {
 });
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState==='hidden')controleRetomadaGestor.sair();
-  else if(document.visibilityState==='visible')controleRetomadaGestor.retomar('visivel');
+  else if(document.visibilityState==='visible'){controleRetomadaGestor.retomar('visivel');retomarVisibilidadeConsultaGestor();}
 });
 
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo

@@ -9,6 +9,40 @@ function ambiente(dados=fixture()){
 const estado=a=>a.ctx.situacaoResumoPlanilhaGestor_();
 const salvar=(a,id)=>api(a,'salvarLancamentoWeb',{...launch,requestId:id,incluirAtualizacaoDados:true});
 
+function prepararPagamentoResumo(){
+ const a=ambiente(fixture([personal('Pessoal',100)],[loan('Pessoa','A Receber',80,'Cartao')]));
+ a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
+ const previa=api(a,'previaPagamentoFaturaWeb',{forma:'Cartao',mesFatura:'10/2026',valor:130,resumo:true});
+ return {a,p:{...previa,requestId:'pagamento-resumo-001'}};
+}
+test('pagamento confirma sem resumo síncrono, preserva recebível, reenvio e atualização pelo worker',()=>{
+ const {a,p}=prepararPagamentoResumo(),antes=JSON.stringify(a.db.sheets['_Gestor_Resumo'].rows),gerar=a.ctx.atualizarResumoNativoGestor_;let chamadas=0;
+ a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};
+ const r=api(a,'registrarPagamentoFaturaWeb',p);assert.equal(r.pago,130);assert.equal(chamadas,0);assert.equal(estado(a).pendente,true);
+ assert.equal(a.ctx.obterFaturaPagamentoWeb(p).pago,130);assert.equal(a.db.sheets['Empréstimos'].rows[1][9],'A Receber');
+ assert.equal(JSON.stringify(a.db.sheets['_Gestor_Resumo'].rows),antes);
+ assert(a.db.sheets['_Gestor_Operacoes'].rows.some(r=>r[0]==='registrarPagamentoFaturaWeb:'+p.requestId&&r[2]==='CONFIRMADO'));
+ api(a,'registrarPagamentoFaturaWeb',p);assert.equal(a.ctx.obterFaturaPagamentoWeb(p).pago,130);assert.equal(chamadas,0);
+ assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);assert.equal(chamadas,1);assert.equal(estado(a).pendente,false);
+ assert.notEqual(JSON.stringify(a.db.sheets['_Gestor_Resumo'].rows),antes);
+});
+test('pagamento conserva resumo imediato se fórmula ou intenção indisponível',()=>{
+ for(const motivo of ['formula','intencao']){
+ const {a,p}=prepararPagamentoResumo(),gerar=a.ctx.atualizarResumoNativoGestor_;let chamadas=0;
+ a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};
+ if(motivo==='formula')a.db.sheets['Dashboard & Resumo'].getRange(17,4).setValue('=500');
+ else{const obter=a.ctx.PropertiesService.getScriptProperties;let falhar=true;a.ctx.PropertiesService.getScriptProperties=()=>{const props=obter(),set=props.setProperty;props.setProperty=(k,v)=>{if(k==='GESTOR_RESUMO_ASSINCRONO_V1'&&falhar){falhar=false;throw Error('quota');}return set(k,v);};return props;};}
+ api(a,'registrarPagamentoFaturaWeb',p);assert.equal(chamadas,1);assert.equal(estado(a).pendente,false);assert.equal(a.ctx.obterFaturaPagamentoWeb(p).pago,130);
+ }
+});
+test('pagamento interrompido deixa intenção durável e worker aguarda recuperação',()=>{
+ const {a,p}=prepararPagamentoResumo(),aplicar=a.ctx.aplicarPlanoGestor_;
+ a.ctx.aplicarPlanoGestor_=()=>{throw Error('pagamento interrompido');};assert.throws(()=>api(a,'registrarPagamentoFaturaWeb',p),/interrompido/);
+ assert.equal(estado(a).pendente,true);assert.equal(a.ctx.rotinaResumoPlanilhaGestor().aguardandoConferencia,true);
+ a.ctx.aplicarPlanoGestor_=aplicar;api(a,'registrarPagamentoFaturaWeb',p);assert.equal(a.ctx.obterFaturaPagamentoWeb(p).pago,130);
+ assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);assert.equal(estado(a).pendente,false);
+});
+
 const acoesTerceiros=['salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'];
 function prepararTerceiros(acao){
  const a=ambiente(fixture([personal('Pessoal',60)],[loan('Ana','A Receber',120,'Cartao')])),r=a.db.sheets[acao==='moverParaEmprestimosWeb'?'Lançamentos':'Empréstimos'].rows[1];

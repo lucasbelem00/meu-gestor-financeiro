@@ -6,6 +6,28 @@ const vm = require('node:vm');
 const fonte = fs.readFileSync(path.join(__dirname, '../interface/desempenho.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 const aguardar = () => new Promise(resolve => setImmediate(resolve));
+
+test('tela oculta aguarda retorno antes de consultar, mas não bloqueia gravação e protocolo',async()=>{
+ const chamadas=[],a=ambiente((acao)=>new Promise(resolve=>chamadas.push({acao,resolve})));
+ a.ctx.document.visibilityState='hidden';a.eventos['document:visibilitychange']();
+ const r=a.ctx.apiCall('obterRecorrenciasWeb',{}),s=a.ctx.apiCall('salvarLancamentoWeb',{});
+await aguardar();chamadas[0].resolve({sucesso:true});await s;
+ const p=a.ctx.apiCall('getDadosCompletos');
+ await aguardar();assert.deepEqual(chamadas.map(c=>c.acao),['salvarLancamentoWeb','getDadosCompletos']);
+ chamadas[1].resolve({dados:true});await p;
+ a.ctx.document.visibilityState='visible';a.eventos['document:visibilitychange']();await aguardar();
+ assert.equal(chamadas.length,3);assert.equal(chamadas[2].acao,'obterRecorrenciasWeb');chamadas[2].resolve({itens:[]});await r;
+ assert(a.ctx.obterMetricasDesempenhoGestor().esperasConsultas.some(e=>e.motivo==='tela_oculta'));
+});
+
+test('resposta invalidada não inicia outra leitura enquanto app está oculto',async()=>{
+ const chamadas=[],a=ambiente((acao)=>new Promise(resolve=>chamadas.push({acao,resolve})));
+ const p=a.ctx.apiCall('obterRecorrenciasWeb',{});await aguardar();
+ a.eventos.storage({key:'gestorEpocaRestauracaoV1'});a.ctx.document.visibilityState='hidden';a.eventos['document:visibilitychange']();
+ chamadas[0].resolve({antigo:true});await aguardar();assert.equal(chamadas.length,1);
+ a.ctx.document.visibilityState='visible';a.eventos['document:visibilitychange']();await aguardar();assert.equal(chamadas.length,2);
+ chamadas[1].resolve({atual:true});assert.equal((await p).atual,true);assert.equal(a.ctx.obterMetricasDesempenhoGestor().descartadas,1);
+});
 const leituras = ['getDadosCompletos', 'obterRelatorioMes', 'obterRelatorioAnual', 'filtrarLancamentosWeb', 'obterFaturaPagamentoWeb', 'previaRestauracaoBackupWeb','obterAtividadeWeb','obterRecorrenciasWeb'];
 
 function ambiente(executar, carregarReal = false, extras = {}) {
@@ -152,7 +174,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v167');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v170');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');

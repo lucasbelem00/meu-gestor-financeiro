@@ -41,6 +41,16 @@ function tela(){
  const c=vm.createContext({Date,Map,window:{},renderizarDados(){},geracaoLeituraGestor:1,requisicaoPagamentoGestor:0,faturaConferidaGestor:null,pagamentoFaturaEmCursoGestor:false,navigator:{onLine:true},document:{getElementById:el},formatBRL:n=>'R$ '+n,lerValorMoeda:v=>Number(campos.has(v)?el(v).value:v),elementoAtividadeGestor:()=>({append(){}}),mostrarConfirmacao:(...a)=>confirmacoes.push(a),mostrarAviso(){},apiCall:(a,p)=>new Promise((resolve,reject)=>chamadas.push({a,p,resolve,reject}))});c.window=c;vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);vm.runInContext(fs.readFileSync('interface/faturas.js','utf8'),c);el('cartaoPagamentoFaturaGestor').value='Cartao';el('mesPagamentoFaturaGestor').value='10/2026';return {c,el,chamadas,confirmacoes};
 }
 const resumo={...alvo,total:308,pago:0,restante:308,pessoal:100,terceiros:208,quantidade:2};
+test('prévia mostra espera imediatamente e bloqueia clique repetido até sucesso ou falha',async()=>{
+ for(const falhar of [false,true]){
+ const a=tela();a.c.faturaConferidaGestor=clone(resumo);a.el('valorPagamentoFaturaGestor').value='100';
+ const p=a.c.confirmarPagamentoFaturaGestor();assert.match(a.el('salvarPagamentoFaturaGestor').textContent,/Conferindo/);assert(a.el('salvarPagamentoFaturaGestor').disabled);
+ assert.match(a.el('estadoPreviaPagamentoGestor').textContent,/Aguarde/);assert.equal(a.el('estadoPreviaPagamentoGestor').hidden,false);await a.c.confirmarPagamentoFaturaGestor();assert.equal(a.chamadas.length,1);
+ if(falhar)a.chamadas[0].reject(Error('Sem conexão'));else a.chamadas[0].resolve({...alvo,valor:100,distribuicao:{pessoal:100,terceiros:0,quantidade:1}});
+ await p;assert.equal(a.el('salvarPagamentoFaturaGestor').disabled,false);assert.equal(a.el('estadoPreviaPagamentoGestor').textContent,'');assert.equal(a.el('estadoPreviaPagamentoGestor').hidden,true);
+ assert.equal(a.confirmacoes.length,falhar?0:1);assert.equal(a.chamadas.length,1);
+ }
+});
 test('reabrir usa resumo recente; atualização forçada e mudança de dados consultam novamente',async()=>{
  const a=tela();let p=a.c.conferirPagamentoFaturaGestor();assert.equal(a.chamadas[0].p.resumo,true);assert(a.el('salvarPagamentoFaturaGestor').disabled);a.chamadas[0].resolve(clone(resumo));await p;
  await a.c.conferirPagamentoFaturaGestor();assert.equal(a.chamadas.length,1);

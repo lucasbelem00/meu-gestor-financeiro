@@ -86,6 +86,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   }
   function consultar(acao, param, extras, repeticoes = 0, continuar = null, tentativasOcupadas = 0) {
     if(continuar&&!continuar()){metricas.filtrosSuperados++;const e=new Error('Consulta substituída pela navegação ou por outro filtro.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
+    // Somente leituras de tela aguardam retorno; protocolo e mutações seguem livres.
+    if(leiturasDeTela.has(acao)||cacheaveis.has(acao)){
+      const visibilidade=opcoes.aguardarVisibilidade?.();
+      if(visibilidade)return aguardarConsulta([visibilidade],'tela_oculta',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
+    }
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
     if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
@@ -217,7 +222,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v167', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v170', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -240,7 +245,18 @@ function avisarEsperaConsultaGestor(acao){
   const id={obterAtividadeWeb:'estadoHistoricoAtividade',obterRecorrenciasWeb:'estadoModelosRecorrenciaGestor'}[acao];
   const e=id&&document.getElementById?.(id);if(e)e.textContent=texto;
 }
+let esperaVisibilidadeConsultaGestor=null,liberarVisibilidadeConsultaGestor=null;
+function aguardarVisibilidadeConsultaGestor(){
+  if(document.visibilityState!=='hidden')return null;
+  if(!esperaVisibilidadeConsultaGestor)esperaVisibilidadeConsultaGestor=new Promise(resolve=>{liberarVisibilidadeConsultaGestor=resolve;});
+  return esperaVisibilidadeConsultaGestor;
+}
+function retomarVisibilidadeConsultaGestor(){
+  if(document.visibilityState!=='visible')return;
+  const liberar=liberarVisibilidadeConsultaGestor;esperaVisibilidadeConsultaGestor=null;liberarVisibilidadeConsultaGestor=null;liberar?.();
+}
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
+  aguardarVisibilidade:aguardarVisibilidadeConsultaGestor,
   podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
   executar: (...args) => apiAntesCoordenacaoDesempenhoGestor(...args),
   leituras: leiturasDesempenhoGestor,
@@ -441,7 +457,7 @@ window.addEventListener('storage', evento => {
 });
 document.addEventListener('visibilitychange', () => {
   if(document.visibilityState==='hidden')controleRetomadaGestor.sair();
-  else if(document.visibilityState==='visible')controleRetomadaGestor.retomar('visivel');
+  else if(document.visibilityState==='visible'){controleRetomadaGestor.retomar('visivel');retomarVisibilidadeConsultaGestor();}
 });
 
 // Revalida o dia ao retomar as telas de consulta, sem recarregar o aplicativo
