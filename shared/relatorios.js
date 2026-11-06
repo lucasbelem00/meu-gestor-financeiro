@@ -1,5 +1,37 @@
 // Compara gastos pessoais por competência, em centavos e com períodos equivalentes.
 // Intenção persistida antes de PRONTO; o gatilho lê somente dados confirmados.
+// Prioridade consultiva: cache guarda só o instante, nunca dados financeiros.
+function marcarUsoRecenteAppGestor_(acao){
+  if(acao==='processarModelosRecorrenciaGestor')return;
+  try{if(typeof CacheService!=='undefined')CacheService.getScriptCache().put('gestorUsoInterativoV1',String(Date.now()),120);}catch(_){}
+}
+function usoRecenteAppGestor_(){
+  try{if(typeof CacheService==='undefined')return false;const t=Number(CacheService.getScriptCache().get('gestorUsoInterativoV1'));const idade=Date.now()-t;return t>0&&Number.isFinite(t)&&idade>=0&&idade<30000;}catch(_){return false;}
+}
+function adiarResumoPorUsoGestor_(s){
+  if(!usoRecenteAppGestor_())return false;
+  const agora=Date.now(),inicio=Number(s.adiadoDesde)||agora;
+  if(!Number.isFinite(inicio)||inicio<=0||inicio>agora||agora-inicio>=300000)return false;
+  try{s.adiadoDesde=inicio;salvarResumoAssincronoGestor_(s);return true;}catch(_){return false;}
+}
+const CHAVE_ADIAMENTO_PROTECAO_GESTOR_='GESTOR_ADIAMENTO_PROTECAO_V1';
+// Chamado sob a trava; sem agendamento confirmado, mantém a execução normal.
+function adiarProtecaoProgramadaPorUsoGestor_(){
+  try{
+    const props=PropertiesService.getScriptProperties(),texto=props.getProperty(CHAVE_ADIAMENTO_PROTECAO_GESTOR_);
+    const inicio=texto?Number(texto):Date.now();
+    if(!Number.isFinite(inicio)||inicio<=0||inicio>Date.now()||!usoRecenteAppGestor_()||Date.now()-inicio>=300000){if(texto)props.deleteProperty(CHAVE_ADIAMENTO_PROTECAO_GESTOR_);return false;}
+    if(!ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='retomarProtecaoProgramadaPorUsoGestor')){
+      ScriptApp.newTrigger('retomarProtecaoProgramadaPorUsoGestor').timeBased().after(120000).create();
+    }
+    props.setProperty(CHAVE_ADIAMENTO_PROTECAO_GESTOR_,String(inicio));return true;
+  }catch(_){return false;}
+}
+function retomarProtecaoProgramadaPorUsoGestor(){
+  for(const t of ScriptApp.getProjectTriggers())if(t.getHandlerFunction()==='retomarProtecaoProgramadaPorUsoGestor')ScriptApp.deleteTrigger(t);
+  return rotinaProtecaoProgramadaGestor();
+}
+
 const CHAVE_RESUMO_ASSINCRONO_GESTOR_='GESTOR_RESUMO_ASSINCRONO_V1';
 function lerResumoAssincronoGestor_(){
   const texto=PropertiesService.getScriptProperties().getProperty(CHAVE_RESUMO_ASSINCRONO_GESTOR_);
@@ -10,6 +42,7 @@ function lerResumoAssincronoGestor_(){
 function salvarResumoAssincronoGestor_(s){PropertiesService.getScriptProperties().setProperty(CHAVE_RESUMO_ASSINCRONO_GESTOR_,JSON.stringify(s));}
 function situacaoResumoPlanilhaGestor_(conferirGatilho=false){
   try{const s=lerResumoAssincronoGestor_(),estado={modo:s?.ativo?'segundo_plano':'imediato',pendente:s?.pendente===true,erro:s?.erro||'',atualizadoEm:s?.atualizadoEm||null,solicitadoEm:s?.solicitadoEm||null};
+    if(s?.adiadoDesde)estado.adiadoPorUso=true;
     const e=s?.ultimaExecucao;if(e&&Number.isFinite(e.inicioServidorMs)&&e.inicioServidorMs>=0)estado.ultimaExecucao={inicioServidorMs:e.inicioServidorMs,fimServidorMs:Number.isFinite(e.fimServidorMs)?e.fimServidorMs:null,duracaoMs:Number.isFinite(e.duracaoMs)?e.duracaoMs:null};
     if(estado.ultimaExecucao&&e.etapas){const etapas={};for(const k of ['resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs'])if(typeof e.etapas[k]==='number'&&Number.isFinite(e.etapas[k])&&e.etapas[k]>=0)etapas[k]=Math.round(e.etapas[k]);if(Object.keys(etapas).length)estado.ultimaExecucao.etapas=etapas;}
     if(conferirGatilho&&s?.ativo)estado.rotinaInstalada=ScriptApp.getProjectTriggers().some(t=>t.getHandlerFunction()==='rotinaResumoPlanilhaGestor');return estado;}
@@ -47,7 +80,7 @@ function solicitarResumoAssincronoGestor_(acao,ctx){
 }
 function concluirResumoAssincronoGestor_(){
   const s=lerResumoAssincronoGestor_();if(!s?.ativo)return;
-  s.pendente=false;s.erro='';s.atualizadoEm=new Date().toISOString();salvarResumoAssincronoGestor_(s);
+  s.pendente=false;s.erro='';delete s.adiadoDesde;s.atualizadoEm=new Date().toISOString();salvarResumoAssincronoGestor_(s);
 }
 function rotinaResumoPlanilhaGestor(){
   try{const inicial=lerResumoAssincronoGestor_();if(!inicial?.ativo||!inicial.pendente)return {pendente:false};}catch(_){return {pendente:true,erroConfiguracao:true};}
@@ -57,6 +90,7 @@ function rotinaResumoPlanilhaGestor(){
   let inicioExecucao=null;
   try{
     const s=lerResumoAssincronoGestor_();if(!s?.ativo||!s.pendente)return {pendente:false};
+    if(adiarResumoPorUsoGestor_(s))return {pendente:true,adiadoPorUso:true};
     const ss=obterPlanilhaGestor_(),diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
     // Nunca materializar uma aplicação financeira interrompida ou divergente.
     if(diario&&localizarLinhasTecnicasGestor_(diario,3,'PRONTO').length)return {pendente:true,aguardandoConferencia:true};

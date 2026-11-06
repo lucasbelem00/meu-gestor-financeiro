@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v167 — Histórico: mensagem discreta acima da lista com role=status/aria-live informa consulta em andamento, ocupação ou resultados anteriores. Mantém cards visíveis para evitar tela vazia, mas lista inert impede ações sobre busca ainda não confirmada. Soma anterior fica escondida ao trocar filtro. Aviso desaparece somente após sucesso válido; nenhuma cor de pagamento ou status financeiro foi alterada.
+
+
 v165 — Interação comum: mouse realça discretamente botão/summary com brilho sem substituir a cor semântica; pressionar dá retorno breve, sem escala/deslocamento. Hover só em hover:hover/pointer:fine, evitando realce preso no toque. Foco de teclado: contorno azul claro 2px afastado 3px. Disabled/aria-disabled não recebem hover/press; preferência de movimento reduzido remove transição. Atividade: seleção azul persistente e aria-pressed nos três painéis desde Pendentes inicial, sincronizados nas renderizações. Realce passageiro não muda seleção nem regras de pagamento.
 
 

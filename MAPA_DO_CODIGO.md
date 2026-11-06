@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v167 — interface/desempenho.js: consultas permitidas repetem SERVICO_OCUPADO com duas pausas limitadas, cancelamento por tela/busca e métricas ocupadas/retentativasOcupado/ocupadasEsgotadas/esperasConsultas. index.html: informarEstadoConsultaHistoricoGestor conserva lista anterior, identifica espera/falha e bloqueia ações até resposta válida. shared/relatorios.js: marcarUsoRecenteAppGestor_ e usoRecenteAppGestor_ são prioridade consultiva por timestamp no cache, sem finanças; adiarResumoPorUsoGestor_ preserva intenção; adiarProtecaoProgramadaPorUsoGestor_ e retomarProtecaoProgramadaPorUsoGestor agendam retomada limitada. shared/protecao.js consulta prioridade somente na rotina programada; manual permanece imediato. Backend/Code.gs integra marcação antes do lock e recebe blocos gerados. Módulos 2/3/5/6/8/10; protocolo 19/cache v167.
+
+
 v166 — interface/desempenho.js: leiturasDeTela coordena filtro, Atividade e Recorrências após carga completa/mutações; getDadosCompletos interno não espera mutação. Backend/Code.gs: medirEtapaConsultaGestor_ fornece subetapas de filtros/Atividade; obterAtividadeWeb não carrega mapa para recorrência integrada já bloqueada; filtro usa tipo cadastrado resolvido em lerLancamentosParaRelatorio. index.html filtra métricas numéricas novas para diagnóstico. Módulos 2/3/5/6/8/10; protocolo 19/cache v166.
 
 

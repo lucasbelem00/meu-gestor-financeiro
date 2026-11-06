@@ -56,13 +56,13 @@ test('atalho do resumo não desloca outra navegação; termômetro só mostra ga
 });
 test('resposta do Histórico preserva posição na mesma visita, mas não após sair e voltar',async()=>{
  for(const navegar of [false,true]){const a=navegacao();a.c.setAba('lancamentos');a.flush();a.c.scrollY=1200;let resolver;a.c.apiCall=()=>new Promise(r=>resolver=r);
-  require('./fixtures/integracao-interface-ui.cjs')(a.c,'chamarFiltroBackend');
+  require('./fixtures/integracao-interface-ui.cjs')(a.c,'informarEstadoConsultaHistoricoGestor','chamarFiltroBackend');
   const pedido=a.c.chamarFiltroBackend(false,true);if(navegar){a.c.setAba('dashboard');a.c.setAba('lancamentos');a.flush();}
   resolver({itens:[],temMais:false,versaoConsulta:'v2',qtdTotal:0});await pedido;a.flush();assert.equal(a.c.scrollY,navegar?0:1200);assert.equal(a.c.filtrosAtuais.forma,'Cartao');
  }
 });
 test('nova busca oculta a soma anterior imediatamente, inclusive quando a consulta falha',async()=>{
- const a=navegacao();let ocultou=false,rejeitar;a.el('barraSomaFiltro').classList.add=n=>{if(n==='hidden')ocultou=true;};a.c.apiCall=()=>new Promise((_,r)=>rejeitar=r);require('./fixtures/integracao-interface-ui.cjs')(a.c,'chamarFiltroBackend');const p=a.c.chamarFiltroBackend(false);assert(ocultou);rejeitar(Error('Sem conexão'));await p;assert(ocultou);
+ const a=navegacao();let ocultou=false,rejeitar;a.el('barraSomaFiltro').classList.add=n=>{if(n==='hidden')ocultou=true;};a.c.apiCall=()=>new Promise((_,r)=>rejeitar=r);require('./fixtures/integracao-interface-ui.cjs')(a.c,'informarEstadoConsultaHistoricoGestor','chamarFiltroBackend');const p=a.c.chamarFiltroBackend(false);assert(ocultou);rejeitar(Error('Sem conexão'));await p;assert(ocultou);
 });
 
 test('Painel para Agenda zera documento depois do fechamento do menu e de alterações de layout',()=>{const a=navegacao({aoTrocar({c,frames}){c.scrollY=1200;frames.push(()=>frames.push(()=>{c.scrollY=900;}));}});const html={scrollTop:1200,scrollLeft:70},body={scrollTop:1200,scrollLeft:40};a.c.document.scrollingElement=html;a.c.document.documentElement=html;a.c.document.body=body;a.c.setAba('agenda');assert.equal(a.c.scrollY,0,'também zera após mostrar a aba');assert.equal(html.scrollTop,0);assert.equal(body.scrollTop,0);assert.equal(html.scrollLeft,0);assert.equal(body.scrollLeft,0);a.flush();assert.equal(a.c.scrollY,0,'layout do próximo quadro não restaura a aba anterior');assert.equal(a.el('view-agenda').focado,true);});

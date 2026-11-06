@@ -5,7 +5,7 @@ const front=html.slice(html.indexOf('function normalizarTemposServidorGestor'),h
 test('trava ocupada informa código próprio antes de ler ou gravar e não libera trava alheia',()=>{
   const limites=[];let liberacoes=0,acessos=0;
   const lock={tryLock(ms){limites.push(ms);return false;},releaseLock(){liberacoes++;}};
-  const c=vm.createContext({Date,console:{log(){}},LockService:{getScriptLock:()=>lock},obterPlanilhaGestor_(){acessos++;throw Error('não deveria ler');}});
+  const c=vm.createContext({Date,marcarUsoRecenteAppGestor_(){},console:{log(){}},LockService:{getScriptLock:()=>lock},obterPlanilhaGestor_(){acessos++;throw Error('não deveria ler');}});
   const executor=backend.slice(backend.indexOf('function executarOperacaoGestor_('),backend.indexOf('function assinaturaManutencaoLeituraGestor_'));
   vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null,CONTEXTO_GESTOR_=null;'+helper+executor,c);
   for(const leitura of [true,false])assert.throws(()=>c.executarOperacaoGestor_(leitura?'obterRelatorioAnual':'salvarLancamentoWeb',{},()=>{acessos++;},leitura),e=>e.codigo==='SERVICO_OCUPADO'&&!!e.resultadoIncerto===!leitura);

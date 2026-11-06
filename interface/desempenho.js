@@ -17,6 +17,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const leituras = opcoes.leituras || new Set();
   const cacheaveis = new Set(opcoes.cacheaveis || []);
   const leiturasDeTela=new Set(['filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb']);
+  const retentaveisOcupado=new Set(['getDadosCompletos','filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb','obterRelatorioMes','obterRelatorioAnual']);
+  const esperar=opcoes.esperar||((ms)=>new Promise(resolve=>setTimeout(resolve,ms)));
   const cache = new Map(), consultas = new Map();
   const cargasCompletas = new Set();
   const mutacoesPendentes = new Set();
@@ -32,7 +34,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   }
   let respostaCompletaAtual = null;
   let atualizacaoConfirmada = null;
-  const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0, filtrosSuperados:0 };
+  const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0, filtrosSuperados:0, ocupadas:0, retentativasOcupado:0, ocupadasEsgotadas:0 };
   const motivosInvalidacao = new Set(['externa','mutacao_inicio','mutacao_fim','carga_completa','online','foco','armazenamento','visivel']);
   const invalidacoesPorMotivo = {}, ultimasInvalidacoes = [], ultimosDescartes = [];
   let geracao = 0, bytes = 0;
@@ -82,23 +84,23 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     return copia;
   }
-  function consultar(acao, param, extras, repeticoes = 0, continuar = null) {
+  function consultar(acao, param, extras, repeticoes = 0, continuar = null, tentativasOcupadas = 0) {
     if(continuar&&!continuar()){metricas.filtrosSuperados++;const e=new Error('Consulta substituída pela navegação ou por outro filtro.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
     if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
-      return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar));
+      return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
     }
     // A resposta da carga completa invalida relatórios. Se ela já está em
     // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
     if ((cacheaveis.has(acao)||leiturasDeTela.has(acao)) && cargasCompletas.size) {
-      return aguardarConsulta(cargasCompletas,'carga_completa',() => consultar(acao, param, extras, repeticoes,continuar));
+      return aguardarConsulta(cargasCompletas,'carga_completa',() => consultar(acao, param, extras, repeticoes,continuar,tentativasOcupadas));
     }
     const versao = geracao, chave = acao + ':' + chaveEstavel(param) + ':' + chaveEstavel(extras);
     // Uma leitura já enviada pode continuar no Google. As próximas aguardam
     // seu término; filtros visuais superados são descartados antes de enviar.
     if(acao==='filtrarLancamentosWeb'&&consultasHistorico.size&&!consultas.has(versao+':'+chave)){
-      return aguardarConsulta(consultasHistorico,'historico',()=>consultar(acao,param,extras,repeticoes,continuar));
+      return aguardarConsulta(consultasHistorico,'historico',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
     }
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
@@ -151,7 +153,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
         }
         // Não repete uma falha de rede nem qualquer gravação. Só refaz uma
         // leitura bem-sucedida que atravessou uma alteração dos dados.
-        if (repeticoes < 2) return consultar(acao, param, extras, repeticoes + 1,continuar);
+        if (repeticoes < 2) return consultar(acao, param, extras, repeticoes + 1,continuar,tentativasOcupadas);
         const erro = new Error('Os dados mudaram durante a consulta. Atualize novamente para conferir a versão atual.');
         erro.codigo = 'LEITURA_SUBSTITUIDA'; throw erro;
       }
@@ -159,6 +161,19 @@ function criarCoordenadorLeiturasGestor(opcoes) {
         try { guardar(chave, valor, instante); } catch (_) {}
       }
       return resultado(valor, instante, 'rede', acao);
+    }).catch(async erro=>{
+      if(erro?.codigo!=='SERVICO_OCUPADO'||!retentaveisOcupado.has(acao))throw erro;
+      metricas.ocupadas++;
+      const vigente=()=> (!continuar||continuar())&&(!opcoes.podeRetomar||opcoes.podeRetomar(acao));
+      if(!vigente()){const cancelada=new Error('Consulta substituída.');cancelada.codigo='CONSULTA_SUBSTITUIDA';throw cancelada;}
+      if(tentativasOcupadas>=2){metricas.ocupadasEsgotadas++;throw erro;}
+      const pausa=[1200,2500][tentativasOcupadas],inicio=agora();
+      try{opcoes.aoOcupado?.(acao,tentativasOcupadas+1);}catch(_){}
+      await esperar(pausa);
+      esperasConsultas.push({motivo:'planilha_ocupada',duracaoMs:Math.max(0,agora()-inicio)});if(esperasConsultas.length>20)esperasConsultas.shift();
+      if(!vigente()){const cancelada=new Error('Consulta substituída.');cancelada.codigo='CONSULTA_SUBSTITUIDA';throw cancelada;}
+      metricas.retentativasOcupado++;
+      return consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas+1);
     }).finally(()=>{if(acao==='getDadosCompletos'&&!cargasCompletas.size)respostaCompletaAtual=null;});
   }
   function chamar(acao, param, ...extras) {
@@ -202,7 +217,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v166', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v167', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -213,7 +228,20 @@ function limparGraficoDesempenhoGestor(id,anterior){
 }
 const leiturasDesempenhoGestor = new Set(acoesDoTipoGestor('leitura'));
 const apiAntesCoordenacaoDesempenhoGestor = window.apiCall;
+function consultaOcupadaAindaVisivelGestor(acao){
+  if(document.visibilityState==='hidden')return false;
+  const abas={filtrarLancamentosWeb:'lancamentos',obterAtividadeWeb:'atividade',obterRecorrenciasWeb:'assinaturas',obterRelatorioMes:'relatorio',obterRelatorioAnual:'anual'};
+  if(typeof abaAtivaAtual!=='undefined'&&abas[acao]&&abaAtivaAtual!==abas[acao])return false;
+  return acao!=='obterAtividadeWeb'||typeof painelAtividadeGestor==='undefined'||painelAtividadeGestor==='historico';
+}
+function avisarEsperaConsultaGestor(acao){
+  const texto='Aguardando outra operação na planilha… A consulta será repetida automaticamente.';
+  if(acao==='filtrarLancamentosWeb'&&typeof informarEstadoConsultaHistoricoGestor==='function')informarEstadoConsultaHistoricoGestor(texto);
+  const id={obterAtividadeWeb:'estadoHistoricoAtividade',obterRecorrenciasWeb:'estadoModelosRecorrenciaGestor'}[acao];
+  const e=id&&document.getElementById?.(id);if(e)e.textContent=texto;
+}
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
+  podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
   executar: (...args) => apiAntesCoordenacaoDesempenhoGestor(...args),
   leituras: leiturasDesempenhoGestor,
   cacheaveis: Object.keys(CATALOGO_ACOES_GESTOR).filter(acao => CATALOGO_ACOES_GESTOR[acao].cacheavel),
