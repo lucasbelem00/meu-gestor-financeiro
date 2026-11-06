@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v173 — No simulador, 🎯 Levar ao planejamento é ação secundária centralizada abaixo de todos os campos e antes do resultado; sai do cabeçalho. Mantém confirmação e rascunho revisável, sem gravação automática.
+
+
 v172 — Simulador apresenta Compra (opcional) e 🎯 Levar ao planejamento. Confirmação explica dados transferidos; destino abre formulário revisável, sem criar lançamento. Valores, cores de situação e identidade das abas preservados.
 
 

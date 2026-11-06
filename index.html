@@ -1244,7 +1244,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div>
             <h2 class="text-base font-bold text-white flex items-center gap-2">🛍️ Simulador de Compras</h2>
-            <button type="button" onclick="levarSimulacaoAoPlanejamentoGestor()" class="text-xs text-sky-300 underline mt-1">🎯 Levar ao planejamento</button>
             <p class="text-xs text-slate-400 mt-0.5">Calcula parcelas e compara o impacto nos seus cartões.</p>
           </div>
           <div class="flex items-center gap-2">
@@ -1284,6 +1283,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label for="simData" class="block text-xs text-slate-300 mb-1">Data prevista da compra</label><input id="simData" type="date" onchange="rodarSimuladorCompra()" class="w-full h-[52px] bg-slate-900 border border-slate-600 rounded-xl px-3 text-white"></div><div><label for="simAVista" class="block text-xs text-slate-300 mb-1">Preço à vista para comparar (opcional)</label><input id="simAVista" inputmode="decimal" placeholder="R$ 0,00" oninput="mascaraMoedaTeclado(this);rodarSimuladorCompra()" class="w-full h-[52px] bg-slate-900 border border-slate-600 rounded-xl px-3 text-white"></div></div>
+        <div class="flex justify-center"><button type="button" onclick="levarSimulacaoAoPlanejamentoGestor()" class="border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/20 text-sky-200 font-bold py-2.5 px-4 rounded-xl text-xs transition text-center">🎯 Levar ao planejamento</button></div>
         <div id="boxResultadoSimulador" class="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-4">
           <p class="text-xs text-slate-500 text-center py-4">Digite o valor da compra acima para ver o cálculo instantâneo e o comparativo.</p>
         </div>
@@ -9941,7 +9941,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v172', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v173', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
