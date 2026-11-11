@@ -471,3 +471,7 @@ aplicarPlanoGestor_ reúne somente anexo de atividade com uma única mudança fi
 
 ### Usabilidade v189 — 11/11/2026 (local)
 Mensal: periodoMensalSelecionadoGestor parseia selFiltroRelPeriodo; preencherSeletoresInteligentes consolida meses/anos e mantém Anual independente. PDF usa mesma competência. getDadosCompletos fornece opcoesTagsSugeridas recentes sem substituir opcoesTags; renderizarChipsTags usa recentes apenas em Novo.
+
+
+### Seletor nativo v190 — 11/11/2026 (local)
+Mensal v190: selFiltroRelPeriodo é month AAAA-MM, convertido por periodoMensalSelecionadoGestor. periodoAdjacenteMensalGestor acha vizinhos conhecidos mesmo de período vazio; atualização e PDF usam MM/AAAA. Sem montagem de options nem dependência de select.selectedIndex.

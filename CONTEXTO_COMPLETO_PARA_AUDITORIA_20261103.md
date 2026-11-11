@@ -1,5 +1,16 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Seletor nativo da Mensal v190 local — 11/11/2026
+
+Após imagem da Agenda, Lucas aprovou usar o mesmo controle nativo de mês/ano na Mensal e delegou a escolha sobre meses vazios. selFiltroRelPeriodo agora é input type=month (1900-01 a 2200-12), com apresentação controlada por aparelho/navegador, sem interface de calendário personalizada. Valor nativo AAAA-MM é convertido em MM/AAAA por periodoMensalSelecionadoGestor; PDF e consultas continuam usando competência anterior. Nenhuma mudança de API/backend.
+
+Permite selecionar períodos vazios, pois o seletor nativo não oculta meses esparsos. Relatório vazio continua com mensagem de ausência de lançamentos. Setas seguem períodos conhecidos + mês vigente, buscando vizinhos mais próximos mesmo a partir de mês vazio. Troca de dados preserva período válido escolhido, entrar novamente na Mensal segue mês atual. Seleção vazia/fora da faixa restaura último valor válido, avisa e não consulta; evita mostrar resultados antigos com período em branco. Min/max/required também estão no controle nativo.
+
+Atualização retira montagem de opções do antigo select. Agenda, Anual e filtros amplos do Histórico permanecem. Testes direcionados conferem navegação/virada de ano/período vazio e conversão/limpeza. Consultas locais com dados fictícios a 06/2026, 01/2020 e 01/2027 retornaram zero registros, sem erro. Não é validação na planilha real.
+
+Interface/cache v190, protocolo 19. Somente frontend neste pacote; backend v189 mantido. Validação: 1.306 testes aprovados, zero falhas (testes-v190-final.log); após ajustar a representação do controle nativo no teste, os 10 cenários de navegação também passaram (testes-v190-periodo-final.log). CSS/espelhos/dist preparados; diff --check sem erros. Código local, publicação e visual no aparelho pendentes.
+
+
 ## Pacote de usabilidade v189 local — 11/11/2026
 
 Lucas autorizou propostas pendentes após esclarecer que o Pix pode pertencer a dezembro. Mantida regra: card Pix usa mês da fatura, não data combinada. Teste de integração cobre Pix com fatura atual/futura e devolução em dezembro; sem alteração de totais financeiros.

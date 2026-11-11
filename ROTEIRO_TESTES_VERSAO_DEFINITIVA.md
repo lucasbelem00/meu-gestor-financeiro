@@ -409,3 +409,7 @@ v188 backend+interface: salvar/editar/excluir avulso e parcelado; conferir valor
 
 ### Usabilidade v189 — 11/11/2026 (local)
 v189: em 320/390 px e desktop, conferir nomes normais completos, categorias e formas longas, status recorrente/pago/vencido sem quebra, atalhos e filtro correto. Mensal: trocar mês/ano juntos, atravessar dezembro/janeiro com setas, entrar no mês vigente, atualizar sem perder período escolhido, PDF com mês/ano corretos, Anual independente. Tags: compra de hoje/90/91 dias, futura e cancelada; antigas continuam em filtros/edição e novos dados não são apagados. Pix: devolução em dezembro com fatura do mês atual permanece no resumo atual; fatura em dezembro só aparece em dezembro.
+
+
+### Seletor nativo v190 — 11/11/2026 (local)
+v190: no celular abrir Mensal e confirmar seletor nativo mês/ano; escolher período conhecido, vazio entre meses, antes/depois dos dados e atravessar ano. Setas acham vizinho disponível; mês vigente continua acessível vazio. Limpar/valor inválido restaura período e não envia consulta. Atualização mantém período escolhido; reentrada seleciona mês atual. PDF usa mês/ano corretos, Anual e Agenda preservados.

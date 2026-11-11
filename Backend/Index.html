@@ -685,7 +685,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <div class="navegacao-periodo-gestor">
             <button id="btnMesPrev" type="button" aria-label="Ir para o mês anterior disponível" title="Mês anterior disponível" onclick="mudarMesRelatorio(-1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
             <div class="seletores-periodo-gestor">
-              <select id="selFiltroRelPeriodo" aria-label="Mês e ano da fatura" onchange="dispararBuscaRelatorioMensal()" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
+              <input type="month" id="selFiltroRelPeriodo" min="1900-01" max="2200-12" required aria-label="Mês e ano da fatura" onchange="dispararBuscaRelatorioMensal()" class="controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none">
             </div>
             <button id="btnMesNext" type="button" aria-label="Ir para o próximo mês disponível" title="Próximo mês disponível" onclick="mudarMesRelatorio(1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
             </div>
@@ -6193,8 +6193,8 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     }
 
     function periodoMensalSelecionadoGestor(){
-      const valor=document.getElementById('selFiltroRelPeriodo')?.value||'',p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(valor);
-      return p?{mes:p[1],ano:p[2],valor}:null;
+      const valor=document.getElementById('selFiltroRelPeriodo')?.value||'',p=/^(\d{4})-(0[1-9]|1[0-2])$/.exec(valor);
+      return p&&Number(p[1])>=1900&&Number(p[1])<=2200?{mes:p[2],ano:p[1],valor:p[2]+'/'+p[1]}:null;
     }
     function atualizarSeletoresRelatorioGestor(){
       const atual=periodoMensalSelecionadoGestor(),anual=document.getElementById('selFiltroAnoSimples')?.value,hoje=typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date();
@@ -6209,7 +6209,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       if(!arvoreMesesAno[ano].includes(mes))arvoreMesesAno[ano].push(mes);
       const sel=document.getElementById('selFiltroRelPeriodo'),anual=document.getElementById('selFiltroAnoSimples');
       if(anual){anual.innerHTML='';Object.keys(arvoreMesesAno).sort((a,b)=>b-a).forEach(a=>anual.add(new Option(a,a)));if(arvoreMesesAno[anoPadrao])anual.value=anoPadrao;}
-      if(sel){const lista=obterMesesRelatorioEmOrdem(),valores=lista.map(x=>x.mes+'/'+x.ano);sel.innerHTML='';lista.forEach(x=>sel.add(new Option(getNomeMes(x.mes)+' de '+x.ano,x.mes+'/'+x.ano)));const alvo=mesPadrao+'/'+anoPadrao;sel.value=valores.includes(alvo)?alvo:mes;}
+      if(sel){const alvo=String(anoPadrao)+'-'+String(mesPadrao).padStart(2,'0');sel.value=/^(19\d{2}|20\d{2}|21\d{2}|2200)-(0[1-9]|1[0-2])$/.test(alvo)?alvo:ano+'-'+mes.slice(0,2);sel._ultimoPeriodoValido=sel.value;}
       atualizarEstadoSetasMensal();atualizarEstadoSetasAnual();if(dispararBusca)dispararBuscaRelatorioMensal();
     }
 
@@ -6222,7 +6222,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
         (arvoreMesesAno[ano] || []).forEach(mesAno => {
           const mes = Number(String(mesAno).replace(/^'/, '').split('/')[0]);
           const anoNumero = Number(ano);
-          if (!Number.isInteger(mes) || mes < 1 || mes > 12 || !Number.isInteger(anoNumero) || anoNumero < 1) return;
+          if (!Number.isInteger(mes) || mes < 1 || mes > 12 || !Number.isInteger(anoNumero) || anoNumero < 1900 || anoNumero > 2200) return;
           const chave = anoNumero + ':' + mes;
           if (vistos.has(chave)) return;
           vistos.add(chave);
@@ -6232,15 +6232,19 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       return meses.sort((a, b) => Number(a.ano) - Number(b.ano) || Number(a.mes) - Number(b.mes));
     }
 
-    function atualizarEstadoSetasMensal(){
-      const atual=periodoMensalSelecionadoGestor(),anterior=document.getElementById('btnMesPrev'),proximo=document.getElementById('btnMesNext');if(!anterior||!proximo)return;
-      const lista=obterMesesRelatorioEmOrdem(),i=lista.findIndex(x=>x.ano===atual?.ano&&x.mes===atual?.mes);
-      anterior.disabled=i<=0;proximo.disabled=i<0||i>=lista.length-1;
+    function periodoAdjacenteMensalGestor(step){
+      const atual=periodoMensalSelecionadoGestor();if(!atual)return null;
+      const referencia=Number(atual.ano)*12+Number(atual.mes),lista=obterMesesRelatorioEmOrdem();
+      const candidatos=lista.filter(x=>step<0?Number(x.ano)*12+Number(x.mes)<referencia:Number(x.ano)*12+Number(x.mes)>referencia);
+      return step<0?candidatos[candidatos.length-1]||null:candidatos[0]||null;
     }
-
+    function atualizarEstadoSetasMensal(){
+      const anterior=document.getElementById('btnMesPrev'),proximo=document.getElementById('btnMesNext');if(!anterior||!proximo)return;
+      anterior.disabled=!periodoAdjacenteMensalGestor(-1);proximo.disabled=!periodoAdjacenteMensalGestor(1);
+    }
     function mudarMesRelatorio(step){
-      if(![-1,1].includes(Number(step)))return;const atual=periodoMensalSelecionadoGestor(),lista=obterMesesRelatorioEmOrdem(),i=lista.findIndex(x=>x.ano===atual?.ano&&x.mes===atual?.mes),alvo=i<0?null:lista[i+Number(step)];if(!alvo)return;
-      document.getElementById('selFiltroRelPeriodo').value=alvo.mes+'/'+alvo.ano;dispararBuscaRelatorioMensal();
+      if(![-1,1].includes(Number(step)))return;const alvo=periodoAdjacenteMensalGestor(Number(step));if(!alvo)return;
+      document.getElementById('selFiltroRelPeriodo').value=alvo.ano+'-'+alvo.mes;dispararBuscaRelatorioMensal();
     }
 
     function atualizarEstadoSetasAnual() {
@@ -6261,7 +6265,9 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     }
 
     function dispararBuscaRelatorioMensal(){
-      atualizarEstadoSetasMensal();const periodo=periodoMensalSelecionadoGestor();if(periodo){relatorioMensalPendente=false;carregarRelatorioMesUnico(periodo.valor);}
+      const campo=document.getElementById('selFiltroRelPeriodo'),periodo=periodoMensalSelecionadoGestor();
+      if(!periodo){if(campo?._ultimoPeriodoValido)campo.value=campo._ultimoPeriodoValido;atualizarEstadoSetasMensal();mostrarAviso('Escolha o período','Selecione um mês e ano entre 1900 e 2200.');return;}
+      campo._ultimoPeriodoValido=campo.value;atualizarEstadoSetasMensal();relatorioMensalPendente=false;carregarRelatorioMesUnico(periodo.valor);
     }
 
     function quitarFaturaCartaoMes(forma,mesFatura) { return abrirConferenciaFaturaGestor(forma,mesFatura); }
@@ -9951,7 +9957,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v189', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v190', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
