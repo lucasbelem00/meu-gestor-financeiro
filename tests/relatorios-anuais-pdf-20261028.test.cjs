@@ -149,5 +149,13 @@ test('PDF reconhece competência convertida em Date e ano numérico, preservando
  const anual=a.ctx.dadosPeriodoPDFGestor_(a.ctx.registrosResumoNativoGestor_(a.db),'2025');a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,anual);t.rows[2][1]=2025;
  assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,0);
  t.rows[1][1]=new Date(2025,11,2);assert.throws(()=>a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),/Período inválido/);
- t.rows[1][1]='12/2025';t.rows[1][2]='0'.repeat(64);assert.throws(()=>a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),/incompatível/);
+ t.rows[1][1]='12/2025';t.rows[1][2]='0'.repeat(64);assert.throws(()=>a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),/revisão dos dados/);
+});
+
+test('reprocessamento manual limita PDFs, limpa aviso somente no sucesso e não duplica arquivos',()=>{
+ const a=ambiente(fixture([personal('Antiga',100,'1/1','12/2025','Pago')]));let c=a.ctx.configProtecaoGestor_();c.erroRelatorios='Erro antigo';a.ctx.salvarConfigProtecaoGestor_(c);
+ let r=a.ctx.reprocessarRelatoriosPDFGestor();assert.equal(r.sucesso,true);assert.equal(r.versaoRotina,2);assert.equal(a.ctx.configProtecaoGestor_().erroRelatorios,'');assert.equal(pdfs(a).length,2);
+ r=a.ctx.reprocessarRelatoriosPDFGestor();assert.equal(r.gerados.length,0);assert.equal(pdfs(a).length,2);
+ a.db.sheets['Lançamentos'].rows[1][7]=130;a.falhaConversao=true;r=a.ctx.reprocessarRelatoriosPDFGestor();assert.equal(r.sucesso,false);assert.match(a.ctx.configProtecaoGestor_().erroRelatorios,/Conversão/);assert.equal(pdfs(a).length,2);
+ assert.throws(()=>a.ctx.executarAcaoApi_('reprocessarRelatoriosPDFGestor',{}),/Comando desconhecido/);
 });

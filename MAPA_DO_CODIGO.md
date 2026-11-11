@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v175 — normalizarTemposServidorGestor preserva contadores numéricos da configuração de proteção. shared/relatorios.js: reprocessarRelatoriosPDFGestor é entrada manual do editor, fora da API, para tentar até dois PDFs sob trava e registrar resultado versão 2; incompatibilidades agora distinguem período/revisão/estado. interface/protecao.js distingue última tentativa e consulta de status. Módulos 2/6/10.
+
+
 v174 — Backend/Code.gs: executor agrupa cabeçalho/partes do diário sem mudar barreiras de flush; getDadosCompletos calcula limite agregado dos cartões ativos; snapshot opcional inclui salvarFormaPagamentoWeb. shared/protecao.js: texto da configuração restrito à execução com atualização após escrita e métricas. shared/relatorios.js: periodoControlePDFGestor_ normaliza competências de controle, sem relaxar hashes de arquivos. index.html: coresCategoriasGraficoGestor define sequência das fatias no Painel/Mensal. Módulos 2/3/5/6/9/10.
 
 

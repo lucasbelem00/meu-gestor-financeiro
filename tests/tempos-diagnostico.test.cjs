@@ -38,12 +38,12 @@ test('subetapas preservam retorno e erro e expõem somente durações permitidas
  const d={};assert.equal(c.medirEtapaGravacaoGestor_(d,'resumoMs',()=>{agora=50;return 7;}),7);
  assert.throws(()=>c.medirEtapaGravacaoGestor_(d,'aplicacaoMs',()=>{agora=100;throw Error('interrompido');}),/interrompido/);
  assert.equal(d.resumoMs,50);assert.equal(d.aplicacaoMs,50);
- c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,1,{...d,resumoLeituraMs:12,atualizacaoMs:8,prepararBaseMs:3,aplicarConferenciaMs:9,aplicarEscritaMs:7,planoAnualMs:4,atualizacaoDadosMs:6,celulasEscritas:36,resumoCalculoMs:NaN,senha:'privada'});
+ c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,1,{...d,resumoLeituraMs:12,atualizacaoMs:8,prepararBaseMs:3,aplicarConferenciaMs:9,aplicarEscritaMs:7,planoAnualMs:4,atualizacaoDadosMs:6,celulasEscritas:36,configProtecaoLeituras:1,configProtecaoReusos:8,resumoCalculoMs:NaN,senha:'privada'});
  const m=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));
  vm.runInContext(front,c);const v=c.normalizarTemposServidorGestor(m.acao,m);
  assert.equal(v.detalhesGravacao.resumoMs,50);assert.equal(v.detalhesGravacao.resumoLeituraMs,12);assert.equal(v.detalhesGravacao.atualizacaoMs,8);assert(!Object.hasOwn(v.detalhesGravacao,'resumoCalculoMs'));assert(!JSON.stringify(v).includes('privada'));
  assert.equal(v.detalhesGravacao.prepararBaseMs,3);assert.equal(v.detalhesGravacao.aplicarConferenciaMs,9);assert.equal(v.detalhesGravacao.aplicarEscritaMs,7);
- assert.equal(v.detalhesGravacao.planoAnualMs,4);assert.equal(v.detalhesGravacao.atualizacaoDadosMs,6);assert.equal(v.detalhesGravacao.celulasEscritas,36);
+ assert.equal(v.detalhesGravacao.planoAnualMs,4);assert.equal(v.detalhesGravacao.atualizacaoDadosMs,6);assert.equal(v.detalhesGravacao.celulasEscritas,36);assert.equal(v.detalhesGravacao.configProtecaoLeituras,1);assert.equal(v.detalhesGravacao.configProtecaoReusos,8);
  assert.equal(c.normalizarTemposServidorGestor(m.acao,{...m,detalhesGravacao:{resumoMs:NaN}}).detalhesGravacao,undefined);
 });
 test('cada chamada reseta tempos e envelope não modifica dados',()=>{

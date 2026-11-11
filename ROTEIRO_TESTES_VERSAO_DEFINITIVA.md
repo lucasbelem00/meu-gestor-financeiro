@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v175 — Publicar backend/frontend do complemento. No editor, executar reprocessarRelatoriosPDFGestor, depois Atualizar situação no app. Log deve identificar versaoRotina 2; sucesso limpa erro anterior, falha informa causa sem apagar PDFs. Se houver mais períodos pendentes, cada execução limita a dois e novas chamadas não duplicam arquivo confirmado. Bloquear destino/proteção/pendências incompatíveis. Próximo diagnóstico deve conservar configProtecaoLeituras e configProtecaoReusos numéricos, excluindo campos não permitidos. A ordenação do Histórico foi discutida, mas não alterada neste pacote.
+
+
 Reteste v174 — Publicar Apps Script e frontend. Criar cartão de teste e editar limite: Total da Carteira deve somar cartões ativos imediatamente após confirmação; Pix/à vista/resumo/arquivados não entram no limite total. Conferir disponível/uso, seletor e simulador. Fórmula particular no cadastro deve conservar fallback seguro; não sobrescrever personalizações da planilha. Novo/Edição/Exclusão e recuperação de envio interrompido continuam idempotentes, sem antecipar sucesso. Comparar configProtecaoLeituras/configProtecaoReusos e duração das etapas em nova rodada; uma redução de chamadas não garante duração fixa.
 
 PDFs: Atualizar situação após execução programada; no erro de competência convertida, a rotina deve retomar e limpar erro após sucesso, sem duplicar ou apagar arquivos. Em cópia de testes, Date no primeiro dia e ano numérico devem representar mesmo período; outro dia/mês, hash alterado, arquivo corrompido ou duplicata continuam bloqueados. Gráficos de 2, 3, várias categorias: conferir vizinhas e fechamento, legenda e dados iguais no computador/celular.

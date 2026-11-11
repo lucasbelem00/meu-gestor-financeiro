@@ -281,7 +281,7 @@ function emitirRelatorioPDFGestor_(ss,pasta,dados){
   const origem=propriedade_(CHAVE_ID_PLANILHA_GESTOR),prefixo=hashGestor_(origem).slice(0,12),id='pdf-'+prefixo+'-'+dados.periodo.replace('/','-')+'-'+dados.hash.slice(0,32),tabela=abaTecnicaProtecaoGestor_(ss,ABA_RELATORIOS_PDF_GESTOR_,CAB_RELATORIOS_PDF_GESTOR_,true),achados=localizarLinhasTecnicasGestor_(tabela,1,id);
   if(achados.length>1)throw Error('Identificação repetida na lista de PDFs. Preserve a aba.');
   const linha=achados[0]||tabela.getLastRow()+1,anterior=achados.length?tabela.getRange(linha,1,1,8).getValues()[0]:null;
-  if(anterior&&(periodoControlePDFGestor_(anterior[1])!==dados.periodo||anterior[2]!==dados.hash||!['PREPARANDO','CONFIRMADO'].includes(anterior[3])))throw Error('Preparação do PDF incompatível.');
+  if(anterior){if(periodoControlePDFGestor_(anterior[1])!==dados.periodo)throw Error('Preparação do PDF: o período salvo difere do solicitado. Preserve o controle.');if(anterior[2]!==dados.hash)throw Error('Preparação do PDF: a revisão dos dados difere da identificação. Preserve o controle.');if(!['PREPARANDO','CONFIRMADO'].includes(anterior[3]))throw Error('Preparação do PDF: estado de processamento não reconhecido. Preserve o controle.');}
   if(anterior?.[3]==='CONFIRMADO'){const arquivo=conferirArquivoPDFRelatorioGestor_(DriveApp.getFileById(anterior[4]),anterior[5]);return {periodo:dados.periodo,arquivoId:arquivo.getId(),url:arquivo.getUrl(),hashDados:dados.hash,repetido:true};}
   const geradoEm=anterior?.[6]||new Date().toISOString(),nome='Gestor_Resumo_'+dados.periodo.replace('/','-')+'_'+prefixo+'_'+dados.hash.slice(0,24)+'.pdf',encontrados=pasta.getFilesByName(nome);let arquivo;
   if(encontrados.hasNext()){arquivo=encontrados.next();if(encontrados.hasNext()||!anterior)throw Error('Nome de PDF já utilizado sem uma preparação única. Preserve os arquivos.');conferirArquivoPDFRelatorioGestor_(arquivo,anterior[5]);}
@@ -310,5 +310,17 @@ function gerarRelatoriosPDFProgramadosGestor_(ss,pasta,limite){
 function atualizarRelatoriosContinuosGestor_(ss,pasta){
   atualizarResumoNativoGestor_(ss);
   const resultado=gerarRelatoriosPDFProgramadosGestor_(ss,pasta,2),config=configProtecaoGestor_();
-  config.erroRelatorios=resultado.erro||'';config.relatoriosPDF={data:new Date().toISOString(),pendentes:resultado.pendentes||0,gerados:resultado.gerados||[]};salvarConfigProtecaoGestor_(config);return resultado;
+  config.erroRelatorios=resultado.erro||'';config.relatoriosPDF={versaoRotina:2,data:new Date().toISOString(),pendentes:resultado.pendentes||0,gerados:resultado.gerados||[]};salvarConfigProtecaoGestor_(config);return resultado;
+}
+
+// Executar pelo editor para repetir só os PDFs; não expor como mutação da API.
+function reprocessarRelatoriosPDFGestor(){
+ return comLockProtecaoGestor_(function(ss){
+  const c=configProtecaoGestor_();if(c.ativo!==true||c.pdfAutomatico!==true)throw Error('Ative a proteção e os PDFs automáticos antes de repetir.');
+  if(c.planilhaId!==propriedade_(CHAVE_ID_PLANILHA_GESTOR))throw Error('Confira a base de controle da proteção antes de repetir.');
+  conferirSemPendenciasProtecaoGestor_(ss);
+  const resultado=gerarRelatoriosPDFProgramadosGestor_(ss,pastaProtecaoGestor_(),2),atual=configProtecaoGestor_();
+  atual.erroRelatorios=resultado.erro||'';atual.relatoriosPDF={versaoRotina:2,data:new Date().toISOString(),pendentes:resultado.pendentes||0,gerados:resultado.gerados||[]};salvarConfigProtecaoGestor_(atual);
+  const saida={...resultado,versaoRotina:2};console.log(JSON.stringify(saida));return saida;
+ });
 }

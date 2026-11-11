@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v175 — Aviso de PDF usa Última tentativa dos PDFs, com data quando disponível e explicação de que Atualizar situação apenas consulta. Não sugere que a leitura do status refaz relatórios nem que apaga falhas ainda existentes.
+
+
 v174 — Categorias em gráficos de pizza/rosca usam paleta comum, sem cores repetidas até 25 segmentos, com seleção por distância RGB e borda escura de 2px. A última fatia considera a primeira para evitar fechamento pouco distinto. Valores e ordem das categorias preservados; cores semânticas financeiras não mudam. Não exige que a mesma categoria tenha uma cor fixa entre períodos com categorias/ordens diferentes.
 
 
