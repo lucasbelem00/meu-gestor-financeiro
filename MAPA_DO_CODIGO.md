@@ -455,3 +455,7 @@ Mensagens de instalarAtalhoRecorrenciaEdicaoGestor distinguem origem pessoal/ter
 
 ### Desempenho v185 — 11/11/2026 (local)
 obterAbaExecucaoGestor_: memo de referências existentes de abas no escopo HASHES_EXECUCAO_GESTOR_, sem células/ausências; fallback nativo fora do executor/abas virtuais. Diagnóstico: abasConsultadas/abasReutilizadas.
+
+
+### Coordenação v186 — 11/11/2026 (local)
+Coordenador em interface/desempenho.js: getDadosCompletos de outra geração espera cargasCompletas; nova consulta reconfere geração/chave, sem usar dados antigos. Mesma chave/geração compartilha envio. Diagnóstico esperasConsultas inclui carga_anterior.

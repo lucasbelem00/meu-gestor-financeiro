@@ -1,5 +1,14 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Coordenação de cargas completas v186 local — 11/11/2026
+
+Rodada v185: três getDadosCompletos sobrepostos no servidor e salvar aguardando trava por 8.015 ms. Cliente salvar 29.563 ms, editar 21.196 ms, excluir 22.742 ms. Sem pendências; uso do memo confirmado, mas sem ganho geral comprovado. Além de tempo do Google, havia concorrência de cargas originadas por gerações distintas no mesmo cliente.
+
+criarCoordenadorLeiturasGestor agora serializa getDadosCompletos quando já existe uma carga de outra geração/chave em voo. Mesma geração/parâmetros continua compartilhando envio. Espera o término da chamada real (não presume cancelamento no Google), então reconfere geração/compartilhamento antes de enviar. Não reutiliza resposta antiga após mutação/invalidação e não transforma carga completa em cache de resultado. Diagnóstico registra espera motivo carga_anterior. Recargas visuais continuam aguardando mutações pelo mecanismo existente; mutações não são repetidas/canceladas nem ficam aguardando sua própria consulta de protocolo.
+
+Testes de concorrência atualizados para exigir envio sequencial, preservando resultado mais novo e um único render após pagamento. Cenário novo: múltiplas invalidações com falha da primeira carga libera uma única carga seguinte compartilhada, sem prender a fila nem repetir falha de rede. Escopo é o coordenador deste cliente; não elimina disputa com outros aparelhos ou rotinas Google. Cache/interface v186, protocolo 19. Backend v185 preservado. Validação local: 1.295 testes aprovados, zero falhas (testes-v186-final.log). CSS/espelhos/dist preparados; diff --check sem erros. Código local; publicação e ganho em segundos pendentes.
+
+
 ## Desempenho v185 local — 11/11/2026
 
 obterAbaExecucaoGestor_(ss,nome) reutiliza referências positivas de abas por objeto de planilha num WeakMap pertencente a HASHES_EXECUCAO_GESTOR_. Substitui procuras repetidas nos caminhos de controle, planejamento, aplicação e conferência. Somente referências: não memoriza valores, fórmulas, hashes, identidade anual nem ausências. Abas virtuais continuam no resolvedor próprio. Misses continuam consultando para encontrar abas criadas durante a operação. Todo memo é descartado pelo finally existente, em sucesso ou falha; fora do executor, procura nativa sempre. Sem cache entre execuções.

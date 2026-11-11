@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v185');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v186');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -331,9 +331,9 @@ test('nova atualização após pagamento substitui o render antigo sem uma quart
   const chamadas=[];const a=ambiente(acao=>new Promise(resolve=>chamadas.push({acao,resolve})),true);
   const anterior=a.ctx.carregarDados();await aguardar();
   const pago=a.ctx.apiCall('registrarPagamentoFaturaWeb',{});await aguardar();chamadas[1].resolve({confirmado:true});await pago;
-  const atual=a.ctx.carregarDados();await aguardar();assert.notEqual(anterior,atual);assert.equal(chamadas.length,3);
-  chamadas[2].resolve({saldo:0});assert.equal(await atual,true);
-  chamadas[0].resolve({saldo:100});assert.equal(await anterior,false);assert.equal(chamadas.length,3);
+  const atual=a.ctx.carregarDados();await aguardar();assert.notEqual(anterior,atual);assert.equal(chamadas.length,2);
+  chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,3);
+  chamadas[2].resolve({saldo:0});assert.equal(await atual,true);assert.equal(await anterior,false);assert.equal(chamadas.length,3);
   assert.equal(a.renderizados.length,1);assert.equal(a.renderizados[0].saldo,0);
 });
 
@@ -352,12 +352,14 @@ test('recarga visual após falha de gravação consulta novamente sem repetir o 
  assert.equal(chamadas.length,2);chamadas[1].resolve({saldo:40});assert.equal(await dados,true);assert.equal(a.renderizados.length,1);
 });
 
-test('resposta completa nova não é reaproveitada após outra invalidação',async()=>{
+test('cargas de gerações diferentes esperam a anterior e nunca promovem dados antigos',async()=>{
  const chamadas=[];const c=coordenador({executar:acao=>new Promise(resolve=>chamadas.push({acao,resolve}))});
  const antiga=c.chamar('getDadosCompletos');await aguardar();c.invalidar();
- const nova=c.chamar('getDadosCompletos');await aguardar();chamadas[1].resolve({saldo:20});assert.equal((await nova).saldo,20);
- c.invalidar();chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,3);
- chamadas[2].resolve({saldo:10});assert.equal((await antiga).saldo,10);
+ const nova=c.chamar('getDadosCompletos');await aguardar();assert.equal(chamadas.length,1);
+ chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,2);
+ c.invalidar();chamadas[1].resolve({saldo:20});await aguardar();assert.equal(chamadas.length,3);
+ chamadas[2].resolve({saldo:10});assert.equal((await nova).saldo,10);assert.equal((await antiga).saldo,10);
+ assert(c.metricas().esperasConsultas.some(e=>e.motivo==='carga_anterior'));
 });
 
 test('gráficos de tela oculta são criados ao abrir, usando somente a última configuração', () => {
@@ -471,3 +473,5 @@ test('ocupação repete somente consulta permitida, com duas pausas e limite tot
 test('ocupação não repete salvamento, prévia financeira nem falha de comunicação',async()=>{for(const [acao,codigo]of [['salvarLancamentoWeb','SERVICO_OCUPADO'],['obterFaturaPagamentoWeb','SERVICO_OCUPADO'],['obterAtividadeWeb','FALHA_COMUNICACAO']]){let chamadas=0;const c=coordenador({esperar:async()=>{throw Error('Não deveria esperar');},executar:async()=>{chamadas++;throw Object.assign(Error('falhou'),{codigo});}});await assert.rejects(c.chamar(acao,{}),e=>e.codigo===codigo);assert.equal(chamadas,1);}});
 test('busca alterada ou tela abandonada durante pausa não reenvia consulta antiga',async()=>{for(const caso of ['filtro','tela']){let ativo=true,liberar,chamadas=0;const c=coordenador({podeRetomar:()=>caso==='tela'?ativo:true,esperar:()=>new Promise(r=>liberar=r),executar:async()=>{chamadas++;throw Object.assign(Error('ocupado'),{codigo:'SERVICO_OCUPADO'});}});const p=caso==='filtro'?c.consultarHistorico({filtros:{termo:'antigo'}},()=>ativo):c.chamar('obterRecorrenciasWeb',{}),erro=assert.rejects(p,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();assert.equal(typeof liberar,'function');ativo=false;liberar();await erro;assert.equal(chamadas,1);}});
 test('consultas iguais compartilham novo envio depois da ocupação',async()=>{let chamadas=0;const c=coordenador({esperar:async()=>{},executar:async()=>{chamadas++;if(chamadas===1)throw Object.assign(Error('ocupado'),{codigo:'SERVICO_OCUPADO'});return {itens:[1]};}});const r=await Promise.all([c.chamar('obterAtividadeWeb',{}),c.chamar('obterAtividadeWeb',{})]);assert.equal(chamadas,2);assert.equal(r[0].itens[0],1);assert.equal(r[1].itens[0],1);});
+
+test('múltiplas recargas invalidadas não sobrepõem cargas e falha antiga não prende a seguinte',async()=>{const chamadas=[],c=coordenador({executar:()=>new Promise((resolve,reject)=>chamadas.push({resolve,reject}))});const a=c.chamar('getDadosCompletos'),falha=assert.rejects(a,/rede/);await aguardar();c.invalidar();const b=c.chamar('getDadosCompletos');c.invalidar();const d=c.chamar('getDadosCompletos');await aguardar();assert.equal(chamadas.length,1);chamadas[0].reject(Error('rede'));await falha;await aguardar();assert.equal(chamadas.length,2);chamadas[1].resolve({saldo:7});assert.equal((await b).saldo,7);assert.equal((await d).saldo,7);assert.equal(chamadas.length,2);assert.equal(c.metricas().pendentes,0);});

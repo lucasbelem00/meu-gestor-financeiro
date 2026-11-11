@@ -393,3 +393,7 @@ v184: abrir Ajuda por toque/teclado na edição de empréstimo; conferir leitura
 
 ### Desempenho v185 — 11/11/2026 (local)
 v185 backend+frontend: após atualizar implantação, testar cadastrar/editar/excluir e conferir confirmação, valores e diagnóstico. Verificar abasConsultadas/abasReutilizadas; testar ano novo/aba criada, retorno após erro e consulta em outro aparelho. Comparar mesma sequência em condições semelhantes; não declarar ganho só por teste mock.
+
+
+### Coordenação v186 — 11/11/2026 (local)
+v186: abrir app, iniciar salvar durante carga, pedir nova atualização e conferir uma confirmação/registro sem duplicação. Repetir após pagamento e falha de rede: dados antigos não sobrescrevem novos; fila libera. Comparar esperaLockMs/envios/getDadosCompletos e esperas carga_anterior. Protocolo e snapshots continuam válidos. Não presumir melhora de servidor antes da rodada real.

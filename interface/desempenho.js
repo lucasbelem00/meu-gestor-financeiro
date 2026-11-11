@@ -107,6 +107,12 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     if(acao==='filtrarLancamentosWeb'&&consultasHistorico.size&&!consultas.has(versao+':'+chave)){
       return aguardarConsulta(consultasHistorico,'historico',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
     }
+    // Uma geração nova não cancela a chamada que já chegou ao Google.
+    // Serializa também cargas completas de gerações diferentes, sem reutilizar
+    // a resposta antiga; chamadas equivalentes da mesma geração compartilham abaixo.
+    if(acao==='getDadosCompletos'&&cargasCompletas.size&&!consultas.has(versao+':'+chave)){
+      return aguardarConsulta(cargasCompletas,'carga_anterior',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
+    }
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
     if (item && agora() - item.instante >= 0 && agora() - item.instante < ttl) {
@@ -230,7 +236,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v185', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v186', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
