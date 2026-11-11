@@ -1,5 +1,11 @@
 # Mapa do código do Gestor de Gastos
 
+v177 — interface/perfil.js: estadoUsoCartaoVisualGestor calcula somente apresentação do uso com limite/disponível em centavos. index.html renderListaFormas aplica faixas, rótulos e cor da parte pessoal; atalho do Painel mantém abrirResumoEmprestimos. Módulos 5/9, sem alteração de backend.
+
+
+v176 — shared/anual.js: dadosAnoGestor_ agrega apenas metadados de abas na leitura atual e mantém todas as conferências de valores/origem/fórmulas/hash. Backend/Code.gs: partes do diário de 20 mil caracteres, mesmo formato JSON e mesmos estados; métricas diarioPartes/diarioCaracteresPlano. normalizarTemposServidorGestor aceita contagens. Módulos 2/3/6/10; protocolo 19.
+
+
 v175 — normalizarTemposServidorGestor preserva contadores numéricos da configuração de proteção. shared/relatorios.js: reprocessarRelatoriosPDFGestor é entrada manual do editor, fora da API, para tentar até dois PDFs sob trava e registrar resultado versão 2; incompatibilidades agora distinguem período/revisão/estado. interface/protecao.js distingue última tentativa e consulta de status. Módulos 2/6/10.
 
 

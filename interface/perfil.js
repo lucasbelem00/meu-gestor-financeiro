@@ -1,3 +1,14 @@
+// Cores de atenção do limite; somente apresentação, sem alterar saldos ou pagamentos.
+function estadoUsoCartaoVisualGestor(forma){
+ if(typeof forma.limiteRaw!=='number'||typeof forma.disponivelRaw!=='number')return null;
+ const limite=Math.round(Number(forma.limiteRaw)*100),disponivel=Math.round(Number(forma.disponivelRaw)*100);
+ if(!Number.isSafeInteger(limite)||limite<=0||!Number.isSafeInteger(disponivel))return null;
+ const usado=limite-disponivel,pct=Math.max(0,usado/limite*100),estado=usado>limite?'excedido':usado===limite?'atingido':pct>=80?'alerta':'normal';
+ const classe=estado==='excedido'?'bg-rose-500/20 text-rose-300 border border-rose-500/40':estado==='normal'?'bg-blue-500/20 text-blue-300 border border-blue-500/30':'bg-amber-500/20 text-amber-300 border border-amber-500/40';
+ const arredondado=Number(pct.toFixed(1));let texto=arredondado.toLocaleString('pt-BR')+'%';
+ if(pct<80&&arredondado>=80)texto='<80%';else if(pct<100&&arredondado>=100)texto='<100%';else if(pct>100&&arredondado<=100)texto='>100%';
+ return {estado,classe,texto,rotulo:estado==='atingido'?'Limite atingido':estado==='excedido'?'Limite excedido':estado==='alerta'?'Próximo do limite':'Uso dentro da faixa normal'};
+}
 // Classificação visual e preferências por lançamento; não altera pagamentos.
 // Meta de categoria é teto de gasto: atingir e ultrapassar são estados distintos.
 function estadoMetaCategoriaGestor(total,meta){

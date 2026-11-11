@@ -20,10 +20,13 @@ function dadosAnoGestor_(e){
   const ctx=CONTEXTO_GESTOR_,chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
   if(ctx){ctx.cacheAnosConferidos=ctx.cacheAnosConferidos||new Map();if(ctx.cacheAnosConferidos.has(chave))return copiarGestor_(ctx.cacheAnosConferidos.get(chave));}
   const inicioLeitura=Date.now();try{
-  const ss=abrirPlanilhaPorIdGestor_(e.id),info=ss.getSheetByName('Leia-me');
+  const ss=abrirPlanilhaPorIdGestor_(e.id);
+  // Agrupa só os metadados das abas desta leitura; valores/fórmulas são conferidos normalmente.
+  const folhas=typeof ss.getSheets==='function'?new Map(ss.getSheets().map(sh=>[sh.getName(),sh])):null;
+  const obterFolha=nome=>folhas?folhas.get(nome):ss.getSheetByName(nome),info=obterFolha('Leia-me');
   const identidade=info?info.getRange(2,2,2,1).getValues():[];
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
-  const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=ss.getSheetByName(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
+  const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();if(rg.getFormulas().some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');return {nome:nome,valores:rg.getValues()};})};
   if(e.estado==='FECHADO'&&hashGestor_(dados)!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;
   }finally{if(ctx?.detalhesGravacao){const t=ctx.detalhesGravacao;t.leituraAnosMs=(t.leituraAnosMs||0)+Math.max(0,Date.now()-inicioLeitura);t.anosLidos=(t.anosLidos||0)+1;}}
 }

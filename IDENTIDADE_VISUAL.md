@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v177 — Seus gastos na fatura em roxo claro para distinguir parte pessoal de terceiros (âmbar). 🤝 Consultar terceiros encurta o atalho do Painel sem alterar ação. Uso de cartão/total agregado: azul <80%, âmbar >=80% até100%, vermelho >100%; verde permanece em pagamentos/disponível. Estados de 100% e excedido têm texto explícito; faixa usa valores em centavos antes do arredondamento. Badge com texto centralizado, sem encolher, tooltip e descrição acessível.
+
+
 v175 — Aviso de PDF usa Última tentativa dos PDFs, com data quando disponível e explicação de que Atualizar situação apenas consulta. Não sugere que a leitura do status refaz relatórios nem que apaga falhas ainda existentes.
 
 

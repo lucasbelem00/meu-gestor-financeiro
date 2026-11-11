@@ -1,5 +1,11 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste visual v177 — Cartões e total agregado: conferir abaixo de80%, exatamente80%, antes de100%, exatamente100% e acima100%, incluindo percentuais que arredondariam à faixa errada. Badge azul/âmbar/vermelho com texto atingido/excedido, sem mudar limite/disponível. Verificar título Seus gastos na fatura em roxo e terceiros em âmbar, nome longo no celular, modo Gerenciar e Pix preservado. 🤝 Consultar terceiros abre a mesma lista com recebimentos/cobrança. Conferência visual em celular/computador pendente.
+
+
+Reteste v176 — Publicar backend/frontend juntos. Novo/Edição/Exclusão em anos abertos, consulta de ano fechado, alteração externa e fórmula devem manter recusas/conferências. Em cópia de testes, falha após PRONTO e replay continuam recuperáveis. Planos grandes devem usar partes JSON de até 20 mil caracteres, sem células acima do limite; comprovantes antigos de 12 mil continuam legíveis. Medir diarioPartes/diarioCaracteresPlano, diarioMs, leituraAnosMs e total, sem pressupor ganho em planos pequenos. Retorno ao app durante envio pode exigir consulta completa; não afirmar falha de salvamento nem cancelar envio por navegar. Propostas de cores/textos ainda não fazem parte deste pacote.
+
+
 Reteste v175 — Publicar backend/frontend do complemento. No editor, executar reprocessarRelatoriosPDFGestor, depois Atualizar situação no app. Log deve identificar versaoRotina 2; sucesso limpa erro anterior, falha informa causa sem apagar PDFs. Se houver mais períodos pendentes, cada execução limita a dois e novas chamadas não duplicam arquivo confirmado. Bloquear destino/proteção/pendências incompatíveis. Próximo diagnóstico deve conservar configProtecaoLeituras e configProtecaoReusos numéricos, excluindo campos não permitidos. A ordenação do Histórico foi discutida, mas não alterada neste pacote.
 
 

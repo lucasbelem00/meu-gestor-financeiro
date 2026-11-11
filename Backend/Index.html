@@ -919,7 +919,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             </table></div>
             <section class="mt-4 pt-4 border-t border-slate-700 space-y-3" aria-label="Pagamentos e recebimentos">
               <h3 class="text-sm font-bold text-white">Pagamentos e recebimentos</h3>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button type="button" onclick="abrirConferenciaFaturaGestor()" class="rounded-xl border border-purple-400/40 bg-purple-500/10 text-purple-200 px-3 py-3 text-xs font-bold flex items-center justify-center text-center">📃 Conferir fatura</button><button type="button" onclick="abrirResumoEmprestimos()" class="rounded-xl border border-amber-400/40 bg-amber-500/10 text-amber-200 px-3 py-3 text-xs font-bold flex items-center justify-center text-center">🤝 Terceiros — registrar recebimento e cobrar</button></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2"><button type="button" onclick="abrirConferenciaFaturaGestor()" class="rounded-xl border border-purple-400/40 bg-purple-500/10 text-purple-200 px-3 py-3 text-xs font-bold flex items-center justify-center text-center">📃 Conferir fatura</button><button type="button" onclick="abrirResumoEmprestimos()" class="rounded-xl border border-amber-400/40 bg-amber-500/10 text-amber-200 px-3 py-3 text-xs font-bold flex items-center justify-center text-center">🤝 Consultar terceiros</button></div>
               <p class="text-xs text-slate-200 leading-relaxed">Pagar a fatura e receber de terceiros são registros separados. Receber da pessoa não quita o cartão; pagar o cartão não confirma que ela devolveu o dinheiro.</p>
             </section>
           </div>
@@ -4577,6 +4577,17 @@ document.addEventListener('DOMContentLoaded',iniciarPadraoBotoesGestor);
 // FIM INTERFACE BOTOES GERADA
 
 // INICIO INTERFACE PERFIL GERADA
+// Cores de atenção do limite; somente apresentação, sem alterar saldos ou pagamentos.
+function estadoUsoCartaoVisualGestor(forma){
+ if(typeof forma.limiteRaw!=='number'||typeof forma.disponivelRaw!=='number')return null;
+ const limite=Math.round(Number(forma.limiteRaw)*100),disponivel=Math.round(Number(forma.disponivelRaw)*100);
+ if(!Number.isSafeInteger(limite)||limite<=0||!Number.isSafeInteger(disponivel))return null;
+ const usado=limite-disponivel,pct=Math.max(0,usado/limite*100),estado=usado>limite?'excedido':usado===limite?'atingido':pct>=80?'alerta':'normal';
+ const classe=estado==='excedido'?'bg-rose-500/20 text-rose-300 border border-rose-500/40':estado==='normal'?'bg-blue-500/20 text-blue-300 border border-blue-500/30':'bg-amber-500/20 text-amber-300 border border-amber-500/40';
+ const arredondado=Number(pct.toFixed(1));let texto=arredondado.toLocaleString('pt-BR')+'%';
+ if(pct<80&&arredondado>=80)texto='<80%';else if(pct<100&&arredondado>=100)texto='<100%';else if(pct>100&&arredondado<=100)texto='>100%';
+ return {estado,classe,texto,rotulo:estado==='atingido'?'Limite atingido':estado==='excedido'?'Limite excedido':estado==='alerta'?'Próximo do limite':'Uso dentro da faixa normal'};
+}
 // Classificação visual e preferências por lançamento; não altera pagamentos.
 // Meta de categoria é teto de gasto: atingir e ultrapassar são estados distintos.
 function estadoMetaCategoriaGestor(total,meta){
@@ -5865,7 +5876,9 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
           const isPagamentoAVista = tipo === 'pix' || tipo === 'avista';
           const isTotal = tipo === 'resumo';
           const isFixed = isPagamentoAVista || isTotal;
-          const badgeClass = isPagamentoAVista ? 'bg-slate-700 text-slate-300' : (isTotal ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30');
+          const usoVisual=isPagamentoAVista?null:estadoUsoCartaoVisualGestor(p);
+          const badgeClass = isPagamentoAVista ? 'bg-slate-700 text-slate-300' : usoVisual?.classe || 'bg-slate-700 text-slate-300';
+          const textoUso=usoVisual?.texto || p.pctUso || '0%',avisoUso=usoVisual&&['atingido','excedido'].includes(usoVisual.estado)?'<span class="block mt-0.5">'+usoVisual.rotulo+'</span>':'';
 
           let botaoExcluir = '', iconeDrag = '', lockClass = '', botoesRow = '', margemInterna = '';
           if (modoEdicaoFormas) {
@@ -5882,14 +5895,14 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
           }
 
           if(p.arquivado)botoesRow='<p class="text-xs font-bold text-slate-300">Arquivado · histórico e faturas preservados</p><button type="button" '+acaoHTML('reativarFormaRotinaGestor',[p.nome])+' class="rounded-lg border border-sky-400 p-2 text-sky-200 text-xs">▶️ Reativar</button>';
-          const labelFatura = isPagamentoAVista ? 'Gasto no Mês' : 'Sua Fatura Atual';
+          const labelFatura = isPagamentoAVista ? 'Gasto no Mês' : 'Seus gastos na fatura';
           const mostrarFuturo = !isPagamentoAVista || (tipo === 'pix' && Number(p.futuroPessoalRaw || 0) > 0);
           const htmlTotalFuturo = mostrarFuturo ? `<div class="pt-1 mt-1 border-t border-slate-700/50"><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">${tipo === 'pix' ? 'A pagar nos próximos meses' : 'Total Futuro'}</span><span class="text-sky-400 font-bold text-base">${escaparHTML(p.totalFuturo || 'R$ 0,00')}</span>${tipo === 'pix' ? '<span class="block text-[10px] text-slate-300 mt-1">Pagamentos registrados; não inclui valores a receber.</span>' : ''}</div>` : '';
           const htmlTerceiros = (!isPagamentoAVista && p.terceirosMesRaw > 0)
             ? `<div class="col-span-2 pt-1.5 mt-1 border-t border-slate-800 text-[11px] flex justify-between items-center"><span class="text-amber-300 font-bold">🤝 + ${escaparHTML(p.terceirosMes)} de terceiros</span><span class="text-slate-400">Banco: <strong class="text-white">${escaparHTML(p.totalBancoMes)}</strong></span></div>`
             : '';
 
-          htmlP += `<div data-nome="${escaparHTML(nomeSeguro)}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start"><div class="flex items-center">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${escaparHTML(nomeSeguro)}</h3><p class="text-slate-400 text-xs mt-0.5">${escaparHTML(bancoSeguro)}</p></div></div><span class="px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${escaparHTML(p.pctUso || '0%')} Uso</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${escaparHTML(p.limiteTotal || 'R$ 0,00')}</span></div><div><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${escaparHTML(p.disponivel || 'R$ 0,00')}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPagamentoAVista && !mostrarFuturo ? 'col-span-2' : ''}"><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="text-amber-400 font-bold text-base">${escaparHTML(p.utilizado || 'R$ 0,00')}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
+          htmlP += `<div data-nome="${escaparHTML(nomeSeguro)}" class="${lockClass} bg-slate-800/40 border border-slate-700 rounded-2xl p-4 flex flex-col gap-3 relative shadow-sm"><div class="flex justify-between items-start gap-2"><div class="flex items-center min-w-0">${iconeDrag}<div><h3 class="text-white font-bold text-base leading-tight">${escaparHTML(nomeSeguro)}</h3><p class="text-slate-400 text-xs mt-0.5">${escaparHTML(bancoSeguro)}</p></div></div><span title="${escaparHTML(usoVisual?.rotulo || 'Uso informado')}" aria-label="${escaparHTML(textoUso + ' de uso do limite. ' + (usoVisual?.rotulo || ''))}" class="shrink-0 text-center px-2 py-1 rounded-md text-[9px] font-bold uppercase tracking-wider ${badgeClass}">${escaparHTML(textoUso)} Uso${avisoUso}</span></div><div class="grid grid-cols-2 gap-2 text-sm bg-slate-900/50 p-3 rounded-xl border border-slate-800 ${margemInterna}"><div><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">Limite Total</span><span class="text-slate-300 font-medium">${escaparHTML(p.limiteTotal || 'R$ 0,00')}</span></div><div><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">Disponível</span><span class="text-emerald-400 font-bold">${escaparHTML(p.disponivel || 'R$ 0,00')}</span></div><div class="pt-1 mt-1 border-t border-slate-700/50 ${isPagamentoAVista && !mostrarFuturo ? 'col-span-2' : ''}"><span class="text-slate-400 text-[10px] font-bold uppercase block mb-0.5">${labelFatura}</span><span class="${isPagamentoAVista ? 'text-amber-400' : 'text-purple-300'} font-bold text-base">${escaparHTML(p.utilizado || 'R$ 0,00')}</span></div>${htmlTotalFuturo}${htmlTerceiros}</div>${botoesRow}</div>`;
         });
       }
 
@@ -8211,7 +8224,7 @@ function normalizarTemposServidorGestor(action, meta) {
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos']){
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','diarioCaracteresPlano','diarioPartes']){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -9952,7 +9965,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v175', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v177', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
