@@ -116,11 +116,11 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
       if(!intacto()){mostrarAviso('Salve a edição primeiro','Salve ou descarte a edição antes de criar a recorrência com os dados salvos.');return;}
       if(!plano)return;const modo=area._modo.value;
       const p={origem:tipo,modo,descricao:args[terceiros?3:2],pessoa:terceiros?args[2]:'',forma:args[terceiros?4:3],categoria:terceiros?'':args[4],valor:lerValorMoeda(args[5]),dia:plano.dia,proximoMes:plano.proximoMes,defasagem:plano.defasagem,tags:terceiros?'':args[8]||'',perfilGasto:terceiros?null:args[10]||null,registroOrigem:ref.registroId,versaoOrigem:ref.versao};
-      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+'. O lançamento atual permanece em Empréstimos para registrar a devolução. A recorrência prepara somente os próximos meses.',async()=>{
+      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+(terceiros?'. O lançamento atual permanece em Empréstimos para registrar a devolução.':'. O gasto atual permanece no Histórico pessoal.')+' A recorrência prepara somente os próximos meses.',async()=>{
         if(!intacto()||modo!==area._modo.value||area._enviando){mostrarAviso('Os dados mudaram','Confira os campos e tente novamente.');return;}
         const chave=JSON.stringify([epoca,p]);if(area._pedido?.chave!==chave)area._pedido={chave,param:{...p,requestId:novoRequestIdGestor()}};
         area._enviando=true;botao.disabled=true;area._modo.disabled=true;
-        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada','Os próximos meses estão em Recorrências. O empréstimo deste mês permanece para registrar o recebimento; não foi duplicado.');}}
+        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada',terceiros?'Os próximos meses estão em Recorrências. O empréstimo deste mês permanece para registrar o recebimento; não foi duplicado.':'Os próximos meses estão em Recorrências. O gasto atual permanece no Histórico pessoal; não foi duplicado.');}}
         catch(e){mostrarAviso('Confira a recorrência',e.message+' Consulte Atividade antes de repetir um envio sem confirmação.');}
         finally{area._enviando=false;if(m._sessaoEdicao===sessao){botao.disabled=false;area._modo.disabled=false;}}
       },false,'Criar recorrência','neutral');

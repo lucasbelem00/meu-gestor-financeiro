@@ -227,3 +227,7 @@ Nova forma: ➕ Nova forma de pagamento. Opções Crédito, Débito, Pix; débit
 
 ### Fluidez v183 — 11/11/2026 (local)
 Gráficos de categorias Painel/Mensal: separadores de 1 px (antes 2), preservando paleta e contraste.
+
+
+### v184 — 11/11/2026 (local)
+Ajuda contextual details/summary também em Mês da fatura e Observação na edição de Empréstimo. Explicações secundárias recolhidas; consequências financeiras, escopos e confirmações permanecem visíveis.

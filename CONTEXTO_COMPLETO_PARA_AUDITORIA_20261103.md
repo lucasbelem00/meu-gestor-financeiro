@@ -1,5 +1,25 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Desempenho v185 local — 11/11/2026
+
+obterAbaExecucaoGestor_(ss,nome) reutiliza referências positivas de abas por objeto de planilha num WeakMap pertencente a HASHES_EXECUCAO_GESTOR_. Substitui procuras repetidas nos caminhos de controle, planejamento, aplicação e conferência. Somente referências: não memoriza valores, fórmulas, hashes, identidade anual nem ausências. Abas virtuais continuam no resolvedor próprio. Misses continuam consultando para encontrar abas criadas durante a operação. Todo memo é descartado pelo finally existente, em sucesso ou falha; fora do executor, procura nativa sempre. Sem cache entre execuções.
+
+Aplicação de plano e anexo técnico consultam capacidade de linhas/colunas uma vez por dimensão, reutilizando o número na expansão. Mantidos flush PREPARANDO/PRONTO, aplicação e releitura integral, CONFIRMADO, journal, lock, hashes, idempotência e validação de fórmulas/anos fechados. Novas contagens abasConsultadas e abasReutilizadas permitidas no diagnóstico do servidor e cliente, sem nomes/IDs. Teste controlado: dez reusos da mesma aba não acrescentam consultas; mudança na célula continua imediatamente visível; aba ausente criada depois é encontrada; novo executor faz nova consulta. Não constitui medição de latência do Google.
+
+Pacote inclui as mudanças locais anteriores de Ajuda/mensagens (v184). Cache/interface v185, protocolo 19. Backend alterado: atualizar Código.gs e nova versão da implantação existente, além da publicação frontend. Sem nova permissão ou reativação. Validação local: 1.294 testes aprovados, zero falhas (testes-v185-final2.log), incluindo atualização confirmada com Pix/recorrência, replay e divergências, anos fechados/fórmulas e reset do memo após falha. CSS/espelhos/dist preparados e diff --check sem erros. Publicação e ganho real ainda não verificados.
+
+
+## Ajuda contextual e conferência de comportamento — v184 local, 11/11/2026
+
+Acrescentada Ajuda expansível no Mês da fatura e Observação opcional da edição de Empréstimo. Explica diferença entre competência e devolução, e que observação não agenda recebimento. Mantidos avisos de confirmação de pagamento/recebimento, escopos de parcelas e consequências da transferência sempre visíveis. Mesmo padrão nativo details/summary existente; sem requisições.
+
+Conferência atual: moverParaEmprestimosWeb transfere compra/parcelas para Empréstimos e retira de Lançamentos, preservando pagamento bancário; interface fecha editor e atualiza dados, sem navegar automaticamente. Criar recorrência mantém registro original no local e prepara meses seguintes; não é transferência. Corrigidas confirmação e mensagem de sucesso que falavam em empréstimo mesmo na origem pessoal. Nenhuma mudança contábil ou de navegação foi aplicada.
+
+Diagnóstico v183: quatro envios no coordenador, zero filtros superados/ocupados, três atualizações de dados confirmadas. Eventos de salvar/editar/excluir 25.468/20.063/26.982 ms; servidor 22.325/16.130/24.006 ms, com gravação de 11.758/9.279/13.961 ms. Não comprova aceleração das gravações; variação dos serviços permanece. Retornos de foco/visibilidade invalidaram leituras conforme proteção existente. Não remover validações para obter resposta artificialmente rápida. Sem falhas/pedidos pendentes no diagnóstico enviado.
+
+Cache/interface v184, protocolo 19. Validação local: 1.293 testes aprovados, zero falhas (testes-v184-final.log). CSS/espelhos/dist preparados; diff --check sem erros. Código local, publicação e conferência real pendentes.
+
+
 ## Fluidez local v183 — 11/11/2026
 
 Diagnóstico v182: renderizações recentes de 34–84 ms, consultas filtradas no servidor de 4.958–7.478 ms (cliente 7.902–10.214 ms nas buscas recentes), gravações no servidor de 16.584–17.626 ms. Espera de trava recente 126–677 ms, sem SERVICO_OCUPADO; não há evidência de que atalhos estejam pesando no desenho. Predominam leituras e persistência nos serviços Google. Não confundir medições históricas do arquivo com última rodada; nenhuma melhoria remota foi medida após este pacote.

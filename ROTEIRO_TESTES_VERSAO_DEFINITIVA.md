@@ -385,3 +385,11 @@ Após publicar v182: abrir Histórico com registros, verificar cards e clicar ca
 
 ### Fluidez v183 — 11/11/2026 (local)
 v183: abrir app com cópia local e Histórico; verificar que não consulta antes da carga atual. Filtrar, trocar de aba e atualizar dados: Histórico consulta só ao voltar. Retornar em até 60 s sem alterações mantém a lista; após edição/retorno do app ou filtro novo deve reconferir. Atualização explícita sempre funciona. Carregar mais preserva versão, itens e rolagem. Comparar divisórias dos gráficos no celular/computador.
+
+
+### v184 — 11/11/2026 (local)
+v184: abrir Ajuda por toque/teclado na edição de empréstimo; conferir leitura no celular e fechamento sem envio. Criar recorrência pessoal deve informar permanência no Histórico; terceiros em Empréstimos. Mover compra de teste deve retirá-la do pessoal, preservar parcelas/pagamento bancário e disponibilizar em Empréstimos, sem exigir mudança automática de aba.
+
+
+### Desempenho v185 — 11/11/2026 (local)
+v185 backend+frontend: após atualizar implantação, testar cadastrar/editar/excluir e conferir confirmação, valores e diagnóstico. Verificar abasConsultadas/abasReutilizadas; testar ano novo/aba criada, retorno após erro e consulta em outro aparelho. Comparar mesma sequência em condições semelhantes; não declarar ganho só por teste mock.

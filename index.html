@@ -1443,7 +1443,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <input type="hidden" id="inpEmpEdData">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 mb-1">Mês da fatura</label>
+            <div class="flex items-start justify-between gap-2 mb-1"><label for="inpEdEmpMesFat" class="text-xs font-bold text-slate-400">Mês da fatura</label><details class="relative"><summary class="text-xs text-sky-300 cursor-pointer" aria-label="Ajuda sobre mês da fatura">Ajuda</summary><p class="absolute right-0 top-full z-20 mt-1 w-56 max-w-[70vw] rounded-lg border border-slate-600 bg-slate-900 p-3 text-xs font-normal text-slate-200 shadow-lg">Define em qual mês a compra entra na fatura. A data combinada de devolução é separada; mudar a data da compra não altera este mês automaticamente.</p></details></div>
             <input type="text" id="inpEdEmpMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none">
           </div>
         </div>
@@ -1480,7 +1480,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <input type="text" id="inpEdEmpValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white font-bold text-sm focus:border-amber-500 outline-none">
           </div>
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 mb-1">Observação (opcional)</label>
+            <div class="flex items-start justify-between gap-2 mb-1"><label for="inpEdEmpObs" class="text-xs font-bold text-slate-400">Observação (opcional)</label><details class="relative"><summary class="text-xs text-sky-300 cursor-pointer" aria-label="Ajuda sobre observação (opcional)">Ajuda</summary><p class="absolute right-0 top-full z-20 mt-1 w-56 max-w-[70vw] rounded-lg border border-slate-600 bg-slate-900 p-3 text-xs font-normal text-slate-200 shadow-lg">Use para detalhes adicionais. Para combinar quando a pessoa devolverá o dinheiro, use a data combinada abaixo; a observação não agenda uma devolução.</p></details></div>
             <input type="text" id="inpEdEmpObs" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm focus:border-amber-500 outline-none">
           </div>
         </div>
@@ -8252,7 +8252,7 @@ function normalizarTemposServidorGestor(action, meta) {
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','diarioCaracteresPlano','diarioPartes']){
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes']){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -9672,11 +9672,11 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
       if(!intacto()){mostrarAviso('Salve a edição primeiro','Salve ou descarte a edição antes de criar a recorrência com os dados salvos.');return;}
       if(!plano)return;const modo=area._modo.value;
       const p={origem:tipo,modo,descricao:args[terceiros?3:2],pessoa:terceiros?args[2]:'',forma:args[terceiros?4:3],categoria:terceiros?'':args[4],valor:lerValorMoeda(args[5]),dia:plano.dia,proximoMes:plano.proximoMes,defasagem:plano.defasagem,tags:terceiros?'':args[8]||'',perfilGasto:terceiros?null:args[10]||null,registroOrigem:ref.registroId,versaoOrigem:ref.versao};
-      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+'. O lançamento atual permanece em Empréstimos para registrar a devolução. A recorrência prepara somente os próximos meses.',async()=>{
+      mostrarConfirmacao('Criar recorrência?',p.descricao+' · próxima ocorrência: '+plano.dataProxima+(terceiros?'. O lançamento atual permanece em Empréstimos para registrar a devolução.':'. O gasto atual permanece no Histórico pessoal.')+' A recorrência prepara somente os próximos meses.',async()=>{
         if(!intacto()||modo!==area._modo.value||area._enviando){mostrarAviso('Os dados mudaram','Confira os campos e tente novamente.');return;}
         const chave=JSON.stringify([epoca,p]);if(area._pedido?.chave!==chave)area._pedido={chave,param:{...p,requestId:novoRequestIdGestor()}};
         area._enviando=true;botao.disabled=true;area._modo.disabled=true;
-        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada','Os próximos meses estão em Recorrências. O empréstimo deste mês permanece para registrar o recebimento; não foi duplicado.');}}
+        try{await apiCall('salvarRecorrenciaWeb',area._pedido.param,1);if(m._sessaoEdicao===sessao&&epoca===epocaModeloRecorrenciaGestor()){area.hidden=true;mostrarAviso('Recorrência criada',terceiros?'Os próximos meses estão em Recorrências. O empréstimo deste mês permanece para registrar o recebimento; não foi duplicado.':'Os próximos meses estão em Recorrências. O gasto atual permanece no Histórico pessoal; não foi duplicado.');}}
         catch(e){mostrarAviso('Confira a recorrência',e.message+' Consulte Atividade antes de repetir um envio sem confirmação.');}
         finally{area._enviando=false;if(m._sessaoEdicao===sessao){botao.disabled=false;area._modo.disabled=false;}}
       },false,'Criar recorrência','neutral');
@@ -9993,7 +9993,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v183', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v185', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

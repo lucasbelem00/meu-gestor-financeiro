@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','diarioCaracteresPlano','diarioPartes'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -70,6 +70,17 @@ function abrirPlanilhaPorIdGestor_(id){
   const inicio=Date.now();
   try{const ss=SpreadsheetApp.openById(id);mapa.set(chave,ss);memo.planilhasAbertas=(memo.planilhasAbertas||0)+1;return ss;}
   finally{memo.abrirPlanilhaMs=(memo.abrirPlanilhaMs||0)+Math.max(0,Date.now()-inicio);}
+}
+// Memoriza apenas referências existentes durante um executor sob lock, nunca células.
+// Ausências não são memorizadas: uma aba criada depois precisa ser encontrada.
+function obterAbaExecucaoGestor_(ss,nome){
+  const memo=typeof HASHES_EXECUCAO_GESTOR_!=='undefined'?HASHES_EXECUCAO_GESTOR_:null;
+  if(!memo||ss.abas)return ss.getSheetByName(nome);
+  const bancos=memo.abasAbertasGestor||(memo.abasAbertasGestor=new WeakMap());
+  let abas=bancos.get(ss);if(!abas){abas=new Map();bancos.set(ss,abas);}
+  if(abas.has(nome)){memo.abasReutilizadas=(memo.abasReutilizadas||0)+1;return abas.get(nome);}
+  memo.abasConsultadas=(memo.abasConsultadas||0)+1;
+  const aba=ss.getSheetByName(nome);if(aba)abas.set(nome,aba);return aba;
 }
 function obterPlanilhaGestor_() {
   if (CONTEXTO_GESTOR_) return CONTEXTO_GESTOR_.ss;
@@ -341,9 +352,9 @@ function atualizarStatusAutomaticoInterno_() {
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
-    const empSheet = ss.getSheetByName('Empréstimos');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
+    const empSheet = obterAbaExecucaoGestor_(ss,'Empréstimos');
     if (lancSheet) { processarAssinaturasAutomaticas(lancSheet); organizarEAtualizarPlanilha(lancSheet, pagtoSheet); }
     if (empSheet) organizarAbaEmprestimos(empSheet);
   } catch (e) {
@@ -772,7 +783,7 @@ function organizarFormasPagamento(pagtoSheet) {
 // ============================================================================
 
 function garantirAbaEmprestimos(ss) {
-  let empSheet = ss.getSheetByName('Empréstimos');
+  let empSheet = obterAbaExecucaoGestor_(ss,'Empréstimos');
   if (!empSheet) {
     empSheet = ss.insertSheet('Empréstimos');
     const headers = [['Data Compra', 'Pessoa / Devedor', 'Descrição da Compra', 'Forma de Pagamento', 'Valor Total', 'Qtd Parcelas', 'Parcela', 'Valor Parcela', 'Mês Fatura', 'Status Recebimento', 'Observações']];
@@ -1150,8 +1161,8 @@ function moverParaEmprestimosWebInterno_(dados) {
   try {
     lock.waitLock(12000);
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const empSheet = garantirAbaEmprestimos(ss);
 
     const pessoaFmt = formatarTituloInteligente(dados.pessoa || '');
@@ -1229,8 +1240,8 @@ function moverParaGastosPessoaisWebInterno_(dados) {
   try {
     lock.waitLock(12000);
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const empSheet = garantirAbaEmprestimos(ss);
 
     const catFmt = validarCategoriaAtualGestor_(dados.categoria);
@@ -1309,7 +1320,7 @@ function moverParaGastosPessoaisWebInterno_(dados) {
 // ============================================================================
 
 function gravarLancamentoDoFormulario() {
-  const ss=obterPlanilhaGestor_(),form=ss.getSheetByName('Formulário de Lançamento');if(!form)return;
+  const ss=obterPlanilhaGestor_(),form=obterAbaExecucaoGestor_(ss,'Formulário de Lançamento');if(!form)return;
   const lock=LockService.getDocumentLock(),props=PropertiesService.getScriptProperties(),chave='GESTOR_FORMULARIO_ENVIO_V1';let mensagem='',travado=false,envio=null;
   const conferir=d=>{validarLancamentoWeb_(d);validarFormaAtualGestor_(d.formaPagto,{novaCompra:true});validarCategoriaAtualGestor_(d.categoria);};
   try{
@@ -1354,7 +1365,7 @@ function gravarLancamentoDoFormulario() {
 
 function limparFormulario() {
   const ss = obterPlanilhaGestor_();
-  const formSheet = ss.getSheetByName('Formulário de Lançamento');
+  const formSheet = obterAbaExecucaoGestor_(ss,'Formulário de Lançamento');
   if (!formSheet) return;
 
   const hoje = Utilities.formatDate(getHojeSeguro(), getTimezone(), 'dd/MM/yyyy');
@@ -1379,8 +1390,8 @@ function sincronizarLoteWebInterno_(loteOffline,parcelasInternasCentavos) {
     if(parcelasInternasCentavos!==undefined&&loteOffline.length!==1)throw Error('Plano interno de parcelas incompatível com o lote.');
 
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const hoje = getHojeSeguro();
     let novasLinhasGerais = [];
 
@@ -1533,14 +1544,14 @@ function getDadosCompletos() {
 
   try {
     const ss = obterPlanilhaGestor_();
-    const dashSheet = ss.getSheetByName('Dashboard & Resumo');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const notasSheet = ss.getSheetByName('Anotações');
+    const dashSheet = obterAbaExecucaoGestor_(ss,'Dashboard & Resumo');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const notasSheet = obterAbaExecucaoGestor_(ss,'Anotações');
     let erroNotas='';if(notasSheet){try{garantirCabecalhoNotasGestor_(notasSheet);}catch(e){erroNotas=String(e.message||e);}}
     // Cria a aba uma única vez, inclusive antes do primeiro empréstimo. O lock
     // evita que duas primeiras cargas tentem criá-la ao mesmo tempo.
-    let empSheet = ss.getSheetByName('Empréstimos');
+    let empSheet = obterAbaExecucaoGestor_(ss,'Empréstimos');
     if (!empSheet) {
       const lockCriacaoEmprestimos = obterLockGestor_();
       lockCriacaoEmprestimos.waitLock(10000);
@@ -2479,8 +2490,8 @@ function editarLancamentoLinhaWebInterno_(dados) {
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const lido = lerAbaCompleta(lancSheet, 11);
     const raw = lido.raw, disp = lido.disp;
 
@@ -2564,8 +2575,8 @@ function excluirLancamentoWebInterno_(dados) {
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const lido = lerAbaCompleta(lancSheet, 11);
     const disp = lido.disp;
 
@@ -2646,8 +2657,8 @@ function adiantarParcelasWebInterno_(dados) {
     const previa=previaAntecipacaoWeb(dados);
     if(!dados.previaHash || dados.previaHash!==previa.previaHash) throw new Error('As parcelas mudaram ou ainda não foram conferidas. Abra uma nova prévia antes de antecipar.');
     const ss = obterPlanilhaGestor_();
-    const lancSheet = ss.getSheetByName('Lançamentos');
-    const pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+    const lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     const lido = lerAbaCompleta(lancSheet, 11);
     const raw = lido.raw, disp = lido.disp;
 
@@ -2709,7 +2720,7 @@ function adiantarParcelasWebInterno_(dados) {
 
 
 function editarAssinaturaWebInterno_(dados) {
-  const ss = obterPlanilhaGestor_(), lancSheet = ss.getSheetByName('Lançamentos'), pagtoSheet = ss.getSheetByName('Formas de Pagamento');
+  const ss = obterPlanilhaGestor_(), lancSheet = obterAbaExecucaoGestor_(ss,'Lançamentos'), pagtoSheet = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
   const lido = lerAbaCompleta(lancSheet, COLUNAS_GESTOR_), raw = lido.raw, disp = lido.disp;
   const idx = localizarIndiceSeguro(disp, dados.linhaBase, dados.descOriginal, '', '∞/∞');
   if (idx < 0 || limparApostrofo(disp[idx][6]) !== '∞/∞') throw new Error('Assinatura não localizada. Atualize a tela.');
@@ -2753,7 +2764,7 @@ function editarAssinaturaWebInterno_(dados) {
 }
 
 function cancelarAssinaturaWebInterno_(dados) {
-  const ss = obterPlanilhaGestor_(), sheet = ss.getSheetByName('Lançamentos'), lido = lerAbaCompleta(sheet, COLUNAS_GESTOR_);
+  const ss = obterPlanilhaGestor_(), sheet = obterAbaExecucaoGestor_(ss,'Lançamentos'), lido = lerAbaCompleta(sheet, COLUNAS_GESTOR_);
   const idx = localizarIndiceSeguro(lido.disp, dados.linhaBase, dados.descricao, '', '∞/∞');
   if (idx < 0 || limparApostrofo(lido.disp[idx][6]) !== '∞/∞') throw new Error('Assinatura não localizada. Atualize a tela.');
   const grupo = indicesMesmaCompra(lido.disp, idx); let qtd = 0;
@@ -2781,7 +2792,7 @@ function lerNotasGestor_(sh) {
 }
 function salvarNotasWebInterno_(param) {
   if (!param || !Array.isArray(param.operacoes) || param.operacoes.length > 500) throw new Error('Atualize o app para sincronizar as alterações das notas.');
-  const ss = obterPlanilhaGestor_(); let sh = ss.getSheetByName('Anotações');
+  const ss = obterPlanilhaGestor_(); let sh = obterAbaExecucaoGestor_(ss,'Anotações');
   if (!sh) { sh = ss.insertSheet('Anotações'); sh.getRange(1, 1, 1, 6).setValues([['ID','Texto','Concluída','Data','Versão','Excluída']]); sh.setFrozenRows(1); }
   garantirCabecalhoNotasGestor_(sh);
   const linhas = sh.getLastRow() > 1 ? sh.getRange(2, 1, sh.getLastRow() - 1, 6).getValues() : [];
@@ -2906,7 +2917,7 @@ function encontrarLinhaForma(pagtoSheet, nome) {
 
 function renomearFormaNasAbas(ss, de, para) {
   [['Lançamentos', 3], ['Empréstimos', 4]].forEach(function (par) {
-    const sh = ss.getSheetByName(par[0]);
+    const sh = obterAbaExecucaoGestor_(ss,par[0]);
     if (!sh || sh.getLastRow() < 2) return;
     const rng = sh.getRange(2, par[1], sh.getLastRow() - 1, 1);
     const vals = rng.getValues();
@@ -2919,7 +2930,7 @@ function renomearFormaNasAbas(ss, de, para) {
 }
 
 function versaoConfiguracaoGestor_(ss, grupo, perfisConferidos) {
-  const sh = ss.getSheetByName(grupo === 'formas' ? 'Formas de Pagamento' : 'Dashboard & Resumo');
+  const sh = obterAbaExecucaoGestor_(ss,grupo === 'formas' ? 'Formas de Pagamento' : 'Dashboard & Resumo');
   if (!sh) return hashEstadoGestor_([]);
   function ler(rng) { const v=rng.getValues(), f=rng.getFormulas(); return v.map(function(r,i){return r.map(function(x,j){return f[i][j] || x;});}); }
   if (grupo === 'formas') {
@@ -2952,7 +2963,7 @@ function salvarFormaPagamentoWebInterno_(dados) {
   try {
     lock.waitLock(15000);
     const ss = obterPlanilhaGestor_();
-    const sh = ss.getSheetByName('Formas de Pagamento');
+    const sh = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     if (!sh) throw new Error('Aba "Formas de Pagamento" não encontrada.');
 
     const orig = String(dados.nomeOriginal || '').trim();
@@ -3015,7 +3026,7 @@ function reordenarFormasPagamentoWebInterno_(param) {
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
-    const sh = ss.getSheetByName('Formas de Pagamento');
+    const sh = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     if (!sh || sh.getLastRow() < 7) return { sucesso: true };
 
     validarVersaoConfiguracaoGestor_(ss, 'formas', param);
@@ -3061,7 +3072,7 @@ function excluirFormaPagamentoWebInterno_(param) {
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
-    const sh = ss.getSheetByName('Formas de Pagamento');
+    const sh = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
     validarVersaoConfiguracaoGestor_(ss, 'formas', param);
     const linha = encontrarLinhaForma(sh, nome);
     if (linha < 0) throw new Error('Cartão não encontrado.');
@@ -3070,7 +3081,7 @@ function excluirFormaPagamentoWebInterno_(param) {
     const alvo = chaveFormaGestor_(nome);
     let emUso = false;
     [['Lançamentos', 3], ['Empréstimos', 4]].forEach(function (par) {
-      const aba = ss.getSheetByName(par[0]);
+      const aba = obterAbaExecucaoGestor_(ss,par[0]);
       if (!aba || aba.getLastRow() < 2 || emUso) return;
       const vals = aba.getRange(2, par[1], aba.getLastRow() - 1, 1).getValues();
       if (vals.some(function (l) { return chaveFormaGestor_(l[0]) === alvo; })) emUso = true;
@@ -3104,7 +3115,7 @@ function salvarCategoriasWebInterno_(param) {
   try {
     lock.waitLock(10000);
     const ss = obterPlanilhaGestor_();
-    const dash = ss.getSheetByName('Dashboard & Resumo');
+    const dash = obterAbaExecucaoGestor_(ss,'Dashboard & Resumo');
     if (!dash) throw new Error('Aba "Dashboard & Resumo" não encontrada.');
 
     // aceita o formato antigo (lista) e o novo ({ categorias, renomeacoes })
@@ -3145,7 +3156,7 @@ function salvarCategoriasWebInterno_(param) {
     // cobre Outros legado sem emoji e mantém comparações exatas da planilha.
     let qtdRenomeadas = 0;
     {
-      const lanc = ss.getSheetByName('Lançamentos');
+      const lanc = obterAbaExecucaoGestor_(ss,'Lançamentos');
       if (lanc && lanc.getLastRow() >= 2) {
         const rng = lanc.getRange(2, 4, lanc.getLastRow() - 1, 1);
         const vals = rng.getValues();
@@ -3206,8 +3217,8 @@ function resolverCategoria(raw, nomesConfig) {
 // Mostra, sem alterar a planilha, quais nomes serão reunidos pela unificação.
 function previsualizarUnificacaoCategoriasNaPlanilha() {
   const ss = obterPlanilhaGestor_();
-  const lanc = ss.getSheetByName('Lançamentos');
-  const nomesConfig = listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo'));
+  const lanc = obterAbaExecucaoGestor_(ss,'Lançamentos');
+  const nomesConfig = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
   if (!lanc || lanc.getLastRow() < 2 || nomesConfig.length === 0) {
     const vazio = { total: 0, alteracoes: [] };
     console.log(JSON.stringify(vazio));
@@ -3248,8 +3259,8 @@ function unificarCategoriasNaPlanilhaInterno_() {
     lock.waitLock(10000);
     lockObtido = true;
     const ss = obterPlanilhaGestor_();
-    const lanc = ss.getSheetByName('Lançamentos');
-    const nomesConfig = listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo'));
+    const lanc = obterAbaExecucaoGestor_(ss,'Lançamentos');
+    const nomesConfig = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
     if (!lanc || lanc.getLastRow() < 2 || nomesConfig.length === 0) return 0;
     const rng = lanc.getRange(2, 4, lanc.getLastRow() - 1, 1);
     const vals = rng.getValues();
@@ -3277,7 +3288,7 @@ function unificarCategoriasNaPlanilhaInterno_() {
 function lerLancamentosParaRelatorio(anosArquivo) {
   const ss = obterPlanilhaGestor_();
   const lido = lerRegistrosConsultaProtecaoGestor_('Lançamentos',anosArquivo);
-  const nomesCfg = listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo'));
+  const nomesCfg = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
   const linhas = [];
   const datasOrdenacao=new Map();
   lido.raw.forEach(function (r, i) {
@@ -3344,7 +3355,7 @@ function itemLancamento(l, resumo, modo) {
 
 function lerMetasCategorias() {
   const ss = obterPlanilhaGestor_();
-  const dash = ss.getSheetByName('Dashboard & Resumo');
+  const dash = obterAbaExecucaoGestor_(ss,'Dashboard & Resumo');
   const mapa = Object.create(null);
   if (!dash) return mapa;
   const linhas = dash.getRange('B17:D41').getValues();
@@ -3986,7 +3997,7 @@ function finalizarPlanoGestor_(ctx, detalhes) {
   return medir('planoAnualMs',()=>desdobrarPlanoAnualGestor_(ctx,mudancas)).concat(ctx.anexosTecnicos || []);
 }
 function abrirDiarioGestor_(ss) {
-  let sh = ss.getSheetByName(ABA_DIARIO_GESTOR_);
+  let sh = obterAbaExecucaoGestor_(ss,ABA_DIARIO_GESTOR_);
   if (!sh) { sh = ss.insertSheet(ABA_DIARIO_GESTOR_); sh.getRange(1, 1, 1, 6).setValues([['Operação', 'Payload SHA256', 'Estado', 'Parte', 'Conteúdo', 'Data']]); sh.setFrozenRows(1); if (typeof sh.hideSheet === 'function') sh.hideSheet(); }
   else if (JSON.stringify(sh.getRange(1,1,1,6).getValues()[0]) !== JSON.stringify(['Operação','Payload SHA256','Estado','Parte','Conteúdo','Data'])) throw new Error('A aba _Gestor_Operacoes possui estrutura incompatível. Preserve os dados para conferência.');
   return sh;
@@ -4120,7 +4131,7 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     if (m.modo === 'anexar') { aplicarAnexoTecnicoGestor_(ss, m); return; }
     const leituraDestino={};
     let destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));
-    let sh = destino.getSheetByName(m.nome);
+    let sh = obterAbaExecucaoGestor_(destino,m.nome);
     let atual = medir('aplicarLeituraMs',()=>leituraDestino.valores || lerEstadoAbaGestor_(sh)), hash = hashEstadoGestor_(atual);
     // Datas convertidas precisam de reparação apenas se a fotografia real
     // divergir dos estados antes/depois do diário. No caminho normal, a mesma
@@ -4128,7 +4139,7 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     if(hash!==m.antes&&hash!==m.depois){
       medir('aplicarDestinosMs',()=>recuperarDatasTextoPlanoGestor_(ss,plano,[m]));
       // A recuperação pode ter escrito. Nunca reaproveitar a fotografia anterior.
-      destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));sh=destino.getSheetByName(m.nome);
+      destino=medir('aplicarLeituraMs',()=>destinoMudancaAnualGestor_(ss,m,plano,leituraDestino));sh=obterAbaExecucaoGestor_(destino,m.nome);
       atual=medir('aplicarLeituraMs',()=>leituraDestino.valores||lerEstadoAbaGestor_(sh));hash=hashEstadoGestor_(atual);
     }
     // Aprovação explícita só reconhece linhas já aplicadas. Nunca reescreve
@@ -4148,8 +4159,8 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     // Texto explícito também protege parcelas e competências da conversão em
     // datas em destinos novos. Date e valores monetários mantêm o tipo original.
     const valores = Array.from({ length: rows }, function (_, i) { return Array.from({ length: cols }, function (_, j) { let v = (alvo[i] || [])[j]; if (v === undefined) v = ''; if ((ehAbaRegistrosGestor_(m.nome)||m.nome==='Anotações'||m.nome==='Planejamento') && i > 0) v = textoCelulaRegistroGestor_(v); return v; }); });
-    if (typeof sh.getMaxRows === 'function' && rows > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), rows - sh.getMaxRows());
-    if (typeof sh.getMaxColumns === 'function' && cols > sh.getMaxColumns()) sh.insertColumnsAfter(sh.getMaxColumns(), cols - sh.getMaxColumns());
+    if (typeof sh.getMaxRows === 'function') { const capacidade=sh.getMaxRows(); if(rows>capacidade)sh.insertRowsAfter(capacidade,rows-capacidade); }
+    if (typeof sh.getMaxColumns === 'function') { const capacidade=sh.getMaxColumns(); if(cols>capacidade)sh.insertColumnsAfter(capacidade,cols-capacidade); }
     medir('aplicarFormatosMs',()=>contar('linhasValidacaoStatus',atualizarValidacaoStatusLancamentosGestor_(sh,Math.max(m.linhas,atual.length),indicesFormato)));
     // Mantém a conferência integral, mas escreve somente os blocos alterados.
     // Planos antigos continuam compatíveis; a recuperação reenvia os mesmos blocos.
@@ -4228,7 +4239,7 @@ function identificacaoOperacaoDiarioGestor_(operacaoId) {
 function diagnosticarPendenciasWeb() {
   const lock=LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    const ss=obterPlanilhaGestor_(), diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
+    const ss=obterPlanilhaGestor_(), diario=obterAbaExecucaoGestor_(ss,ABA_DIARIO_GESTOR_);
     if(!diario) return {pendencias:[],resumoPlanilha:situacaoResumoPlanilhaGestor_()};
     return {resumoPlanilha:situacaoResumoPlanilhaGestor_(),pendencias:localizarLinhasTecnicasGestor_(diario,3,'PRONTO').map(function(linha) {
       try { return resumirPendenciaDiarioGestor_(ss,lerOperacaoTecnicaGestor_(diario,linha)); }
@@ -4288,7 +4299,7 @@ function prepararConferenciaRecuperacaoGestor_(ss,diario,p) {
   conferirDestinosRestauracaoGestor_(entrada.plano,ss);
   const abas=Object.create(null),resumo=[];
   entrada.plano.mudancas.forEach(function(m){
-    const sh=ss.getSheetByName(m.nome);
+    const sh=obterAbaExecucaoGestor_(ss,m.nome);
     if(m.modo==='anexar') {
       const fim=m.inicio+m.valores.length-1,aplicado=sh&&sh.getLastRow()>=fim&&hashEstadoGestor_(sh.getRange(m.inicio,1,m.valores.length,6).getValues())===hashEstadoGestor_(m.valores);
       if(!aplicado && (sh?sh.getLastRow():0)!==m.inicio-1) throw new Error('O histórico também apresenta uma diferença. Preserve o diário e copie o diagnóstico para revisão.');
@@ -4331,7 +4342,7 @@ function consultarOperacaoWeb(param) {
   const operacaoId=acao+':'+pedido, lock=LockService.getScriptLock(); lock.waitLock(30000);
   try {
     const ss=obterPlanilhaGestor_();retomarManutencaoProtecaoGestor_(ss);
-    const diario=ss.getSheetByName(ABA_DIARIO_GESTOR_);
+    const diario=obterAbaExecucaoGestor_(ss,ABA_DIARIO_GESTOR_);
     if(!diario) return {estado:'nao_localizado',operacaoId:operacaoId};
     const entradas=localizarCabecalhosOperacaoGestor_(diario,operacaoId);
     if(!entradas.length) return {estado:'nao_localizado',operacaoId:operacaoId};
@@ -4365,7 +4376,7 @@ function consultarOperacaoWeb(param) {
 }
 function estatisticasHistoricoTecnicoGestor_() {
   const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
-  const contar = function (nome) { const sh = ss.getSheetByName(nome); return sh ? Math.max(0,sh.getLastRow()-1) : 0; };
+  const contar = function (nome) { const sh = obterAbaExecucaoGestor_(ss,nome); return sh ? Math.max(0,sh.getLastRow()-1) : 0; };
   const diario = contar(ABA_DIARIO_GESTOR_), atividade = contar(ABA_ATIVIDADE_GESTOR_), restauracoes = contar(ABA_RESTAURACOES_GESTOR_);
   return {linhasDiario:diario, linhasAtividade:atividade, linhasRestauracoes:restauracoes, revisarCrescimento:diario>50000 || atividade>20000 || restauracoes>10000};
 }
@@ -4423,13 +4434,13 @@ function localizarCabecalhosOperacaoGestor_(sh, operacaoId, cabecalhosLidos) {
 }
 
 function aplicarAnexoTecnicoGestor_(ss, m) {
-  let sh = ss.getSheetByName(m.nome);
+  let sh = obterAbaExecucaoGestor_(ss,m.nome);
   const fim = m.inicio + m.valores.length - 1;
   if (sh && sh.getLastRow() >= fim && hashEstadoGestor_(sh.getRange(m.inicio,1,m.valores.length,6).getValues()) === hashEstadoGestor_(m.valores)) return;
   if ((sh ? sh.getLastRow() : 0) !== m.inicio-1) throw new Error('O histórico mudou durante uma gravação interrompida. Preserve os dados para conferência.');
   if (!sh) sh = ss.insertSheet(m.nome);
-  if (typeof sh.getMaxRows === 'function' && fim > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(),fim-sh.getMaxRows());
-  if (typeof sh.getMaxColumns === 'function' && sh.getMaxColumns()<6) sh.insertColumnsAfter(sh.getMaxColumns(),6-sh.getMaxColumns());
+  if (typeof sh.getMaxRows === 'function') { const capacidade=sh.getMaxRows(); if(fim>capacidade)sh.insertRowsAfter(capacidade,fim-capacidade); }
+  if (typeof sh.getMaxColumns === 'function') { const capacidade=sh.getMaxColumns(); if(capacidade<6)sh.insertColumnsAfter(capacidade,6-capacidade); }
   sh.getRange(m.inicio,1,m.valores.length,6).setValues(m.valores);
   if (typeof sh.hideSheet === 'function') sh.hideSheet();
   SpreadsheetApp.flush();
@@ -4586,13 +4597,13 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
     throw e;
-  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
+  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
 }
 
 function assinaturaManutencaoLeituraGestor_(ss) {
   return hashGestor_([Utilities.formatDate(getHojeSeguro(),getTimezone(),'yyyy-MM-dd'),
     ['Dashboard & Resumo','Formas de Pagamento','Lançamentos','Empréstimos'].map(function(nome) {
-      const sh=ss.getSheetByName(nome), matriz=sh ? (sh.valores || lerEstadoAbaGestor_(sh)) : null;
+      const sh=obterAbaExecucaoGestor_(ss,nome), matriz=sh ? (sh.valores || lerEstadoAbaGestor_(sh)) : null;
       return [nome,matriz ? hashEstadoGestor_(matriz.map(function(r){return Array.from(r,function(v){return v==null?'':v;});})) : null];
     })]);
 }
@@ -4605,7 +4616,7 @@ function comImportacaoBackupGestor_(param,executar) {
   if(!/^[A-Za-z0-9_.:-]{8,160}$/.test(id)) throw new Error('Identificação de importação inválida.');
   const lock=LockService.getScriptLock(); lock.waitLock(30000);
   try {
-    const ss=obterPlanilhaGestor_(); let sh=ss.getSheetByName(ABA_IMPORTACOES_BACKUP_GESTOR_);
+    const ss=obterPlanilhaGestor_(); let sh=obterAbaExecucaoGestor_(ss,ABA_IMPORTACOES_BACKUP_GESTOR_);
     const cab=['Importação','Tipo','Parte','Total','Conteúdo','Data'];
     if(!sh) { sh=ss.insertSheet(ABA_IMPORTACOES_BACKUP_GESTOR_); sh.getRange(1,1,1,6).setValues([cab]); if(sh.hideSheet)sh.hideSheet(); }
     else if(JSON.stringify(sh.getRange(1,1,1,6).getValues()[0])!==JSON.stringify(cab)) throw new Error('A área temporária contém dados incompatíveis. Preserve a planilha para conferência.');
@@ -4695,7 +4706,7 @@ function resolverBackupRestauracaoGestor_(param) {
   if(param && param.backup) return param.backup;
   const id=String(param && param.importacaoId || '');
   if(!/^[A-Za-z0-9_.:-]{8,160}$/.test(id))throw new Error('Selecione uma cópia de segurança.');
-  const ss=CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_(),sh=ss.getSheetByName(ABA_IMPORTACOES_BACKUP_GESTOR_);
+  const ss=CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_(),sh=obterAbaExecucaoGestor_(ss,ABA_IMPORTACOES_BACKUP_GESTOR_);
   const estado=sh&&lerImportacaoBackupGestor_(sh,id,false);
   if(!estado||!estado.meta.pronta||param.hashImportacao!==estado.meta.hash)throw new Error('O arquivo ainda não foi preparado ou expirou. Selecione novamente o backup.');
   return montarImportacaoBackupGestor_(sh,id,estado);
@@ -4818,7 +4829,7 @@ function obterFaturaPagamentoWeb(param) {
   const chaveForma=chaveFormaGestor_(forma);
   const itens = [], ss = obterPlanilhaGestor_(), resumo=param.resumo===true; let total = 0, pago = 0, pessoal=0, terceiros=0, quantidade=0;
   ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
-    const sh = ss.getSheetByName(nome),ultima=sh?.getLastRow()||0; if (ultima < 2) return;
+    const sh = obterAbaExecucaoGestor_(ss,nome),ultima=sh?.getLastRow()||0; if (ultima < 2) return;
     const emp = nome === 'Empréstimos';
     sh.getRange(2, 1, ultima - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) {
       if (!r[11] || isStatusCancelado(r[9]) || chaveFormaGestor_(r[emp ? 3 : 2]) !== chaveForma || formatarCelulaRegistroGestor_(r[8], 'MM/yyyy') !== mes) return;
@@ -4849,7 +4860,7 @@ function registrarPagamentoFaturaWeb(param) {
     // A distribuição permanece a mesma. Preparar um bloco por aba evita
     // recalcular os controles de toda a planilha para cada parcela paga.
     Object.keys(grupos).forEach(function (nome) {
-      const g=grupos[nome],sh=ss.getSheetByName(nome),range=sh.getRange(g.inicio,1,g.fim-g.inicio+1,COLUNAS_GESTOR_),calculados=range.getValues(),formulas=range.getFormulas();
+      const g=grupos[nome],sh=obterAbaExecucaoGestor_(ss,nome),range=sh.getRange(g.inicio,1,g.fim-g.inicio+1,COLUNAS_GESTOR_),calculados=range.getValues(),formulas=range.getFormulas();
       const linhas=calculados.map(function(r,i){return r.map(function(v,j){return formulas[i][j] || v;});});
       g.itens.forEach(function (item) {
         const r=linhas[item.linha-g.inicio];
@@ -4955,7 +4966,7 @@ function registrarAtividadeGestor_(ctx) {
 }
 
 function indiceEventosAtividadeGestor_() {
-  const ss=CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_(),sh=ss.getSheetByName(ABA_ATIVIDADE_GESTOR_);
+  const ss=CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_(),sh=obterAbaExecucaoGestor_(ss,ABA_ATIVIDADE_GESTOR_);
   return {sh:sh,linhas:sh ? localizarLinhasTecnicasGestor_(sh,5,'EVENTO').concat(localizarLinhasTecnicasGestor_(sh,5,'EVENTO_ARQUIVADO')).sort(function(a,b){return a-b;}) : []};
 }
 function lerEventosAtividadeGestor_(selecionadas,indice) {
@@ -4995,7 +5006,7 @@ function decodificarEventosAtividadeGestor_(linhas) {
 function mapaRegistrosAtividadeGestor_() {
   const mapa = new Map(), ss = obterPlanilhaGestor_();
   ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
-    const sh = ss.getSheetByName(nome); if (!sh || sh.getLastRow() < 2) return;
+    const sh = obterAbaExecucaoGestor_(ss,nome); if (!sh || sh.getLastRow() < 2) return;
     sh.getRange(2, 1, sh.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) { if (r[11]) { if (mapa.has(String(r[11]))) throw new Error('Há registros com identificação repetida. Confira a planilha.'); mapa.set(String(r[11]), { aba: nome, linha: i + 2, registro: r }); } });
   }); return mapa;
 }
@@ -5063,7 +5074,7 @@ function desfazerAtividadeWeb(param) {
     evento.alteracoes.forEach(function (a) {
       let grupo=grupos[a.aba];
       if(!grupo) {
-        const sh=ss.getSheetByName(a.aba),range=sh.getRange(1,1,Math.max(1,sh.getLastRow()),COLUNAS_GESTOR_),valores=range.getValues(),formulas=range.getFormulas();
+        const sh=obterAbaExecucaoGestor_(ss,a.aba),range=sh.getRange(1,1,Math.max(1,sh.getLastRow()),COLUNAS_GESTOR_),valores=range.getValues(),formulas=range.getFormulas();
         grupo=grupos[a.aba]={sh:sh,linhasAntes:valores.length,valores:valores.map(function(r,i){return r.map(function(v,j){return formulas[i][j] || v;});})};
       }
       const atual=mapa.get(a.id);
@@ -5074,7 +5085,7 @@ function desfazerAtividadeWeb(param) {
       // base ativa usada para conferir pagamentos de fatura.
       const indiceForma=a.aba==='Empréstimos'?3:2;
       r[indiceForma]=nomeFormaLeituraGestor_(r[indiceForma],ss);
-      if(a.aba==='Lançamentos')r[3]=resolverCategoria(r[3],listarNomesCategoriasConfig(ss.getSheetByName('Dashboard & Resumo')));
+      if(a.aba==='Lançamentos')r[3]=resolverCategoria(r[3],listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo')));
       r[13] = Math.max(Number(a.antes[13] || 1), Number(a.depois && a.depois[13] || 0)) + 1;
       if(atual) grupo.valores[atual.linha-1]=r;
       else {
@@ -5155,7 +5166,7 @@ function validarConteudoAbaBackupGestor_(aba) {
 
 function estadoRestauracaoGestor_() {
   const ss = obterPlanilhaGestor_();
-  return hashGestor_(ABAS_BACKUP_RESTAURAVEL_.concat([ABA_ARQUIVOS_ANUAIS_GESTOR_,ABA_ANOS_GESTOR_,ABA_AJUSTES_ANUAIS_GESTOR_]).map(function (nome) { return [nome, lerEstadoAbaGestor_(ss.getSheetByName(nome))]; }));
+  return hashGestor_(ABAS_BACKUP_RESTAURAVEL_.concat([ABA_ARQUIVOS_ANUAIS_GESTOR_,ABA_ANOS_GESTOR_,ABA_AJUSTES_ANUAIS_GESTOR_]).map(function (nome) { return [nome, lerEstadoAbaGestor_(obterAbaExecucaoGestor_(ss,nome))]; }));
 }
 
 function validarBackupRestauracaoGestor_(backup) {
@@ -5302,7 +5313,7 @@ function diferencasAbaRestauracaoGestor_(nome, antes, depois) {
 
 function avisosDependenciasBackupGestor_(abas, ss) {
   const mapa=new Map(abas.map(function (a) { return [a.nome,a.valores]; }));
-  const linhas=function (nome) { const sh=ss.getSheetByName(nome); return mapa.has(nome)?mapa.get(nome):(sh?sh.getDataRange().getValues():[]); };
+  const linhas=function (nome) { const sh=obterAbaExecucaoGestor_(ss,nome); return mapa.has(nome)?mapa.get(nome):(sh?sh.getDataRange().getValues():[]); };
   const formas=new Set(registrosResumoBackupGestor_('Formas de Pagamento',linhas('Formas de Pagamento')).map(function (r) { return chaveFormaGestor_(r[1]); }));
   const categorias=new Set(registrosResumoBackupGestor_('Dashboard & Resumo',linhas('Dashboard & Resumo')).map(function (r) { return chaveCategoria(r[1]); }));
   let formasAusentes=0,categoriasAusentes=0,seriesInvalidas=0;
@@ -5332,7 +5343,7 @@ function previaRestauracaoBackupWeb(param) {
     if(anuais.necessaria)avisos.push('Recuperação de arquivos ou catálogo anual: a cópia anterior guardará o conteúdo legível, a matriz original do catálogo e o diagnóstico. O JSON selecionado reconstruirá os anos conferidos.');
     if(backup.recuperacaoOrigem)avisos.push('Esta cópia anterior foi gerada durante uma recuperação: pode não conter todos os anos originais. Consulte o diagnóstico preservado no arquivo antes de prosseguir.');
     return { protocoloGestor:19, recuperacaoAnual:{necessaria:anuais.necessaria,catalogoDanificado:anuais.catalogoDanificado,erroCatalogo:anuais.erroCatalogo,assinatura:anuais.assinatura,indisponiveis:anuais.indisponiveis}, preservadasAnuais:anuais.preservadas, arquivosAtuais:anuais.catalogo.length, arquivosAnuais:(abas.arquivosAnuais||[]).map(function(d){return {ano:d.ano,resumo:resumoArquivoAnualProtecaoGestor_(d)};}), versaoAtual:estadoRestauracaoGestor_(), hashBackup:hashGestor_(backup), planilha:ss.getName(), origem:String(backup.planilha || ''), avisos:avisos, preservadas:abas.preservadas, geradoEm:String(backup.geradoEm || ''), modo:'substituicao', historicoPreservado:true, abas:abas.map(function (aba) {
-      const sh=ss.getSheetByName(aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
+      const sh=obterAbaExecucaoGestor_(ss,aba.nome), atual=sh && sh.getLastRow()?sh.getDataRange().getValues():[];
       return {nome:aba.nome,atual:resumirAbaRestauracaoGestor_(aba.nome,atual),backup:resumirAbaRestauracaoGestor_(aba.nome,aba.valores),diferencas:diferencasAbaRestauracaoGestor_(aba.nome,atual,aba.valores)};
     }) };
   }, true);
@@ -5352,7 +5363,7 @@ function restaurarBackupDadosWeb(param) {
     const copiaAnterior = { ...originalAnterior, abas: originalAnterior.abas.filter(function (a) { return a.nome !== '_Gestor_Atividade'; }).map(function (a) { const dados = Object.assign({}, a); delete dados.exibidos; return dados; }) };
     const copia=prepararCopiaAnteriorRestauracaoGestor_(copiaAnterior,param.requestId);
     abas.forEach(function (dados) {
-      const sh = ss.getSheetByName(dados.nome) || ss.insertSheet(dados.nome);
+      const sh = obterAbaExecucaoGestor_(ss,dados.nome) || ss.insertSheet(dados.nome);
       // Manipulação do plano em memória: a gravação real fica sob o diário recuperável.
       sh.valores = copiarGestor_(dados.valores); sh.colunas = Math.max(sh.colunas, dados.valores[0].length);
       if(dados.nome==='Formas de Pagamento'){delete CONTEXTO_GESTOR_.tiposFormas;delete CONTEXTO_GESTOR_.nomesFormas;delete CONTEXTO_GESTOR_.identidadesFormas;}
@@ -5376,7 +5387,7 @@ function planilhaRealCopiasRestauracaoGestor_() { return CONTEXTO_GESTOR_?CONTEX
 function prepararCopiaAnteriorRestauracaoGestor_(backup,id) {
   const texto=JSON.stringify(backup), bytes=Utilities.newBlob(texto).getBytes().length;
   if (bytes>LIMITE_BACKUP_RESTAURACAO_GESTOR_) throw new Error('A cópia dos dados atuais excede 8 MB. Exporte os dados para recuperação assistida antes de continuar.');
-  const real=planilhaRealCopiasRestauracaoGestor_(), sh=real.getSheetByName(ABA_RESTAURACOES_GESTOR_);
+  const real=planilhaRealCopiasRestauracaoGestor_(), sh=obterAbaExecucaoGestor_(real,ABA_RESTAURACOES_GESTOR_);
   if (sh && sh.getLastRow() && JSON.stringify(sh.getRange(1,1,1,4).getValues()[0])!==JSON.stringify(CABECALHO_COPIAS_RESTAURACAO_GESTOR_.slice(0,4))) throw new Error('A aba de segurança já contém dados incompatíveis.');
   const hash=hashTextoBackupGestor_(texto), partes=texto.match(/[\s\S]{1,12000}/g) || [''];
   const valores=partes.map(function (p,i) { return [id,backup.geradoEm,i+1,JSON.stringify(p),hash,partes.length]; });
@@ -5468,7 +5479,7 @@ function obterBackupAnteriorWeb(param) {
 
 function epocaRestauracaoGestor_() {
   const ss = CONTEXTO_GESTOR_ ? CONTEXTO_GESTOR_.ssReal : obterPlanilhaGestor_();
-  const sh = ss.getSheetByName(ABA_RESTAURACOES_GESTOR_);
+  const sh = obterAbaExecucaoGestor_(ss,ABA_RESTAURACOES_GESTOR_);
   return sh && sh.getLastRow() > 1 ? String(sh.getRange(sh.getLastRow(),1).getValue() || '') : '';
 }
 
@@ -5524,7 +5535,7 @@ function validarNomesFormasGestor_(linhas) {
 // Só o cadastro atual pode autorizar uma nova compra. O fallback usado para
 // leitura de históricos antigos nunca serve como cadastro para uma gravação.
 function validarFormaAtualGestor_(nome, opcoes) {
-  const ss = obterPlanilhaGestor_(), sh = ss.getSheetByName('Formas de Pagamento');
+  const ss = obterPlanilhaGestor_(), sh = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
   if (!sh) throw new Error('O cadastro de formas de pagamento não foi encontrado. Seu rascunho foi preservado.');
   const linha = encontrarLinhaForma(sh, nome);
   if (linha < 0) throw new Error('A forma selecionada foi removida ou renomeada. Atualize os dados e selecione a forma atual; seu rascunho foi preservado.');
@@ -5537,7 +5548,7 @@ function validarFormaAtualGestor_(nome, opcoes) {
 }
 
 function validarCategoriaAtualGestor_(nome) {
-  const ss = obterPlanilhaGestor_(), sh = ss.getSheetByName('Dashboard & Resumo');
+  const ss = obterPlanilhaGestor_(), sh = obterAbaExecucaoGestor_(ss,'Dashboard & Resumo');
   const chave = chaveCategoria(nome), cadastradas = listarNomesCategoriasConfig(sh);
   const correspondentes = cadastradas.filter(function (categoria) { return chaveCategoria(categoria) === chave; });
   if (!chave || correspondentes.length !== 1) throw new Error('A categoria selecionada não está mais disponível ou seu cadastro está ambíguo. Atualize as categorias e confira o rascunho antes de gravar.');
@@ -5640,11 +5651,11 @@ function formaReferidaNoHistoricoGestor_(nome) {
 }
 
 function motivoDependenciaDesfazerGestor_(registro, aba) {
-  const ss = obterPlanilhaGestor_(), sh = ss.getSheetByName('Formas de Pagamento');
+  const ss = obterPlanilhaGestor_(), sh = obterAbaExecucaoGestor_(ss,'Formas de Pagamento');
   const forma = limparApostrofo(registro[aba === 'Empréstimos' ? 3 : 2]);
   if (!sh || encontrarLinhaForma(sh, nomeFormaLeituraGestor_(forma,ss)) < 0) return 'A forma de pagamento "' + forma + '" não está mais cadastrada. Recupere o cadastro correto em Gestão antes de desfazer; limite e vencimento não serão inventados.';
   if (aba === 'Lançamentos') {
-    const dash = ss.getSheetByName('Dashboard & Resumo'), categoria = chaveCategoria(registro[3]);
+    const dash = obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'), categoria = chaveCategoria(registro[3]);
     const cadastradas = dash ? dash.getRange('B17:B41').getValues().map(function (r) { return chaveCategoria(r[0]); }) : [];
     if (!cadastradas.includes(categoria)) return 'A categoria deste registro não está mais cadastrada. Recupere ou confira a categoria em Gestão antes de desfazer.';
   }
@@ -5661,7 +5672,7 @@ function celulaCriticaConfiguracaoBackupGestor_(aba, linha, coluna) {
 function validarIdentidadesEstadoRestauradoGestor_(abas) {
   const ss = obterPlanilhaGestor_(), restauradas = new Map(abas.map(function (a) { return [a.nome,a.valores]; })), ids = new Map();
   ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
-    const sh = ss.getSheetByName(nome);
+    const sh = obterAbaExecucaoGestor_(ss,nome);
     const linhas = restauradas.has(nome) ? restauradas.get(nome) : (sh && sh.getLastRow() ? sh.getDataRange().getValues() : []);
     linhas.slice(1).forEach(function (r,i) {
       if (!r[11]) return;

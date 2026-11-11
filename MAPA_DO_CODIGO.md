@@ -447,3 +447,11 @@ Atalhos do Histórico devem estar em ACOES_RENDERIZADAS: acaoHTML valida o regis
 
 ### Fluidez v183 — 11/11/2026 (local)
 renderizarDados(dados, origemCache=false): cópia local não inicia busca de Histórico. Fora da aba com filtros, agenda retomada. atualizarHistoricoAoEntrarGestor reaproveita lista íntegra por até 60 s com mesma geração e filtros.
+
+
+### v184 — 11/11/2026 (local)
+Mensagens de instalarAtalhoRecorrenciaEdicaoGestor distinguem origem pessoal/terceiros. Criar recorrência preserva origem; executarMoverParaEmprestimos transfere registro e atualiza dados, sem navegação automática.
+
+
+### Desempenho v185 — 11/11/2026 (local)
+obterAbaExecucaoGestor_: memo de referências existentes de abas no escopo HASHES_EXECUCAO_GESTOR_, sem células/ausências; fallback nativo fora do executor/abas virtuais. Diagnóstico: abasConsultadas/abasReutilizadas.
