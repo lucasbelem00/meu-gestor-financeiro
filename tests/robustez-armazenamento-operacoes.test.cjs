@@ -37,7 +37,8 @@ for(const stage of ['before','after']) test('cancelamento recusa plano PRONTO co
   assert.equal(db.sheets['Lançamentos'].rows.slice(1).filter(r=>r[11]).length,3);
 });
 test('PREPARANDO incompleto é cancelável sem aplicar suas partes',()=>{
-  const {ctx,db}=boot(fixture());db.failure={name:'_Gestor_Operacoes',stage:'before',row:3};
+  const {ctx,db}=boot(fixture()),insert=db.insertSheet;let falhar=true;
+  db.insertSheet=function(nome){const sh=insert.call(this,nome);if(nome==='_Gestor_Operacoes'){const get=sh.getRange;sh.getRange=function(...args){const rg=get.apply(this,args),set=rg.setValues;rg.setValues=function(v){if(falhar&&v[0]?.[2]==='PREPARANDO'){falhar=false;get.call(sh,args[0],args[1],1,6).setValues([v[0]]);throw Error('FALHA após cabeçalho e antes das partes');}return set.call(this,v);};return rg;};}return sh;};
   assert.throws(()=>ctx.salvarLancamentoWeb({...launch,requestId:pedido.requestId}),/FALHA/);
   assert.equal(db.sheets['_Gestor_Operacoes'].rows[1][2],'PREPARANDO');
   assert.equal(ctx.cancelarOperacaoWeb(pedido).estado,'cancelado');

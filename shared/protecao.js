@@ -9,11 +9,15 @@ const CAB_MANUTENCAO_PROTECAO_GESTOR_=['Operação','Estado','Arquivo do plano',
 const NOME_PASTA_BACKUPS_GESTOR_='Backups do Gestor de Gastos';
 function realProtecaoGestor_(){return CONTEXTO_GESTOR_?CONTEXTO_GESTOR_.ssReal:obterPlanilhaGestor_();}
 function configProtecaoGestor_(){
-  const texto=propriedade_(CONFIG_PROTECAO_GESTOR_);if(!texto)return {versao:1,ativo:false};
+  // Somente dentro do executor sob trava; leituras externas continuam atuais.
+  const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_;
+  let texto;if(memo?.has('configProtecaoTexto')){texto=memo.get('configProtecaoTexto');memo.configProtecaoReusos=(memo.configProtecaoReusos||0)+1;}
+  else{texto=propriedade_(CONFIG_PROTECAO_GESTOR_);if(memo){memo.set('configProtecaoTexto',texto);memo.configProtecaoLeituras=(memo.configProtecaoLeituras||0)+1;}}
+  if(!texto)return {versao:1,ativo:false};
   let c;try{c=JSON.parse(texto);}catch(_){throw Error('A configuração de backups está inválida. Preserve a propriedade para conferência.');}
   if(c.versao!==1)throw Error('Configuração de backups incompatível.');return c;
 }
-function salvarConfigProtecaoGestor_(c){PropertiesService.getScriptProperties().setProperty(CONFIG_PROTECAO_GESTOR_,JSON.stringify(c));}
+function salvarConfigProtecaoGestor_(c){const texto=JSON.stringify(c);PropertiesService.getScriptProperties().setProperty(CONFIG_PROTECAO_GESTOR_,texto);const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_;if(memo)memo.set('configProtecaoTexto',texto);}
 function comLockProtecaoGestor_(fn){
   if(CONTEXTO_GESTOR_)throw Error('A manutenção precisa de uma execução separada das gravações financeiras.');
   const lock=LockService.getScriptLock();lock.waitLock(30000);

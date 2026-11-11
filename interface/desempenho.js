@@ -195,7 +195,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       // Qualquer outra alteração/retomada durante o envio exige consulta normal.
       try{
         const snapshot=respostaConfirmada?.atualizacaoDados,d=snapshot?.dados;
-        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'].includes(acao)&&snapshot?.versao===1&&
+        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb'].includes(acao)&&snapshot?.versao===1&&
           d&&typeof d==='object'&&!Array.isArray(d)&&Number(d.protocoloGestor)>=18&&!d.erro&&!d.error&&
           d.integridade&&d.integridade.bloqueada===false&&typeof d.epocaRestauracao==='string'&&
           d.kpis&&d.faturas&&Array.isArray(d.lancamentos)&&Array.isArray(d.formasPagamento)&&
@@ -230,7 +230,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v173', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v174', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v174 — Categorias em gráficos de pizza/rosca usam paleta comum, sem cores repetidas até 25 segmentos, com seleção por distância RGB e borda escura de 2px. A última fatia considera a primeira para evitar fechamento pouco distinto. Valores e ordem das categorias preservados; cores semânticas financeiras não mudam. Não exige que a mesma categoria tenha uma cor fixa entre períodos com categorias/ordens diferentes.
+
+
 v173 — No simulador, 🎯 Levar ao planejamento é ação secundária centralizada abaixo de todos os campos e antes do resultado; sai do cabeçalho. Mantém confirmação e rascunho revisável, sem gravação automática.
 
 

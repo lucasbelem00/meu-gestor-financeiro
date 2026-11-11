@@ -141,3 +141,13 @@ test('falha de conversão é independente do backup financeiro já confirmado',(
 test('excluir último gasto de um período já emitido cria revisão zerada de mês e ano',()=>{
  const a=ambiente(fixture([personal('Única',100,'1/1','12/2025','Pago')]));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,2);const antigos=pdfs(a).map(f=>f.id);a.db.sheets['Lançamentos'].rows.splice(1);const r=a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2);assert.equal(r.sucesso,true);assert.equal(r.gerados.length,2);assert.equal(pdfs(a).length,4);assert(antigos.every(id=>a.arquivos.has(id)));assert(a.conversoes.at(-1).includes('0 registro(s)'));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,0);
 });
+
+test('PDF reconhece competência convertida em Date e ano numérico, preservando hashes e arquivos',()=>{
+ const a=ambiente(fixture([personal('Antiga',100,'1/1','12/2025','Pago')]));const dados=a.ctx.dadosPeriodoPDFGestor_(a.ctx.registrosResumoNativoGestor_(a.db),'12/2025');
+ const r=a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),t=a.db.sheets['_Gestor_RelatoriosPDF'];t.rows[1][1]=new Date(2025,11,1);
+ assert.equal(a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados).arquivoId,r.arquivoId);assert.equal(pdfs(a).length,1);
+ const anual=a.ctx.dadosPeriodoPDFGestor_(a.ctx.registrosResumoNativoGestor_(a.db),'2025');a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,anual);t.rows[2][1]=2025;
+ assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,0);
+ t.rows[1][1]=new Date(2025,11,2);assert.throws(()=>a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),/Período inválido/);
+ t.rows[1][1]='12/2025';t.rows[1][2]='0'.repeat(64);assert.throws(()=>a.ctx.emitirRelatorioPDFGestor_(a.db,a.pasta,dados),/incompatível/);
+});

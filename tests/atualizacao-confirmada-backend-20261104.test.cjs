@@ -133,3 +133,12 @@ test('fórmula incompatível interrompe snapshot antes de calcular o Painel inte
 
 test('categorias devolvem atualização confirmada com nomes, metas e versões atuais',()=>{const a=iniciar(fixture([personal('Compra',30)])),d=api(a,'getDadosCompletos');const r=api(a,'salvarCategoriasWeb',{requestId:'snapshot-categorias-001',incluirAtualizacaoDados:true,versaoConfiguracao:d.versoesConfiguracao.categorias,categorias:[{nome:'Teste',meta:250},{nome:'Outros 📦',meta:0}],renomeacoes:[]});conferir(a,r);assert.equal(r.atualizacaoDados.dados.configCategorias.find(c=>c.nome==='Teste').meta,250);});
 test('exclusão devolve retrato confirmado sem o registro, preservando os demais',()=>{const a=iniciar(fixture([personal('Excluir',30),personal('Preservar',20)])),r=a.db.sheets['Lançamentos'].rows.find(r=>r[1]==='Excluir');const p={requestId:'snapshot-excluir-001',incluirAtualizacaoDados:true,registroId:r[11],compraId:r[12],versao:r[13],linha:2,descricao:r[1],mesFatura:r[8],parcela:r[6],excluirTodasParcelas:false};const res=api(a,'excluirLancamentoWeb',p);conferir(a,res);assert(!res.atualizacaoDados.dados.lancamentos.some(x=>x[1]==='Excluir'));assert(res.atualizacaoDados.dados.lancamentos.some(x=>x[1]==='Preservar'));const antes=JSON.stringify(a.db.sheets['Lançamentos'].rows);api(a,'excluirLancamentoWeb',p);assert.equal(JSON.stringify(a.db.sheets['Lançamentos'].rows),antes);});
+
+test('Total da Carteira acompanha cartões novos e limites corrigidos sem depender da linha de resumo',()=>{
+ const f=fixture();f['Formas de Pagamento'].push(['','Total Carteira','',7,'','','',0]);const a=iniciar(f);
+ let d=api(a,'getDadosCompletos');assert.equal(d.formasPagamento.find(f=>f.tipo==='resumo').limiteTotal,'R$ 1.000,00');
+ let res=api(a,'salvarFormaPagamentoWeb',{requestId:'forma-carteira-nova-001',incluirAtualizacaoDados:true,versaoConfiguracao:d.versoesConfiguracao.formas,nome:'Segundo',tipo:'cartao',banco:'Banco',limite:2500,fechamento:5,vencimento:10});conferir(a,res);
+ d=res.atualizacaoDados.dados;assert.equal(d.formasPagamento.find(f=>f.tipo==='resumo').limiteTotal,'R$ 3.500,00');
+ res=api(a,'salvarFormaPagamentoWeb',{requestId:'forma-carteira-limite-001',incluirAtualizacaoDados:true,versaoConfiguracao:d.versoesConfiguracao.formas,nomeOriginal:'Cartao',nome:'Cartao',tipo:'cartao',banco:'Banco',limite:1200,fechamento:5,vencimento:10});conferir(a,res);
+ assert.equal(res.atualizacaoDados.dados.formasPagamento.find(f=>f.tipo==='resumo').limiteTotal,'R$ 3.700,00');
+});

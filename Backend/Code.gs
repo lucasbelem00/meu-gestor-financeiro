@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -2093,7 +2093,9 @@ function getDadosCompletos() {
         const gastoMesCartoes = pivotTotalCarteira[mesAtualStr] || 0;
         const comprometidoTotal = somaAbertoMesCartoes + somaFuturoCartoes + somaVencidoCartoes;
         f.atrasadoRaw = somaVencidoCartoes;
-        const limRaw = extractNum(f.limiteTotal);
+        // A soma vem dos cadastros atuais, sem depender da fórmula de resumo da planilha.
+        const limRaw = listaFormasPagto.filter(x=>x.tipo==='cartao'&&!x.arquivado).reduce((s,x)=>s+Math.round(extractNum(x.limiteTotal)*100),0)/100;
+        f.limiteTotal=formatBRL(limRaw);f.limiteRaw=limRaw;
 
         f.utilizado = formatBRL(gastoMesCartoes);
         f.terceirosMesRaw = somaTerceirosMesCartoes;
@@ -4434,7 +4436,7 @@ function aplicarAnexoTecnicoGestor_(ss, m) {
 }
 
 function montarAtualizacaoDadosConfirmadaGestor_(ctx,integridade,detalhes) {
-  if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'].includes(ctx.action))return null;
+  if(!ctx||!['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb'].includes(ctx.action))return null;
   const anterior=CONTEXTO_GESTOR_,somenteLeitura=ctx.somenteLeitura;
   const medir=(etapa,fn)=>detalhes?medirEtapaGravacaoGestor_(detalhes,etapa,fn):fn();
   try {
@@ -4564,8 +4566,8 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     let inicio,resumoAdiado=false;
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioMs',function(){
     inicio = diario.getLastRow() + 1;
-    diario.getRange(inicio, 1, 1, 6).setValues([[id, fingerprint, 'PREPARANDO', partes.length, '', new Date()]]);
-    diario.getRange(inicio + 1, 1, partes.length, 6).setValues(partes.map(function (p, i) { return [id, '', 'PARTE', i + 1, JSON.stringify(p), '']; })); SpreadsheetApp.flush();
+    // Cabeçalho PREPARANDO e partes são um único bloco; PRONTO só após o flush.
+    diario.getRange(inicio,1,partes.length+1,6).setValues([[id,fingerprint,'PREPARANDO',partes.length,'',new Date()]].concat(partes.map(function(p,i){return [id,'','PARTE',i+1,JSON.stringify(p),''];}))); SpreadsheetApp.flush();
     resultadoIncerto = true;
     if(ctx.financeiroAlterado)resumoAdiado=solicitarResumoAssincronoGestor_(acao,ctx);
     diario.getRange(inicio, 3).setValue('PRONTO'); SpreadsheetApp.flush();
@@ -4582,7 +4584,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
     throw e;
-  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
+  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
 }
 
 function assinaturaManutencaoLeituraGestor_(ss) {
@@ -5791,11 +5793,15 @@ const CAB_MANUTENCAO_PROTECAO_GESTOR_=['Operação','Estado','Arquivo do plano',
 const NOME_PASTA_BACKUPS_GESTOR_='Backups do Gestor de Gastos';
 function realProtecaoGestor_(){return CONTEXTO_GESTOR_?CONTEXTO_GESTOR_.ssReal:obterPlanilhaGestor_();}
 function configProtecaoGestor_(){
-  const texto=propriedade_(CONFIG_PROTECAO_GESTOR_);if(!texto)return {versao:1,ativo:false};
+  // Somente dentro do executor sob trava; leituras externas continuam atuais.
+  const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_;
+  let texto;if(memo?.has('configProtecaoTexto')){texto=memo.get('configProtecaoTexto');memo.configProtecaoReusos=(memo.configProtecaoReusos||0)+1;}
+  else{texto=propriedade_(CONFIG_PROTECAO_GESTOR_);if(memo){memo.set('configProtecaoTexto',texto);memo.configProtecaoLeituras=(memo.configProtecaoLeituras||0)+1;}}
+  if(!texto)return {versao:1,ativo:false};
   let c;try{c=JSON.parse(texto);}catch(_){throw Error('A configuração de backups está inválida. Preserve a propriedade para conferência.');}
   if(c.versao!==1)throw Error('Configuração de backups incompatível.');return c;
 }
-function salvarConfigProtecaoGestor_(c){PropertiesService.getScriptProperties().setProperty(CONFIG_PROTECAO_GESTOR_,JSON.stringify(c));}
+function salvarConfigProtecaoGestor_(c){const texto=JSON.stringify(c);PropertiesService.getScriptProperties().setProperty(CONFIG_PROTECAO_GESTOR_,texto);const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_;if(memo)memo.set('configProtecaoTexto',texto);}
 function comLockProtecaoGestor_(fn){
   if(CONTEXTO_GESTOR_)throw Error('A manutenção precisa de uma execução separada das gravações financeiras.');
   const lock=LockService.getScriptLock();lock.waitLock(30000);
@@ -6945,22 +6951,27 @@ function retomarRelatoriosPDFGestor_(ss,pasta,limite){
   for(let i=1;i<linhas.length&&retomados.length<limite;i++){const r=linhas[i];if(r[3]!=='PREPARANDO')continue;
     if(!String(r[0]).startsWith(prefixo)||!/^[a-f0-9]{64}$/.test(r[2])||!/^[a-f0-9]{64}$/.test(r[5]))throw Error('Preparação de PDF não reconhecida. Preserve o controle.');
     const arquivos=pasta.getFilesByName(String(r[4]));if(!arquivos.hasNext())continue;const arquivo=arquivos.next();if(arquivos.hasNext())throw Error('Há PDFs repetidos na preparação. Preserve os arquivos.');
-    conferirArquivoPDFRelatorioGestor_(arquivo,r[5]);r[3]='CONFIRMADO';r[4]=arquivo.getId();tabela.getRange(i+1,1,1,8).setValues([r]);SpreadsheetApp.flush();retomados.push({periodo:r[1],arquivoId:arquivo.getId(),url:arquivo.getUrl(),hashDados:r[2],retomado:true});
+    const periodo=periodoControlePDFGestor_(r[1]);conferirArquivoPDFRelatorioGestor_(arquivo,r[5]);r[1]=textoLiteralGestor_(periodo);r[3]='CONFIRMADO';r[4]=arquivo.getId();tabela.getRange(i+1,1,1,8).setValues([r]);SpreadsheetApp.flush();retomados.push({periodo:periodo,arquivoId:arquivo.getId(),url:arquivo.getUrl(),hashDados:r[2],retomado:true});
   }return retomados;
+}
+// O Sheets pode converter MM/AAAA em Date e o ano isolado em número.
+function periodoControlePDFGestor_(valor){
+ if(valor instanceof Date){if(!Number.isFinite(valor.getTime()))throw Error('Período inválido no controle de PDFs.');if(formatarDataLeituraGestor_(valor,'dd/MM/yyyy').slice(0,2)!=='01')throw Error('Período inválido no controle de PDFs.');return formatarDataLeituraGestor_(valor,'MM/yyyy');}
+ const texto=String(valor??'').replace(/^'/,'');if(!/^(?:0[1-9]|1[0-2])\/\d{4}$/.test(texto)&&!/^\d{4}$/.test(texto))throw Error('Período inválido no controle de PDFs.');return texto;
 }
 function emitirRelatorioPDFGestor_(ss,pasta,dados){
   const origem=propriedade_(CHAVE_ID_PLANILHA_GESTOR),prefixo=hashGestor_(origem).slice(0,12),id='pdf-'+prefixo+'-'+dados.periodo.replace('/','-')+'-'+dados.hash.slice(0,32),tabela=abaTecnicaProtecaoGestor_(ss,ABA_RELATORIOS_PDF_GESTOR_,CAB_RELATORIOS_PDF_GESTOR_,true),achados=localizarLinhasTecnicasGestor_(tabela,1,id);
   if(achados.length>1)throw Error('Identificação repetida na lista de PDFs. Preserve a aba.');
   const linha=achados[0]||tabela.getLastRow()+1,anterior=achados.length?tabela.getRange(linha,1,1,8).getValues()[0]:null;
-  if(anterior&&(anterior[1]!==dados.periodo||anterior[2]!==dados.hash||!['PREPARANDO','CONFIRMADO'].includes(anterior[3])))throw Error('Preparação do PDF incompatível.');
+  if(anterior&&(periodoControlePDFGestor_(anterior[1])!==dados.periodo||anterior[2]!==dados.hash||!['PREPARANDO','CONFIRMADO'].includes(anterior[3])))throw Error('Preparação do PDF incompatível.');
   if(anterior?.[3]==='CONFIRMADO'){const arquivo=conferirArquivoPDFRelatorioGestor_(DriveApp.getFileById(anterior[4]),anterior[5]);return {periodo:dados.periodo,arquivoId:arquivo.getId(),url:arquivo.getUrl(),hashDados:dados.hash,repetido:true};}
   const geradoEm=anterior?.[6]||new Date().toISOString(),nome='Gestor_Resumo_'+dados.periodo.replace('/','-')+'_'+prefixo+'_'+dados.hash.slice(0,24)+'.pdf',encontrados=pasta.getFilesByName(nome);let arquivo;
   if(encontrados.hasNext()){arquivo=encontrados.next();if(encontrados.hasNext()||!anterior)throw Error('Nome de PDF já utilizado sem uma preparação única. Preserve os arquivos.');conferirArquivoPDFRelatorioGestor_(arquivo,anterior[5]);}
   else {
     const blob=Utilities.newBlob(htmlRelatorioPDFGestor_(dados,geradoEm),'text/html',nome+'.html').getAs('application/pdf').setName(nome),hash=hashBlobRelatorioPDFGestor_(blob);
-    tabela.getRange(linha,1,1,8).setValues([[id,dados.periodo,dados.hash,'PREPARANDO',nome,hash,geradoEm,JSON.stringify({versao:1,origem:origem,quantidade:dados.quantidade,bytes:blob.getBytes().length})]]);SpreadsheetApp.flush();arquivo=pasta.createFile(blob);conferirArquivoPDFRelatorioGestor_(arquivo,hash);
+    tabela.getRange(linha,1,1,8).setValues([[id,textoLiteralGestor_(dados.periodo),dados.hash,'PREPARANDO',nome,hash,geradoEm,JSON.stringify({versao:1,origem:origem,quantidade:dados.quantidade,bytes:blob.getBytes().length})]]);SpreadsheetApp.flush();arquivo=pasta.createFile(blob);conferirArquivoPDFRelatorioGestor_(arquivo,hash);
   }
-  const preparada=tabela.getRange(linha,1,1,8).getValues()[0];preparada[3]='CONFIRMADO';preparada[4]=arquivo.getId();tabela.getRange(linha,1,1,8).setValues([preparada]);SpreadsheetApp.flush();
+  const preparada=tabela.getRange(linha,1,1,8).getValues()[0];preparada[1]=textoLiteralGestor_(dados.periodo);preparada[3]='CONFIRMADO';preparada[4]=arquivo.getId();tabela.getRange(linha,1,1,8).setValues([preparada]);SpreadsheetApp.flush();
   return {periodo:dados.periodo,arquivoId:arquivo.getId(),url:arquivo.getUrl(),hashDados:dados.hash,repetido:false};
 }
 function gerarRelatoriosPDFProgramadosGestor_(ss,pasta,limite){
@@ -6969,10 +6980,10 @@ function gerarRelatoriosPDFProgramadosGestor_(ss,pasta,limite){
     const quantidade=Math.min(2,Math.max(1,Number(limite)||2));gerados.push(...retomarRelatoriosPDFGestor_(ss,pasta,quantidade));
     const registros=registrosResumoNativoGestor_(ss),hoje=getHojeSeguro(),inicio=new Date(hoje.getFullYear(),hoje.getMonth(),1).getTime(),periodos=new Set();
     for(const r of registros){if(parseMesFat(r.mes).time<inicio)periodos.add(r.mes);if(r.ano<hoje.getFullYear())periodos.add(String(r.ano));}
-    const tabela=abaTecnicaProtecaoGestor_(ss,ABA_RELATORIOS_PDF_GESTOR_,CAB_RELATORIOS_PDF_GESTOR_,false),linhas=(tabela?.getDataRange().getValues()||[]).slice(1),confirmados=new Set(linhas.filter(r=>r[3]==='CONFIRMADO').map(r=>r[1]+'|'+r[2]));
+    const tabela=abaTecnicaProtecaoGestor_(ss,ABA_RELATORIOS_PDF_GESTOR_,CAB_RELATORIOS_PDF_GESTOR_,false),linhas=(tabela?.getDataRange().getValues()||[]).slice(1).filter(r=>r.some(v=>v!==''&&v!=null)),confirmados=new Set(linhas.filter(r=>r[3]==='CONFIRMADO').map(r=>periodoControlePDFGestor_(r[1])+'|'+r[2]));
     // Se o último lançamento do período for excluído, a revisão zerada também
     // precisa existir. O PDF anterior permanece como retrato da revisão antiga.
-    for(const r of linhas){const p=String(r[1]);if(/^\d{2}\/\d{4}$/.test(p)){const info=parseMesFat(p);if(info.time&&info.time<inicio)periodos.add(p);}else if(/^\d{4}$/.test(p)&&Number(p)>=ANO_MIN_COMPETENCIA_GESTOR_&&Number(p)<hoje.getFullYear())periodos.add(p);}
+    for(const r of linhas){const p=periodoControlePDFGestor_(r[1]);if(/^\d{2}\/\d{4}$/.test(p)){const info=parseMesFat(p);if(info.time&&info.time<inicio)periodos.add(p);}else if(/^\d{4}$/.test(p)&&Number(p)>=ANO_MIN_COMPETENCIA_GESTOR_&&Number(p)<hoje.getFullYear())periodos.add(p);}
     const candidatos=Array.from(periodos).map(p=>dadosPeriodoPDFGestor_(registros,p)).filter(d=>!confirmados.has(d.periodo+'|'+d.hash)).sort((a,b)=>{const fim=p=>p.includes('/')?parseMesFat(p).time:new Date(Number(p),11,1).getTime();return fim(b.periodo)-fim(a.periodo)||a.periodo.length-b.periodo.length;});
     const novos=candidatos.slice(0,quantidade-gerados.length);for(const d of novos)gerados.push(emitirRelatorioPDFGestor_(ss,pasta,d));
     return {sucesso:true,ativo:true,gerados:gerados,pendentes:Math.max(0,candidatos.length-novos.length)};

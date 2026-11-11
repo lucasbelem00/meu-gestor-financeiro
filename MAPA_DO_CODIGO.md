@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v174 — Backend/Code.gs: executor agrupa cabeçalho/partes do diário sem mudar barreiras de flush; getDadosCompletos calcula limite agregado dos cartões ativos; snapshot opcional inclui salvarFormaPagamentoWeb. shared/protecao.js: texto da configuração restrito à execução com atualização após escrita e métricas. shared/relatorios.js: periodoControlePDFGestor_ normaliza competências de controle, sem relaxar hashes de arquivos. index.html: coresCategoriasGraficoGestor define sequência das fatias no Painel/Mensal. Módulos 2/3/5/6/9/10.
+
+
 v172 — Atualização confirmada do executor contempla pagamento/recebimentos; interface/desempenho.js aceita retrato e primeira página opcional de Histórico após edição/exclusão, por filtro/geração/prazo e uso único. Continuação reconfere versão física. interface/envios.js compartilha bloqueio reentrante por raiz com liberação idempotente. interface/usabilidade.js valida/solicita transferência de simulação; interface/planejamento.js reconfere conflito e persiste rascunho antes de navegar. Esquema de oito colunas preservado, sem salvar financeiro automaticamente. Módulos 2/3/4/5/7/8; protocolo 19.
 
 

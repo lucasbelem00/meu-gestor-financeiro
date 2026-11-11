@@ -5938,6 +5938,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       const btn = document.getElementById('btnSalvarFp'); btn.textContent = 'Enviando…'; btn.disabled = true;
       const sessaoEdicao=document.getElementById('modalForma')._sessaoEdicao;
       apiCall('salvarFormaPagamentoWeb', {
+        incluirAtualizacaoDados:true,
         nomeOriginal: document.getElementById('inpFpOriginal').value,
         nome: document.getElementById('inpFpNome').value,
         tipo: document.getElementById('selFpTipo').value,
@@ -6447,7 +6448,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
 
         chartRel = atualizarGraficoGestor(chartRel, document.getElementById('chartRelatorio').getContext('2d'), {
           type: 'pie',
-          data: { labels: res.categorias.map(c => isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome), datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: ['#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f97316'], borderWidth: 0 }] },
+          data: { labels: res.categorias.map(c => isCategoriaOutros(c.nome) ? 'Outros 📦' : c.nome), datasets: [{ data: res.categorias.map(c => c.total), backgroundColor: coresCategoriasGraficoGestor(res.categorias.length), borderColor:'#1e293b', borderWidth:2 }] },
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } } }
         });
 
@@ -6985,8 +6986,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
                labels: Object.keys(catAgrupadas),
                datasets: [{
                  data: Object.values(catAgrupadas),
-                 backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6', '#f97316', '#6366f1', '#84cc16', '#a3e635', '#f43f5e', '#8b5cf6', '#d946ef', '#64748b'],
-                 borderWidth: 0
+                 backgroundColor: coresCategoriasGraficoGestor(Object.keys(catAgrupadas).length),
+                 borderColor:'#1e293b',
+                 borderWidth: 2
                }]
              },
              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, padding: 14, font: { size: 11 } } } } }
@@ -8600,6 +8602,15 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script>
 
+function coresCategoriasGraficoGestor(quantidade){
+ const cores=['#38bdf8','#fb923c','#a78bfa','#a3e635','#f472b6','#2dd4bf','#facc15','#818cf8','#fb7185','#22d3ee','#c084fc','#4ade80','#fbbf24','#60a5fa','#e879f9','#34d399','#f97316','#93c5fd','#fda4af','#bef264','#c4b5fd','#fcd34d','#67e8f9','#f0abfc','#86efac'];
+ const n=Math.max(0,Math.floor(Number(quantidade)||0));if(!Number.isFinite(n))return [];
+ const disponiveis=cores.slice(),resultado=[];const rgb=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+ const distancia=(a,b)=>{const x=rgb(a),y=rgb(b);return x.reduce((s,v,i)=>s+(v-y[i])**2,0);};
+ while(resultado.length<Math.min(n,cores.length)){let indice=0;if(resultado.length){let maior=-1;disponiveis.forEach((c,i)=>{const d=distancia(c,resultado.at(-1)),fechamento=resultado.length===n-1?distancia(c,resultado[0]):Infinity,peso=Math.min(d,fechamento);if(peso>maior){maior=peso;indice=i;}});}resultado.push(disponiveis.splice(indice,1)[0]);}
+ for(let i=resultado.length;i<n;i++)resultado.push('hsl('+Math.round(i*137.508%360)+' 75% 65%)');return resultado;
+}
+
 function atualizarGraficoGestor(anterior, contexto, configuracao) {
   if (anterior && anterior.config.type === configuracao.type) {
     anterior.data = configuracao.data;
@@ -9906,7 +9917,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       // Qualquer outra alteração/retomada durante o envio exige consulta normal.
       try{
         const snapshot=respostaConfirmada?.atualizacaoDados,d=snapshot?.dados;
-        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb'].includes(acao)&&snapshot?.versao===1&&
+        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb'].includes(acao)&&snapshot?.versao===1&&
           d&&typeof d==='object'&&!Array.isArray(d)&&Number(d.protocoloGestor)>=18&&!d.erro&&!d.error&&
           d.integridade&&d.integridade.bloqueada===false&&typeof d.epocaRestauracao==='string'&&
           d.kpis&&d.faturas&&Array.isArray(d.lancamentos)&&Array.isArray(d.formasPagamento)&&
@@ -9941,7 +9952,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v173', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v174', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

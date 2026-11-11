@@ -28,6 +28,7 @@ test('envio incerto só conclui o rascunho quando a central confirma a mesma ide
 test('gráfico vazio destrói a instância e a configuração adiada; novos dados podem voltar',()=>{
  const canvas={hidden:false,getContext:()=>({})},estado={hidden:true},c=vm.createContext({Map,Set,document:{getElementById:id=>id==='chartCategorias'?canvas:estado},getCategoriaExibicao:v=>v,chartGlobal:null,atualizarGraficoGestor:(_a,_c,config)=>({config,destroy(){this.destruido=true;}})});
  vm.runInContext(trecho(desempenho,'const graficosPendentesDesempenhoGestor =','const leiturasDesempenhoGestor ='),c);
+ vm.runInContext(trecho(html,'function coresCategoriasGraficoGestor','function atualizarGraficoGestor('),c);
  const render=trecho(html,'      const temCategorias=','      if (!modoEdicaoFormas) renderListaFormas();');
  c.dados={categorias:[{nome:'Teste',total:100}]};vm.runInContext('(function(){'+render+'})()',c);const antigo=c.chartGlobal;
  vm.runInContext("graficosPendentesDesempenhoGestor.set('chartCategorias',{anterior:chartGlobal,configuracao:{antiga:true}})",c);
