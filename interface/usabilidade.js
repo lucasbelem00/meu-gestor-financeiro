@@ -79,24 +79,28 @@ function renderTabelaEvolucao() {
   document.getElementById('faturas-header').innerHTML = cabecalho;
   const intervalo=document.getElementById('intervaloHorizonteRotina');if(intervalo)intervalo.textContent=meses.length?meses[0]+' a '+meses[meses.length-1]:'';
   let html = '';
-  function linha(rotulo, valores, classe, abrir = false) {
+  function linha(rotulo, valores, classe, abrir = false, opcoes = {}) {
+    const identificacao=rotulo+(opcoes.subtitulo?' — '+opcoes.subtitulo:'');
     const soma = valores.reduce((s,v) => s + centavosInterfaceGestor(v.valor),0)/100;
     const cols = valores.map((v,i) => {
       const quitado = v.registrado > 0 && v.saldo < 0.005 && !v.previsto;
       const cor = v.previsto > 0 && v.situacao?.codigo === 'pago' ? classe : v.situacao?.cor || (quitado ? 'text-emerald-400' : v.pago > 0 && v.saldo > 0 ? 'text-amber-200' : classe);
       const aviso = v.situacao?.codigo==='hoje' ? (v.recebivel?'Receber hoje':'Vence hoje') : ['vencido','mesEncerrado'].includes(v.situacao?.codigo) ? 'Vencido' : v.previsto > 0 ? 'Previsto' : v.situacao?.codigo === 'parcial' || (v.pago > 0 && v.saldo > 0) ? 'Parcial' : '';
       const titulo = `${v.situacao?.texto||''}. Registrado: ${formatBRL(v.registrado || 0)}. ${v.recebivel?'Recebido':'Pago ao banco'}: ${formatBRL(v.pago || 0)}. Restante: ${formatBRL(v.saldo || 0)}.${v.previsto?' Previsto: '+formatBRL(v.previsto)+'.':''}${v.aReceber!==undefined?' A receber da pessoa: '+formatBRL(v.aReceber)+'. '+v.sitReceber.texto:''}`;
-      const acao = acaoHTML('abrirDetalheHorizonteGestor',[rotulo,meses[i],v,abrir]);
-      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(rotulo+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(['hoje','vencido','mesEncerrado'].includes(v.situacao?.codigo)?aviso:v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',hoje:v.recebivel?'Receber hoje':'Vence hoje',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(aviso)+'</span>':''}</button></td>`;
+      const acao = acaoHTML('abrirDetalheHorizonteGestor',[identificacao,meses[i],v,abrir]);
+      return `<td class="py-3 px-1 text-center ${cor}"><button type="button" ${acao} class="w-full min-w-0 py-1 font-bold whitespace-normal break-words" title="${escaparHTML(titulo)}" aria-label="${escaparHTML(identificacao+' '+meses[i]+'. '+titulo)}">${v.valor>0?moeda(v.valor):quitado?moeda(0):'—'}${celular?'<span class="block text-[9px] font-normal">'+escaparHTML(['hoje','vencido','mesEncerrado'].includes(v.situacao?.codigo)?aviso:v.previsto>0?'Inclui previsão':({pago:'Pago',recebido:'Recebido',parcial:'Parcial',pendente:v.recebivel?'A receber':'A pagar',vencido:'Vencido',mesEncerrado:'Mês encerrado',hoje:v.recebivel?'Receber hoje':'Vence hoje',vazio:''}[v.situacao?.codigo]||''))+'</span>':''}${!celular&&aviso?'<span class="block text-[9px] font-normal">'+escaparHTML(aviso)+'</span>':''}</button></td>`;
     }).join('');
-    html += `<tr class="border-b border-slate-700"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold break-words ${comparacao?'sticky left-0 z-10 bg-slate-800':''} ${classe}">${escaparHTML(rotulo)}${rotulo==='Terceiros'?'<span class="block text-[9px] font-normal">Nos cartões</span>':''}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
+    if(opcoes.separar)html+='<tr aria-hidden="true"><td colspan="'+(meses.length+(compacto?1:2))+'" class="h-2 border-0"></td></tr>';
+    html += `<tr class="border-b border-slate-700 ${opcoes.destaque?'border-t border-purple-400/30 bg-purple-500/5':''}"><th scope="row" class="text-left py-3 pl-2 pr-1 font-bold break-words ${comparacao?'sticky left-0 z-10 bg-slate-800':''} ${classe}">${escaparHTML(rotulo)}${opcoes.subtitulo?'<span class="block text-[9px] font-normal">'+escaparHTML(opcoes.subtitulo)+'</span>':''}</th>${cols}<td class="text-right pr-2 font-bold ${classe} ${compacto?'hidden':''}">${soma>0?moeda(soma):'—'}</td></tr>`;
+
   }
-  formas.forEach(f => linha(f,meses.map(m => {
+  const renderForma=(f,separar=false)=>linha(f,meses.map(m => {
     if(!h)return {valor:evolucaoPivot[f]?.[m] || 0};
     const cartao = formaEhCartaoGestor(f), previsto = valorMapaHorizonteGestor(h.previstoPessoal,f,m);
     const registrado=valorMapaHorizonteGestor(cartao?h.totalBanco:h.totalPessoal,f,m),pago=valorMapaHorizonteGestor(cartao?h.pagoBanco:h.pagoPessoal,f,m),saldo=valorMapaHorizonteGestor(cartao?h.saldoBanco:h.saldoPessoal,f,m);
     return {valor:(total?registrado:saldo)+previsto,registrado,pago,saldo,previsto,situacao:situacaoBancoVisualGestor({total:registrado,pago,saldo,forma:f,mesFatura:m,vencimento:cartao?formaSituacaoVisualGestor(f).vencimento:null,imediato:!cartao})};
-  }),'text-white',formaEhCartaoGestor(f)));
+  }),'text-white',formaEhCartaoGestor(f),{separar});
+  formas.filter(f=>!h||formaEhCartaoGestor(f)).forEach(f=>renderForma(f));
   if(h){
     const itens=typeof emprestimosGlobal==='undefined'?[]:emprestimosGlobal.itens||[];
     function estadoReceber(m,cartao,registrado,recebido){
@@ -117,13 +121,14 @@ function renderTabelaEvolucao() {
     if(temTerceiros)linha('Terceiros',meses.map(m=>{
       const registrado=somaMapaHorizonteGestor(h.totalTerceiros,m,true),recebido=somaMapaHorizonteGestor(h.recebidoTerceiros,m,true),aReceber=Math.max(0,registrado-recebido),saldoBanco=Math.max(0,somaMapaHorizonteGestor(h.saldoBanco,m,true)-somaMapaHorizonteGestor(h.saldoPessoal,m,true)),pagoBanco=Math.max(0,registrado-saldoBanco),sitReceber=estadoReceber(m,true,registrado,recebido);
       return {valor:total?registrado:saldoBanco,registrado,pago:total?recebido:pagoBanco,saldo:total?aReceber:saldoBanco,recebivel:total,aReceber,sitReceber,situacao:total?sitReceber:estadoBanco(m,false,registrado,pagoBanco,saldoBanco,true)};
-    }),'text-amber-300');
-    linha('Total Faturas',resumo(false),'text-violet-300');
-    if(meses.some(m=>somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.totalTerceiros,m,true)>0))linha('Terceiros fora dos cartões',meses.map(m=>{
+    }),'text-amber-300',false,{subtitulo:'Nos cartões'});
+    linha('Total Faturas',resumo(false),'text-purple-300',false,{destaque:true});
+    const foraDosCartoes=formas.filter(f=>!formaEhCartaoGestor(f));foraDosCartoes.forEach((f,i)=>renderForma(f,i===0));
+    if(meses.some(m=>somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.totalTerceiros,m,true)>0))linha('Terceiros',meses.map(m=>{
       const registrado=somaMapaHorizonteGestor(h.totalTerceiros,m)-somaMapaHorizonteGestor(h.totalTerceiros,m,true),pago=somaMapaHorizonteGestor(h.recebidoTerceiros,m)-somaMapaHorizonteGestor(h.recebidoTerceiros,m,true),saldo=Math.max(0,registrado-pago);return {valor:total?registrado:saldo,registrado,pago,saldo,recebivel:true,situacao:estadoReceber(m,false,registrado,pago)};
-    }),'text-amber-300');
+    }),'text-amber-300',false,{subtitulo:'Fora dos cartões',separar:!foraDosCartoes.length});
   }else{
-    for(const [f,rotulo,cor]of [[evolucaoChaveResumoGestor,'Total Carteira','text-sky-300'],['__TERCEIROS_A_RECEBER__','A receber de terceiros','text-amber-300'],['__BANCO_TOTAL__','Total Faturas','text-violet-300']])if(f===evolucaoChaveResumoGestor||meses.some(m=>(evolucaoPivot[f]?.[m]||0)>0))linha(rotulo,meses.map(m=>({valor:evolucaoPivot[f]?.[m]||0})),cor);
+    for(const [f,rotulo,cor]of [[evolucaoChaveResumoGestor,'Total Carteira','text-sky-300'],['__TERCEIROS_A_RECEBER__','A receber de terceiros','text-amber-300'],['__BANCO_TOTAL__','Total Faturas','text-purple-300']])if(f===evolucaoChaveResumoGestor||meses.some(m=>(evolucaoPivot[f]?.[m]||0)>0))linha(rotulo,meses.map(m=>({valor:evolucaoPivot[f]?.[m]||0})),cor);
   }
   document.getElementById('faturas-body').innerHTML = html || '<tr><td colspan="6" class="py-4 text-slate-300 text-center">Nenhum valor neste período.</td></tr>';
   const anterior = document.getElementById('btnEvolPrev'), proximo = document.getElementById('btnEvolNext');

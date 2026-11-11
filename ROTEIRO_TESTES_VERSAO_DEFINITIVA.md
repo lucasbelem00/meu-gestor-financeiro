@@ -1,5 +1,11 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste visual v179 — Pix: confirmar valores de referência preservados e rótulos próprios, gasto pessoal atual, pagamentos futuros só quando presentes, gastos de terceiros do mês e saldo a receber de todos os meses (incluindo devolução parcial/futura). Recebidos não permanecem no saldo a receber e recebíveis não entram em pagamentos futuros nem Total Faturas. Sem dados de terceiros, campos extras desaparecem. No Horizonte, Pix fica após Total Faturas e antes de Terceiros Fora dos cartões, em Total do mês e A pagar; totais e meses não mudam. Testar celular/computador e cadastro renomeado de Pix; nenhuma consulta adicional deve ser enviada só por renderizar estes rótulos.
+
+
+Reteste visual v178 — Horizonte: formas/Total Carteira/Terceiros Nos cartões/Total Faturas/Terceiros Fora dos cartões; conferir espaço/divisória e ocultação da última linha sem registros. Mesmos totais em Total do mês e A pagar; Pix de terceiros não entra em Total Faturas. Tocar cada Terceiros deve identificar a origem no detalhe. No celular, coluna fixa e rolagem de comparação continuam funcionais. Conferir fatura, Total Faturas e Seus gastos na fatura usam mesmo roxo-base, preservando cores situacionais. Consultar terceiros deve conservar 🤝 após atualização dinâmica. Pix completo ainda é proposta, não mudança entregue.
+
+
 Reteste visual v177 — Cartões e total agregado: conferir abaixo de80%, exatamente80%, antes de100%, exatamente100% e acima100%, incluindo percentuais que arredondariam à faixa errada. Badge azul/âmbar/vermelho com texto atingido/excedido, sem mudar limite/disponível. Verificar título Seus gastos na fatura em roxo e terceiros em âmbar, nome longo no celular, modo Gerenciar e Pix preservado. 🤝 Consultar terceiros abre a mesma lista com recebimentos/cobrança. Conferência visual em celular/computador pendente.
 
 

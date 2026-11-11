@@ -47,3 +47,18 @@ test('Horizonte ignora direção inválida e normaliza um índice corrompido sem
 });
 
 test('comparação no celular reserva espaço e fixa a primeira coluna; sair restaura a janela compacta',()=>{const {c,el}=ambiente();c.evolucaoPivot={Cartao:{'01/2026':100}};c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.equal(el('dicaRolagemHorizonteGestor').hidden,true);c.compararHorizonteCompleto=true;c.renderTabelaEvolucao();assert.match(el('tabelaHorizonte').attrs.style,/min-width: 840px/);assert.equal(el('dicaRolagemHorizonteGestor').hidden,false);assert.match(el('faturas-header').innerHTML,/sticky left-0/);assert.match(el('faturas-body').innerHTML,/sticky left-0/);c.compararHorizonteCompleto=false;c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.doesNotMatch(el('faturas-header').innerHTML,/sticky left-0/);c.window.innerWidth=1024;c.compararHorizonteCompleto=true;c.renderTabelaEvolucao();assert.equal(el('tabelaHorizonte').attrs.style,'');assert.equal(el('dicaRolagemHorizonteGestor').hidden,true);});
+
+test('Horizonte distingue terceiros nos cartões e fora deles sem alterar composição das faturas',()=>{
+ const {c,el}=ambiente(1,1024);c.formaEhCartaoGestor=f=>f==='Cartao';c.formaEhPixGestor=f=>f==='Pix';
+ vm.runInContext("horizonteDetalhadoGestor={totalPessoal:{Cartao:{'01/2026':100}},pagoPessoal:{},saldoPessoal:{Cartao:{'01/2026':100}},totalBanco:{Cartao:{'01/2026':150}},pagoBanco:{},saldoBanco:{Cartao:{'01/2026':150}},totalTerceiros:{Cartao:{'01/2026':50},Pix:{'01/2026':20}},recebidoTerceiros:{},previstoPessoal:{}}",c);
+ c.renderTabelaEvolucao();const h=el('faturas-body').innerHTML;
+ assert(h.indexOf('Total Carteira')<h.indexOf('Nos cartões'));assert(h.indexOf('Nos cartões')<h.indexOf('Total Faturas'));assert(h.indexOf('Total Faturas')<h.indexOf('Fora dos cartões'));
+ assert.match(h,/bg-purple-500\/5/);assert.match(h,/aria-hidden="true"/);assert.match(h,/Terceiros — Fora dos cartões/);assert(!h.includes('Terceiros fora dos cartões'));assert(h.includes('R$ 150.00'));
+ vm.runInContext('horizonteDetalhadoGestor.totalTerceiros.Pix={}',c);c.renderTabelaEvolucao();assert(!el('faturas-body').innerHTML.includes('Fora dos cartões'));
+});
+
+test('Pix pessoal vem após Total Faturas e antes de terceiros fora dos cartões',()=>{
+ const {c,el}=ambiente(1,1024);c.formaEhCartaoGestor=f=>f==='Cartao';c.formaEhPixGestor=f=>f==='Pix';
+ vm.runInContext("horizonteDetalhadoGestor={totalPessoal:{Cartao:{'01/2026':100},Pix:{'01/2026':10}},pagoPessoal:{},saldoPessoal:{Cartao:{'01/2026':100},Pix:{'01/2026':10}},totalBanco:{Cartao:{'01/2026':150}},pagoBanco:{},saldoBanco:{Cartao:{'01/2026':150}},totalTerceiros:{Cartao:{'01/2026':50},Pix:{'01/2026':20}},recebidoTerceiros:{},previstoPessoal:{}}",c);
+ for(const modo of ['total','saldo']){vm.runInContext('modoHorizonteGestor='+JSON.stringify(modo),c);c.renderTabelaEvolucao();const h=el('faturas-body').innerHTML;assert(h.indexOf('Total Faturas')<h.indexOf('>Pix<'));assert(h.indexOf('>Pix<')<h.indexOf('Fora dos cartões'));assert(h.includes('R$ 150.00'));}
+});

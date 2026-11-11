@@ -14,7 +14,7 @@ function rotuloAcaoBotaoGestor(valor){
   [/^(Registrar recebimento|Receber\b|Confirmar [Rr]ecebimento)/,'💰'],
   [/^Registrar pagamento\b/,'💸'],[/^Transferir\b/,'↔️'],[/^Compartilhar\b/,'📤'],[/^Repetir\b/,'🔁'],
   [/^Prévia(?: para)? WhatsApp$/,'📲'],[/^Comparar meses\b/,'📅'],[/^Comparar(?: preços)?$/,'⚖️'],
-  [/^Terceiros(?:\s|$)/,'🤝'],[/^Conferir fatura\b/,'📃'],[/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
+  [/^Consultar terceiros\b/,'🤝'],[/^Terceiros(?:\s|$)/,'🤝'],[/^Conferir fatura\b/,'📃'],[/^Comparar com\b/,'🔎'],[/^(Conferir|Consultar)\b/,'🔎'],[/^Buscar\b/,'🔍'],
   [/^(Salvar|Guardar)\b/,'💾'],[/^Atualizar\b/,'↻'],
   [/^(Cancelar|Fechar)\b/,'✕'],[/^Pular m[êe]s\b/,'⏸️'],[/^Desativar\b/,'⏹️'],[/^Reativar\b/,'▶️'],
   [/^Confirmar antecipação$/i,'⏩'],

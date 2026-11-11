@@ -8,3 +8,5 @@ test('botão alterado após clique é padronizado sem trocar ação ou liberar e
 test('ações adicionadas ao DOM recebem a regra mesmo após carregamento inicial',()=>{const a=ambiente();a.c.iniciarPadraoBotoesGestor();const x=botao('Limpar tudo');a.observar([{target:{nodeType:1,closest:()=>null},addedNodes:[x.b]}]);assert.equal(x.b.textContent,'🧹 Limpar tudo');});
 
 test('pagamento, pausa e desativação conservam ícones distintos sem duplicar',()=>{const {c}=ambiente();for(const [a,b]of [['💳 Registrar pagamento','💸 Registrar pagamento'],['Registrar pagamento','💸 Registrar pagamento'],['Pular mês','⏸️ Pular mês'],['⏸️ Desativar','⏹️ Desativar']]){assert.equal(c.rotuloAcaoBotaoGestor(a),b);assert.equal(c.rotuloAcaoBotaoGestor(b),b);}});
+
+test('Consultar terceiros preserva aperto de mão após normalização automática',()=>{const {c}=ambiente();for(const texto of ['Consultar terceiros','🤝 Consultar terceiros','🔎 Consultar terceiros'])assert.equal(c.rotuloAcaoBotaoGestor(texto),'🤝 Consultar terceiros');});

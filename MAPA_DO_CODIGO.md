@@ -1,5 +1,11 @@
 # Mapa do código do Gestor de Gastos
 
+v179 — interface/perfil.js: resumoTerceirosFormaVisualGestor produz resumo de apresentação a partir dos mapas atuais do Horizonte, sem consulta adicional. index.html: renderListaFormas aplica rótulos do Pix e campos de terceiros, sem usar resumo bancário de cartão. interface/usabilidade.js: renderForma agrupa não cartões após Total Faturas no Horizonte detalhado; fallback legado preservado. Módulos 5/9, sem alteração de backend.
+
+
+v178 — interface/usabilidade.js: linha interna do Horizonte recebe opções de subtítulo/destaque/separação; identificação de detalhe inclui origem. Valores/agregadores não mudam. interface/botoes.js: regra específica de Consultar terceiros antes da regra genérica de lupa. index.html unifica texto-base roxo do atalho. Módulos 5/7/9; só frontend.
+
+
 v177 — interface/perfil.js: estadoUsoCartaoVisualGestor calcula somente apresentação do uso com limite/disponível em centavos. index.html renderListaFormas aplica faixas, rótulos e cor da parte pessoal; atalho do Painel mantém abrirResumoEmprestimos. Módulos 5/9, sem alteração de backend.
 
 

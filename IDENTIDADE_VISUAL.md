@@ -1,5 +1,11 @@
 # Identidade visual do webapp
 
+v179 — Pix usa badge Pix, Valor de referência/Referência restante e Seus gastos no mês; campos legados não são chamados de limite de crédito ou saldo bancário. Pagamentos futuros ficam em azul; gastos e valores a receber de terceiros ficam separados em âmbar, somente quando positivos. Horizonte move Pix e outras formas não cartão para depois de Total Faturas e antes de Terceiros Fora dos cartões, mantendo cartões/composição primeiro.
+
+
+v178 — Horizonte mantém Terceiros em duas linhas distintas, com subtítulos Nos cartões e Fora dos cartões. Total Faturas destacado por fundo roxo discreto e borda; pequeno espaço antes de Fora dos cartões, que só aparece com registros no período. Textos-base de Total Faturas, Conferir fatura e Seus gastos na fatura usam purple-300; fundos/bordas seguem intensidade do componente. Cores de status nas células preservadas. 🤝 Consultar terceiros tem precedência sobre a lupa genérica de consulta.
+
+
 v177 — Seus gastos na fatura em roxo claro para distinguir parte pessoal de terceiros (âmbar). 🤝 Consultar terceiros encurta o atalho do Painel sem alterar ação. Uso de cartão/total agregado: azul <80%, âmbar >=80% até100%, vermelho >100%; verde permanece em pagamentos/disponível. Estados de 100% e excedido têm texto explícito; faixa usa valores em centavos antes do arredondamento. Badge com texto centralizado, sem encolher, tooltip e descrição acessível.
 
 
