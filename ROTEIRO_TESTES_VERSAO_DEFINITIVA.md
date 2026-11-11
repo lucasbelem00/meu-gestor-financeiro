@@ -397,3 +397,7 @@ v185 backend+frontend: após atualizar implantação, testar cadastrar/editar/ex
 
 ### Coordenação v186 — 11/11/2026 (local)
 v186: abrir app, iniciar salvar durante carga, pedir nova atualização e conferir uma confirmação/registro sem duplicação. Repetir após pagamento e falha de rede: dados antigos não sobrescrevem novos; fila libera. Comparar esperaLockMs/envios/getDadosCompletos e esperas carga_anterior. Protocolo e snapshots continuam válidos. Não presumir melhora de servidor antes da rodada real.
+
+
+### Primeiro salvamento v187 — 11/11/2026 (local)
+v187: no primeiro acesso, tentar salvar enquanto dados iniciais carregam. Deve aguardar a versão confirmada e enviar uma única gravação, sem cargas completas simultâneas de protocolo. Testar rede falha antes do envio (campos preservados, sem gravação), versão antiga (bloqueio) e registro confirmado em Histórico/Mensal. Conferir diagnóstico, espera de trava e ausência de descarte da carga inicial provocado pelo salvamento.

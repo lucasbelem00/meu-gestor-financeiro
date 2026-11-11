@@ -234,9 +234,10 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     registrarAtualizacaoConfirmada:()=>{metricas.atualizacoesConfirmadas++;},
     // Só recargas visuais usam esta espera. A API de confirmação/protocolo
     // continua livre para evitar dependência circular dentro das gravações.
+    aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v186', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v187', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -277,7 +278,23 @@ const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
   cacheaveis: Object.keys(CATALOGO_ACOES_GESTOR).filter(acao => CATALOGO_ACOES_GESTOR[acao].cacheavel),
   aoInvalidar: () => { if (typeof geracaoLeituraGestor !== 'undefined') geracaoLeituraGestor++; }
 });
-window.apiCall = function(acao, param, ...extras) {
+let verificacaoInicialCoordenadaGestor=null;
+function conferirProtocoloAntesMutacaoGestor(acao,param){
+  if(typeof protocoloServidorGestor==='undefined'||typeof metadadosAcaoGestor!=='function'||leiturasDesempenhoGestor.has(acao))return null;
+  const meta=metadadosAcaoGestor(acao),escopo=['editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined;
+  const minimo=Math.max(meta.exigeProtocoloAtual?15:0,escopo?17:0,meta.diarioFinanceiro?5:0,['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)?7:0);
+  if(protocoloServidorGestor>=minimo)return null;
+  if(!verificacaoInicialCoordenadaGestor){
+    verificacaoInicialCoordenadaGestor=Promise.resolve().then(async()=>{
+      const carga=coordenadorLeiturasDesempenhoGestor.aguardarCargasCompletas();if(carga)await carga;
+      if(protocoloServidorGestor<minimo)await window.apiCall('getDadosCompletos',null,1);
+    }).finally(()=>{verificacaoInicialCoordenadaGestor=null;});
+  }
+  return verificacaoInicialCoordenadaGestor.then(()=>{if(protocoloServidorGestor<minimo)throw new Error('Atualize a implantação do Apps Script antes de gravar. Seus campos foram preservados.');});
+}
+window.apiCall = function apiCoordenadaDesempenhoGestor(acao, param, ...extras) {
+  const verificacao=conferirProtocoloAntesMutacaoGestor(acao,param);
+  if(verificacao)return verificacao.then(()=>apiCoordenadaDesempenhoGestor(acao,param,...extras));
   const estadoMensal = acao === 'obterRelatorioMes' && cargaMensalDesempenhoGestor?.mes === String(param) ? cargaMensalDesempenhoGestor : null;
   return coordenadorLeiturasDesempenhoGestor.chamar(acao, param, ...extras).then(resultado => {
     if (estadoMensal) setTimeout(() => concluirVisualMensalDesempenhoGestor(estadoMensal, null), 0);

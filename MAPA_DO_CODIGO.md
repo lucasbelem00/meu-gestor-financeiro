@@ -459,3 +459,7 @@ obterAbaExecucaoGestor_: memo de referências existentes de abas no escopo HASHE
 
 ### Coordenação v186 — 11/11/2026 (local)
 Coordenador em interface/desempenho.js: getDadosCompletos de outra geração espera cargasCompletas; nova consulta reconfere geração/chave, sem usar dados antigos. Mesma chave/geração compartilha envio. Diagnóstico esperasConsultas inclui carga_anterior.
+
+
+### Primeiro salvamento v187 — 11/11/2026 (local)
+conferirProtocoloAntesMutacaoGestor (desempenho): valida protocolo conhecido antes de invalidar a geração pela primeira mutação. aguardarCargasCompletas acompanha somente cargas em voo; checagem compartilhada limpa em finally. rotina encaminha fallback de protocolo pela API coordenada.

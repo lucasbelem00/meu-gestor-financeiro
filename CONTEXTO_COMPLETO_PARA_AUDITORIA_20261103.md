@@ -1,5 +1,16 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Primeiro salvamento e protocolo v187 local — 11/11/2026
+
+Diagnóstico v186: salvar confirmado em 29.356 ms no cliente, 26.728 ms servidor (7.034 ms de trava); consulta getDadosCompletos com SERVICO_OCUPADO foi repetida uma vez, sem esgotamento. Nenhuma pendência/envio sem confirmação. Após salvar houve nova carga completa de 14.236 ms; edição/exclusão ainda lentas. Não há prova de perda de dados.
+
+Causa adicional conferida: interface/rotina.js fazia validação de protocolo chamando apiAntesRotinaGestor diretamente, fora do coordenador novo. A mutação começava/incrementava geração antes da checagem, invalidando a carga inicial, e leituras internas podiam disputar a trava. Corrigido fallback para window.apiCall de leitura (getDadosCompletos), sem recursão de mutação.
+
+conferirProtocoloAntesMutacaoGestor roda antes de registrar a mutação no coordenador quando a versão conhecida é insuficiente. Compartilha checagem transitória, aguarda carga completa em voo e só consulta outra se continuar sem versão suficiente. Mantém mínimos anteriores 5/7/15/17 conforme ação/escopo; não baixa exigências. Se carga falha, não envia mutação nem repete a falha; servidor antigo bloqueia envio. Depois do protocolo válido, chama fluxo habitual de salvamento, diário, geração e confirmação. Leituras internas não aguardam a própria mutação. Não usa cache local como prova de versão.
+
+Testes específicos cobrem carga inicial única + salvar sem descarte, falha de rede sem envio e servidor antigo bloqueado. A retomada da mutação após a checagem usa a função interna nomeada apiCoordenadaDesempenhoGestor, sem reentrar nos bloqueios visuais externos de envio duplicado. Teste específico cobre essa integração. Interface/cache v187, protocolo 19; backend v185 preservado. Validação local: 1.299 testes aprovados, zero falhas (testes-v187-final2.log). CSS/espelhos/dist preparados; diff --check sem erros. Publicação remota e ganho real pendentes.
+
+
 ## Coordenação de cargas completas v186 local — 11/11/2026
 
 Rodada v185: três getDadosCompletos sobrepostos no servidor e salvar aguardando trava por 8.015 ms. Cliente salvar 29.563 ms, editar 21.196 ms, excluir 22.742 ms. Sem pendências; uso do memo confirmado, mas sem ganho geral comprovado. Além de tempo do Google, havia concorrência de cargas originadas por gerações distintas no mesmo cliente.
