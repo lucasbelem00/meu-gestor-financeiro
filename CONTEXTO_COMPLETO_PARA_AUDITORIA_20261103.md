@@ -1,5 +1,18 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Pacote de usabilidade v189 local — 11/11/2026
+
+Lucas autorizou propostas pendentes após esclarecer que o Pix pode pertencer a dezembro. Mantida regra: card Pix usa mês da fatura, não data combinada. Teste de integração cobre Pix com fatura atual/futura e devolução em dezembro; sem alteração de totais financeiros.
+
+Mensal usa selFiltroRelPeriodo com opções MM/AAAA e rótulo Mês de Ano. Removidos seletores separados e função atualizarMesesDisponiveis; navegação usa periodoMensalSelecionadoGestor e lista consolidada de períodos. Setas, seleção do mês vigente ao entrar, acesso explícito a período antigo, atualização preservando período e ano independente do Anual mantidos. PDF mensal usa período parseado e getNomeMes, sem duplicar ano no título. Agenda já usa mês/ano juntos e não foi reescrita. Histórico preserva filtros de ano e mês independentes.
+
+getDadosCompletos retorna opcoesTags completa (compatível) e opcoesTagsSugeridas para Novo, com compras não canceladas de idade até 90 dias pela data do gasto e data civil do servidor; exclui datas futuras. Frequência conta compra única, não parcelas, com desempate alfabético. Usa a leitura financeira já feita, sem nova consulta. Frontend mantém sugestões recentes separadas da lista completa de filtros/datalist e edição; array vazio permanece vazio, backend antigo sem campo usa fallback completo. Não apaga tags, lançamentos nem rascunhos; tags digitadas podem continuar sendo usadas. Registros históricos incluídos hoje continuam sendo antigos pela data do gasto.
+
+Histórico/Mensal usam identidade-lancamento-gestor em linha própria na largura do card e chips dado-lancamento-gestor de 11 px, sem quebra interna. Chips podem mudar de linha como unidade; nomes excepcionalmente longos usam reticências com texto completo no title/edição e rótulos acessíveis dos atalhos. Status usa classe comum status-lancamento-gestor de 10 px, sem quebra interna. Histórico preserva atalhos de forma/categoria; Mensal preserva somente as ações anteriores. Não introduz novas consultas por interação visual.
+
+Cache/interface v189, protocolo 19. Backend alterado pelas sugestões de tags; requer atualizar Código.gs, nova versão da implantação existente e interface, sem permissões novas. Código local; publicação e conferência visual real pendentes. Validação v189: 1.304 testes aprovados, zero falhas na suíte completa (testes-v189-final.log). Após a suíte, removidas também referências de acessibilidade aos seletores antigos em rotina.js e espelhos, sem mudança de comportamento. Conferências finais direcionadas e espelhos verificadas separadamente.
+
+
 ## Gravação agrupada v188 local — 11/11/2026
 
 Rodada v187: salvar 20.824 ms, editar 19.357 ms, excluir 27.009 ms no cliente. Nenhuma ocupação/repetição/descarte, três atualizações confirmadas, sem pendências. Disputa inicial resolvida nessa rodada; exclusão permanece dominada por gravação/aplicação e resposta (servidor 23.865 ms, gravação 13.854 ms, aplicação 4.371 ms, atualização 5.338 ms).
@@ -1290,3 +1303,12 @@ Proposta adicional discutida, ainda não aplicada: badge de uso de cartão azul 
 Discussão adicional de Horizonte (não aplicada): manter composição Seus gastos nos cartões + Terceiros nos cartões = Total Faturas; substituir linha isolada Terceiros fora dos cartões por bloco separado A receber de terceiros com saldo a receber de todas as formas. Pagamento do banco e recebimento da pessoa não se somam nem se substituem. Aguardando definição do usuário, sem mudança nos cálculos deste pacote.
 
 Proposta discutida de cadastro de Débito/à vista: o tipo avista já é suportado, mas opção de novo cadastro está oculta no modal. Recomendado permitir Cartão de débito / à vista, com cadastros distintos de crédito e débito para o mesmo banco/cartão físico. Ainda não aplicado: requer conferir formulário, lançamentos imediatos/agendados, terceiros, futuro, backup e apresentação sem crédito/fatura. Não converter tipo de cadastros existentes automaticamente.
+
+
+## Rodada v188 e propostas em análise — 11/11/2026
+
+Diagnóstico recebido: salvar 20.745 ms, editar 23.056 ms, excluir 17.863 ms no cliente; comparação com v187 20.824/19.357/27.009 ms. Exclusão melhorou nesta amostra, salvar praticamente igual e edição piorou; não atribuir redução global comprovada. Em cada uma das três operações, aplicarFlushes=1/anexosAgrupados=1. Uma ocupação e três descartes de consultas; sem pendências ou envios sem confirmação. Nenhuma nova execução de testes locais nesta análise.
+
+Lucas reportou ausência de terceiros no card Pix; resumo atual consulta horizonte.totalTerceiros pela competência atual, enquanto campos terceirosMesRaw do cadastro ainda se concentram em crédito. Pergunta pendente: valores esperados são do mês atual ou de outros meses/total? Não alterar agregação financeira sem confirmar/reproduzir.
+
+Propostas ainda em discussão, sem implementação: harmonizar categoria/forma e status entre Histórico/Mensal, evitando quebra interna dos chips e preservando nomes completos; limitar sugestões de tags por recência (proposta 90 dias) sem apagar tags antigas nem limitar filtros/edição; seletor único mês/ano no Mensal. Agenda já usa input type=month. Backend atual conta frequência de tags por compra única, sem expiração. Separar lista completa para filtros das sugestões recentes se a política for aprovada.

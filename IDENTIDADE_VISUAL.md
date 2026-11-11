@@ -231,3 +231,7 @@ Gráficos de categorias Painel/Mensal: separadores de 1 px (antes 2), preservand
 
 ### v184 — 11/11/2026 (local)
 Ajuda contextual details/summary também em Mês da fatura e Observação na edição de Empréstimo. Explicações secundárias recolhidas; consequências financeiras, escopos e confirmações permanecem visíveis.
+
+
+### Usabilidade v189 — 11/11/2026 (local)
+Histórico/Mensal: forma e categoria em linha própria com chips de 11 px, altura/padding comum, sem quebra interna; status comum de 10 px e nowrap. Nomes extremos usam reticências com identificação completa preservada. Mensal: seletor único Mês de Ano entre setas, mesma altura dos controles e PDF; Agenda mantém month nativo.

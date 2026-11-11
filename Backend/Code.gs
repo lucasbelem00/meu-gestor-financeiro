@@ -1641,7 +1641,8 @@ function getDadosCompletos() {
     const comprasMemoria = new Set();
     let listaAssinaturas = Object.create(null);
     let lancamentosValidos = [];
-    let freqTagsCompras = Object.create(null);
+    let freqTagsCompras = Object.create(null), freqTagsRecentesCompras = Object.create(null);
+    const hojeTags = new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()), inicioTags = new Date(hojeTags); inicioTags.setDate(inicioTags.getDate()-90);
     let consumoCatPorMes = Object.create(null);
     let resumoParcelasCompra = Object.create(null);
 
@@ -1689,11 +1690,16 @@ function getDadosCompletos() {
         }
 
         if (!cancelado && tagsDaLinha) {
+          const dataTag=parseDataBR(dtLimpa),tagRecente=dataTag&&Number.isFinite(dataTag.getTime())&&dataTag>=inicioTags&&dataTag<=hojeTags;
           tagsDaLinha.split(',').forEach(t => {
             let tagLimpa = t.trim().toLowerCase().replace(/^#/, '');
             if (tagLimpa) {
               if (!freqTagsCompras[tagLimpa]) freqTagsCompras[tagLimpa] = new Set();
               freqTagsCompras[tagLimpa].add(chaveCompraUnica);
+              if(tagRecente){
+                if(!freqTagsRecentesCompras[tagLimpa])freqTagsRecentesCompras[tagLimpa]=new Set();
+                freqTagsRecentesCompras[tagLimpa].add(chaveCompraUnica);
+              }
             }
           });
         }
@@ -2212,6 +2218,7 @@ function getDadosCompletos() {
       opcoesFormas: opcoesFormasFiltradas,
       opcoesCategorias: opcoesCategorias,
       opcoesTags: tagsOrdenadasPorFreq,
+      opcoesTagsSugeridas: Object.keys(freqTagsRecentesCompras).sort((a,b)=>freqTagsRecentesCompras[b].size-freqTagsRecentesCompras[a].size||a.localeCompare(b)).map(t=>'#'+t),
       autofill: mapAutofill,
       autofillPrefixos: mapPrefixosAutofill,
       assinaturas: Object.values(listaAssinaturas),

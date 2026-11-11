@@ -322,7 +322,7 @@ function prepararFiltrosEmpRotinaGestor(){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   prepararFiltrosEmpRotinaGestor();
-  document.getElementById('selFiltroRelMes')?.setAttribute('aria-label','Mês da fatura');document.getElementById('selFiltroRelAno')?.setAttribute('aria-label','Ano da fatura');
+  document.getElementById('selFiltroRelPeriodo')?.setAttribute('aria-label','Mês e ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
   document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat','selEmpForma'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(['selForma','selEmpForma'].includes(e.target.id))delete document.getElementById(e.target.id==='selForma'?'inpMesFat':'inpEmpMesFat').dataset.escolhaManual;}},true);
   document.addEventListener('input',e=>{if(['inpMesFat','inpDataDia','inpDataMes','inpDataAno','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno'].includes(e.target.id))e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});

@@ -220,6 +220,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     :where(button:disabled,[aria-disabled="true"]){cursor:not-allowed}
     @media(prefers-reduced-motion:reduce){:where(button,[role="button"],summary){transition-duration:0s!important}}
   </style>
+<style id="gestor-identificacao-lancamentos">.identidade-lancamento-gestor{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0;width:100%;color:#cbd5e1;font-size:11px}.dado-lancamento-gestor{display:inline-block;min-width:0;max-width:100%;padding:3px 6px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;border:1px solid #334155;border-radius:6px;background:#0f172a80;font-size:11px;text-align:left}.status-lancamento-gestor{display:inline-block;flex-shrink:0;white-space:nowrap;padding:3px 8px;line-height:1.4;font-size:10px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;border-radius:4px}</style>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
@@ -684,8 +685,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <div class="navegacao-periodo-gestor">
             <button id="btnMesPrev" type="button" aria-label="Ir para o mês anterior disponível" title="Mês anterior disponível" onclick="mudarMesRelatorio(-1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
             <div class="seletores-periodo-gestor">
-              <select id="selFiltroRelMes" onchange="dispararBuscaRelatorioMensal()" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
-              <select id="selFiltroRelAno" onchange="atualizarMesesDisponiveis(null, true)" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
+              <select id="selFiltroRelPeriodo" aria-label="Mês e ano da fatura" onchange="dispararBuscaRelatorioMensal()" class="minimal controle-periodo-select bg-slate-900 border border-slate-700 rounded-lg text-white font-semibold focus:border-blue-500 outline-none"></select>
             </div>
             <button id="btnMesNext" type="button" aria-label="Ir para o próximo mês disponível" title="Próximo mês disponível" onclick="mudarMesRelatorio(1)" class="btn-periodo-gestor controle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
             </div>
@@ -2309,7 +2309,7 @@ const DICIONARIO_ACENTOS_PT = {
     // ============================================================================
 
     let chartGlobal = null, chartRel = null, chartAnualObj = null;
-    let formasGlobais = [], categoriasGlobaisEdit = [], opcoesTagsGlobal = [];
+    let formasGlobais = [], categoriasGlobaisEdit = [], opcoesTagsGlobal = [], opcoesTagsSugeridasGlobal = [];
     let cartaoMaisFrequenteGlobal = '';
     let consumoCategoriasPorMesGlobal = {};
     let dadosCarregadosIniciais = false;
@@ -3023,8 +3023,7 @@ const DICIONARIO_ACENTOS_PT = {
       const boxEd = document.getElementById('chipsTagsEdicao');
       if (!boxNovo && !boxEd) return;
 
-      const tagsParaExibir = opcoesTagsGlobal.slice(0, 14);
-      const gerarHtml = (ctx) => tagsParaExibir.map(t => {
+      const gerarHtml = (ctx) => (ctx==='novo'?opcoesTagsSugeridasGlobal:opcoesTagsGlobal).slice(0,14).map(t => {
         return `<button type="button" data-tag="${escaparHTML(t)}" ${acaoHTML('toggleTagChip', [t, ctx])} class="chip-tag-${ctx} px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-700 bg-slate-900 text-slate-400 hover:text-white transition active:scale-95">${escaparHTML(t)}</button>`;
       }).join('');
 
@@ -3535,13 +3534,13 @@ const DICIONARIO_ACENTOS_PT = {
           <div class="flex justify-between items-start gap-2"><div class="min-w-0">
             <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">${escaparHTML(l[0])}</div>
             <div class="text-white font-bold text-base mt-0.5 leading-tight break-words">${escaparHTML(l[1])}</div>
-            <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-flex flex-wrap items-center gap-x-1 px-1 py-0.5 rounded-md border border-slate-700/50"><button type="button" aria-pressed="${filtrosAtuais.forma===l[2]}" ${acaoHTML('filtrarPorCampoHistoricoGestor',['forma',l[2]])} class="rounded px-1 py-1 text-left max-w-full whitespace-normal break-words hover:bg-slate-700/70" title="Filtrar por esta forma de pagamento" aria-label="Filtrar por forma: ${escaparHTML(l[2])}">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])}</button><span aria-hidden="true">•</span><button type="button" aria-pressed="${filtrosAtuais.categoria===l[3]}" ${acaoHTML('filtrarPorCampoHistoricoGestor',['categoria',l[3]])} class="rounded px-1 py-1 text-left max-w-full whitespace-normal break-words hover:bg-slate-700/70" title="Filtrar por esta categoria" aria-label="Filtrar por categoria: ${escaparHTML(l[3])}">🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</button></div><div>${tagsHtml}</div>${detalheFechamentoAnualGestor(l[21]||l[18])}
           </div><div class="text-right shrink-0">
             <div class="${alertaPrazo?situacao.cor:corValorLancamentoGestor(l[9])} font-bold text-lg leading-tight tracking-tight">${escaparHTML(l[7])}</div>
             <div class="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</div>
           </div></div>
+          <div class="identidade-lancamento-gestor"><button type="button" aria-pressed="${filtrosAtuais.forma===l[2]}" ${acaoHTML('filtrarPorCampoHistoricoGestor',['forma',l[2]])} class="dado-lancamento-gestor hover:bg-slate-700/70" title="Filtrar por ${escaparHTML(l[2])}" aria-label="Filtrar por forma: ${escaparHTML(l[2])}">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])}</button><span aria-hidden="true">•</span><button type="button" aria-pressed="${filtrosAtuais.categoria===l[3]}" ${acaoHTML('filtrarPorCampoHistoricoGestor',['categoria',l[3]])} class="dado-lancamento-gestor hover:bg-slate-700/70" title="Filtrar por ${escaparHTML(l[3])}" aria-label="Filtrar por categoria: ${escaparHTML(l[3])}">🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</button></div><div>${tagsHtml}</div>${detalheFechamentoAnualGestor(l[21]||l[18])}
           <div class="flex items-center gap-2 mt-2 pt-3 border-t border-slate-700/50">
-            <span class="px-2 py-1 rounded text-[9px] font-bold uppercase tracking-wider ${badgeColor}">${escaparHTML(rotuloStatusRecorrenciaGestor(alertaPrazo||parcial?situacao.texto:l[9]))}</span>
+            <span class="status-lancamento-gestor ${badgeColor}">${escaparHTML(rotuloStatusRecorrenciaGestor(alertaPrazo||parcial?situacao.texto:l[9]))}</span>
             <span class="text-[11px] text-slate-400 font-bold">Fatura: <span class="text-white">${escaparHTML(l[8])}</span></span>
           </div>
           ${parcial?`<p class="text-xs text-slate-300">Pago ao banco: ${formatBRL(pagoValor)} · Falta pagar: ${formatBRL(Math.max(0,total-pagoValor))}</p>`:''}
@@ -6193,53 +6192,28 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       return nomes[parseInt(numero, 10) - 1] || numero;
     }
 
-    function atualizarSeletoresRelatorioGestor() {
-      const anoSelecionado = document.getElementById('selFiltroRelAno')?.value;
-      const mesSelecionado = document.getElementById('selFiltroRelMes')?.value;
-      const anoAnual = document.getElementById('selFiltroAnoSimples')?.value;
-      const disponivel = (arvoreMesesAno[anoSelecionado] || []).some(m => String(m).split('/')[0] === mesSelecionado);
-      const hoje = (typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());
-      preencherSeletoresInteligentes(disponivel ? anoSelecionado : String(hoje.getFullYear()), disponivel ? mesSelecionado : String(hoje.getMonth()+1).padStart(2,'0'), false);
-      if (anoAnual && Object.prototype.hasOwnProperty.call(arvoreMesesAno, anoAnual)) document.getElementById('selFiltroAnoSimples').value = anoAnual;
+    function periodoMensalSelecionadoGestor(){
+      const valor=document.getElementById('selFiltroRelPeriodo')?.value||'',p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(valor);
+      return p?{mes:p[1],ano:p[2],valor}:null;
+    }
+    function atualizarSeletoresRelatorioGestor(){
+      const atual=periodoMensalSelecionadoGestor(),anual=document.getElementById('selFiltroAnoSimples')?.value,hoje=typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date();
+      preencherSeletoresInteligentes(atual?.ano||String(hoje.getFullYear()),atual?.mes||String(hoje.getMonth()+1).padStart(2,'0'),false);
+      if(anual&&Object.prototype.hasOwnProperty.call(arvoreMesesAno,anual))document.getElementById('selFiltroAnoSimples').value=anual;
       atualizarEstadoSetasAnual();
     }
 
-    function preencherSeletoresInteligentes(anoPadrao, mesPadrao, dispararBusca = false) {
-      // O mês vigente é consultável mesmo vazio; isso não cria lançamentos.
-      const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date()),anoAtual=String(hoje.getFullYear()),mesAtual=String(hoje.getMonth()+1).padStart(2,'0')+'/'+anoAtual;
-      if(!Array.isArray(arvoreMesesAno[anoAtual]))arvoreMesesAno[anoAtual]=[];
-      if(!arvoreMesesAno[anoAtual].includes(mesAtual))arvoreMesesAno[anoAtual].push(mesAtual);
-      const selAno = document.getElementById('selFiltroRelAno');
-      const selAnoSimples = document.getElementById('selFiltroAnoSimples');
-      if (selAno && selAnoSimples) {
-        const anosUnicosStr = Object.keys(arvoreMesesAno).sort((a, b) => b - a);
-        selAno.innerHTML = ''; selAnoSimples.innerHTML = '';
-        anosUnicosStr.forEach(a => {
-          selAno.add(new Option(a, a));
-          selAnoSimples.add(new Option(a, a));
-        });
-        if (anosUnicosStr.includes(anoPadrao)) {
-          selAno.value = anoPadrao;
-          selAnoSimples.value = anoPadrao;
-        }
-      }
-      atualizarMesesDisponiveis(mesPadrao, dispararBusca);
-      atualizarEstadoSetasAnual();
+    function preencherSeletoresInteligentes(anoPadrao,mesPadrao,dispararBusca=false){
+      const hoje=typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date(),ano=String(hoje.getFullYear()),mes=String(hoje.getMonth()+1).padStart(2,'0')+'/'+ano;
+      if(!Array.isArray(arvoreMesesAno[ano]))arvoreMesesAno[ano]=[];
+      if(!arvoreMesesAno[ano].includes(mes))arvoreMesesAno[ano].push(mes);
+      const sel=document.getElementById('selFiltroRelPeriodo'),anual=document.getElementById('selFiltroAnoSimples');
+      if(anual){anual.innerHTML='';Object.keys(arvoreMesesAno).sort((a,b)=>b-a).forEach(a=>anual.add(new Option(a,a)));if(arvoreMesesAno[anoPadrao])anual.value=anoPadrao;}
+      if(sel){const lista=obterMesesRelatorioEmOrdem(),valores=lista.map(x=>x.mes+'/'+x.ano);sel.innerHTML='';lista.forEach(x=>sel.add(new Option(getNomeMes(x.mes)+' de '+x.ano,x.mes+'/'+x.ano)));const alvo=mesPadrao+'/'+anoPadrao;sel.value=valores.includes(alvo)?alvo:mes;}
+      atualizarEstadoSetasMensal();atualizarEstadoSetasAnual();if(dispararBusca)dispararBuscaRelatorioMensal();
     }
 
-    function atualizarMesesDisponiveis(mesPadraoForcado = null, dispararBusca = true) {
-      const selAno = document.getElementById('selFiltroRelAno');
-      const selMes = document.getElementById('selFiltroRelMes');
-      if (!selAno || !selMes) return;
-      const mesesDoAno = arvoreMesesAno[selAno.value] || [];
-      const mesesUnicosInt = [...new Set(mesesDoAno.map(str => str.split('/')[0]))].sort((a, b) => parseInt(a) - parseInt(b));
-      selMes.innerHTML = '';
-      mesesUnicosInt.forEach(m => selMes.add(new Option(getNomeMes(m), m)));
-      if (mesPadraoForcado && mesesUnicosInt.includes(mesPadraoForcado)) selMes.value = mesPadraoForcado;
-      else if (mesesUnicosInt.length > 0) selMes.value = mesesUnicosInt[0];
-      atualizarEstadoSetasMensal();
-      if (dispararBusca) dispararBuscaRelatorioMensal();
-    }
+
 
     function obterMesesRelatorioEmOrdem() {
       const meses = [];
@@ -6258,33 +6232,15 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       return meses.sort((a, b) => Number(a.ano) - Number(b.ano) || Number(a.mes) - Number(b.mes));
     }
 
-    function atualizarEstadoSetasMensal() {
-      const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
-      const btnPrev = document.getElementById('btnMesPrev'), btnNext = document.getElementById('btnMesNext');
-      if (!selAno || !selMes || !btnPrev || !btnNext) return;
-      const listaGlobalMeses = obterMesesRelatorioEmOrdem();
-      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && Number(item.mes) === Number(selMes.value));
-      btnPrev.disabled = (idxAtual <= 0);
-      btnNext.disabled = (idxAtual === -1 || idxAtual >= listaGlobalMeses.length - 1);
+    function atualizarEstadoSetasMensal(){
+      const atual=periodoMensalSelecionadoGestor(),anterior=document.getElementById('btnMesPrev'),proximo=document.getElementById('btnMesNext');if(!anterior||!proximo)return;
+      const lista=obterMesesRelatorioEmOrdem(),i=lista.findIndex(x=>x.ano===atual?.ano&&x.mes===atual?.mes);
+      anterior.disabled=i<=0;proximo.disabled=i<0||i>=lista.length-1;
     }
 
-    function mudarMesRelatorio(step) {
-      const selAno = document.getElementById('selFiltroRelAno'), selMes = document.getElementById('selFiltroRelMes');
-      if (!selAno || !selMes || ![-1, 1].includes(Number(step))) return;
-      const listaGlobalMeses = obterMesesRelatorioEmOrdem();
-      const idxAtual = listaGlobalMeses.findIndex(item => item.ano === selAno.value && Number(item.mes) === Number(selMes.value));
-      if (idxAtual < 0) return;
-      const alvo = listaGlobalMeses[idxAtual + Number(step)];
-      if (!alvo) return;
-      // No mesmo ano, usar as opções já exibidas: equivale à escolha manual.
-      if (selAno.value !== alvo.ano) {
-        selAno.value = alvo.ano;
-        atualizarMesesDisponiveis(null, false);
-      }
-      const opcao = Array.from(selMes.options).find(o => Number(o.value) === Number(alvo.mes));
-      if (!opcao) return;
-      selMes.value = opcao.value;
-      dispararBuscaRelatorioMensal();
+    function mudarMesRelatorio(step){
+      if(![-1,1].includes(Number(step)))return;const atual=periodoMensalSelecionadoGestor(),lista=obterMesesRelatorioEmOrdem(),i=lista.findIndex(x=>x.ano===atual?.ano&&x.mes===atual?.mes),alvo=i<0?null:lista[i+Number(step)];if(!alvo)return;
+      document.getElementById('selFiltroRelPeriodo').value=alvo.mes+'/'+alvo.ano;dispararBuscaRelatorioMensal();
     }
 
     function atualizarEstadoSetasAnual() {
@@ -6304,14 +6260,8 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       if (novoAno) { sel.value = novoAno; carregarRelatorioAnual(); atualizarEstadoSetasAnual(); }
     }
 
-    function dispararBuscaRelatorioMensal() {
-      atualizarEstadoSetasMensal();
-      const ano = document.getElementById('selFiltroRelAno').value;
-      const mes = document.getElementById('selFiltroRelMes').value;
-      if (ano && mes) {
-        relatorioMensalPendente = false;
-        carregarRelatorioMesUnico(`${mes}/${ano}`);
-      }
+    function dispararBuscaRelatorioMensal(){
+      atualizarEstadoSetasMensal();const periodo=periodoMensalSelecionadoGestor();if(periodo){relatorioMensalPendente=false;carregarRelatorioMesUnico(periodo.valor);}
     }
 
     function quitarFaturaCartaoMes(forma,mesFatura) { return abrirConferenciaFaturaGestor(forma,mesFatura); }
@@ -6385,15 +6335,15 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       const tagsHTML = tags.map(t => `<button type="button" ${acaoHTML('aplicarFiltroInternoMensal', ['tag', t])} aria-pressed="${filtroMensalSelecionadoGestor('tag',t) ? 'true' : 'false'}" data-filtro-mensal-tipo="tag" data-filtro-mensal-valor="${escaparHTML(t)}" class="bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider mr-1 mt-1 inline-block">${escaparHTML(t)}</button>`).join('');
       const referencia = referenciaLinhaSegura('g', l[11], l[13], l[15]);
       return `<div class="bg-slate-800/30 border border-slate-700/50 p-3.5 rounded-2xl flex flex-col gap-2">
-        <div class="flex justify-between items-start"><div>
+        <div class="flex justify-between items-start gap-2"><div class="min-w-0">
           <div class="text-[10px] text-slate-400 font-bold uppercase">${escaparHTML(l[0])}</div>
           <div class="text-white font-bold text-sm mt-0.5 leading-tight">${escaparHTML(l[1])}</div>
-          <div class="text-xs text-slate-300 mt-1 font-medium bg-slate-900/50 inline-block px-2 py-1 rounded-md border border-slate-700/50">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])} • 🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</div><div>${tagsHTML}</div>${detalheFechamentoAnualGestor(l[21]||l[20])}
-        </div><div class="text-right flex flex-col items-end">
+        </div><div class="text-right shrink-0 flex flex-col items-end">
           <div class="${situacao.codigo==='vencido'?situacao.cor:corValorLancamentoGestor(l[9],l[18])} font-bold text-base tracking-tight">${escaparHTML(l[7])}</div>
-          <span class="mt-1 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${badge}">${escaparHTML(rotuloStatusRecorrenciaGestor(situacao.codigo==='vencido'?situacao.texto:l[9]))}</span>
+          <span class="mt-1 status-lancamento-gestor ${badge}">${escaparHTML(rotuloStatusRecorrenciaGestor(situacao.codigo==='vencido'?situacao.texto:l[9]))}</span>
           ${Number(l[17])>0 && Number(l[18])>0 ? `<span class="text-[10px] mt-1"><span class="text-emerald-300">Pago ao banco: ${formatBRL(l[17])}</span><br><span class="${situacao.cor} font-bold">Falta pagar: ${formatBRL(l[18])}</span></span>` : ''}
         </div></div>
+        <div class="identidade-lancamento-gestor"><span class="dado-lancamento-gestor" title="${escaparHTML(l[2])}">${iconeFormaPagamentoVisualGestor(l[2])} ${escaparHTML(l[2])}</span><span aria-hidden="true">•</span><span class="dado-lancamento-gestor" title="${escaparHTML(l[3])}">🏷️ ${escaparHTML(isCategoriaOutros(l[3]) ? 'Outros 📦' : l[3])}</span></div><div>${tagsHTML}</div>${detalheFechamentoAnualGestor(l[21]||l[20])}
         <div class="flex justify-between items-center mt-1 pt-2 border-t border-slate-700/30">
           <span class="text-[10px] text-slate-400 font-bold uppercase bg-slate-900 px-2 py-1 rounded-md">${formatarInfoParcelaCard(l[6], l[12] || null, l[2])}</span>
 ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · somente consulta</span>':`<button type="button" ${acaoHTML('abrirModalEdicaoLanc', [referencia, l[0], l[1], l[2], l[3], l[7], l[8], l[9], l[10] || '', l[6] || '',l[20]||null])} class="acao-compacta-gestor ml-auto shrink-0 text-slate-300 hover:text-white text-[11px] font-bold px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg transition active:scale-95 no-print">✏️ Editar</button>`}
@@ -6766,8 +6716,8 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       if (!dados) { mostrarAviso('Aguarde', 'Carregue o relatório do período antes de exportar.'); return; }
       if (!dados.terceiros) { mostrarAviso('Atualização necessária', 'Atualize o Código.gs e a implantação do Apps Script para incluir terceiros no relatório.'); return; }
 
-      const selMes = document.getElementById('selFiltroRelMes');
-      const periodo = mensal ? { mes: selMes.value, nomeMes: selMes.options[selMes.selectedIndex]?.text || '', ano: document.getElementById('selFiltroRelAno').value } : { ano: document.getElementById('selFiltroAnoSimples').value };
+      const periodoMensal=periodoMensalSelecionadoGestor();
+      const periodo = mensal ? { mes: periodoMensal?.mes, nomeMes: periodoMensal?getNomeMes(periodoMensal.mes):'', ano: periodoMensal?.ano } : { ano: document.getElementById('selFiltroAnoSimples').value };
       if (dados.periodoReferencia !== (mensal ? periodo.mes + '/' + periodo.ano : String(periodo.ano))) { mostrarAviso('Aguarde', 'O período selecionado ainda está sendo atualizado.'); return; }
       gerarPDFExecutivo.emAndamento = true;
       mostrarAviso('Preparando relatório', 'O PDF completo será baixado quando estiver pronto.');
@@ -6877,6 +6827,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       if (!modoEdicaoCategorias) categoriasGlobaisEdit = dados.configCategorias ? JSON.parse(JSON.stringify(dados.configCategorias)) : [];
       consumoCategoriasPorMesGlobal = dados.consumoCategoriasPorMes || {};
       opcoesTagsGlobal = dados.opcoesTags || [];
+      opcoesTagsSugeridasGlobal = Array.isArray(dados.opcoesTagsSugeridas) ? dados.opcoesTagsSugeridas : opcoesTagsGlobal;
 
       atualizarAvisoNotasServidorGestor(dados.erroNotas||'');
       if (dados.anotacoes) {
@@ -9340,7 +9291,7 @@ function prepararFiltrosEmpRotinaGestor(){
 }
 document.addEventListener('DOMContentLoaded',()=>{
   prepararFiltrosEmpRotinaGestor();
-  document.getElementById('selFiltroRelMes')?.setAttribute('aria-label','Mês da fatura');document.getElementById('selFiltroRelAno')?.setAttribute('aria-label','Ano da fatura');
+  document.getElementById('selFiltroRelPeriodo')?.setAttribute('aria-label','Mês e ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
   document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat','selEmpForma'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(['selForma','selEmpForma'].includes(e.target.id))delete document.getElementById(e.target.id==='selForma'?'inpMesFat':'inpEmpMesFat').dataset.escolhaManual;}},true);
   document.addEventListener('input',e=>{if(['inpMesFat','inpDataDia','inpDataMes','inpDataAno','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno'].includes(e.target.id))e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
@@ -10000,7 +9951,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v188', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v189', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

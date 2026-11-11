@@ -405,3 +405,7 @@ v187: no primeiro acesso, tentar salvar enquanto dados iniciais carregam. Deve a
 
 ### Gravação v188 — 11/11/2026 (local)
 v188 backend+interface: salvar/editar/excluir avulso e parcelado; conferir valores e um evento na Atividade. Comparar aplicarFlushes/anexosAgrupados e tempos. Recuperação: testes locais devem cobrir falha na sincronização agrupada, reenvio sem duplicação e anexo divergente impedindo confirmação. Não provocar falhas na base definitiva; usar cópia de teste. Verificar pagamento/recebimento, transferência entre abas e restauração (múltiplos destinos preservam suas conferências).
+
+
+### Usabilidade v189 — 11/11/2026 (local)
+v189: em 320/390 px e desktop, conferir nomes normais completos, categorias e formas longas, status recorrente/pago/vencido sem quebra, atalhos e filtro correto. Mensal: trocar mês/ano juntos, atravessar dezembro/janeiro com setas, entrar no mês vigente, atualizar sem perder período escolhido, PDF com mês/ano corretos, Anual independente. Tags: compra de hoje/90/91 dias, futura e cancelada; antigas continuam em filtros/edição e novos dados não são apagados. Pix: devolução em dezembro com fatura do mês atual permanece no resumo atual; fatura em dezembro só aparece em dezembro.

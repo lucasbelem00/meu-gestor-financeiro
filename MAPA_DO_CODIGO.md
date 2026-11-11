@@ -467,3 +467,7 @@ conferirProtocoloAntesMutacaoGestor (desempenho): valida protocolo conhecido ant
 
 ### Gravação v188 — 11/11/2026 (local)
 aplicarPlanoGestor_ reúne somente anexo de atividade com uma única mudança financeira, fora de restauração, na primeira sincronização financeira; verifica anexo e hash financeiro antes de confirmar. Demais planos mantêm a sequência original de anexos. Fallback só de anexos para planos já aplicados. aplicarAnexoTecnicoGestor_(ss,m,adiarFlush=false) preserva chamadas diretas. Diagnóstico: aplicarFlushes/anexosAgrupados.
+
+
+### Usabilidade v189 — 11/11/2026 (local)
+Mensal: periodoMensalSelecionadoGestor parseia selFiltroRelPeriodo; preencherSeletoresInteligentes consolida meses/anos e mantém Anual independente. PDF usa mesma competência. getDadosCompletos fornece opcoesTagsSugeridas recentes sem substituir opcoesTags; renderizarChipsTags usa recentes apenas em Novo.
