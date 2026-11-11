@@ -475,3 +475,7 @@ Mensal: periodoMensalSelecionadoGestor parseia selFiltroRelPeriodo; preencherSel
 
 ### Seletor nativo v190 — 11/11/2026 (local)
 Mensal v190: selFiltroRelPeriodo é month AAAA-MM, convertido por periodoMensalSelecionadoGestor. periodoAdjacenteMensalGestor acha vizinhos conhecidos mesmo de período vazio; atualização e PDF usam MM/AAAA. Sem montagem de options nem dependência de select.selectedIndex.
+
+
+### v191 — 11/11/2026 (local)
+dadosAnoGestor_(e,somenteAba) em shared/anual.js: projeção de valores só para destino aberto, conferindo fórmulas das duas abas e identidade. destinoMudancaAnualGestor_ é único consumidor parcial. Métricas anuais detalhadas usam detalhes do contexto ou memo da execução. Gerar Backend pelo sincronizador.

@@ -1,5 +1,16 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Largura da Mensal e leitura anual direcionada v191 local — 11/11/2026
+
+Foto de Lucas mostrou mês/ano cortado no celular. Cabeçalho Mensal recebe classes próprias barra-periodo-mensal-gestor/navegacao-mensal-gestor: grid com setas de 32 px e centro minmax(0,1fr), navegação e campo month a 100% no celular, padding horizontal reduzido e datetime-edit sem padding extra. Desktop usa navegação de 280 px. Agenda/Anual não recebem essas classes. Sem alterar período, setas, PDF ou regras financeiras. Conferência visual real ainda pendente.
+
+shared/anual.js é a fonte gerada das funções anuais; mudanças aplicadas nele, com Backend/Code.gs sincronizado pelo gerador. dadosAnoGestor_(e,somenteAba) aceita projeção apenas em ano ABERTO e aba financeira válida. Continua verificando identidade da base/ano, existência das duas abas e fórmulas nas duas; busca getValues somente da aba solicitada. Uso restrito a destinoMudancaAnualGestor_ na comparação imediatamente anterior à aplicação. Leitura integral do planejamento, consulta, restauração e anos FECHADOS permanece. A leitura parcial nunca substitui hash de fechamento. Hash/células da aba alterada continuam relidos após escrever, sem cache de células entre fases/execuções. Cache interno tem chave específica para projeção, sem confundir com fotografia integral.
+
+Detalhamento anual: anoAbrirMs, anoMetadadosMs, anoIdentidadeMs, anoFormulasMs, anoValoresMs, anoHashMs e contagens anoValoresLeituras/anoValoresEvitadas/anoLeiturasDirecionadas, somente números. Ponte detalhesIOGestor no memo do executor permite medir também a aplicação sem CONTEXTO virtual; descartada no finally existente. Reutilização de referências de abas nas funções anuais passa pelo helper já existente, na fonte compartilhada, sem memorizar valores/ausências.
+
+Objetivo é eliminar uma leitura de valores da outra aba financeira em cada conferência de destino aberto, mantendo checagem de fórmulas dessa aba. Nenhuma promessa de ganho em segundos antes de medir no Google. Não implementada atualização parcial da resposta: continua sendo proposta posterior, pois exige validação própria dos totais/versões. Interface/cache v191, protocolo 19. Backend e frontend alterados, exigem nova versão da implantação existente e publicação frontend; sem permissões novas. Validação local v191: 1.310 testes aprovados, zero falhas (testes-v191-final.log); 33 testes direcionados iniciais também passaram. Cobertura inclui origem/fórmula na outra aba, ano fechado recusando projeção, exportação dos contadores no executor e descarte do memo, além de divergência após escrita e restaurações existentes. CSS/espelhos/dist preparados e diff --check sem erros. Código local; publicação e conferência visual/latência na conta pendentes.
+
+
 ## Seletor nativo da Mensal v190 local — 11/11/2026
 
 Após imagem da Agenda, Lucas aprovou usar o mesmo controle nativo de mês/ano na Mensal e delegou a escolha sobre meses vazios. selFiltroRelPeriodo agora é input type=month (1900-01 a 2200-12), com apresentação controlada por aparelho/navegador, sem interface de calendário personalizada. Valor nativo AAAA-MM é convertido em MM/AAAA por periodoMensalSelecionadoGestor; PDF e consultas continuam usando competência anterior. Nenhuma mudança de API/backend.

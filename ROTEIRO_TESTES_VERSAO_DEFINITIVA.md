@@ -413,3 +413,7 @@ v189: em 320/390 px e desktop, conferir nomes normais completos, categorias e fo
 
 ### Seletor nativo v190 — 11/11/2026 (local)
 v190: no celular abrir Mensal e confirmar seletor nativo mês/ano; escolher período conhecido, vazio entre meses, antes/depois dos dados e atravessar ano. Setas acham vizinho disponível; mês vigente continua acessível vazio. Limpar/valor inválido restaura período e não envia consulta. Atualização mantém período escolhido; reentrada seleciona mês atual. PDF usa mês/ano corretos, Anual e Agenda preservados.
+
+
+### v191 — 11/11/2026 (local)
+v191: conferir em 320/390 px e desktop mês e ano completos entre setas, PDF centralizado e período correto. Servidor: salvar/editar/excluir com organização anual; verificar anoValoresEvitadas/anoLeiturasDirecionadas. Testes locais devem provar um getValues a menos, fórmulas checadas nas duas abas, origem inválida recusada, ano fechado sem leitura parcial e divergência após escrita bloqueando confirmação. Manter restauração/retomada e hashes. Medir na conta após publicar, sem presumir ganho por mocks.

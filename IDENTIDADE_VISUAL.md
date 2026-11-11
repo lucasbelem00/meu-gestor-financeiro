@@ -239,3 +239,7 @@ Histórico/Mensal: forma e categoria em linha própria com chips de 11 px, altur
 
 ### Seletor nativo v190 — 11/11/2026 (local)
 Mensal usa input month igual à Agenda, com altura dos controles mensais e setas existentes. Janela de escolha depende de Android/iOS/navegador/desktop; não prometemos aparência idêntica em todos. Meses vazios continuam escolhíveis e têm estado vazio explícito.
+
+
+### v191 — 11/11/2026 (local)
+Mensal no celular: navegação de largura total com grid 32px/minmax(0,1fr)/32px. Campo month ocupa centro inteiro, sem padding adicional do datetime-edit. Desktop reserva 280 px para navegação. Classes próprias evitam afetar Anual e Agenda.
