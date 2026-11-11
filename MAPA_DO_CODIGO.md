@@ -439,3 +439,7 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 
 ### Revisão 11/11/2026 — v181 (local)
 renderTabelaLancamentos e filtrarPorCampoHistoricoGestor: atalhos de categoria/forma preservam demais filtros. renderListaFormas/selFpTipo liberam cadastro avista existente no backend; renderTabelaEvolucao ordena Pix e débito, omitindo formas sem valores.
+
+
+### Correção v182 — 11/11/2026
+Atalhos do Histórico devem estar em ACOES_RENDERIZADAS: acaoHTML valida o registro antes de montar o HTML. Testes de renderização agora usam essa validação real.

@@ -428,7 +428,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   <div id="modalExportarDados" role="dialog" aria-modal="true" aria-labelledby="tituloExportarDados" onkeydown="conterFocoExportacao(event)" onclick="if(event.target === this) fecharExportacaoDados()" class="hidden fixed inset-0 z-[160] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between gap-3">
-        <h3 id="tituloExportarDados" class="text-base font-bold text-white">Exportar dados</h3>
+        <h3 id="tituloExportarDados" class="text-base font-bold text-white">💾 Exportar dados</h3>
         <button id="btnFecharExportacao" type="button" onclick="fecharExportacaoDados()" aria-label="Fechar exportação" class="bg-slate-800 text-slate-200 rounded-lg px-3 py-2">✕</button>
       </div>
       <p class="text-xs text-slate-300 leading-relaxed">Os arquivos contêm os dados já sincronizados na planilha. Lançamentos que ainda aguardam envio neste aparelho entram na próxima exportação, após sincronizar.</p>
@@ -1598,7 +1598,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">✏️ Editar forma de pagamento</h3>
       <form onsubmit="salvarForma(event)" class="space-y-4">
         <input type="hidden" id="inpFpOriginal">
-        <div><label for="selFpTipo" class="block text-xs font-bold text-slate-300 mb-1">Forma de pagamento</label><select id="selFpTipo" onchange="atualizarCamposTipoFormaGestor()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"><option value="cartao">Cartão de crédito</option><option value="pix">Pix</option><option value="avista">Cartão de débito / à vista</option></select><p id="avisoTipoFormaGestor" class="text-xs text-slate-300 mt-1 hidden">O tipo é preservado para manter o histórico correto.</p></div>
+        <div><label for="selFpTipo" class="block text-xs font-bold text-slate-300 mb-1">Forma de pagamento</label><select id="selFpTipo" onchange="atualizarCamposTipoFormaGestor()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"><option value="cartao">Cartão de crédito</option><option value="avista">Cartão de débito</option><option value="pix">Pix</option></select><p id="avisoTipoFormaGestor" class="text-xs text-slate-300 mt-1 hidden">O tipo é preservado para manter o histórico correto.</p></div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="block text-xs font-bold text-slate-400 mb-1">Nome</label><input type="text" id="inpFpNome" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
           <div><label for="inpFpBanco" class="block text-xs font-bold text-slate-400 mb-1">Banco / Instituição</label><input type="text" id="inpFpBanco" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
@@ -1945,7 +1945,7 @@ const DICIONARIO_ACENTOS_PT = {
 
     const ACOES_RENDERIZADAS = new Set([
       'abrirDetalheHorizonteGestor', 'abrirConferenciaFaturaGestor', 'alternarProjecaoSimuladorGestor', 'reutilizarCalcGestor', 'copiarCalcGestor',
-      'setAba', 'toggleTagChip', 'filtrarPorTagRapida', 'repetirLancamentoHoje',
+      'setAba', 'toggleTagChip', 'filtrarPorTagRapida', 'filtrarPorCampoHistoricoGestor', 'repetirLancamentoHoje',
       'abrirModalEdicaoLanc', 'excluirLancamentoLocal', 'selecionarPessoaChipEmp',
       'quitarMesPessoaEmprestimo', 'copiarCobrancaPessoaWhats', 'alternarStatusItemEmprestimo',
       'abrirModalEdicaoEmp', 'excluirItemEmprestimo', 'removerPessoaRachaDet',
@@ -5950,7 +5950,7 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
 
     function abrirModalForma(nome = '', banco = '', limite = '', fechamento = '', vencimento = '') {
       versaoModalFormaGestor = versoesConfigGestor.formas || '';
-      document.getElementById('modalFormaTitle').textContent = nome ? '✏️ Editar forma de pagamento' : 'Nova forma de pagamento';
+      document.getElementById('modalFormaTitle').textContent = nome ? '✏️ Editar forma de pagamento' : '➕ Nova forma de pagamento';
       const tipo=document.getElementById('selFpTipo'); tipo.value=nome?tipoFormaPagamentoGestor(nome):'cartao'; tipo.disabled=Boolean(nome);
       document.getElementById('avisoTipoFormaGestor').classList.toggle('hidden',!nome);
       document.getElementById('inpFpOriginal').value = nome;
@@ -9992,7 +9992,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v181', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v182', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

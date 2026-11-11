@@ -1,5 +1,12 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Correção local v182 — 11/11/2026
+
+Falha real reportada no Histórico após v181: filtrarPorCampoHistoricoGestor não havia sido incluída em ACOES_RENDERIZADAS. acaoHTML recusava a ação durante renderTabelaLancamentos, interrompendo os cards. Corrigido o registro específico, preservando a lista de permissões. Testes anteriores simplificavam acaoHTML e não detectaram a integração; a suíte do Histórico agora usa a implementação real com a lista, cobrindo também recusa de ação desconhecida. Não foi falha de rede nem perda de dados.
+
+Nova forma de pagamento recebe ➕ no título; opções ordenadas Cartão de crédito, Cartão de débito, Pix. Removido complemento à vista somente do nome da opção; tipo técnico avista e regras financeiras preservados. Modal Exportar dados recebe 💾; títulos de edição já usam ✏️ e confirmações genéricas mantêm seu contexto. Cache/interface v182, protocolo 19. Validação: 1.290 testes aprovados, zero falhas (testes-v182-final.log), incluindo renderização real com acaoHTML e rejeição de ação não permitida. CSS, espelhos e dist preparados; diff --check sem erros. Alterações locais, publicação e verificação real pendentes. Backend financeiro preservado.
+
+
 ## Revisão 11/11/2026 — débito e atalhos do Histórico (v181 local)
 
 Cadastro de formas permite Cartão de débito / à vista, usando o tipo interno avista já suportado pelo backend. Sem limite, fechamento ou vencimento de crédito. Pagamento pessoal à vista passado/hoje nasce pago; data futura permanece agendada até confirmação. Débito não consome limite de cartão nem entra no Total Carteira de crédito. Cadastro utilizado é arquivado ao remover, preservando histórico.

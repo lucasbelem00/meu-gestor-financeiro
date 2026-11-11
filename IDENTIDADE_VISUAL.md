@@ -219,3 +219,7 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 
 ### Revisão 11/11/2026 — v181 (local)
 Débito usa identidade À vista e valores pessoais roxos, sem campos de limite de crédito. No Histórico, forma/categoria são botões discretos com hover e indicação acessível de filtro selecionado; não recebem emojis de ações pelo padronizador.
+
+
+### Correção v182 — 11/11/2026
+Nova forma: ➕ Nova forma de pagamento. Opções Crédito, Débito, Pix; débito sem complemento à vista. Exportar dados usa 💾.

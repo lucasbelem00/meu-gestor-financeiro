@@ -377,3 +377,7 @@ Registro da migração em 03/11/2026: cópia nativa pré-migração da definitiv
 
 ### Revisão 11/11/2026 — v181 (local)
 Cadastrar débito sem limite; registrar passado/hoje e conferir Pago, futuro e conferir Agendado. Confirmar ausência no total de limites de crédito. Horizonte: cadastro vazio oculto; com valores abaixo de Pix; conferir Total do mês/A pagar. Histórico: clicar categoria e forma preservando busca/tag/situação; limpar filtros; testar nomes antigos e celular/computador. Conferir arquivamento de débito utilizado e preservação do histórico.
+
+
+### Correção v182 — 11/11/2026
+Após publicar v182: abrir Histórico com registros, verificar cards e clicar categoria/forma; conferir ausência de Ação de tela inválida. Abrir nova forma e conferir título e ordem Crédito/Débito/Pix.
