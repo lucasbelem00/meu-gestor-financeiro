@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v180 — interface/perfil.js resumoTerceirosFormaVisualGestor passa a retornar somente gastosMes da competência atual; não calcula saldo geral. renderListaFormas exibe percentual Pix pelos valores existentes e rótulos de referência, além de total pessoal+terceiros registrado no mês. Nenhuma nova consulta ou alteração de backend. Módulos 5/9.
+
+
 v179 — interface/perfil.js: resumoTerceirosFormaVisualGestor produz resumo de apresentação a partir dos mapas atuais do Horizonte, sem consulta adicional. index.html: renderListaFormas aplica rótulos do Pix e campos de terceiros, sem usar resumo bancário de cartão. interface/usabilidade.js: renderForma agrupa não cartões após Total Faturas no Horizonte detalhado; fallback legado preservado. Módulos 5/9, sem alteração de backend.
 
 

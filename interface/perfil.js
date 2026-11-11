@@ -1,10 +1,9 @@
 // Usa o mesmo retrato do Horizonte, sem nova consulta nem alteração financeira.
 function resumoTerceirosFormaVisualGestor(nome,horizonte,mes){
  if(!horizonte?.totalTerceiros||!/^\d{2}\/\d{4}$/.test(mes||''))return null;
- const totais=horizonte.totalTerceiros[nome]||{},recebidos=horizonte.recebidoTerceiros?.[nome]||{};
- let aReceber=0;const centavos=v=>{const n=Math.round(Number(v||0)*100);return Number.isSafeInteger(n)&&n>=0?n:null;};
- for(const m of Object.keys(totais)){const t=centavos(totais[m]),r=centavos(recebidos[m]);if(t===null||r===null)return null;aReceber+=Math.max(0,t-r);if(!Number.isSafeInteger(aReceber))return null;}
- const noMes=centavos(totais[mes]);return noMes===null?null:{gastosMes:noMes/100,aReceber:aReceber/100};
+ // Mesma leitura dos cartões: registrado no mês, mesmo quando já recebido.
+ const centavos=Math.round(Number(horizonte.totalTerceiros[nome]?.[mes]||0)*100);
+ return Number.isSafeInteger(centavos)&&centavos>=0?{gastosMes:centavos/100}:null;
 }
 // Cores de atenção do limite; somente apresentação, sem alterar saldos ou pagamentos.
 function estadoUsoCartaoVisualGestor(forma){

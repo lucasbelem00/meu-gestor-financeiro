@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v180 — Pix retoma percentual de uso com mesmas faixas de atenção dos cartões; linguagem da referência de gastos (atingida/excedida), sem tratar como crédito bancário. Resumo de terceiros passa a 🤝 + valor de terceiros e Total no mês, somente competência atual, como cartões. Retira total geral a receber do card Pix; permanece em Pagamentos e recebimentos. Pagamentos futuros continuam com rótulo separado.
+
+
 v179 — Pix usa badge Pix, Valor de referência/Referência restante e Seus gastos no mês; campos legados não são chamados de limite de crédito ou saldo bancário. Pagamentos futuros ficam em azul; gastos e valores a receber de terceiros ficam separados em âmbar, somente quando positivos. Horizonte move Pix e outras formas não cartão para depois de Total Faturas e antes de Terceiros Fora dos cartões, mantendo cartões/composição primeiro.
 
 

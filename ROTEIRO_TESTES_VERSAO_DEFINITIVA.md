@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste visual v180 — Pix: percentual normal/80%/100%/acima100% segue valores de referência já existentes, com textos Referência atingida/excedida e estado neutro sem limite válido. Terceiros do mês incluem recebidos; meses futuros não entram na linha mensal. Total no mês soma somente pessoal/terceiros da competência, não recebíveis gerais ou pagamentos futuros. Resumo global a receber continua no Painel. História/categoria/forma clicáveis seguem como proposta, ainda não implementadas. Conferir celular/computador após publicar frontend.
+
+
 Reteste visual v179 — Pix: confirmar valores de referência preservados e rótulos próprios, gasto pessoal atual, pagamentos futuros só quando presentes, gastos de terceiros do mês e saldo a receber de todos os meses (incluindo devolução parcial/futura). Recebidos não permanecem no saldo a receber e recebíveis não entram em pagamentos futuros nem Total Faturas. Sem dados de terceiros, campos extras desaparecem. No Horizonte, Pix fica após Total Faturas e antes de Terceiros Fora dos cartões, em Total do mês e A pagar; totais e meses não mudam. Testar celular/computador e cadastro renomeado de Pix; nenhuma consulta adicional deve ser enviada só por renderizar estes rótulos.
 
 
