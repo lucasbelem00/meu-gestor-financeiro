@@ -401,3 +401,7 @@ v186: abrir app, iniciar salvar durante carga, pedir nova atualização e confer
 
 ### Primeiro salvamento v187 — 11/11/2026 (local)
 v187: no primeiro acesso, tentar salvar enquanto dados iniciais carregam. Deve aguardar a versão confirmada e enviar uma única gravação, sem cargas completas simultâneas de protocolo. Testar rede falha antes do envio (campos preservados, sem gravação), versão antiga (bloqueio) e registro confirmado em Histórico/Mensal. Conferir diagnóstico, espera de trava e ausência de descarte da carga inicial provocado pelo salvamento.
+
+
+### Gravação v188 — 11/11/2026 (local)
+v188 backend+interface: salvar/editar/excluir avulso e parcelado; conferir valores e um evento na Atividade. Comparar aplicarFlushes/anexosAgrupados e tempos. Recuperação: testes locais devem cobrir falha na sincronização agrupada, reenvio sem duplicação e anexo divergente impedindo confirmação. Não provocar falhas na base definitiva; usar cópia de teste. Verificar pagamento/recebimento, transferência entre abas e restauração (múltiplos destinos preservam suas conferências).

@@ -463,3 +463,7 @@ Coordenador em interface/desempenho.js: getDadosCompletos de outra geração esp
 
 ### Primeiro salvamento v187 — 11/11/2026 (local)
 conferirProtocoloAntesMutacaoGestor (desempenho): valida protocolo conhecido antes de invalidar a geração pela primeira mutação. aguardarCargasCompletas acompanha somente cargas em voo; checagem compartilhada limpa em finally. rotina encaminha fallback de protocolo pela API coordenada.
+
+
+### Gravação v188 — 11/11/2026 (local)
+aplicarPlanoGestor_ reúne somente anexo de atividade com uma única mudança financeira, fora de restauração, na primeira sincronização financeira; verifica anexo e hash financeiro antes de confirmar. Demais planos mantêm a sequência original de anexos. Fallback só de anexos para planos já aplicados. aplicarAnexoTecnicoGestor_(ss,m,adiarFlush=false) preserva chamadas diretas. Diagnóstico: aplicarFlushes/anexosAgrupados.

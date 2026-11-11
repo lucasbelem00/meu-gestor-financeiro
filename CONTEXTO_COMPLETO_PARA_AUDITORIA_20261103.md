@@ -1,5 +1,16 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Gravação agrupada v188 local — 11/11/2026
+
+Rodada v187: salvar 20.824 ms, editar 19.357 ms, excluir 27.009 ms no cliente. Nenhuma ocupação/repetição/descarte, três atualizações confirmadas, sem pendências. Disputa inicial resolvida nessa rodada; exclusão permanece dominada por gravação/aplicação e resposta (servidor 23.865 ms, gravação 13.854 ms, aplicação 4.371 ms, atualização 5.338 ms).
+
+Aplicar plano agrupa anexos técnicos (somente atividade) no flush da alteração financeira apenas em planos com uma única mudança não anexo, numa aba financeira, sem formatos/destinos de restauração. Qualquer outro anexo (como cópia anterior de restauração) ou múltiplas mudanças mantém a sequência original e flush próprio de anexos. O diário continua persistindo PREPARANDO + partes, depois PRONTO antes de aplicar. Após preparar os blocos financeiros, escreve os anexos idempotentes sem flush próprio, sincroniza aplicação uma vez, relê/confere o anexo e o hash integral financeiro. CONFIRMADO continua separado e posterior. Planos sem bloco financeiro a escrever (incluindo retomadas já aplicadas) têm fallback para aplicar/sincronizar/conferir anexos no final. Função aplicarAnexoTecnicoGestor_ mantém comportamento padrão para chamadas diretas; adiarFlush opcional só no agrupamento controlado.
+
+Não é sucesso antecipado nem gravação em segundo plano. Uma falha na aplicação mantém PRONTO e resultado incerto para recuperação; anexos já escritos não duplicam ao retomar. Planos antigos continuam aceitos, formato de diário/protocolo inalterados. Adicionada conferência explícita das linhas de atividade depois do flush; divergência impede CONFIRMADO. Teste controlado com resumo já adiado verifica quatro barreiras (PREPARANDO, PRONTO, aplicação agrupada, CONFIRMADO), em vez da barreira extra da atividade. Casos com múltiplas abas financeiras mantêm a sequência anterior, para preservar conferência por destino. Os testes de restauração existentes foram mantidos integralmente, incluindo a interrupção antes de modificar finanças.
+
+Diagnóstico servidor/cliente acrescenta anexosAgrupados e aplicarFlushes. Novos testes cobrem flush comum, interrupção sem duplicação e divergência de atividade sem confirmação. Cache/interface v188, protocolo 19. Backend alterado; requer atualizar Código.gs e publicar nova versão da implantação existente, além da interface. Sem nova permissão. Ganho em segundos ainda depende de medição no Google; uma releitura de anexo foi adicionada para segurança. Validação local v188: 1.302 testes aprovados, zero falhas (testes-v188-final3.log), incluindo preservação dos dois cenários existentes de restauração interrompida, além de agrupamento e recuperação. CSS/espelhos/dist preparados e diff --check sem erros. Código local, publicação pendente.
+
+
 ## Primeiro salvamento e protocolo v187 local — 11/11/2026
 
 Diagnóstico v186: salvar confirmado em 29.356 ms no cliente, 26.728 ms servidor (7.034 ms de trava); consulta getDadosCompletos com SERVICO_OCUPADO foi repetida uma vez, sem esgotamento. Nenhuma pendência/envio sem confirmação. Após salvar houve nova carga completa de 14.236 ms; edição/exclusão ainda lentas. Não há prova de perda de dados.
