@@ -373,3 +373,7 @@ Acesso definitivo: Vercel → projeto meu-gestor-financeiro → Security/Deploym
 
 Proteção verificada em 03/11/2026: Vercel Authentication → All Deployments ativado por autorização de Lucas. POST anônimo em /api/gestor de produção e da branch New retornou 401. Etapa de proteção de acesso destes endereços concluída; manter bloqueio de produção do código até preparar backup/destino e liberação controlada.
 Registro da migração em 03/11/2026: cópia nativa pré-migração da definitiva criada com autorização e metadados conferidos (pasta de backups, sem compartilhamento). Isso não conclui sozinho o item de backup completo/retorno de implantação: JSON, propriedades e gatilhos são verificações separadas. Apps Script da definitiva localizado; ainda sem propriedades de conexão e com interface antiga. Produção permanece bloqueada e sem variáveis configuradas. Aguardar criação da credencial pelo usuário antes de configurar a conexão definitiva e testar consultas reais.
+
+
+### Revisão 11/11/2026 — v181 (local)
+Cadastrar débito sem limite; registrar passado/hoje e conferir Pago, futuro e conferir Agendado. Confirmar ausência no total de limites de crédito. Horizonte: cadastro vazio oculto; com valores abaixo de Pix; conferir Total do mês/A pagar. Histórico: clicar categoria e forma preservando busca/tag/situação; limpar filtros; testar nomes antigos e celular/computador. Conferir arquivamento de débito utilizado e preservação do histórico.

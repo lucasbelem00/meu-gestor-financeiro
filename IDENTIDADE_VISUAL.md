@@ -215,3 +215,7 @@ Trocar de aba ou subferramenta abre o documento no topo, sem herdar a posição 
 - Novo: Parcelas em 1 mostra À vista; foco limpa apenas a quantidade 1 e mantém teclado numérico. Sair vazio restaura 1/À vista. Quantidades maiores mostram o número.
 
 - Edição de lançamento e empréstimo: situação somente para consulta, com ajuda indicando os fluxos próprios de pagamento/recebimento e Atividade para desfazer. Não aparentar que edição cadastral registra dinheiro.
+
+
+### Revisão 11/11/2026 — v181 (local)
+Débito usa identidade À vista e valores pessoais roxos, sem campos de limite de crédito. No Histórico, forma/categoria são botões discretos com hover e indicação acessível de filtro selecionado; não recebem emojis de ações pelo padronizador.

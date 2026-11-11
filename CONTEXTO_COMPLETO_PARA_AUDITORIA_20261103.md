@@ -1,10 +1,22 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Revisão 11/11/2026 — débito e atalhos do Histórico (v181 local)
+
+Cadastro de formas permite Cartão de débito / à vista, usando o tipo interno avista já suportado pelo backend. Sem limite, fechamento ou vencimento de crédito. Pagamento pessoal à vista passado/hoje nasce pago; data futura permanece agendada até confirmação. Débito não consome limite de cartão nem entra no Total Carteira de crédito. Cadastro utilizado é arquivado ao remover, preservando histórico.
+
+Horizonte mantém cartões e seus totais; depois apresenta Pix e, logo abaixo, débitos com valores no horizonte carregado. Cadastro sem movimento não cria linha vazia. Valores registrados de terceiros permanecem separados de recebimentos.
+
+No Histórico, categoria e forma de pagamento nos cards viraram atalhos de filtro, preservando busca, situação, tags e demais escolhas. Clicar novamente no mesmo filtro não repete consulta. Cadastros históricos podem ser consultados sem reativá-los. Pix/A pagar continuam como filtros rápidos; não foram acrescentados chips redundantes. Descrição, data e valor não viraram atalhos. Rótulos dos atalhos são preservados pelo padronizador de botões.
+
+Somente código local, cache/interface v181, protocolo 19. Publicação e conferência real no aparelho pendentes; nenhuma alteração em dados reais ou permissões. Validação local concluída: 1.288 testes aprovados, zero falhas na suíte completa (testes-v181-final.log). CSS, interfaces espelhadas e dist preparados; diff --check sem erros. Backend sem alterações nesta rodada. Os testes isolados do Histórico receberam filtrosAtuais no ambiente simulado para representar a nova indicação de filtro selecionado. Publicação remota e conferência visual real continuam pendentes.
+
+
+
 Pacote visual local v180 — revisão 11/11/2026. Lucas pediu retorno do percentual de uso no Pix e resumo de terceiros parecido com cartões. Badge do Pix volta a usar limiteRaw/disponivelRaw já calculados pelo backend, com faixas azul <80%, âmbar >=80% até100%, vermelho >100%. No Pix esses valores são referência de gastos pessoais do mês, não crédito disponível; textos de 100% e excesso dizem Referência atingida/excedida. Sem referência positiva válida, mantém badge neutro Pix. Não altera cálculo do backend nem inclui recebíveis ou pagamentos futuros nesse percentual.
 
 Terceiros no Pix: mesma leitura dos cartões, total registrado na competência atual, incluindo parcelas já recebidas. Resumo curto 🤝 + valor de terceiros e Total no mês (pessoal + terceiros), sem chamá-lo de total pago/fatura. Remove a linha A receber de terceiros (todos os meses) do card Pix; o saldo geral continua em Pagamentos e recebimentos. Valores de meses futuros não aparecem nessa linha mensal, mas pagamentos pessoais futuros mantêm campo próprio e recebíveis continuam em Empréstimos/Horizonte. resumoTerceirosFormaVisualGestor agora consulta uma competência do mapa já carregado, sem varrer todos os meses nem enviar nova requisição.
 
-Discussão adicional de Histórico: sugeridos atalhos em categoria e forma de pagamento, preservando demais filtros e evitando tornar valor/data/descrição clicáveis. Apenas proposta, sem implementação autorizada nesta rodada. Ordenação de parcelas permanece inalterada.
+Histórico: proposta desta rodada implementada posteriormente na v181, conforme revisão acima. Ordenação de parcelas permanece inalterada.
 
 Somente frontend, cache/interface v180, protocolo 19. Código local; publicação e conferência visual pendentes. Validação local v180: 136 testes direcionados aprovados, zero falhas (testes-v180-visual.log), incluindo percentual Pix, estados atingido/excedido, total mensal de terceiros com recebimento/futuro e preservação dos totais do Horizonte. Última suíte completa permanece 1.279 aprovados da v176; não repetida para este ajuste de apresentação. CSS/espelhos/dist preparados; publicação e conferência no aparelho pendentes. Backend compatível do pacote anterior preservado, sem função manual ou permissão nova.
 

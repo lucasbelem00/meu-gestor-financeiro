@@ -435,3 +435,7 @@ O plano anual existente transforma alterações em registros fechados em ajustes
 - Backend/Code.gs: referenciaRelogioServidorGestor_ acrescenta metadados opcionais aos envelopes de doPost/apiCallServidor, sem alterar dados nem autenticação.
 - scripts/sincronizar-rachadinha.cjs: gera bloco do relógio no início do HTML a partir das duas fontes, antes dos consumidores. interface/desempenho.js aceita função dia no revalidador para separar dia civil de passagem de tempo.
 - tests/relogio-civil-20261103.test.cjs: cenários de fuso, viradas, offline e compatibilidade.
+
+
+### Revisão 11/11/2026 — v181 (local)
+renderTabelaLancamentos e filtrarPorCampoHistoricoGestor: atalhos de categoria/forma preservam demais filtros. renderListaFormas/selFpTipo liberam cadastro avista existente no backend; renderTabelaEvolucao ordena Pix e débito, omitindo formas sem valores.
