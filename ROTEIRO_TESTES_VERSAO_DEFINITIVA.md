@@ -381,3 +381,7 @@ Cadastrar débito sem limite; registrar passado/hoje e conferir Pago, futuro e c
 
 ### Correção v182 — 11/11/2026
 Após publicar v182: abrir Histórico com registros, verificar cards e clicar categoria/forma; conferir ausência de Ação de tela inválida. Abrir nova forma e conferir título e ordem Crédito/Débito/Pix.
+
+
+### Fluidez v183 — 11/11/2026 (local)
+v183: abrir app com cópia local e Histórico; verificar que não consulta antes da carga atual. Filtrar, trocar de aba e atualizar dados: Histórico consulta só ao voltar. Retornar em até 60 s sem alterações mantém a lista; após edição/retorno do app ou filtro novo deve reconferir. Atualização explícita sempre funciona. Carregar mais preserva versão, itens e rolagem. Comparar divisórias dos gráficos no celular/computador.

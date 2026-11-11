@@ -223,3 +223,7 @@ Débito usa identidade À vista e valores pessoais roxos, sem campos de limite d
 
 ### Correção v182 — 11/11/2026
 Nova forma: ➕ Nova forma de pagamento. Opções Crédito, Débito, Pix; débito sem complemento à vista. Exportar dados usa 💾.
+
+
+### Fluidez v183 — 11/11/2026 (local)
+Gráficos de categorias Painel/Mensal: separadores de 1 px (antes 2), preservando paleta e contraste.

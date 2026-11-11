@@ -14,7 +14,7 @@ test('Histórico reaproveita lista recente somente com mesmos filtros e geraçã
  vm.runInContext(s.slice(s.indexOf('let consultaHistoricoAplicadaGestor'),s.indexOf('function consultarHistoricoVisivelGestor')),c);
  c.registrarConsultaHistoricoAplicadaGestor({termo:'x',versaoConsulta:'v1'});c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,0);assert.equal(c.retomarFiltroHistoricoGestor,false);
  c.geracaoLeituraGestor++;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,1);
- c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);agora+=15001;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,2);
+ c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);agora+=15001;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,1);agora+=45000;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,2);
  c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);c.filtrosAtuais.termo='y';c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,3);
  c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);lista.inert=true;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,4);
  c.estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento=true;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,4);

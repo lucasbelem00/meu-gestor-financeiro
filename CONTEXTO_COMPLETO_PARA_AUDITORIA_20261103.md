@@ -1,5 +1,14 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Fluidez local v183 — 11/11/2026
+
+Diagnóstico v182: renderizações recentes de 34–84 ms, consultas filtradas no servidor de 4.958–7.478 ms (cliente 7.902–10.214 ms nas buscas recentes), gravações no servidor de 16.584–17.626 ms. Espera de trava recente 126–677 ms, sem SERVICO_OCUPADO; não há evidência de que atalhos estejam pesando no desenho. Predominam leituras e persistência nos serviços Google. Não confundir medições históricas do arquivo com última rodada; nenhuma melhoria remota foi medida após este pacote.
+
+renderizarDados recebe origemCache opcional. A apresentação inicial da cópia local não dispara busca paralela de Histórico antes do getDadosCompletos; resposta atual continua reconferindo a lista quando visível. Carga geral fora do Histórico com filtros deixa retomada pendente para próxima entrada, em vez de consultar uma tela oculta. Mantidos filtros, páginas, barreiras de mutação, versões e invalidações ao recuperar visibilidade. Lista consultada recentemente pode ser reaproveitada por até 60 segundos (antes 15), somente com mesmos filtros/geração e lista não bloqueada; atualização explícita continua consultando, mutações e mudanças externas invalidam imediatamente conforme controles existentes. Não é cache permanente nem dispensa a validação ao editar/pagar.
+
+Divisórias dos gráficos de categorias do Painel/Mensal: 2 para 1 px, mantendo cor e paleta. Backend financeiro, locks, diário e hashes preservados. Cache/interface v183, protocolo 19. Validação local: 1.293 testes aprovados, zero falhas (testes-v183-final.log); cenários novos cobrem cópia local sem consulta, retomada fora da aba e lista inicial sem filtros; cenários existentes conferem geração/filtros, prazo, lista bloqueada e consulta em andamento. CSS/espelhos/dist preparados, diff --check sem erros. Publicação e validação real de fluidez pendentes.
+
+
 ## Correção local v182 — 11/11/2026
 
 Falha real reportada no Histórico após v181: filtrarPorCampoHistoricoGestor não havia sido incluída em ACOES_RENDERIZADAS. acaoHTML recusava a ação durante renderTabelaLancamentos, interrompendo os cards. Corrigido o registro específico, preservando a lista de permissões. Testes anteriores simplificavam acaoHTML e não detectaram a integração; a suíte do Histórico agora usa a implementação real com a lista, cobrindo também recusa de ação desconhecida. Não foi falha de rede nem perda de dados.

@@ -230,7 +230,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     // continua livre para evitar dependência circular dentro das gravações.
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v182', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v183', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -296,7 +296,7 @@ function atualizarHistoricoAoEntrarGestor(){
   if(typeof retomarFiltroHistoricoGestor!=='undefined')retomarFiltroHistoricoGestor=false;
   if(typeof estadoIntegracaoInterfaceGestor!=='undefined'&&estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento)return;
   const c=consultaHistoricoAplicadaGestor,lista=document.getElementById('lista-lancamentos'),idade=c?Date.now()-c.instante:-1;
-  if(c&&idade>=0&&idade<15000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
+  if(c&&idade>=0&&idade<60000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
   chamarFiltroBackend(false,true);
 }
 function consultarHistoricoVisivelGestor(param,continuar){

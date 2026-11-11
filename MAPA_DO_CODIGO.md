@@ -443,3 +443,7 @@ renderTabelaLancamentos e filtrarPorCampoHistoricoGestor: atalhos de categoria/f
 
 ### Correção v182 — 11/11/2026
 Atalhos do Histórico devem estar em ACOES_RENDERIZADAS: acaoHTML valida o registro antes de montar o HTML. Testes de renderização agora usam essa validação real.
+
+
+### Fluidez v183 — 11/11/2026 (local)
+renderizarDados(dados, origemCache=false): cópia local não inicia busca de Histórico. Fora da aba com filtros, agenda retomada. atualizarHistoricoAoEntrarGestor reaproveita lista íntegra por até 60 s com mesma geração e filtros.
