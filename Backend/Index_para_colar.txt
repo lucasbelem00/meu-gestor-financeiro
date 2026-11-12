@@ -221,7 +221,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     @media(prefers-reduced-motion:reduce){:where(button,[role="button"],summary){transition-duration:0s!important}}
   </style>
 <style id="gestor-identificacao-lancamentos">.identidade-lancamento-gestor{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0;width:100%;color:#cbd5e1;font-size:11px}.dado-lancamento-gestor{display:inline-block;min-width:0;max-width:100%;padding:3px 6px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;border:1px solid #334155;border-radius:6px;background:#0f172a80;font-size:11px;text-align:left}.status-lancamento-gestor{display:inline-block;flex-shrink:0;white-space:nowrap;padding:3px 8px;line-height:1.4;font-size:10px;font-weight:700;letter-spacing:.025em;text-transform:uppercase;border-radius:4px}</style>
-<style id="gestor-periodo-mensal-largura">.barra-periodo-mensal-gestor{width:100%}.navegacao-mensal-gestor{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;width:100%}.navegacao-mensal-gestor .seletores-periodo-gestor{width:100%;min-width:0}#selFiltroRelPeriodo{width:100%;box-sizing:border-box;padding-left:4px;padding-right:4px}#selFiltroRelPeriodo::-webkit-datetime-edit{padding:0}@media(min-width:640px){.barra-periodo-mensal-gestor{width:auto}.navegacao-mensal-gestor{width:280px}}</style>
+<style id="gestor-periodo-mensal-largura">.barra-periodo-mensal-gestor{width:100%}.navegacao-mensal-gestor{display:grid;grid-template-columns:32px minmax(0,1fr) 32px;width:100%}.navegacao-mensal-gestor .seletores-periodo-gestor{width:100%;min-width:0}#selFiltroRelPeriodo{width:100%;box-sizing:border-box;padding-left:4px;padding-right:4px}#selFiltroRelPeriodo::-webkit-datetime-edit{padding:0}@media(min-width:640px){.barra-periodo-mensal-gestor{width:auto}.navegacao-mensal-gestor{width:280px}}/* Centralização do valor nativo, incluindo Chrome/Android e Safari. */
+#selFiltroRelPeriodo,#mesAgendaGestor{text-align:center;text-align-last:center}
+#selFiltroRelPeriodo::-webkit-datetime-edit,#mesAgendaGestor::-webkit-datetime-edit{display:block;text-align:center}
+#selFiltroRelPeriodo::-webkit-date-and-time-value,#mesAgendaGestor::-webkit-date-and-time-value{text-align:center}
+</style>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
@@ -9958,7 +9962,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v191', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v192', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

@@ -479,3 +479,6 @@ Mensal v190: selFiltroRelPeriodo é month AAAA-MM, convertido por periodoMensalS
 
 ### v191 — 11/11/2026 (local)
 dadosAnoGestor_(e,somenteAba) em shared/anual.js: projeção de valores só para destino aberto, conferindo fórmulas das duas abas e identidade. destinoMudancaAnualGestor_ é único consumidor parcial. Métricas anuais detalhadas usam detalhes do contexto ou memo da execução. Gerar Backend pelo sincronizador.
+
+### v192 — 11/11/2026 (local)
+Módulos 3/5/10: shared/relatorios.js, entradasCalculadasResumoGestor_ limita a leitura real de fórmulas às entradas financeiras de configuração. Mantém verificação virtual e leituras frescas por chamada. Não há novo cache nem alteração do contrato da resposta confirmada.

@@ -243,3 +243,6 @@ Mensal usa input month igual à Agenda, com altura dos controles mensais e setas
 
 ### v191 — 11/11/2026 (local)
 Mensal no celular: navegação de largura total com grid 32px/minmax(0,1fr)/32px. Campo month ocupa centro inteiro, sem padding adicional do datetime-edit. Desktop reserva 280 px para navegação. Classes próprias evitam afetar Anual e Agenda.
+
+### v192 — 11/11/2026 (local)
+Agenda e Mensal centralizam o texto do campo month e os invólucros nativos WebKit. Preservadas larguras, alturas, setas e acionamento nativo. Conferir no celular real; representação depende do navegador.

@@ -417,3 +417,6 @@ v190: no celular abrir Mensal e confirmar seletor nativo mês/ano; escolher per�
 
 ### v191 — 11/11/2026 (local)
 v191: conferir em 320/390 px e desktop mês e ano completos entre setas, PDF centralizado e período correto. Servidor: salvar/editar/excluir com organização anual; verificar anoValoresEvitadas/anoLeiturasDirecionadas. Testes locais devem provar um getValues a menos, fórmulas checadas nas duas abas, origem inválida recusada, ano fechado sem leitura parcial e divergência após escrita bloqueando confirmação. Manter restauração/retomada e hashes. Medir na conta após publicar, sem presumir ganho por mocks.
+
+### v192 — 11/11/2026 (local)
+Conferir mês/ano centralizados em Agenda/Mensal no celular e computador, mantendo texto completo e seletor funcional. Repetir salvar/editar/excluir e comparar tempos com v191. Testes de fórmulas: rejeitar fórmulas em B:G das formas e B/D das categorias, ignorar C das categorias como antes, detectar fórmula acrescentada entre chamadas; caminho virtual sem nova leitura real. Validação real e publicação pendentes.

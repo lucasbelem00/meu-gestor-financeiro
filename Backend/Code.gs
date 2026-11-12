@@ -6792,8 +6792,18 @@ function entradasCalculadasResumoGestor_(ctx){
   for(const nome of ['Formas de Pagamento','Dashboard & Resumo']){
     // Algumas ações de terceiros não abrem o cadastro de categorias. Verificar
     // suas fórmulas sem abrir/migrar outra aba virtual depois de fechar o plano.
-    const matriz=abas[nome]?.valores||ctx?.ssReal?.getSheetByName(nome)?.getDataRange().getFormulas()||[];
-    if(nome==='Formas de Pagamento'?matriz.slice(6).some(r=>r.slice(1,7).some(formula)):matriz.slice(16,41).some(r=>formula(r[1])||formula(r[3])))return true;
+    if(abas[nome]){
+      const matriz=abas[nome].valores;
+      if(nome==='Formas de Pagamento'?matriz.slice(6).some(r=>r.slice(1,7).some(formula)):matriz.slice(16,41).some(r=>formula(r[1])||formula(r[3])))return true;
+      continue;
+    }
+    // Ler apenas as entradas relevantes, sem trazer fórmulas de relatórios,
+    // colunas técnicas ou linhas vazias. A leitura continua fresca a cada chamada.
+    const aba=ctx?.ssReal?.getSheetByName(nome);if(!aba)continue;
+    if(nome==='Formas de Pagamento'){
+      const linhas=aba.getLastRow()-6;
+      if(linhas>0&&aba.getRange(7,2,linhas,6).getFormulas().some(r=>r.some(formula)))return true;
+    }else if(aba.getRange(17,2,25,3).getFormulas().some(r=>formula(r[0])||formula(r[2])))return true;
   }
   return false;
 }
