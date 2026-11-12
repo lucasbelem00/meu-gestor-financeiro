@@ -444,3 +444,6 @@ Repetir salvar/editar/excluir, Mensal/Anual e recorrências após atualizar Apps
 
 ### v200 — 12/11/2026 (local)
 Iniciar atualização e editar enquanto carga ainda está em voo; concluir leitura antiga durante gravação e verificar que não inicia repetição até gravação terminar. Recarga nova deve substituir velha sem nova rede da velha. Conferir salvamento/edição/timeout e reenvio protegido, dados finais e snapshot confirmado. Protocolo inicial e falhas devem continuar sem travamento. Rodada real: comparar esperas gravacao, cargas completas, descartes e tempos; não prometer redução pela simulação local.
+
+### v201 — 12/11/2026 (local)
+Publicar Apps Script e frontend/proxy; coletar nova rodada incluindo carga inicial, salvar/editar/excluir, Mensal/Anual e recorrências. Diagnóstico deve conter transportes e execuções v201. Conferir espera com resumo/backup e observar indicação de concorrência quando disponível; cache vazio/expirado/indisponível não deve causar erro nem alterar trava. Cabeçalhos ausentes não provam falha do Google. Testar resposta HTTP Google, HTML inválido, timeout/conexão, erro na leitura do JSON e armazenamento cheio: envio permanece protegido, sem repetição automática de mutação. Verificar ausência de conteúdo financeiro/credenciais nos campos novos.

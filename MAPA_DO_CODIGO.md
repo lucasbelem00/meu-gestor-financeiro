@@ -491,3 +491,6 @@ Módulos 1/3/5/6/10: hashGestor_ no Backend mantém cache de SHA por conteúdo s
 
 ### v200 — 12/11/2026 (local)
 Módulo2 integra módulo5: criarCoordenadorLeiturasGestor em interface/desempenho.js fornece consultarDadosRecarga(continuar); consultarDadosRecargaGestor recebe predicado de vigência de carregarDados (HTML). Repetições de cargas antigas aguardam gravação; primeira consulta direta de protocolo livre. Predicado é reconferido antes de enviar e após aguardar/repetir.
+
+### v201 — 12/11/2026 (local)
+Módulos2/5/10: Backend helpers observarOcupacaoGestor_/concluirOcupacaoGestor_/lerOcupacaoConcorrenteGestor_ são observadores de cache opcionais, jamais controle da trava. shared/relatorios.js instrumenta rotinaResumo; comLockProtecaoGestor_ instrumenta proteção/backup. criarPlanilhaVirtual mede leituras e volume; shared/anual conta células. api/gestor.js emite cabeçalhos de transporte técnicos; registrarTransporteConsultaGestor/lerTransportesDiagnosticoGestor no HTML filtram e limitam histórico. interface/desempenho.js executarMedido produz linha do tempo sem parâmetros.

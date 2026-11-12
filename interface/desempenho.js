@@ -24,6 +24,15 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const mutacoesPendentes = new Set();
   const consultasHistorico = new Set();
   const esperasConsultas=[];
+  const execucoesDiagnostico=[],emVooDiagnostico=new Map();let picoExecucoes=0,sequenciaExecucao=0;
+  function executarMedido(acao,param,extras){
+    const id=++sequenciaExecucao,inicio=agora(),versao=geracao;emVooDiagnostico.set(id,acao);picoExecucoes=Math.max(picoExecucoes,emVooDiagnostico.size);
+    let estado='sucesso';
+    return Promise.resolve().then(()=>opcoes.executar(acao,param,...extras)).catch(e=>{estado='falha';throw e;}).finally(()=>{
+      emVooDiagnostico.delete(id);execucoesDiagnostico.push({acao,inicioClienteMs:inicio,fimClienteMs:agora(),duracaoMs:Math.max(0,agora()-inicio),geracao:versao,estado});if(execucoesDiagnostico.length>30)execucoesDiagnostico.shift();
+    });
+  }
+
   function aguardarConsulta(promessas,motivo,retomar){
     const inicio=agora();
     return Promise.allSettled(Array.from(promessas)).then(()=>{
@@ -130,7 +139,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     if (promessa) metricas.compartilhadas++;
     else {
       metricas.envios++;
-      promessa = Promise.resolve().then(() => opcoes.executar(acao, copiar(param), ...extras.map(copiar))).then(valor => {
+      promessa = Promise.resolve().then(() => executarMedido(acao,copiar(param),extras.map(copiar))).then(valor => {
         let versaoResposta = versao;
         if (acao === 'getDadosCompletos' && valor && versao === geracao) {
           // Uma consulta completa pode revelar mudanças de outro aparelho ou
@@ -199,7 +208,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     invalidar('mutacao_inicio');
     const versaoInicio=geracao;let respostaConfirmada;
-    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
+    const mutacao=Promise.resolve().then(() => executarMedido(acao,param,extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
       const mesmaGeracao=geracao===versaoInicio;
       invalidar('mutacao_fim');
       // O servidor só acrescenta este snapshot depois de confirmar a gravação.
@@ -243,7 +252,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v200', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v201', picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

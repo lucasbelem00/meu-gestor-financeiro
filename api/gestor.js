@@ -44,15 +44,23 @@ module.exports = async function gestor(req, res) {
       redirect: 'follow',
       signal: AbortSignal.timeout(55000)
     });
+    const cabecalhosMs=Math.max(0,Date.now()-inicio),inicioCorpo=Date.now();
     const texto = await resposta.text();
+    const corpoMs=Math.max(0,Date.now()-inicioCorpo);
+    if(Number.isInteger(resposta.status))res.setHeader('X-Gestor-Upstream-Status',String(resposta.status));
+    res.setHeader('X-Gestor-Response-Bytes',String(Buffer.byteLength(texto,'utf8')));
+    res.setHeader('X-Gestor-Tempos',JSON.stringify({cabecalhosMs,corpoMs}));
     res.setHeader('Server-Timing', 'upstream;dur=' + Math.max(0,Date.now()-inicio));
     let dados;
     try { dados = JSON.parse(texto); } catch (_) {
+      res.setHeader('X-Gestor-Proxy-Codigo','RESPOSTA_INVALIDA');
       return res.status(502).json({ sucesso: false, codigo: 'RESPOSTA_INVALIDA', erro: 'Resposta inválida do serviço de dados.' });
     }
+    if(!resposta.ok)res.setHeader('X-Gestor-Proxy-Codigo','HTTP_GOOGLE');
     return res.status(resposta.ok ? 200 : 502).json(dados);
   } catch (erro) {
     res.setHeader('Server-Timing', 'upstream;dur=' + Math.max(0,Date.now()-inicio));
+    res.setHeader('X-Gestor-Proxy-Codigo',erro && (erro.name==='TimeoutError'||erro.name==='AbortError')?'TIMEOUT_PROXY':'FALHA_CONEXAO');
     if (erro && (erro.name === 'TimeoutError' || erro.name === 'AbortError')) return res.status(504).json({ sucesso: false, codigo: 'TIMEOUT_PROXY', erro: 'O serviço de dados demorou demais para responder.' });
     return res.status(502).json({ sucesso: false, codigo: 'FALHA_CONEXAO', erro: 'Não foi possível conectar ao serviço de dados.' });
   }

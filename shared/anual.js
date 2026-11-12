@@ -32,9 +32,10 @@ function dadosAnoGestor_(e,somenteAba){
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){
     const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();
-    if(medir('anoFormulasMs',()=>rg.getFormulas()).some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');
+    const formulas=medir('anoFormulasMs',()=>rg.getFormulas());if(detalhes)detalhes.anoCelulasFormulas=(detalhes.anoCelulasFormulas||0)+formulas.reduce((n,r)=>n+r.length,0);
+    if(formulas.some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');
     if(somenteAba&&somenteAba!==nome){contar('anoValoresEvitadas');return null;}
-    contar('anoValoresLeituras');return {nome:nome,valores:medir('anoValoresMs',()=>rg.getValues())};
+    contar('anoValoresLeituras');const valores=medir('anoValoresMs',()=>rg.getValues());if(detalhes)detalhes.anoCelulasValores=(detalhes.anoCelulasValores||0)+valores.reduce((n,r)=>n+r.length,0);return {nome:nome,valores:valores};
   }).filter(Boolean)};
   if(somenteAba)contar('anoLeiturasDirecionadas');
   if(e.estado==='FECHADO'&&medir('anoHashMs',()=>hashGestor_(dados))!==e.hash)throw Error('O ano fechado '+e.ano+' foi alterado. Nenhum registro divergente será misturado.');if(ctx)ctx.cacheAnosConferidos.set(chave,copiarGestor_(dados));return dados;

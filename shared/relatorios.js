@@ -95,6 +95,7 @@ function concluirResumoAssincronoGestor_(){
 function rotinaResumoPlanilhaGestor(){
   try{const inicial=lerResumoAssincronoGestor_();if(!inicial?.ativo||!inicial.pendente)return {pendente:false};}catch(_){return {pendente:true,erroConfiguracao:true};}
   const lock=LockService.getScriptLock();if(!lock.tryLock(1000))return {pendente:true,ocupado:true};
+  const observacaoOcupacao=observarOcupacaoGestor_('rotinaResumoPlanilhaGestor');
   const hashesAnteriores=HASHES_EXECUCAO_GESTOR_;HASHES_EXECUCAO_GESTOR_=new Map();
   const tempos={};
   let inicioExecucao=null;
@@ -112,6 +113,7 @@ function rotinaResumoPlanilhaGestor(){
   }finally{
     try{if(inicioExecucao!==null){const s=lerResumoAssincronoGestor_();if(s?.ultimaExecucao?.inicioServidorMs===inicioExecucao){const fim=Date.now();s.ultimaExecucao.fimServidorMs=fim;s.ultimaExecucao.duracaoMs=Math.max(0,fim-inicioExecucao);s.ultimaExecucao.etapas=tempos;salvarResumoAssincronoGestor_(s);}}}catch(_){}
     HASHES_EXECUCAO_GESTOR_=hashesAnteriores;
+    concluirOcupacaoGestor_(observacaoOcupacao);
     lock.releaseLock();
   }
 }

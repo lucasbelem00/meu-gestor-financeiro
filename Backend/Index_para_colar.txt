@@ -7465,14 +7465,16 @@ try {
             registrarIdentidadesGestor(action, respostaAppsScript, true);
             return respostaAppsScript;
           }
+          var inicioTransporteGestor=Date.now();
           var response = await fetch(API_URL, {
             method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
             body: JSON.stringify({ action: action, param: param }),
             signal: ctrl.signal
           });
-          if (!response.ok) { var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
-          var data = await response.json();
+          if (!response.ok) { if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor); var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
+          var inicioCorpoGestor=Date.now(),data;
+          try{data=await response.json();}finally{if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor,Date.now()-inicioCorpoGestor);}
           clearTimeout(timer);
           if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, data.temposGestor);
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.codigo = data.codigo; e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
@@ -8222,13 +8224,15 @@ function normalizarTemposServidorGestor(action, meta) {
   const tempos = { versao: 1, acao: action };
   if(Number.isFinite(meta.inicioServidorMs)&&Number.isFinite(meta.fimServidorMs)&&meta.inicioServidorMs>=0&&meta.fimServidorMs>=meta.inicioServidorMs&&meta.fimServidorMs<=8640000000000000&&meta.fimServidorMs-meta.inicioServidorMs<=3600000){tempos.inicioServidorMs=meta.inicioServidorMs;tempos.fimServidorMs=meta.fimServidorMs;}
   if(meta.estado==='ocupado')tempos.estado='ocupado';
+  const c=meta.concorrencia;
+  if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&c.inicioServidorMs<=8640000000000000&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs&&c.fimServidorMs<=8640000000000000))tempos.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),indicativo:true};
   for (const campo of ['totalMs','esperaLockMs','preparacaoMs','execucaoMs','planoMs','gravacaoMs','outrosMs']) {
     if (typeof meta[campo] !== 'number' || !Number.isFinite(meta[campo]) || meta[campo] < 0 || meta[campo] > 3600000) return null;
     tempos[campo] = Math.round(meta[campo]);
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes']){
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs']){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -8254,6 +8258,24 @@ function lerTemposServidorGestor() {
     });
   } catch (_) { return []; }
 }
+// Somente cabeçalhos técnicos permitidos; nunca corpo, URL ou conteúdo do envio.
+function lerTransportesDiagnosticoGestor(){
+ try{return (lerJSONLocalGestor('gestorTransportesV1',[])||[]).slice(-30).flatMap(e=>{
+  if(!e||!/^[A-Za-z]{1,80}$/.test(e.acao)||typeof e.data!=='string'||!/^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(e.data))return [];
+  const r={data:e.data,acao:e.acao};if(typeof e.proxyInstrumentado==='boolean')r.proxyInstrumentado=e.proxyInstrumentado;
+  for(const k of ['http','googleHttp','totalMs','lerCorpoMs','proxyCabecalhosMs','proxyCorpoMs','bytesResposta'])if(typeof e[k]==='number'&&Number.isFinite(e[k])&&e[k]>=0&&e[k]<=(k==='bytesResposta'?10485760:k==='http'||k==='googleHttp'?599:3600000))r[k]=Math.round(e[k]);
+  if(['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(e.codigoProxy))r.codigoProxy=e.codigoProxy;return [r];
+ });}catch(_){return [];}
+}
+function registrarTransporteConsultaGestor(acao,resposta,inicio,lerCorpoMs=0){
+ try{
+  if(!/^[A-Za-z]{1,80}$/.test(acao)||!resposta?.headers?.get)return;
+  const numero=(v,max)=>{const n=Number(v);return v!==null&&v!==''&&Number.isFinite(n)&&n>=0&&n<=max?Math.round(n):undefined;};
+  const cab=resposta.headers,tempos=JSON.parse(cab.get('X-Gestor-Tempos')||'{}'),codigo=cab.get('X-Gestor-Proxy-Codigo');
+  const item={data:new Date().toISOString(),acao,proxyInstrumentado:cab.get('X-Gestor-Tempos')!==null||['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo),http:numero(resposta.status,599),googleHttp:numero(cab.get('X-Gestor-Upstream-Status'),599),codigoProxy:['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo)?codigo:undefined,totalMs:Math.max(0,Date.now()-inicio),lerCorpoMs:numero(lerCorpoMs,3600000),proxyCabecalhosMs:numero(tempos.cabecalhosMs,3600000),proxyCorpoMs:numero(tempos.corpoMs,3600000),bytesResposta:numero(cab.get('X-Gestor-Response-Bytes'),10485760)};
+  const anteriores=lerTransportesDiagnosticoGestor();gravarArmazenamentoGestor('gestorTransportesV1',JSON.stringify((Array.isArray(anteriores)?anteriores:[]).concat(item).slice(-30)));
+ }catch(_){}
+}
 function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) {
   try {
     const eventos = lerJSONLocalGestor('gestorDiagnosticoV1', []);
@@ -8267,7 +8289,7 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
 }
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
-  return { formato: 'gestor-diagnostico-v1', resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', medicao:{versao:2,concorrencia:'Indicativa: executor financeiro, resumo e proteção/backup; cache pode expirar e outras rotinas podem não estar identificadas.',transportes:'Até 30 respostas HTTP; sem cabeçalhos técnicos do proxy não é possível atribuir a falha ao Google.'}, resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), transportes:lerTransportesDiagnosticoGestor(), geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();
@@ -9763,6 +9785,15 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const mutacoesPendentes = new Set();
   const consultasHistorico = new Set();
   const esperasConsultas=[];
+  const execucoesDiagnostico=[],emVooDiagnostico=new Map();let picoExecucoes=0,sequenciaExecucao=0;
+  function executarMedido(acao,param,extras){
+    const id=++sequenciaExecucao,inicio=agora(),versao=geracao;emVooDiagnostico.set(id,acao);picoExecucoes=Math.max(picoExecucoes,emVooDiagnostico.size);
+    let estado='sucesso';
+    return Promise.resolve().then(()=>opcoes.executar(acao,param,...extras)).catch(e=>{estado='falha';throw e;}).finally(()=>{
+      emVooDiagnostico.delete(id);execucoesDiagnostico.push({acao,inicioClienteMs:inicio,fimClienteMs:agora(),duracaoMs:Math.max(0,agora()-inicio),geracao:versao,estado});if(execucoesDiagnostico.length>30)execucoesDiagnostico.shift();
+    });
+  }
+
   function aguardarConsulta(promessas,motivo,retomar){
     const inicio=agora();
     return Promise.allSettled(Array.from(promessas)).then(()=>{
@@ -9869,7 +9900,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     if (promessa) metricas.compartilhadas++;
     else {
       metricas.envios++;
-      promessa = Promise.resolve().then(() => opcoes.executar(acao, copiar(param), ...extras.map(copiar))).then(valor => {
+      promessa = Promise.resolve().then(() => executarMedido(acao,copiar(param),extras.map(copiar))).then(valor => {
         let versaoResposta = versao;
         if (acao === 'getDadosCompletos' && valor && versao === geracao) {
           // Uma consulta completa pode revelar mudanças de outro aparelho ou
@@ -9938,7 +9969,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     invalidar('mutacao_inicio');
     const versaoInicio=geracao;let respostaConfirmada;
-    const mutacao=Promise.resolve().then(() => opcoes.executar(acao, param, ...extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
+    const mutacao=Promise.resolve().then(() => executarMedido(acao,param,extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
       const mesmaGeracao=geracao===versaoInicio;
       invalidar('mutacao_fim');
       // O servidor só acrescenta este snapshot depois de confirmar a gravação.
@@ -9982,7 +10013,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v200', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v201', picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

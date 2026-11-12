@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v200');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v201');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -497,3 +497,5 @@ test('repetição direta espera gravação mas primeira consulta de protocolo pe
  chamadas[0].resolve({antigo:true});await aguardar();assert.equal(chamadas.length,2);
  chamadas[1].resolve({sucesso:true});await editar;await aguardar();assert.equal(chamadas.length,3);chamadas[2].resolve({novo:true});assert.equal((await leitura).novo,true);
 });
+
+test('linha do tempo técnica mede sobreposição sem parâmetros nem conteúdo financeiro',async()=>{let instante=1000;const chamadas=[],c=coordenador({agora:()=>instante,executar:acao=>new Promise((resolve,reject)=>chamadas.push({acao,resolve,reject}))});const a=c.chamar('obterRelatorioMes','11/2026'),b=c.chamar('obterRelatorioAnual',2026);await aguardar();assert.equal(c.metricas().picoExecucoes,2);instante=1100;chamadas[0].resolve({segredo:'não exportar'});await a;instante=1200;const falhou=assert.rejects(b,/rede/);chamadas[1].reject(Error('rede'));await falhou;const m=c.metricas();assert.equal(m.execucoes.length,2);assert.equal(m.execucoes[0].duracaoMs,100);assert.equal(m.execucoes[1].estado,'falha');assert.equal(Object.keys(m.emVooPorAcao).length,0);assert(!JSON.stringify(m).includes('segredo'));});
