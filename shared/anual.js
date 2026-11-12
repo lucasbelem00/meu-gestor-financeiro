@@ -78,6 +78,7 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   // Cabeçalho e registros vêm da mesma leitura, restrita a esta montagem.
   // A próxima chamada lê a planilha novamente, inclusive após uma gravação.
   const original=obterAbaExecucaoGestor_(ss,nome),valoresOriginais=original?original.getDataRange().getValues():[],cab=normalizarMatrizProtecaoGestor_([valoresOriginais[0]||Array(COLUNAS_GESTOR_).fill('')],COLUNAS_GESTOR_)[0],mapa=new Map();
+  if(leitura){leitura.controleVazio=leitura.controleVazio||new Map();leitura.controleVazio.set(nome,!valoresOriginais.slice(1).some(r=>r.some(v=>v!==''&&v!=null)));}
   const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
   for(const e of leitura?leitura.catalogo:catalogoAnosGestor_(ss)){
     let dados;try{const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;if(leitura?.anos.has(chave))dados=copiarGestor_(leitura.anos.get(chave));else{dados=dadosAnoGestor_(e);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
@@ -161,7 +162,10 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
   if(ctx.action==='previaRestauracaoBackupWeb'&&ctx.anosIndisponiveis?.size)return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome));
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
-  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(obterAbaExecucaoGestor_(ctx.ssReal,n)?.getLastRow()||0)>1))return mudancas;
+  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>{
+    if(inicial?.ss===ctx.ssReal&&inicial.controleVazio?.has(n)){if(ctx.detalhesGravacao)ctx.detalhesGravacao.controleAnualConsultasEvitadas=(ctx.detalhesGravacao.controleAnualConsultasEvitadas||0)+1;return !inicial.controleVazio.get(n);}
+    return (obterAbaExecucaoGestor_(ctx.ssReal,n)?.getLastRow()||0)>1;
+  }))return mudancas;
   const ss=ctx.ssReal,novas=[],catalogo=ctx.anosRestaurados||catalogoAnosGestor_(ss),ajustes=ajustesAnuaisGestor_(ss).filter(r=>!ctx.ss.abas[r[0]]);
   // Fotografia exclusiva desta construção de plano. As duas origens usam o
   // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova

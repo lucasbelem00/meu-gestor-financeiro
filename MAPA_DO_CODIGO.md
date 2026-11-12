@@ -497,3 +497,6 @@ Módulos2/5/10: Backend helpers observarOcupacaoGestor_/concluirOcupacaoGestor_/
 
 ### v202 — 12/11/2026 (local)
 Módulo2/segurança: doPost (Backend) mede envelope autenticado e redefine RASTRO_CHAMADA_GESTOR_ por chamada, sem mudar identidade financeira. api/gestor.js encaminha diagnostico filtrado e ecoa cabeçalhos técnicos. No HTML, criarRastroDiagnosticoGestor cria página temporária e chamada; normalizarEntradaServidorGestor/registrarEntradaServidorDiagnosticoGestor/lerEntradasServidorDiagnosticoGestor filtram e limitam dados do doPost. Observação concorrente transmite rastros validados.
+
+### v203 — 12/11/2026 (local)
+Módulo2: criarCoordenadorLeiturasGestor acompanha execuções ativas e prepararAtualizacao/cancelarAtualizacao; forcarAtualizacaoApp (HTML) aguarda guarda antes do reload e recupera falhas. criarSerializadorPaginasGestor coordena somente getDadosCompletos com Web Locks, sem dados compartilhados. Módulos3/5/10: shared/anual.js anexa controleVazio ao snapshot inicial por leitura financeira e evita consulta repetida de dimensão só quando não há mudança financeira/legado.

@@ -24,13 +24,14 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const mutacoesPendentes = new Set();
   const consultasHistorico = new Set();
   const esperasConsultas=[];
-  const execucoesDiagnostico=[],emVooDiagnostico=new Map();let picoExecucoes=0,sequenciaExecucao=0;
+  const execucoesDiagnostico=[],emVooDiagnostico=new Map(),execucoesAtivas=new Set();let picoExecucoes=0,sequenciaExecucao=0,preparandoAtualizacao=false,esperaAtualizacaoMs=0,consultasSuspensasAtualizacao=0;
   function executarMedido(acao,param,extras){
     const id=++sequenciaExecucao,inicio=agora(),versao=geracao;emVooDiagnostico.set(id,acao);picoExecucoes=Math.max(picoExecucoes,emVooDiagnostico.size);
     let estado='sucesso';
-    return Promise.resolve().then(()=>opcoes.executar(acao,param,...extras)).catch(e=>{estado='falha';throw e;}).finally(()=>{
+    const promessa=Promise.resolve().then(()=>opcoes.executar(acao,param,...extras)).catch(e=>{estado='falha';throw e;}).finally(()=>{
       emVooDiagnostico.delete(id);execucoesDiagnostico.push({acao,inicioClienteMs:inicio,fimClienteMs:agora(),duracaoMs:Math.max(0,agora()-inicio),geracao:versao,estado});if(execucoesDiagnostico.length>30)execucoesDiagnostico.shift();
     });
+    execucoesAtivas.add(promessa);promessa.then(()=>execucoesAtivas.delete(promessa),()=>execucoesAtivas.delete(promessa));return promessa;
   }
 
   function aguardarConsulta(promessas,motivo,retomar){
@@ -94,6 +95,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     return copia;
   }
   function consultar(acao, param, extras, repeticoes = 0, continuar = null, tentativasOcupadas = 0) {
+    if(preparandoAtualizacao&&(leiturasDeTela.has(acao)||cacheaveis.has(acao)||acao==='getDadosCompletos'&&(continuar||repeticoes>0))){consultasSuspensasAtualizacao++;const e=new Error('Consulta dispensada durante atualização do app.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
     if(continuar&&!continuar()){metricas.filtrosSuperados++;const e=new Error('Consulta substituída pela navegação ou por outro filtro.');e.codigo='CONSULTA_SUBSTITUIDA';return Promise.reject(e);}
     // Somente leituras de tela aguardam retorno; protocolo e mutações seguem livres.
     if(leiturasDeTela.has(acao)||cacheaveis.has(acao)){
@@ -206,6 +208,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       try { return consultar(acao, copiar(param), extras.map(copiar)); }
       catch (erro) { return Promise.reject(erro); }
     }
+    if(preparandoAtualizacao)return Promise.reject(new Error('Aguarde a atualização do app antes de salvar. Seus campos foram preservados.'));
     invalidar('mutacao_inicio');
     const versaoInicio=geracao;let respostaConfirmada;
     const mutacao=Promise.resolve().then(() => executarMedido(acao,param,extras)).then(res=>{respostaConfirmada=res;return res;}).finally(()=>{
@@ -231,6 +234,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   }
   return {
     chamar, invalidar,
+    cancelarAtualizacao:()=>{preparandoAtualizacao=false;},
+    prepararAtualizacao:async()=>{preparandoAtualizacao=true;const inicio=agora();while(execucoesAtivas.size||mutacoesPendentes.size||consultas.size){await Promise.allSettled([...execucoesAtivas,...mutacoesPendentes,...consultas.values()]);await Promise.resolve();}esperaAtualizacaoMs=Math.max(0,agora()-inicio);},
     consultarHistorico:(param,continuar)=>consultar('filtrarLancamentosWeb',copiar(param),[],0,continuar),
     consultarDadosRecarga:continuar=>consultar('getDadosCompletos',undefined,[],0,continuar),
     consumirAtualizacaoConfirmada:()=>{
@@ -252,7 +257,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v202', picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v203', preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -285,10 +290,27 @@ function retomarVisibilidadeConsultaGestor(){
   if(document.visibilityState!=='visible')return;
   const liberar=liberarVisibilidadeConsultaGestor;esperaVisibilidadeConsultaGestor=null;liberarVisibilidadeConsultaGestor=null;liberar?.();
 }
+// Coordena apenas consultas completas entre páginas da mesma origem.
+// Não compartilha respostas ou dados financeiros e nunca envolve gravações.
+function criarSerializadorPaginasGestor(opcoes){
+ const m={esperas:0,criterioEsperaMs:50,esperaMs:0,falhasCoordenacao:0};
+ return {executar:(acao,param,...extras)=>{
+  if(acao!=='getDadosCompletos'||!opcoes.solicitar)return opcoes.executar(acao,param,...extras);
+  let iniciada=false;const inicio=(opcoes.agora||Date.now)();
+  return Promise.resolve().then(()=>opcoes.solicitar('gestor:consulta-completa',()=>{
+   iniciada=true;const espera=Math.max(0,(opcoes.agora||Date.now)()-inicio);m.esperaMs+=espera;if(espera>=m.criterioEsperaMs)m.esperas++;
+   return opcoes.executar(acao,param,...extras);
+  })).catch(e=>{if(iniciada)throw e;m.falhasCoordenacao++;return opcoes.executar(acao,param,...extras);});
+ },metricas:()=>({...m,suportada:!!opcoes.solicitar})};
+}
+const serializadorPaginasGestor=criarSerializadorPaginasGestor({
+ solicitar:typeof navigator!=='undefined'&&typeof navigator.locks?.request==='function'?(nome,fn)=>navigator.locks.request(nome,fn):null,
+ executar:(...args)=>apiAntesCoordenacaoDesempenhoGestor(...args)
+});
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
   aguardarVisibilidade:aguardarVisibilidadeConsultaGestor,
   podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
-  executar: (...args) => apiAntesCoordenacaoDesempenhoGestor(...args),
+  executar: (...args) => serializadorPaginasGestor.executar(...args),
   leituras: leiturasDesempenhoGestor,
   cacheaveis: Object.keys(CATALOGO_ACOES_GESTOR).filter(acao => CATALOGO_ACOES_GESTOR[acao].cacheavel),
   aoInvalidar: () => { if (typeof geracaoLeituraGestor !== 'undefined') geracaoLeituraGestor++; }
@@ -320,7 +342,9 @@ window.apiCall = function apiCoordenadaDesempenhoGestor(acao, param, ...extras) 
   });
 };
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
-function obterMetricasDesempenhoGestor() { return coordenadorLeiturasDesempenhoGestor.metricas(); }
+function cancelarEsperaAtualizacaoAppGestor(){coordenadorLeiturasDesempenhoGestor.cancelarAtualizacao();}
+function aguardarOperacoesAntesAtualizarAppGestor(){return coordenadorLeiturasDesempenhoGestor.prepararAtualizacao();}
+function obterMetricasDesempenhoGestor() { return {...coordenadorLeiturasDesempenhoGestor.metricas(),entrePaginas:serializadorPaginasGestor.metricas()}; }
 let retomarFiltroHistoricoGestor=false;
 function capturarHistoricoAtualizacaoGestor(){
   if(typeof abaAtivaAtual==='undefined'||abaAtivaAtual!=='lancamentos'||typeof offsetAtual==='undefined'||offsetAtual!==0||typeof filtrosAtuais==='undefined')return null;

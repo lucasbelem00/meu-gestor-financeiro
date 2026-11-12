@@ -450,3 +450,6 @@ Publicar Apps Script e frontend/proxy; coletar nova rodada incluindo carga inici
 
 ### v202 — 12/11/2026 (local)
 Coletar abertura e operações após publicar backend e frontend/proxy. entradasServidor deve conter preparo/ação/relógio/serialização e mesmo código chamada de transportes. Página permanece igual até recarregar, chamada muda por tentativa. Quando concorrência tiver rastro, comparar com paginaAtual e transportes; rastro ausente permanece desconhecido. Testar autorização negada, metadado inválido, erro durante ação e envios repetidos com requestId original: comportamento financeiro preservado. Não interpretar proxy menos total doPost como rede pura.
+
+### v203 — 12/11/2026 (local)
+Abrir app e acionar Atualizar enquanto consulta está em voo: deve aguardar, preservar rascunhos e não gerar nova página aos600ms. Clique duplicado compartilha espera. Verificar envio já iniciado, consulta superada, falta de conexão após espera e retry da atualização. Duas abas atualizadas da mesma origem: cargas completas serializadas, sem mistura/compartilhamento de resultados; falha da API não repetida pela trava. Navegador sem Web Locks usa caminho normal. Na leitura anual sem mudanças e controle vazio, medir controleAnualConsultasEvitadas; legado presente e alterações financeiras continuam conferidos. Verificar resto das recuperações/anos fechados.
