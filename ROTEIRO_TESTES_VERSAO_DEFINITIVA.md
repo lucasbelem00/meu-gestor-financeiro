@@ -438,3 +438,6 @@ Agenda: a partir de 1024px, grupo Mês/setas e grupo Tipo/Situação ficam lado 
 
 ### v198 — 12/11/2026 (local)
 Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro; tocar outro dia troca seleção. Mantidos filtros Tipo/Situação, foco no botão do dia, aria-pressed e botão Ver o mês inteiro. Operação local, sem nova consulta ou alteração financeira. Conferir seleção/desseleção no celular após publicar.
+
+### v199 — 12/11/2026 (local)
+Repetir salvar/editar/excluir, Mensal/Anual e recorrências após atualizar Apps Script e frontend. Conferir contadores hashesCalculados/hashesGrandesReutilizados e tempos, sem prometer ganho por teste local. Exercitar timeout/reenvio protegido sem duplicação. Testes devem provar nova chave em mutação da mesma matriz, igualdade de SHA, limites de memória, descarte entre execuções e integridade dos anos fechados/restauração/confirmação após escrita.

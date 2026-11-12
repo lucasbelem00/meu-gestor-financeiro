@@ -16,7 +16,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -3759,12 +3759,21 @@ function copiarGestor_(valor) {
 function hashGestor_(valor) {
   const texto = JSON.stringify(serializarGestor_(valor));
   const memo = HASHES_EXECUCAO_GESTOR_;
-  if (memo && memo.has(texto)) return memo.get(texto);
+  if (memo && memo.has(texto)){memo.hashesReutilizados=(memo.hashesReutilizados||0)+1;return memo.get(texto);}
+  const grandes=memo?.hashesGrandesGestor;
+  if(grandes?.has(texto)){memo.hashesGrandesReutilizados=(memo.hashesGrandesReutilizados||0)+1;return grandes.get(texto);}
+  if(memo)memo.hashesCalculados=(memo.hashesCalculados||0)+1;
   const hash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, texto, Utilities.Charset.UTF_8)
     .map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join('');
   // Só durante esta operação: nenhuma gravação ou edição direta na planilha
   // pode reutilizar o hash de uma execução anterior.
   if (memo && texto.length <= 4096 && memo.size < 5000) memo.set(texto,hash);
+  // Chave é o conteúdo serializado inteiro, nunca a referência mutável da matriz.
+  // Limite UTF-16 de 2 MiB e 64 entradas; descartado no finally do executor.
+  else if(memo&&texto.length>4096&&texto.length<=262144){
+    const cache=memo.hashesGrandesGestor||(memo.hashesGrandesGestor=new Map()),bytes=texto.length*2;
+    if(cache.size<64&&(memo.bytesHashesGrandes||0)+bytes<=2097152){cache.set(texto,hash);memo.bytesHashesGrandes=(memo.bytesHashesGrandes||0)+bytes;}
+  }
   return hash;
 }
 function centavosGestor_(valor) {
@@ -4616,7 +4625,7 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
   } catch (e) {
     if (resultadoIncerto) e.resultadoIncerto = true;
     throw e;
-  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
+  } finally { for(const k of ['planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes'])if(typeof HASHES_EXECUCAO_GESTOR_?.[k]==='number')detalhesGravacaoGestor[k]=HASHES_EXECUCAO_GESTOR_[k]; CONTEXTO_GESTOR_ = null; HASHES_EXECUCAO_GESTOR_ = null; lock.releaseLock(); registrarTemposRespostaGestor_(acao,inicioTempoGestor,esperaLockMsGestor,preparacaoMsGestor,execucaoMsGestor,planoMsGestor,gravacaoInicioGestor,detalhesGravacaoGestor); }
 }
 
 function assinaturaManutencaoLeituraGestor_(ss) {
@@ -6408,7 +6417,7 @@ const CAB_ANOS_GESTOR_=['Ano','Planilha ID','Estado','SHA256 fechamento','Fechad
 const ABA_AJUSTES_ANUAIS_GESTOR_='_Gestor_AjustesAnuais';
 const CAB_AJUSTES_ANUAIS_GESTOR_=['Aba','Registro ID','Ano original','SHA256 original','Estado','Registro JSON'];
 function principalAnualGestor_(ss){return ss||(CONTEXTO_GESTOR_?CONTEXTO_GESTOR_.ssReal:obterPlanilhaGestor_());}
-function ativoAnualGestor_(ss){return configProtecaoGestor_().organizacaoAnual===true||Boolean(principalAnualGestor_(ss).getSheetByName(ABA_ANOS_GESTOR_));}
+function ativoAnualGestor_(ss){return configProtecaoGestor_().organizacaoAnual===true||Boolean(obterAbaExecucaoGestor_(principalAnualGestor_(ss),ABA_ANOS_GESTOR_));}
 function catalogoAnosGestor_(ss){
   const sh=obterAbaExecucaoGestor_(ss,ABA_ANOS_GESTOR_);if(!sh||!sh.getLastRow())return [];
   const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('Catálogo dos anos incompatível. Preserve a base de controle.');
@@ -6562,7 +6571,7 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
   if(ctx.action==='previaRestauracaoBackupWeb'&&ctx.anosIndisponiveis?.size)return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome));
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
-  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(ctx.ssReal.getSheetByName(n)?.getLastRow()||0)>1))return mudancas;
+  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(obterAbaExecucaoGestor_(ctx.ssReal,n)?.getLastRow()||0)>1))return mudancas;
   const ss=ctx.ssReal,novas=[],catalogo=ctx.anosRestaurados||catalogoAnosGestor_(ss),ajustes=ajustesAnuaisGestor_(ss).filter(r=>!ctx.ss.abas[r[0]]);
   // Fotografia exclusiva desta construção de plano. As duas origens usam o
   // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova

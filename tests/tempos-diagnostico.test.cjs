@@ -69,3 +69,5 @@ test('armazenamento indisponível não interrompe a resposta do app',()=>{
   assert.doesNotThrow(()=>c.registrarTemposServidorGestor('getDadosCompletos',null));assert.equal(c.lerTemposServidorGestor().length,0);
   assert.equal((html.match(/registrarTemposServidorGestor\(action, (?:resultado|data)\.temposGestor\)/g)||[]).length,2);
 });
+
+test('diagnóstico aceita contadores de hash, sem serializar o cache de conteúdo',()=>{const c=vm.createContext({Date:{now:()=>1000},console:{log(){}}});vm.runInContext('let TEMPOS_RESPOSTA_GESTOR_=null;'+helper,c);const d={hashesCalculados:12,hashesReutilizados:20,hashesGrandesReutilizados:4,bytesHashesGrandes:20000,hashesGrandesGestor:{segredo:'não exportar'}};c.registrarTemposRespostaGestor_('salvarLancamentoWeb',0,0,0,0,0,0,d);const r=JSON.parse(vm.runInContext('JSON.stringify(TEMPOS_RESPOSTA_GESTOR_)',c));assert.equal(r.detalhesGravacao.hashesGrandesReutilizados,4);assert(!JSON.stringify(r).includes('segredo'));vm.runInContext(front,c);const n=c.normalizarTemposServidorGestor(r.acao,r);assert.equal(n.detalhesGravacao.bytesHashesGrandes,20000);assert.equal(n.detalhesGravacao.hashesCalculados,12);});

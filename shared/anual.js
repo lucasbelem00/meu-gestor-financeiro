@@ -6,7 +6,7 @@ const CAB_ANOS_GESTOR_=['Ano','Planilha ID','Estado','SHA256 fechamento','Fechad
 const ABA_AJUSTES_ANUAIS_GESTOR_='_Gestor_AjustesAnuais';
 const CAB_AJUSTES_ANUAIS_GESTOR_=['Aba','Registro ID','Ano original','SHA256 original','Estado','Registro JSON'];
 function principalAnualGestor_(ss){return ss||(CONTEXTO_GESTOR_?CONTEXTO_GESTOR_.ssReal:obterPlanilhaGestor_());}
-function ativoAnualGestor_(ss){return configProtecaoGestor_().organizacaoAnual===true||Boolean(principalAnualGestor_(ss).getSheetByName(ABA_ANOS_GESTOR_));}
+function ativoAnualGestor_(ss){return configProtecaoGestor_().organizacaoAnual===true||Boolean(obterAbaExecucaoGestor_(principalAnualGestor_(ss),ABA_ANOS_GESTOR_));}
 function catalogoAnosGestor_(ss){
   const sh=obterAbaExecucaoGestor_(ss,ABA_ANOS_GESTOR_);if(!sh||!sh.getLastRow())return [];
   const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('Catálogo dos anos incompatível. Preserve a base de controle.');
@@ -160,7 +160,7 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   // Uma prévia degradada não pode transformar a visão parcial em exclusões.
   if(ctx.action==='previaRestauracaoBackupWeb'&&ctx.anosIndisponiveis?.size)return mudancas.filter(m=>!ehAbaRegistrosGestor_(m.nome));
   if(!ativoAnualGestor_(ctx.ssReal)&&!ctx.anosRestaurados)return mudancas;
-  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(ctx.ssReal.getSheetByName(n)?.getLastRow()||0)>1))return mudancas;
+  if(!mudancas.some(m=>ehAbaRegistrosGestor_(m.nome))&&!ctx.anosRestaurados&&!ctx.importarLegadoAnual&&!['Lançamentos','Empréstimos'].some(n=>(obterAbaExecucaoGestor_(ctx.ssReal,n)?.getLastRow()||0)>1))return mudancas;
   const ss=ctx.ssReal,novas=[],catalogo=ctx.anosRestaurados||catalogoAnosGestor_(ss),ajustes=ajustesAnuaisGestor_(ss).filter(r=>!ctx.ss.abas[r[0]]);
   // Fotografia exclusiva desta construção de plano. As duas origens usam o
   // mesmo ano já conferido, sem carregar as duas matrizes novamente. Uma nova

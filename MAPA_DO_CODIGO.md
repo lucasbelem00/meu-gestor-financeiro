@@ -485,3 +485,6 @@ Módulos 3/5/10: shared/relatorios.js, entradasCalculadasResumoGestor_ limita a 
 
 ### v193 — 12/11/2026 (local)
 Módulo 7: transferirSimulacaoGestor em interface/usabilidade.js captura descrição e assinatura da simulação, preenche e salva rascunho de destino e chama limparSimuladorTudo(true) após sucesso. Função de limpeza no HTML aceita modo silencioso, mantendo limpeza manual com aviso.
+
+### v199 — 12/11/2026 (local)
+Módulos 1/3/5/6/10: hashGestor_ no Backend mantém cache de SHA por conteúdo serializado integral com limite de memória, só durante executor. Mesmo algoritmo e leituras frescas; cache não é de registros nem por identidade mutável. shared/anual.js usa memo de referências para existência do catálogo e base de controle. Contadores numéricos passam por registrarTemposRespostaGestor_ e normalizador do diagnóstico no HTML.
