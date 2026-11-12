@@ -37,10 +37,13 @@ module.exports = async function gestor(req, res) {
       return res.status(400).json({ sucesso: false, erro: 'Solicitação inválida.' });
     }
 
+    const r=payload.diagnostico;
+    const diagnostico=r?.versao===1&&typeof r.chamada==='string'&&typeof r.pagina==='string'&&/^[a-f0-9]{32}$/.test(r.chamada)&&/^[a-f0-9]{32}$/.test(r.pagina)?{versao:1,chamada:r.chamada,pagina:r.pagina}:undefined;
+    if(diagnostico){res.setHeader('X-Gestor-Chamada',diagnostico.chamada);res.setHeader('X-Gestor-Pagina',diagnostico.pagina);}
     const resposta = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: payload.action, param: payload.param ?? null, apiToken: token }),
+      body: JSON.stringify({ action: payload.action, param: payload.param ?? null, apiToken: token, ...(diagnostico?{diagnostico}:{}) }),
       redirect: 'follow',
       signal: AbortSignal.timeout(55000)
     });

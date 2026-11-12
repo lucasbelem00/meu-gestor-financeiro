@@ -8,6 +8,7 @@
 // teste pode apontar para a planilha de teste e o projeto de produção para a real.
 const CHAVE_ID_PLANILHA_GESTOR = 'GESTOR_PLANILHA_ID';
 let TEMPOS_RESPOSTA_GESTOR_ = null;
+let RASTRO_CHAMADA_GESTOR_ = null;
 
 function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execucao, plano, gravacaoInicio, detalhes) {
   try {
@@ -18,7 +19,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
     if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     const c=detalhes?.concorrencia;
-    if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs))TEMPOS_RESPOSTA_GESTOR_.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),indicativo:true};
+    if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs))TEMPOS_RESPOSTA_GESTOR_.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(c.chamada)&&/^[a-f0-9]{32}$/.test(c.pagina)?{chamada:c.chamada,pagina:c.pagina}:{}),indicativo:true};
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
   } catch (_) { /* Medição nunca altera o resultado financeiro. */ }
 }
@@ -42,20 +43,20 @@ function lerOcupacaoConcorrenteGestor_(inicioEspera){
   const agora=Date.now(),a=JSON.parse(CacheService.getScriptCache().get('gestorOcupacaoDiagnosticoV1')||'null');
   if(!a||!/^[A-Za-z]{1,80}$/.test(a.acao)||!Number.isFinite(a.inicioServidorMs)||a.inicioServidorMs<0||a.inicioServidorMs>agora||agora-a.inicioServidorMs>600000)return null;
   if(a.fimServidorMs!==undefined&&(!Number.isFinite(a.fimServidorMs)||a.fimServidorMs<a.inicioServidorMs||a.fimServidorMs>agora||a.fimServidorMs<inicioEspera))return null;
-  return {acao:a.acao,inicioServidorMs:a.inicioServidorMs,...(a.fimServidorMs===undefined?{}:{fimServidorMs:a.fimServidorMs}),indicativo:true};
+  return {acao:a.acao,inicioServidorMs:a.inicioServidorMs,...(a.fimServidorMs===undefined?{}:{fimServidorMs:a.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(a.chamada)&&/^[a-f0-9]{32}$/.test(a.pagina)?{chamada:a.chamada,pagina:a.pagina}:{}),indicativo:true};
  }catch(_){return null;}
 }
 function observarOcupacaoGestor_(acao,inicioEspera){
-  const inicio=Date.now(),observacao={acao:String(acao),inicioServidorMs:inicio};
+  const inicio=Date.now(),r=typeof RASTRO_CHAMADA_GESTOR_==='undefined'?null:RASTRO_CHAMADA_GESTOR_,observacao={acao:String(acao),inicioServidorMs:inicio,...(r||{})};
   try{
     if(typeof CacheService==='undefined'||!/^[A-Za-z]{1,80}$/.test(observacao.acao))return null;
     if(Number.isFinite(inicioEspera)&&inicio-inicioEspera>=500)observacao.concorrencia=lerOcupacaoConcorrenteGestor_(inicioEspera);
-    CacheService.getScriptCache().put('gestorOcupacaoDiagnosticoV1',JSON.stringify({acao:observacao.acao,inicioServidorMs:inicio}),600);
+    CacheService.getScriptCache().put('gestorOcupacaoDiagnosticoV1',JSON.stringify({acao:observacao.acao,inicioServidorMs:inicio,...(r||{})}),600);
     return observacao;
   }catch(_){return null;}
 }
 function concluirOcupacaoGestor_(observacao){
-  try{if(observacao&&typeof CacheService!=='undefined')CacheService.getScriptCache().put('gestorOcupacaoDiagnosticoV1',JSON.stringify({acao:observacao.acao,inicioServidorMs:observacao.inicioServidorMs,fimServidorMs:Date.now()}),600);}catch(_){}
+  try{if(observacao&&typeof CacheService!=='undefined')CacheService.getScriptCache().put('gestorOcupacaoDiagnosticoV1',JSON.stringify({acao:observacao.acao,inicioServidorMs:observacao.inicioServidorMs,fimServidorMs:Date.now(),...(/^[a-f0-9]{32}$/.test(observacao.chamada)&&/^[a-f0-9]{32}$/.test(observacao.pagina)?{chamada:observacao.chamada,pagina:observacao.pagina}:{})}),600);}catch(_){}
 }
 function adquirirLockOperacaoGestor_(lock, acao, leitura) {
   const inicio=Date.now();
@@ -2276,20 +2277,27 @@ function getDadosCompletos() {
 // ============================================================================
 
 function doPost(e) {
-  TEMPOS_RESPOSTA_GESTOR_ = null;
-  const output = ContentService.createTextOutput();
-  output.setMimeType(ContentService.MimeType.JSON);
-  try {
-    const payload = JSON.parse(e.postData.contents);
-    const tokenEsperado = propriedade_("GESTOR_API_TOKEN");
-    if (!tokenEsperado || payload.apiToken !== tokenEsperado) {
-      return output.setContent(JSON.stringify({ sucesso: false, erro: 'Acesso não autorizado.' }));
-    }
-    const result = executarAcaoApi_(payload.action, payload.param);
-    return output.setContent(JSON.stringify({ sucesso: true, dados: result, relogioGestor: referenciaRelogioServidorGestor_(), temposGestor: TEMPOS_RESPOSTA_GESTOR_ }));
-  } catch (err) {
-    return output.setContent(JSON.stringify({ sucesso: false, erro: err.message, resultadoIncerto: err.resultadoIncerto === true, codigo: err.codigo || 'FALHA_OPERACAO', temposGestor: TEMPOS_RESPOSTA_GESTOR_ }));
+  const inicioEntrada=Date.now();TEMPOS_RESPOSTA_GESTOR_=null;RASTRO_CHAMADA_GESTOR_=null;
+  const output=ContentService.createTextOutput();output.setMimeType(ContentService.MimeType.JSON);
+  let autorizado=false,acao='outra',inicioAcao=0,acaoMs=0,relogioMs=0;
+  function responder(envelope){
+    const inicioSerializacao=Date.now(),texto=JSON.stringify(envelope);
+    if(!autorizado)return output.setContent(texto);
+    const fim=Date.now(),entrada={versao:1,acao,inicioServidorMs:inicioEntrada,fimMedidoServidorMs:fim,preparacaoMs:Math.max(0,(inicioAcao||inicioSerializacao)-inicioEntrada),acaoMs,relogioMs,serializacaoMs:Math.max(0,fim-inicioSerializacao),totalMedidoMs:Math.max(0,fim-inicioEntrada),...(RASTRO_CHAMADA_GESTOR_||{})};
+    // Serializar dados uma única vez. Metadados acrescentados ao envelope, não à operação.
+    return output.setContent(texto.slice(0,-1)+',"entradaGestor":'+JSON.stringify(entrada)+'}');
   }
+  try {
+    const payload=JSON.parse(e.postData.contents),tokenEsperado=propriedade_('GESTOR_API_TOKEN');
+    if(!tokenEsperado||payload.apiToken!==tokenEsperado)return responder({sucesso:false,erro:'Acesso não autorizado.'});
+    autorizado=true;acao=/^[A-Za-z]{1,80}$/.test(payload.action)?payload.action:'outra';
+    const r=payload.diagnostico;if(r?.versao===1&&typeof r.chamada==='string'&&typeof r.pagina==='string'&&/^[a-f0-9]{32}$/.test(r.chamada)&&/^[a-f0-9]{32}$/.test(r.pagina))RASTRO_CHAMADA_GESTOR_={chamada:r.chamada,pagina:r.pagina};
+    inicioAcao=Date.now();let result;
+    try{result=executarAcaoApi_(payload.action,payload.param);}finally{acaoMs=Math.max(0,Date.now()-inicioAcao);}
+    const inicioRelogio=Date.now(),relogio=referenciaRelogioServidorGestor_();relogioMs=Math.max(0,Date.now()-inicioRelogio);
+    return responder({sucesso:true,dados:result,relogioGestor:relogio,temposGestor:TEMPOS_RESPOSTA_GESTOR_});
+  }catch(err){return responder({sucesso:false,erro:err.message,resultadoIncerto:err.resultadoIncerto===true,codigo:err.codigo||'FALHA_OPERACAO',temposGestor:TEMPOS_RESPOSTA_GESTOR_});}
+  finally{RASTRO_CHAMADA_GESTOR_=null;}
 }
 
 // Função chamada pela interface hospedada no Apps Script.

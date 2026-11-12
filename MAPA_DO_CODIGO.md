@@ -494,3 +494,6 @@ Módulo2 integra módulo5: criarCoordenadorLeiturasGestor em interface/desempenh
 
 ### v201 — 12/11/2026 (local)
 Módulos2/5/10: Backend helpers observarOcupacaoGestor_/concluirOcupacaoGestor_/lerOcupacaoConcorrenteGestor_ são observadores de cache opcionais, jamais controle da trava. shared/relatorios.js instrumenta rotinaResumo; comLockProtecaoGestor_ instrumenta proteção/backup. criarPlanilhaVirtual mede leituras e volume; shared/anual conta células. api/gestor.js emite cabeçalhos de transporte técnicos; registrarTransporteConsultaGestor/lerTransportesDiagnosticoGestor no HTML filtram e limitam histórico. interface/desempenho.js executarMedido produz linha do tempo sem parâmetros.
+
+### v202 — 12/11/2026 (local)
+Módulo2/segurança: doPost (Backend) mede envelope autenticado e redefine RASTRO_CHAMADA_GESTOR_ por chamada, sem mudar identidade financeira. api/gestor.js encaminha diagnostico filtrado e ecoa cabeçalhos técnicos. No HTML, criarRastroDiagnosticoGestor cria página temporária e chamada; normalizarEntradaServidorGestor/registrarEntradaServidorDiagnosticoGestor/lerEntradasServidorDiagnosticoGestor filtram e limitam dados do doPost. Observação concorrente transmite rastros validados.

@@ -7465,17 +7465,18 @@ try {
             registrarIdentidadesGestor(action, respostaAppsScript, true);
             return respostaAppsScript;
           }
-          var inicioTransporteGestor=Date.now();
+          var inicioTransporteGestor=Date.now(),rastroTransporteGestor=typeof criarRastroDiagnosticoGestor==='function'?criarRastroDiagnosticoGestor():undefined;
           var response = await fetch(API_URL, {
             method: 'POST', redirect: 'follow',
             headers: { 'Content-Type': 'application/json;charset=utf-8' },
-            body: JSON.stringify({ action: action, param: param }),
+            body: JSON.stringify({ action: action, param: param, diagnostico:rastroTransporteGestor }),
             signal: ctrl.signal
           });
-          if (!response.ok) { if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor); var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
+          if (!response.ok) { if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor,0,rastroTransporteGestor); var httpErro = new Error('Falha HTTP ' + response.status); httpErro.status = response.status; httpErro.doServidor = response.status < 500; throw httpErro; }
           var inicioCorpoGestor=Date.now(),data;
-          try{data=await response.json();}finally{if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor,Date.now()-inicioCorpoGestor);}
+          try{data=await response.json();}finally{if(typeof registrarTransporteConsultaGestor==='function')registrarTransporteConsultaGestor(action,response,inicioTransporteGestor,Date.now()-inicioCorpoGestor,rastroTransporteGestor);}
           clearTimeout(timer);
+          if(typeof registrarEntradaServidorDiagnosticoGestor==='function')registrarEntradaServidorDiagnosticoGestor(action,data.entradaGestor);
           if(typeof registrarTemposServidorGestor==='function')registrarTemposServidorGestor(action, data.temposGestor);
           if (!data.sucesso) { var e1 = new Error(data.erro || 'Erro no servidor da nuvem.'); e1.codigo = data.codigo; e1.doServidor = true; e1.resultadoIncerto = data.resultadoIncerto === true; throw e1; }
           if(typeof sincronizarRelogioCivilGestor==='function')sincronizarRelogioCivilGestor(data.relogioGestor);
@@ -8225,7 +8226,7 @@ function normalizarTemposServidorGestor(action, meta) {
   if(Number.isFinite(meta.inicioServidorMs)&&Number.isFinite(meta.fimServidorMs)&&meta.inicioServidorMs>=0&&meta.fimServidorMs>=meta.inicioServidorMs&&meta.fimServidorMs<=8640000000000000&&meta.fimServidorMs-meta.inicioServidorMs<=3600000){tempos.inicioServidorMs=meta.inicioServidorMs;tempos.fimServidorMs=meta.fimServidorMs;}
   if(meta.estado==='ocupado')tempos.estado='ocupado';
   const c=meta.concorrencia;
-  if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&c.inicioServidorMs<=8640000000000000&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs&&c.fimServidorMs<=8640000000000000))tempos.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),indicativo:true};
+  if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&c.inicioServidorMs<=8640000000000000&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs&&c.fimServidorMs<=8640000000000000))tempos.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(c.chamada)&&/^[a-f0-9]{32}$/.test(c.pagina)?{chamada:c.chamada,pagina:c.pagina}:{}),indicativo:true};
   for (const campo of ['totalMs','esperaLockMs','preparacaoMs','execucaoMs','planoMs','gravacaoMs','outrosMs']) {
     if (typeof meta[campo] !== 'number' || !Number.isFinite(meta[campo]) || meta[campo] < 0 || meta[campo] > 3600000) return null;
     tempos[campo] = Math.round(meta[campo]);
@@ -8258,21 +8259,41 @@ function lerTemposServidorGestor() {
     });
   } catch (_) { return []; }
 }
+var paginaRastroDiagnosticoGestor;
+function criarRastroDiagnosticoGestor(){
+ try{
+  const gerar=()=>{if(typeof crypto!=='undefined'&&crypto.getRandomValues){const b=new Uint8Array(16);crypto.getRandomValues(b);return Array.from(b,n=>n.toString(16).padStart(2,'0')).join('');}return Array.from({length:32},()=>Math.floor(Math.random()*16).toString(16)).join('');};
+  if(!paginaRastroDiagnosticoGestor)paginaRastroDiagnosticoGestor=gerar();return {versao:1,pagina:paginaRastroDiagnosticoGestor,chamada:gerar()};
+ }catch(_){return undefined;}
+}
+function normalizarEntradaServidorGestor(acao,e){
+ if(!e||e.versao!==1||e.acao!==acao||!/^[A-Za-z]{1,80}$/.test(acao))return null;
+ const r={versao:1,acao};for(const k of ['inicioServidorMs','fimMedidoServidorMs','preparacaoMs','acaoMs','relogioMs','serializacaoMs','totalMedidoMs']){const v=e[k];if(!Number.isFinite(v)||v<0||v>(k.endsWith('ServidorMs')?8640000000000000:3600000))return null;r[k]=Math.round(v);}
+ if(r.fimMedidoServidorMs<r.inicioServidorMs)return null;
+ if(/^[a-f0-9]{32}$/.test(e.chamada)&&/^[a-f0-9]{32}$/.test(e.pagina)){r.chamada=e.chamada;r.pagina=e.pagina;}return r;
+}
+function lerEntradasServidorDiagnosticoGestor(){
+ try{const a=lerJSONLocalGestor('gestorEntradasServidorV1',[]);return (Array.isArray(a)?a:[]).slice(-30).flatMap(e=>{const r=normalizarEntradaServidorGestor(e?.acao,e);return r?[r]:[];});}catch(_){return [];}
+}
+function registrarEntradaServidorDiagnosticoGestor(acao,entrada){
+ try{const r=normalizarEntradaServidorGestor(acao,entrada);if(r)gravarArmazenamentoGestor('gestorEntradasServidorV1',JSON.stringify(lerEntradasServidorDiagnosticoGestor().concat(r).slice(-30)));}catch(_){}
+}
 // Somente cabeçalhos técnicos permitidos; nunca corpo, URL ou conteúdo do envio.
 function lerTransportesDiagnosticoGestor(){
  try{return (lerJSONLocalGestor('gestorTransportesV1',[])||[]).slice(-30).flatMap(e=>{
   if(!e||!/^[A-Za-z]{1,80}$/.test(e.acao)||typeof e.data!=='string'||!/^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(e.data))return [];
-  const r={data:e.data,acao:e.acao};if(typeof e.proxyInstrumentado==='boolean')r.proxyInstrumentado=e.proxyInstrumentado;
+  const r={data:e.data,acao:e.acao};if(/^[a-f0-9]{32}$/.test(e.chamada)&&/^[a-f0-9]{32}$/.test(e.pagina)){r.chamada=e.chamada;r.pagina=e.pagina;}if(typeof e.proxyInstrumentado==='boolean')r.proxyInstrumentado=e.proxyInstrumentado;
   for(const k of ['http','googleHttp','totalMs','lerCorpoMs','proxyCabecalhosMs','proxyCorpoMs','bytesResposta'])if(typeof e[k]==='number'&&Number.isFinite(e[k])&&e[k]>=0&&e[k]<=(k==='bytesResposta'?10485760:k==='http'||k==='googleHttp'?599:3600000))r[k]=Math.round(e[k]);
   if(['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(e.codigoProxy))r.codigoProxy=e.codigoProxy;return [r];
  });}catch(_){return [];}
 }
-function registrarTransporteConsultaGestor(acao,resposta,inicio,lerCorpoMs=0){
+function registrarTransporteConsultaGestor(acao,resposta,inicio,lerCorpoMs=0,rastro){
  try{
   if(!/^[A-Za-z]{1,80}$/.test(acao)||!resposta?.headers?.get)return;
   const numero=(v,max)=>{const n=Number(v);return v!==null&&v!==''&&Number.isFinite(n)&&n>=0&&n<=max?Math.round(n):undefined;};
   const cab=resposta.headers,tempos=JSON.parse(cab.get('X-Gestor-Tempos')||'{}'),codigo=cab.get('X-Gestor-Proxy-Codigo');
   const item={data:new Date().toISOString(),acao,proxyInstrumentado:cab.get('X-Gestor-Tempos')!==null||['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo),http:numero(resposta.status,599),googleHttp:numero(cab.get('X-Gestor-Upstream-Status'),599),codigoProxy:['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo)?codigo:undefined,totalMs:Math.max(0,Date.now()-inicio),lerCorpoMs:numero(lerCorpoMs,3600000),proxyCabecalhosMs:numero(tempos.cabecalhosMs,3600000),proxyCorpoMs:numero(tempos.corpoMs,3600000),bytesResposta:numero(cab.get('X-Gestor-Response-Bytes'),10485760)};
+  const chamada=cab.get('X-Gestor-Chamada')||rastro?.chamada,pagina=cab.get('X-Gestor-Pagina')||rastro?.pagina;if(/^[a-f0-9]{32}$/.test(chamada)&&/^[a-f0-9]{32}$/.test(pagina)){item.chamada=chamada;item.pagina=pagina;}
   const anteriores=lerTransportesDiagnosticoGestor();gravarArmazenamentoGestor('gestorTransportesV1',JSON.stringify((Array.isArray(anteriores)?anteriores:[]).concat(item).slice(-30)));
  }catch(_){}
 }
@@ -8289,7 +8310,7 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
 }
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
-  return { formato: 'gestor-diagnostico-v1', medicao:{versao:2,concorrencia:'Indicativa: executor financeiro, resumo e proteção/backup; cache pode expirar e outras rotinas podem não estar identificadas.',transportes:'Até 30 respostas HTTP; sem cabeçalhos técnicos do proxy não é possível atribuir a falha ao Google.'}, resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), transportes:lerTransportesDiagnosticoGestor(), geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', medicao:{versao:3,paginaAtual:paginaRastroDiagnosticoGestor,limiteEntrada:'Mede do início do doPost até preparar a resposta. Inicialização anterior ao doPost e entrega HTTP continuam fora dessa medição.',concorrencia:'Indicativa: executor financeiro, resumo e proteção/backup; cache pode expirar e outras rotinas podem não estar identificadas.',transportes:'Até 30 respostas HTTP; sem cabeçalhos técnicos do proxy não é possível atribuir a falha ao Google.'}, resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), transportes:lerTransportesDiagnosticoGestor(), entradasServidor:lerEntradasServidorDiagnosticoGestor(), geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();
@@ -10013,7 +10034,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v201', picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v202', picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

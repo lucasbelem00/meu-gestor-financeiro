@@ -447,3 +447,6 @@ Iniciar atualização e editar enquanto carga ainda está em voo; concluir leitu
 
 ### v201 — 12/11/2026 (local)
 Publicar Apps Script e frontend/proxy; coletar nova rodada incluindo carga inicial, salvar/editar/excluir, Mensal/Anual e recorrências. Diagnóstico deve conter transportes e execuções v201. Conferir espera com resumo/backup e observar indicação de concorrência quando disponível; cache vazio/expirado/indisponível não deve causar erro nem alterar trava. Cabeçalhos ausentes não provam falha do Google. Testar resposta HTTP Google, HTML inválido, timeout/conexão, erro na leitura do JSON e armazenamento cheio: envio permanece protegido, sem repetição automática de mutação. Verificar ausência de conteúdo financeiro/credenciais nos campos novos.
+
+### v202 — 12/11/2026 (local)
+Coletar abertura e operações após publicar backend e frontend/proxy. entradasServidor deve conter preparo/ação/relógio/serialização e mesmo código chamada de transportes. Página permanece igual até recarregar, chamada muda por tentativa. Quando concorrência tiver rastro, comparar com paginaAtual e transportes; rastro ausente permanece desconhecido. Testar autorização negada, metadado inválido, erro durante ação e envios repetidos com requestId original: comportamento financeiro preservado. Não interpretar proxy menos total doPost como rede pura.
