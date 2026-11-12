@@ -5,7 +5,7 @@ const item=(dados={})=>({pessoa:'Núbia',descricao:'Hollywood Burguer',forma:'Az
 
 test('uma compra à vista mostra um único valor e a data combinada, sem 1/1',()=>{
  const c=tela(),t=c.montarCobrancaMensagemGestor('Núbia',[item({dataCombinada:'14/11/2026'})],{status:'A Receber',mes:'10/2026'});
- assert.match(t,/Hollywood Burguer\*\n⚡ À vista\nCartão: Azul Skyline/);assert.match(t,/Devolver até: 14\/11\/2026/);assert.equal(t.match(/R\$ 41,00/g).length,1);assert.match(t,/Valor a devolver: R\$ 41,00/);assert(!t.includes('1/1'));
+ assert.match(t,/Hollywood Burguer\*\n⚡ À vista\nCartão: Azul Skyline/);assert.match(t,/Devolução combinada: 14\/11\/2026/);assert.equal(t.match(/R\$ 41,00/g).length,1);assert.match(t,/Valor a devolver: R\$ 41,00/);assert(!t.includes('1/1'));
 });
 test('várias compras separam parcelas, formas e competências sem presumir Pix sempre à vista',()=>{
  const c=tela(),t=c.montarCobrancaMensagemGestor('Núbia',[item(),item({compraId:'compra-2',descricao:'Roupas',forma:'Pix',parcela:'3/6',mesFatura:'11/2026',valorRaw:75})],{status:'A Receber'});
@@ -13,7 +13,7 @@ test('várias compras separam parcelas, formas e competências sem presumir Pix 
 });
 test('recebidos são resumo de recebimentos, sem data de cobrança ou total a devolver',()=>{
  const t=tela().montarCobrancaMensagemGestor('Núbia',[item({status:'Recebido',dataCombinada:'14/11/2026'})],{status:'Recebido'});
- assert.match(t,/Valores recebidos/);assert.match(t,/Total Recebido: R\$ 41,00/);assert(!t.includes('a devolver'));assert(!t.includes('Devolver até'));assert.equal(t.match(/R\$ 41,00/g).length,1);
+ assert.match(t,/Valores recebidos/);assert.match(t,/Total Recebido: R\$ 41,00/);assert(!t.includes('a devolver'));assert(!t.includes('Devolução combinada'));assert.equal(t.match(/R\$ 41,00/g).length,1);
 });
 test('recebimento parcial conhecido explica valor original e saldo sem cobrar a parte recebida',()=>{
  const c=tela(),aberto=item({valorRaw:31}),pago=item({valorRaw:10,status:'Recebido'}),t=c.montarCobrancaMensagemGestor('Núbia',[aberto],{status:'A Receber'},[aberto,pago]);

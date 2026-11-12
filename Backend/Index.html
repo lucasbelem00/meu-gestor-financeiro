@@ -226,6 +226,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 #selFiltroRelPeriodo::-webkit-datetime-edit,#mesAgendaGestor::-webkit-datetime-edit{display:block;text-align:center}
 #selFiltroRelPeriodo::-webkit-date-and-time-value,#mesAgendaGestor::-webkit-date-and-time-value{text-align:center}
 </style>
+<style id="gestor-previa-whatsapp-altura">
+#modalPixCobranca>div{max-height:94vh;max-height:94dvh}
+#textoModalPixCobranca{height:clamp(220px,45vh,480px);height:clamp(220px,45dvh,480px);resize:vertical}
+</style>
 </head>
 <body class="min-h-screen flex flex-col relative">
 
@@ -265,7 +269,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📲 Prévia para WhatsApp</h3>
         <button type="button" onclick="fecharModalPixCobranca()" aria-label="Fechar" class="text-slate-400 hover:text-white bg-slate-700 px-2.5 py-1 rounded-lg">✕</button>
       </div>
-      <textarea id="textoModalPixCobranca" rows="9" aria-label="Mensagem para WhatsApp editável" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
+      <textarea id="textoModalPixCobranca" rows="14" aria-label="Mensagem para WhatsApp editável" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-sm leading-relaxed focus:border-emerald-500 outline-none"></textarea>
       <label id="linhaIncluirPixCobranca" class="hidden flex items-start gap-2.5 rounded-xl bg-slate-900/70 border border-slate-700 p-3 cursor-pointer">
         <input id="chkIncluirPixCobranca" type="checkbox" class="mt-0.5 w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
         <span class="text-xs text-slate-200">Incluir minha chave Pix nesta mensagem</span>
@@ -4767,7 +4771,7 @@ function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
     if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>String(r.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()===String(pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
     const bloco=['• *'+textoLinhaMensagemGestor(it.descricao)+'*',tipoCompraMensagemGestor(it.parcela),formaMensagemGestor(it.forma)];
     if(it.mesFatura&&(!f.mes||it.mesFatura!==f.mes))bloco.push('Referência: '+textoLinhaMensagemGestor(it.mesFatura));
-    if(g.aberto>0&&it.dataCombinada)bloco.push('Devolver até: '+textoLinhaMensagemGestor(it.dataCombinada));
+    if(g.aberto>0&&it.dataCombinada)bloco.push('Devolução combinada: '+textoLinhaMensagemGestor(it.dataCombinada));
     if(g.aberto>0){
       if(recebidoGrupo>0){bloco.push('Valor: '+formatBRL((g.aberto+recebidoGrupo)/100),'Já recebido: '+formatBRL(recebidoGrupo/100));if(!unico)bloco.push('Falta devolver: *'+formatBRL(g.aberto/100)+'*');}
       else if(!unico)bloco.push('Valor: *'+formatBRL(g.aberto/100)+'*');
@@ -5446,13 +5450,17 @@ function transferirSimulacaoGestor(emp) {
   const id=emp?'formEmprestimo':'formLancamento',form=document.getElementById(id);
   const assinatura=()=>JSON.stringify(Array.from(form.elements).map(e=>[e.id,e.value,e.checked]));
   const antes=assinatura();
+  const camposSim=['simDescricao','simValor','simParcelas','simAVista','simData','simCartao'];
+  const assinaturaSim=()=>JSON.stringify(camposSim.map(id=>document.getElementById(id)?.value||''));
+  const antesSim=assinaturaSim(),descricao=String(document.getElementById('simDescricao')?.value||'').trim();
   function aplicar(){
-    if(bloqueado()||assinatura()!==antes){mostrarAviso('O formulário mudou','Os campos foram preservados. Confira e transfira a simulação novamente.');return;}
-    if(emp){limparFormularioEmprestimo();preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos','novo');document.getElementById('inpEmpPessoa').focus();}
-    else{limparFormularioNovoGasto();preencherDataTripla('novo',s.data);document.getElementById('selForma').value=s.forma;document.getElementById('inpParc').value=s.n;document.getElementById('inpParcIni').value='1';definirValorMoeda('inpValor',s.valor);atualizarRegrasForma();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();}
+    if(bloqueado()||assinatura()!==antes||assinaturaSim()!==antesSim){mostrarAviso('O formulário mudou','Os campos foram preservados. Confira e transfira a simulação novamente.');return;}
+    if(emp){limparFormularioEmprestimo();document.getElementById('inpEmpDesc').value=descricao;preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos','novo');document.getElementById('inpEmpPessoa').focus();}
+    else{limparFormularioNovoGasto();document.getElementById('inpDesc').value=descricao;preencherDataTripla('novo',s.data);document.getElementById('selForma').value=s.forma;document.getElementById('inpParc').value=s.n;document.getElementById('inpParcIni').value='1';definirValorMoeda('inpValor',s.valor);atualizarRegrasForma();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();}
+    limparSimuladorTudo(true);
     mostrarAviso('Simulação preenchida','Confira os campos e complete os dados antes de salvar. Nenhum lançamento foi gravado.');
   }
-  if(haRascunhoFormularioGestor(emp))mostrarConfirmacao('Substituir o rascunho?', 'Já existem dados no formulário. Deseja substituí-los pelos valores desta simulação? Pessoa, descrição e parcela inicial antigas serão limpas.',aplicar,false,'Substituir rascunho','neutral');else aplicar();
+  if(haRascunhoFormularioGestor(emp))mostrarConfirmacao('Substituir o rascunho?', 'Já existem dados no formulário. Deseja substituí-los pelos valores desta simulação? Os campos serão preenchidos com a compra simulada e o simulador será limpo.',aplicar,false,'Substituir rascunho','neutral');else aplicar();
 }
 function haRascunhoFormularioGestor(emp) {
   return !rascunhoFormularioVazioRotinaGestor(emp?'emp':'novo',dadosFormularioRascunhoGestor(emp));
@@ -7104,7 +7112,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       return resultado;
     };
 
-function limparSimuladorTudo() {
+function limparSimuladorTudo(silencioso=false) {
   const nome=document.getElementById('simDescricao');if(nome)nome.value='';
       const inpVal = document.getElementById('simValor');
       if (inpVal) inpVal.value = '';
@@ -7115,7 +7123,7 @@ function limparSimuladorTudo() {
       document.getElementById('simCartao').value = '';
       toggleBotaoLimpar('simValor', 'btnLimparSimValor');
       rodarSimuladorCompra();
-      mostrarAviso('Limpo', 'Simulador zerado!');
+      if(!silencioso)mostrarAviso('Limpo', 'Simulador zerado!');
     }
 
 // Função para avançar/recuar o Mês Fatura através das Setas
@@ -9962,7 +9970,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v192', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v194', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

@@ -420,3 +420,9 @@ v191: conferir em 320/390 px e desktop mês e ano completos entre setas, PDF cen
 
 ### v192 — 11/11/2026 (local)
 Conferir mês/ano centralizados em Agenda/Mensal no celular e computador, mantendo texto completo e seletor funcional. Repetir salvar/editar/excluir e comparar tempos com v191. Testes de fórmulas: rejeitar fórmulas em B:G das formas e B/D das categorias, ignorar C das categorias como antes, detectar fórmula acrescentada entre chamadas; caminho virtual sem nova leitura real. Validação real e publicação pendentes.
+
+### v193 — 12/11/2026 (local)
+Simular compra com nome, valor, cartão e parcelas; transferir separadamente para pessoal e terceiro, conferir descrição, valores e rascunho após recarga; origem deve zerar após transferência. Cancelar substituição ou alterar campos enquanto confirmação aberta deve preservar origem/destino. Compra sem nome continua com descrição vazia. Não há lançamento automático.
+
+### v194 — 12/11/2026 (local)
+Abrir prévias em Empréstimos, Histórico, Simulador e Dividir com a galera: conferir área maior, edição/cópia, botão fechar e acesso ao botão copiar com teclado aberto ou tela baixa por rolagem. Empréstimo aberto com data exibe Devolução combinada; totalmente recebido não cobra data.

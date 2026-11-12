@@ -482,3 +482,6 @@ dadosAnoGestor_(e,somenteAba) em shared/anual.js: projeção de valores só para
 
 ### v192 — 11/11/2026 (local)
 Módulos 3/5/10: shared/relatorios.js, entradasCalculadasResumoGestor_ limita a leitura real de fórmulas às entradas financeiras de configuração. Mantém verificação virtual e leituras frescas por chamada. Não há novo cache nem alteração do contrato da resposta confirmada.
+
+### v193 — 12/11/2026 (local)
+Módulo 7: transferirSimulacaoGestor em interface/usabilidade.js captura descrição e assinatura da simulação, preenche e salva rascunho de destino e chama limparSimuladorTudo(true) após sucesso. Função de limpeza no HTML aceita modo silencioso, mantendo limpeza manual com aviso.

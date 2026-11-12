@@ -227,13 +227,17 @@ function transferirSimulacaoGestor(emp) {
   const id=emp?'formEmprestimo':'formLancamento',form=document.getElementById(id);
   const assinatura=()=>JSON.stringify(Array.from(form.elements).map(e=>[e.id,e.value,e.checked]));
   const antes=assinatura();
+  const camposSim=['simDescricao','simValor','simParcelas','simAVista','simData','simCartao'];
+  const assinaturaSim=()=>JSON.stringify(camposSim.map(id=>document.getElementById(id)?.value||''));
+  const antesSim=assinaturaSim(),descricao=String(document.getElementById('simDescricao')?.value||'').trim();
   function aplicar(){
-    if(bloqueado()||assinatura()!==antes){mostrarAviso('O formulário mudou','Os campos foram preservados. Confira e transfira a simulação novamente.');return;}
-    if(emp){limparFormularioEmprestimo();preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos','novo');document.getElementById('inpEmpPessoa').focus();}
-    else{limparFormularioNovoGasto();preencherDataTripla('novo',s.data);document.getElementById('selForma').value=s.forma;document.getElementById('inpParc').value=s.n;document.getElementById('inpParcIni').value='1';definirValorMoeda('inpValor',s.valor);atualizarRegrasForma();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();}
+    if(bloqueado()||assinatura()!==antes||assinaturaSim()!==antesSim){mostrarAviso('O formulário mudou','Os campos foram preservados. Confira e transfira a simulação novamente.');return;}
+    if(emp){limparFormularioEmprestimo();document.getElementById('inpEmpDesc').value=descricao;preencherDataTripla('emp',s.data);document.getElementById('selEmpForma').value=s.forma;document.getElementById('inpEmpParc').value=s.n;document.getElementById('inpEmpParcIni').value='1';definirValorMoeda('inpEmpValor',s.valor);atualizarFaturaEmprestimo();atualizarPreviewParcEmp();salvarRascunhoEmp();abrirFerramenta('emprestimos','novo');document.getElementById('inpEmpPessoa').focus();}
+    else{limparFormularioNovoGasto();document.getElementById('inpDesc').value=descricao;preencherDataTripla('novo',s.data);document.getElementById('selForma').value=s.forma;document.getElementById('inpParc').value=s.n;document.getElementById('inpParcIni').value='1';definirValorMoeda('inpValor',s.valor);atualizarRegrasForma();salvarRascunho();setAba('novo');document.getElementById('inpDesc').focus();}
+    limparSimuladorTudo(true);
     mostrarAviso('Simulação preenchida','Confira os campos e complete os dados antes de salvar. Nenhum lançamento foi gravado.');
   }
-  if(haRascunhoFormularioGestor(emp))mostrarConfirmacao('Substituir o rascunho?', 'Já existem dados no formulário. Deseja substituí-los pelos valores desta simulação? Pessoa, descrição e parcela inicial antigas serão limpas.',aplicar,false,'Substituir rascunho','neutral');else aplicar();
+  if(haRascunhoFormularioGestor(emp))mostrarConfirmacao('Substituir o rascunho?', 'Já existem dados no formulário. Deseja substituí-los pelos valores desta simulação? Os campos serão preenchidos com a compra simulada e o simulador será limpo.',aplicar,false,'Substituir rascunho','neutral');else aplicar();
 }
 function haRascunhoFormularioGestor(emp) {
   return !rascunhoFormularioVazioRotinaGestor(emp?'emp':'novo',dadosFormularioRascunhoGestor(emp));

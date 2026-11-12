@@ -88,7 +88,7 @@ function montarCobrancaMensagemGestor(pessoa,itens,filtros,contexto=itens){
     if(f.status==='A Receber'&&g.chave)recebidoGrupo=contexto.filter(r=>String(r.pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()===String(pessoa||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase()&&r.status==='Recebido'&&chaveParcelaMensagemGestor(r)===g.chave).reduce((s,r)=>s+Math.round(Number(r.valorRaw)*100),0);
     const bloco=['• *'+textoLinhaMensagemGestor(it.descricao)+'*',tipoCompraMensagemGestor(it.parcela),formaMensagemGestor(it.forma)];
     if(it.mesFatura&&(!f.mes||it.mesFatura!==f.mes))bloco.push('Referência: '+textoLinhaMensagemGestor(it.mesFatura));
-    if(g.aberto>0&&it.dataCombinada)bloco.push('Devolver até: '+textoLinhaMensagemGestor(it.dataCombinada));
+    if(g.aberto>0&&it.dataCombinada)bloco.push('Devolução combinada: '+textoLinhaMensagemGestor(it.dataCombinada));
     if(g.aberto>0){
       if(recebidoGrupo>0){bloco.push('Valor: '+formatBRL((g.aberto+recebidoGrupo)/100),'Já recebido: '+formatBRL(recebidoGrupo/100));if(!unico)bloco.push('Falta devolver: *'+formatBRL(g.aberto/100)+'*');}
       else if(!unico)bloco.push('Valor: *'+formatBRL(g.aberto/100)+'*');

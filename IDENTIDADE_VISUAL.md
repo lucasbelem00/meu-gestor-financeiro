@@ -246,3 +246,6 @@ Mensal no celular: navegação de largura total com grid 32px/minmax(0,1fr)/32px
 
 ### v192 — 11/11/2026 (local)
 Agenda e Mensal centralizam o texto do campo month e os invólucros nativos WebKit. Preservadas larguras, alturas, setas e acionamento nativo. Conferir no celular real; representação depende do navegador.
+
+### v194 — 12/11/2026 (local)
+Prévia compartilhada WhatsApp: área de mensagem responsiva 220–480px/45dvh, fallback vh, redimensionável verticalmente; janela até 94dvh com rolagem para telas pequenas e teclado aberto. Devolução combinada é o rótulo amigável da data em cobranças.
