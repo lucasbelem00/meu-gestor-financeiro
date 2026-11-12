@@ -252,3 +252,12 @@ Prévia compartilhada WhatsApp: área de mensagem responsiva 220–480px/45dvh, 
 
 ### v195 — 12/11/2026 (local)
 Lucas constatou em aparelho que v192 ainda alinhava Mensal à esquerda, apesar da Agenda correta. Ajuste específico no editor interno do input month mensal: ocupar largura disponível, centralizar o invólucro dos campos e remover margem do indicador. Agenda preservada. Exige conferir novamente no Android real; teste local não prova renderização nativa do aparelho. Publicação pendente.
+
+### v196 — 12/11/2026 (local)
+Usuário confirmou persistência do desalinhamento no Mensal. Removida classe compacta controle-periodo-select do input month mensal (fonte/tamanho/padding próprios) e regras especiais de largura/flex do editor interno da tentativa v195. Campo passa a usar as mesmas classes nativas de Agenda, mantendo altura mensal 32px e padding horizontal simétrico de 12px. Centralização comum preservada, sem mudança em consultas/períodos. Conferência visual no Android real e publicação pendentes; não declarar problema visual resolvido só por testes de código.
+
+### v197 — 12/11/2026 (local)
+Agenda: a partir de 1024px, grupo Mês/setas e grupo Tipo/Situação ficam lado a lado, com campos alinhados pela base e espaço de 16px. Abaixo desse limite mantém disposição móvel anterior. CSS restrito ao contêiner da Agenda; sem alteração em dados ou filtros. Conferir desktop e celular após publicar; publicação não realizada nesta execução.
+
+### v198 — 12/11/2026 (local)
+Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro; tocar outro dia troca seleção. Mantidos filtros Tipo/Situação, foco no botão do dia, aria-pressed e botão Ver o mês inteiro. Operação local, sem nova consulta ou alteração financeira. Conferir seleção/desseleção no celular após publicar.

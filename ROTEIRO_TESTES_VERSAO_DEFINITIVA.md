@@ -429,3 +429,12 @@ Abrir prévias em Empréstimos, Histórico, Simulador e Dividir com a galera: co
 
 ### v195 — 12/11/2026 (local)
 Após publicar, conferir especificamente Android Mensal: novembro de 2026 centralizado no espaço interno, texto completo, indicador e setas funcionais. Agenda deve manter aparência anterior. CSS atua no invólucro nativo WebKit; validação no aparelho é necessária.
+
+### v196 — 12/11/2026 (local)
+Conferir no Android após publicação que Mensal usa apresentação nativa equivalente à Agenda: texto centralizado e completo, sem negrito compacto, seletor, setas e PDF preservados. 25 testes locais não substituem conferência visual nativa.
+
+### v197 — 12/11/2026 (local)
+Agenda: a partir de 1024px, grupo Mês/setas e grupo Tipo/Situação ficam lado a lado, com campos alinhados pela base e espaço de 16px. Abaixo desse limite mantém disposição móvel anterior. CSS restrito ao contêiner da Agenda; sem alteração em dados ou filtros. Conferir desktop e celular após publicar; publicação não realizada nesta execução.
+
+### v198 — 12/11/2026 (local)
+Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro; tocar outro dia troca seleção. Mantidos filtros Tipo/Situação, foco no botão do dia, aria-pressed e botão Ver o mês inteiro. Operação local, sem nova consulta ou alteração financeira. Conferir seleção/desseleção no celular após publicar.
