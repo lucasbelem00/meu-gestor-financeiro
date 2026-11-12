@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v199');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v200');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -481,3 +481,19 @@ test('falha na carga inicial conserva o envio sem disparar gravação nem repeti
 test('servidor antigo impede salvar após a checagem coordenada',async()=>{const chamadas=[];let a;a=ambiente(async acao=>{chamadas.push(acao);a.ctx.protocoloServidorGestor=4;return {protocoloGestor:4};},false,{protocoloServidorGestor:0});await assert.rejects(a.ctx.apiCall('salvarLancamentoWeb',{}),/Atualize/);assert.deepEqual(chamadas,['getDadosCompletos']);});
 
 test('checagem inicial retoma dentro do coordenador sem disparar bloqueio visual de envio duplicado',async()=>{const chamadas=[];let a;a=ambiente(async acao=>{chamadas.push(acao);if(acao==='getDadosCompletos'){a.ctx.protocoloServidorGestor=19;return {protocoloGestor:19};}return {confirmado:true};},false,{protocoloServidorGestor:0});const interna=a.ctx.apiCall;let ocupado=false;a.ctx.apiCall=function(acao,...args){if(acao==='getDadosCompletos')return interna(acao,...args);if(ocupado)throw Error('envio duplicado');ocupado=true;return interna(acao,...args).finally(()=>ocupado=false);};assert.equal((await a.ctx.apiCall('salvarLancamentoWeb',{})).confirmado,true);assert.deepEqual(chamadas,['getDadosCompletos','salvarLancamentoWeb']);assert.equal(ocupado,false);});
+
+test('carga antiga não se repete durante gravação e recarga superada não envia outra consulta',async()=>{
+ const chamadas=[],c=coordenador({executar:acao=>new Promise(resolve=>chamadas.push({acao,resolve}))});let vigente=true;
+ const antiga=c.consultarDadosRecarga(()=>vigente),cancelada=assert.rejects(antiga,e=>e.codigo==='CONSULTA_SUBSTITUIDA');await aguardar();
+ const editar=c.chamar('editarLancamentoLinhaWeb',{});await aguardar();assert.equal(chamadas.length,2);
+ chamadas[0].resolve({saldo:100});await aguardar();assert.equal(chamadas.length,2);
+ vigente=false;chamadas[1].resolve({sucesso:true});await editar;await cancelada;assert.equal(chamadas.length,2);
+ assert(c.metricas().esperasConsultas.some(e=>e.motivo==='gravacao'));
+ const atual=c.consultarDadosRecarga(()=>true);await aguardar();assert.equal(chamadas.length,3);chamadas[2].resolve({saldo:40});assert.equal((await atual).saldo,40);
+});
+test('repetição direta espera gravação mas primeira consulta de protocolo permanece livre',async()=>{
+ const chamadas=[],c=coordenador({executar:acao=>new Promise(resolve=>chamadas.push({acao,resolve}))});
+ const leitura=c.chamar('getDadosCompletos');await aguardar();const editar=c.chamar('editarLancamentoLinhaWeb',{});await aguardar();
+ chamadas[0].resolve({antigo:true});await aguardar();assert.equal(chamadas.length,2);
+ chamadas[1].resolve({sucesso:true});await editar;await aguardar();assert.equal(chamadas.length,3);chamadas[2].resolve({novo:true});assert.equal((await leitura).novo,true);
+});

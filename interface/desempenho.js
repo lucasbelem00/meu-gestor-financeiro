@@ -96,6 +96,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
       return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
     }
+    // A repetição de uma carga antiga pode nascer depois que a edição começou.
+    // Aguarda só a repetição; consultas diretas de protocolo continuam livres.
+    if(acao==='getDadosCompletos'&&repeticoes>0&&mutacoesPendentes.size){
+      return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
+    }
     // A resposta da carga completa invalida relatórios. Se ela já está em
     // andamento, esperar antes de enviar evita uma consulta descartada e refeita.
     if ((cacheaveis.has(acao)||leiturasDeTela.has(acao)) && cargasCompletas.size) {
@@ -218,6 +223,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   return {
     chamar, invalidar,
     consultarHistorico:(param,continuar)=>consultar('filtrarLancamentosWeb',copiar(param),[],0,continuar),
+    consultarDadosRecarga:continuar=>consultar('getDadosCompletos',undefined,[],0,continuar),
     consumirAtualizacaoConfirmada:()=>{
       const item=atualizacaoConfirmada;atualizacaoConfirmada=null;
       if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
@@ -237,7 +243,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v199', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v200', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -348,7 +354,7 @@ function concluirAtualizacaoDadosRecargaGestor(dados){
 
 // Somente a recarga visual pode consumir a resposta da gravação. Consultas
 // internas de protocolo, confirmação e API direta continuam consultando a rede.
-function consultarDadosRecargaGestor(){
+function consultarDadosRecargaGestor(continuar){
   const dados=coordenadorLeiturasDesempenhoGestor.consumirAtualizacaoConfirmada();
   if(dados){
     try{

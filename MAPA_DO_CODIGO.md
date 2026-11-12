@@ -488,3 +488,6 @@ Módulo 7: transferirSimulacaoGestor em interface/usabilidade.js captura descri�
 
 ### v199 — 12/11/2026 (local)
 Módulos 1/3/5/6/10: hashGestor_ no Backend mantém cache de SHA por conteúdo serializado integral com limite de memória, só durante executor. Mesmo algoritmo e leituras frescas; cache não é de registros nem por identidade mutável. shared/anual.js usa memo de referências para existência do catálogo e base de controle. Contadores numéricos passam por registrarTemposRespostaGestor_ e normalizador do diagnóstico no HTML.
+
+### v200 — 12/11/2026 (local)
+Módulo2 integra módulo5: criarCoordenadorLeiturasGestor em interface/desempenho.js fornece consultarDadosRecarga(continuar); consultarDadosRecargaGestor recebe predicado de vigência de carregarDados (HTML). Repetições de cargas antigas aguardam gravação; primeira consulta direta de protocolo livre. Predicado é reconferido antes de enviar e após aguardar/repetir.

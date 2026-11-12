@@ -441,3 +441,6 @@ Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro
 
 ### v199 — 12/11/2026 (local)
 Repetir salvar/editar/excluir, Mensal/Anual e recorrências após atualizar Apps Script e frontend. Conferir contadores hashesCalculados/hashesGrandesReutilizados e tempos, sem prometer ganho por teste local. Exercitar timeout/reenvio protegido sem duplicação. Testes devem provar nova chave em mutação da mesma matriz, igualdade de SHA, limites de memória, descarte entre execuções e integridade dos anos fechados/restauração/confirmação após escrita.
+
+### v200 — 12/11/2026 (local)
+Iniciar atualização e editar enquanto carga ainda está em voo; concluir leitura antiga durante gravação e verificar que não inicia repetição até gravação terminar. Recarga nova deve substituir velha sem nova rede da velha. Conferir salvamento/edição/timeout e reenvio protegido, dados finais e snapshot confirmado. Protocolo inicial e falhas devem continuar sem travamento. Rodada real: comparar esperas gravacao, cargas completas, descartes e tempos; não prometer redução pela simulação local.
