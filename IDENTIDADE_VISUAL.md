@@ -249,3 +249,6 @@ Agenda e Mensal centralizam o texto do campo month e os invólucros nativos WebK
 
 ### v194 — 12/11/2026 (local)
 Prévia compartilhada WhatsApp: área de mensagem responsiva 220–480px/45dvh, fallback vh, redimensionável verticalmente; janela até 94dvh com rolagem para telas pequenas e teclado aberto. Devolução combinada é o rótulo amigável da data em cobranças.
+
+### v195 — 12/11/2026 (local)
+Lucas constatou em aparelho que v192 ainda alinhava Mensal à esquerda, apesar da Agenda correta. Ajuste específico no editor interno do input month mensal: ocupar largura disponível, centralizar o invólucro dos campos e remover margem do indicador. Agenda preservada. Exige conferir novamente no Android real; teste local não prova renderização nativa do aparelho. Publicação pendente.

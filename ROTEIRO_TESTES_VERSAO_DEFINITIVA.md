@@ -426,3 +426,6 @@ Simular compra com nome, valor, cartão e parcelas; transferir separadamente par
 
 ### v194 — 12/11/2026 (local)
 Abrir prévias em Empréstimos, Histórico, Simulador e Dividir com a galera: conferir área maior, edição/cópia, botão fechar e acesso ao botão copiar com teclado aberto ou tela baixa por rolagem. Empréstimo aberto com data exibe Devolução combinada; totalmente recebido não cobra data.
+
+### v195 — 12/11/2026 (local)
+Após publicar, conferir especificamente Android Mensal: novembro de 2026 centralizado no espaço interno, texto completo, indicador e setas funcionais. Agenda deve manter aparência anterior. CSS atua no invólucro nativo WebKit; validação no aparelho é necessária.

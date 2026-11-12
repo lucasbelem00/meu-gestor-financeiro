@@ -225,6 +225,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 #selFiltroRelPeriodo,#mesAgendaGestor{text-align:center;text-align-last:center}
 #selFiltroRelPeriodo::-webkit-datetime-edit,#mesAgendaGestor::-webkit-datetime-edit{display:block;text-align:center}
 #selFiltroRelPeriodo::-webkit-date-and-time-value,#mesAgendaGestor::-webkit-date-and-time-value{text-align:center}
+/* O editor interno do month precisa ocupar o espaço disponível antes de centralizar. */
+#selFiltroRelPeriodo::-webkit-datetime-edit{flex:1;min-width:0;width:100%}
+#selFiltroRelPeriodo::-webkit-datetime-edit-fields-wrapper{display:flex;justify-content:center;width:100%;padding:0}
+#selFiltroRelPeriodo::-webkit-calendar-picker-indicator{margin-left:0;flex-shrink:0}
+
 </style>
 <style id="gestor-previa-whatsapp-altura">
 #modalPixCobranca>div{max-height:94vh;max-height:94dvh}
@@ -9970,7 +9975,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v194', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v195', esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

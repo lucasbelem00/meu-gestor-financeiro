@@ -1355,3 +1355,8 @@ Validação v193: 94 testes direcionados passaram, zero falhas (transferência, 
 Mensagem de empréstimos usa Devolução combinada em lugar de Devolver até. Prévia compartilhada de WhatsApp tem campo de mensagem maior (altura responsiva 220–480px, 45% da altura disponível) e limite da janela de 94% da altura disponível, com rolagem preservada para controles. Sem alteração de datas/regras de cobrança. Inclui v193 ainda local. Publicação e inspeção no celular pendentes.
 
 Validação local v194: 58 testes direcionados passaram, sem falhas (testes-v194.log), incluindo mensagem/cópia/prévia, transferência, rotina e identidade. Interfaces sincronizadas, dist preparado e diff --check sem erros. Última suíte completa permanece v192 (1.313); inspeção visual no aparelho ainda pendente. Somente frontend, sem nova publicação do Apps Script ou permissões necessárias.
+
+### v195 — 12/11/2026 (local)
+Lucas constatou em aparelho que v192 ainda alinhava Mensal à esquerda, apesar da Agenda correta. Ajuste específico no editor interno do input month mensal: ocupar largura disponível, centralizar o invólucro dos campos e remover margem do indicador. Agenda preservada. Exige conferir novamente no Android real; teste local não prova renderização nativa do aparelho. Publicação pendente.
+
+Validação local v195: 24 testes direcionados passaram, zero falhas (navegação mensal, interfaces e identidade). Build e dist concluídos, diff --check sem erros. Sem teste visual nativo no aparelho nesta execução. Somente frontend.
