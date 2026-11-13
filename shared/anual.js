@@ -319,7 +319,12 @@ function diagnosticoRecuperacaoAnosGestor_(ss,backup){
   return {necessaria:indisponiveis.length>0,indisponiveis:indisponiveis,assinatura:hashGestor_({catalogo:catalogo,estados:estados,indisponiveis:indisponiveis})};
 }
 function informarOrigemAnualResultadoGestor_(resultado,ctx){
-  if(!resultado||typeof resultado!=='object'||!ativoAnualGestor_(ctx.ssReal)||ctx.anosIndisponiveis?.size)return;
+  if(!resultado||typeof resultado!=='object')return;
+  criarInformadorOrigemAnualGestor_(ctx)(resultado);
+}
+function criarInformadorOrigemAnualGestor_(ctx){
+  if(!ativoAnualGestor_(ctx.ssReal)||ctx.anosIndisponiveis?.size)return function(){};
+  // Reutilização local somente entre os resultados da mesma resposta confirmada.
   // Metadados da mesma fotografia financeira; a aplicação do plano reconfere os destinos.
   const inicial=ctx.leituraFinanceiraInicial,catalogo=inicial?.ss===ctx.ssReal?inicial.catalogo:catalogoAnosGestor_(ctx.ssReal);
   const mapa=new Map(),fechados=new Map(catalogo.filter(e=>e.estado==='FECHADO').map(e=>[e.ano,e]));
@@ -330,5 +335,5 @@ function informarOrigemAnualResultadoGestor_(resultado,ctx){
   const atuais=new Map();for(const nome of ['Lançamentos','Empréstimos'])for(const r of ctx.ss.abas[nome]?.valores.slice(1)||[])atuais.set(String(r[11]),r);
   function estado(id){const o=mapa.get(String(id)),r=atuais.get(String(id))||o?.r,e=o?.e||fechados.get(parseMesFat(r?.[8]).a);if(!e)return null;return {ano:e.ano,fechadoEm:e.fechadoEm,incluidoDepois:!o,alteradoDepois:!o||hashGestor_(r)!==hashGestor_(o.r),pagoBancoNoFechamento:o?valorPagoBancoGestor_(o.r,o.emprestimo):null,recebidoNoFechamento:o?.emprestimo?o.r[9]==='Recebido':null};}
   function visitar(valor){if(!valor||typeof valor!=='object')return;if(Array.isArray(valor)){if(valor.length>=17&&typeof valor[13]==='string'){const e=estado(valor[13]);if(e)valor[21]=e;return;}valor.forEach(visitar);}else{if(valor.registroId){const e=estado(valor.registroId);if(e)valor.estadoAno=e;}for(const k of Object.keys(valor))if(k!=='estadoAno')visitar(valor[k]);}}
-  visitar(resultado);
+  return visitar;
 }

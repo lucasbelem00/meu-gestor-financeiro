@@ -456,3 +456,5 @@ Abrir app e acionar Atualizar enquanto consulta está em voo: deve aguardar, pre
 
 ### v204 — 12/11/2026 (local)
 Publicar Apps Script e frontend e repetir operações. Conferir estadoDimensoesEvitadas, anoMetadadosReutilizados e etapas do diário. Aba vazia preserva[]; zero/falso/fórmula vazia não podem desaparecer. Edição externa entre leituras deve ser percebida; identidade anual divergente e hash fechado continuam recusados. Ensaios de interrupção do diário/aplicação devem manter restauração e reenvio sem duplicação. Interpretar subetapas como detalhamento sobreposto e não prometer ganho só por contadores locais.
+
+Verificação v205 — módulos 2, 6 e 10: após publicar frontend e Apps Script, editar um lançamento com Histórico filtrado, conferir soma e Painel sem consulta extra, depois abrir Mensal/Anual. Confirmar origem e ajustes de anos fechados preservados, sem duplicações. Comparar `atualizacaoOrigemPrepararMs`/`atualizacaoOrigemAplicarMs` entre rodadas equivalentes; são subetapas, não tempos adicionais. Código e testes locais não comprovam publicação ou ganho na conta.
