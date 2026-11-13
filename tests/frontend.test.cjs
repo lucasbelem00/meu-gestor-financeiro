@@ -9,7 +9,7 @@ const flush=()=>new Promise(r=>setImmediate(r));
 function context(local=storage(),locks){const elements=new Map();const get=id=>{if(!elements.has(id))elements.set(id,el(id));return elements.get(id)};
  const c=vm.createContext({console,crypto,Uint8Array,AbortController,setTimeout,clearTimeout,setInterval,clearInterval,localStorage:local,sessionStorage:storage(),navigator:{onLine:true,...(locks?{locks}:{})},document:{getElementById:get,createElement:()=>el()},renderizarNotasUI(){},mostrarAviso(){},mostrarConfirmacao(){},formatBRL:n=>String(n),carregarDados(){return Promise.resolve(true)},estaNoAppsScript:()=>false,API_URL:'/mock',seguro:(n,f)=>f(),pxEl:get});c.window=c;
  vm.runInContext('let notasGlobais=[]; '+part("const GESTOR_FILA_PREFIXO",'    let emprestimosGlobal'),c);vm.runInContext(part('function capturarFormularioMutacaoGestor(','function atualizarIntegridadeServidorGestor('),c);c.elements=elements;return c}
-function loadApi(c){vm.runInContext(fs.readFileSync(root+'shared/acoes.js','utf8'),c);vm.runInContext(part("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),c);vm.runInContext('protocoloServidorGestor=5',c)}
+function loadApi(c){vm.runInContext(fs.readFileSync(root+'shared/acoes.js','utf8'),c);vm.runInContext(part("  seguro('apiCall'",'  /* ------------------------------------------------------------------ 2 */'),c);vm.runInContext('protocoloServidorGestor=19',c)}
 function evalc(c,s){return vm.runInContext(s,c)}
 function lockManager(){const owners=new Set();return{request:async(name,opts,fn)=>{if(owners.has(name))return fn(null);owners.add(name);try{return await fn({name})}finally{owners.delete(name)}}}}
 async function main(){

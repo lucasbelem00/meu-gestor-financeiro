@@ -53,6 +53,14 @@ function sincronizarMotor(){
   if(codigo.includes(inicio))codigo=codigo.slice(0,codigo.indexOf(inicio))+inicio+'\n'+fonte+'\n'+codigo.slice(codigo.indexOf(fim));
   else codigo+='\n'+inicio+'\n'+fonte+'\n'+fim+'\n';
   guardar(backend,codigo);
+  // A lista fica literal nos artefatos para manter os normalizadores autônomos.
+  const camposMetricas=JSON.stringify(require('../shared/metricas-diagnostico.cjs'));
+  for(const nome of ['index.html','Backend/Code.gs']){
+    const arquivo=path.join(raiz,nome),conteudo=ler(arquivo,'utf8');
+    const padrao=nome==='index.html'?/for\(const campo of \[[^\n]+?\]\)/:/if\(detalhes\)for\(const k of \[[^\n]+?\]\)/;
+    if(!padrao.test(conteudo))throw Error('Lista de métricas ausente: '+nome);
+    guardar(arquivo,conteudo.replace(padrao,nome==='index.html'?'for(const campo of '+camposMetricas+')':'if(detalhes)for(const k of '+camposMetricas+')'));
+  }
   for(const [destino,conteudo] of pendentes){
     for(let tentativa=0;;tentativa++){
       try{fs.writeFileSync(destino,conteudo);break;}

@@ -511,3 +511,9 @@ Manutenção 13/11/2026 (v205 local): `criarInformadorOrigemAnualGestor_` prepar
 v206 local (13/11/2026): catálogo anual usa leitura única de conteúdo para detectar vazio, sem dimensão preliminar; validações preservadas. Diagnóstico discrimina leitura do catálogo, obtenção de intervalo anual, ação principal e registro da atividade. Tempos são subetapas dos totais existentes, sem chamadas adicionais para medição.
 
 v208 local (13/11/2026): abertura virtual usa conteúdo atual para detectar vazio, sem dimensão preliminar. Métricas de obtenção de intervalo das abas virtuais e contagem de dimensões evitadas; intervalos anuais separados entre consulta e aplicação. Nenhuma memória de conteúdo ampliada entre operações.
+
+Revisão integrada 13/11/2026: consultar `AUDITORIA_MODULOS_20261113.md` para avaliação das dez áreas e prioridades. Mapa distingue fontes modulares, artefatos gerados, compatibilidade necessária e oportunidades de simplificação; revisão não modifica responsabilidades nem concede selo permanente de ausência de falhas.
+
+v209 local (13/11/2026): matrizFinanceiraAnualGestor_ reutiliza fotografia privada de montagem sem cópia integral intermediária, preservando cópia de entrada e de cada linha de saída. ajustesAnuaisGestor_ usa uma leitura para vazio/conteúdo. organizarEAtualizarPlanilha mede leitura, preparação e sort, sem mudar ordem/status. Novos campos de diagnóstico permitidos no servidor e frontend.
+
+v210 local (13/11/2026): shared/acoes.js define protocoloMinimoAcaoGestor para o transporte e coordenador; interface/rotina.js deixa de instalar sua camada de API de protocolo. shared/metricas-diagnostico.cjs alimenta o gerador com lista única, literal nos destinos. lerLancamentosParaRelatorio aceita anosPreparacao opcional; somente Anual usa o recorte de materialização, sem reduzir leitura/conferência global. Mensal e Histórico mantêm contrato anterior.

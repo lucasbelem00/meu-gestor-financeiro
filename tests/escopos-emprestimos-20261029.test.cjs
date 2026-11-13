@@ -29,9 +29,11 @@ test('prévia de troca para Pix usa valor antigo nas parcelas anteriores e novo 
 test('escopo inválido e aplicação em conjunto partindo de recebido são recusados',()=>{
  const a=ambiente();assert.throws(()=>api(a,'editarEmprestimoLinhaWeb',pedido(a,{escopoValorParcelas:'todas',requestId:'escopos-invalido-001'})),/onde aplicar/);const b=ambiente(),r=item(b,'3/4'),p=pedido(b,{registroId:r[11],versao:r[13],linha:4,mesOriginal:r[8],parcelaOriginal:r[6],mesFatura:r[8],status:r[9]});assert.throws(()=>api(b,'previaEdicaoEmprestimoWeb',p),/parcelas a receber/);
 });
-test('editor novo exige servidor compatível antes de consultar prévia ou enviar alterações',async()=>{
- const chamadas=[],c=vm.createContext({protocoloServidorGestor:16,metadadosAcaoGestor:()=>({exigeProtocoloAtual:false}),apiCall:async n=>{chamadas.push(n);}});c.window=c;const s=fs.readFileSync('interface/rotina.js','utf8'),i=s.indexOf('const apiAntesRotinaGestor='),f=s.indexOf('function alternarModoEmprestimosGestor(',i);vm.runInContext(s.slice(i,f),c);
- await assert.rejects(c.apiCall('previaEdicaoEmprestimoWeb',{escopoValorParcelas:'proximas'}),/Backend\/Code.gs/);assert.deepEqual(chamadas,['getDadosCompletos']);c.protocoloServidorGestor=17;await c.apiCall('previaEdicaoEmprestimoWeb',{escopoValorParcelas:'proximas'});assert.equal(chamadas.at(-1),'previaEdicaoEmprestimoWeb');
+test('editor novo exige servidor compatível pelo contrato central antes da prévia',async()=>{
+ const chamadas=[],c=vm.createContext({protocoloServidorGestor:16,coordenadorLeiturasDesempenhoGestor:{aguardarCargasCompletas:()=>null},apiCall:async n=>{chamadas.push(n);}});c.window=c;
+ vm.runInContext(fs.readFileSync('shared/acoes.js','utf8'),c);
+ const s=fs.readFileSync('interface/desempenho.js','utf8'),i=s.indexOf('let verificacaoInicialCoordenadaGestor='),f=s.indexOf('window.apiCall = function apiCoordenadaDesempenhoGestor',i);vm.runInContext(s.slice(i,f),c);
+ await assert.rejects(c.conferirProtocoloAntesMutacaoGestor('previaEdicaoEmprestimoWeb',{escopoValorParcelas:'proximas'}),/Apps Script/);assert.deepEqual(chamadas,['getDadosCompletos']);c.protocoloServidorGestor=17;assert.equal(c.conferirProtocoloAntesMutacaoGestor('previaEdicaoEmprestimoWeb',{escopoValorParcelas:'proximas'}),null);
 });
 
 test('cada edição reinicia os dois menus em individual e limita opções para compra única ou recebida',()=>{

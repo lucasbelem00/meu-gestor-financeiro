@@ -257,7 +257,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v208', preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v210', preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -317,9 +317,8 @@ const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
 });
 let verificacaoInicialCoordenadaGestor=null;
 function conferirProtocoloAntesMutacaoGestor(acao,param){
-  if(typeof protocoloServidorGestor==='undefined'||typeof metadadosAcaoGestor!=='function'||leiturasDesempenhoGestor.has(acao))return null;
-  const meta=metadadosAcaoGestor(acao),escopo=['editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined;
-  const minimo=Math.max(meta.exigeProtocoloAtual?15:0,escopo?17:0,meta.diarioFinanceiro?5:0,['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)?7:0);
+  if(typeof protocoloServidorGestor==='undefined')return null;
+  const minimo=protocoloMinimoAcaoGestor(acao,param);
   if(protocoloServidorGestor>=minimo)return null;
   if(!verificacaoInicialCoordenadaGestor){
     verificacaoInicialCoordenadaGestor=Promise.resolve().then(async()=>{

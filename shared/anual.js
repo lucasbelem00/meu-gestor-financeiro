@@ -76,8 +76,8 @@ function garantirAnoGestor_(ss,ano){
   tabela.getRange(tabela.getLastRow()+1,1,1,6).setValues([linhaCatalogoAnoGestor_(e)]);SpreadsheetApp.flush();return e;
 }
 function ajustesAnuaisGestor_(ss){
-  const sh=obterAbaExecucaoGestor_(ss,ABA_AJUSTES_ANUAIS_GESTOR_);if(!sh||!sh.getLastRow())return [];
-  const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_AJUSTES_ANUAIS_GESTOR_))throw Error('Controle de ajustes anuais incompatível.');
+  const sh=obterAbaExecucaoGestor_(ss,ABA_AJUSTES_ANUAIS_GESTOR_);if(!sh)return [];
+  const linhas=medirEtapaConsultaGestor_('ajustesAnuaisLeituraMs',()=>sh.getDataRange().getValues());if(!linhas.some(r=>r.some(v=>v!==''&&v!=null)))return [];if(hashGestor_(linhas[0])!==hashGestor_(CAB_AJUSTES_ANUAIS_GESTOR_))throw Error('Controle de ajustes anuais incompatível.');
   const vistos=new Set();return linhas.slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map(function(r){const chave=r[0]+':'+r[1];if(!ehAbaRegistrosGestor_(r[0])||vistos.has(chave)||!r[1]||!['ATUALIZADO','EXCLUIDO'].includes(r[4]))throw Error('Ajuste anual inválido ou repetido.');vistos.add(chave);return r;});
 }
 function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
@@ -90,7 +90,7 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   if(leitura){leitura.controleVazio=leitura.controleVazio||new Map();leitura.controleVazio.set(nome,!valoresOriginais.slice(1).some(r=>r.some(v=>v!==''&&v!=null)));}
   const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
   for(const e of leitura?leitura.catalogo:catalogoAnosGestor_(ss)){
-    let dados;try{const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;if(leitura?.anos.has(chave))dados=copiarGestor_(leitura.anos.get(chave));else{dados=dadosAnoGestor_(e);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
+    let dados;try{const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;if(leitura?.anos.has(chave)){dados=leitura.anos.get(chave);const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.anoCopiasIntermediariasEvitadas=(d.anoCopiasIntermediariasEvitadas||0)+1;}else{dados=dadosAnoGestor_(e);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
     for(const r of dados.abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);
   }
   if(CONTEXTO_GESTOR_?.importarLegadoAnual)for(const e of catalogoAnualProtecaoGestor_(ss))for(const r of dadosArquivoAnualProtecaoGestor_(e).abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);

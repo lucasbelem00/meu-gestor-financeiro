@@ -87,10 +87,16 @@ function metadadosAcaoGestor(acao) {
   if (!meta) throw new Error('Ação não reconhecida nesta versão do aplicativo. Atualize a página antes de continuar.');
   return meta;
 }
+function protocoloMinimoAcaoGestor(acao,param){
+  const meta=metadadosAcaoGestor(acao);
+  const escopo=['previaEdicaoEmprestimoWeb','editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined;
+  const pacote=['previaRachadinhaWeb','registrarRachadinhaWeb','previaRecuperacaoOperacaoWeb','concluirRecuperacaoOperacaoWeb'].includes(acao);
+  return Math.max(meta.exigeProtocoloAtual?15:0,escopo?17:0,meta.diarioFinanceiro?5:0,pacote?6:0,['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)?7:0);
+}
 function acoesDoTipoGestor(tipo) {
   return Object.keys(CATALOGO_ACOES_GESTOR).filter(acao => CATALOGO_ACOES_GESTOR[acao].tipo === tipo);
 }
-if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO_ACOES_GESTOR, metadadosAcaoGestor, acoesDoTipoGestor };
+if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO_ACOES_GESTOR, metadadosAcaoGestor, acoesDoTipoGestor, protocoloMinimoAcaoGestor };
 // FIM CATALOGO ACOES GERADO
   </script>
 
@@ -3469,7 +3475,7 @@ const DICIONARIO_ACENTOS_PT = {
           return;
         }
       } catch (e) {}
-      for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-novo-'+campo);if(e)e.value='padrao';}
+      for(const campo of ["resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","tipo","prioridade"]){const e=document.getElementById('perfil-novo-'+campo);if(e)e.value='padrao';}
       var f = estadoIntegracaoInterfaceGestor.pxEl('formLancamento'); if (f) f.reset();
       ['inpDesc', 'inpValor', 'inpTags', 'inpMesFat'].forEach(function (id) { var el = estadoIntegracaoInterfaceGestor.pxEl(id); if (el) el.value = ''; });
       estadoIntegracaoInterfaceGestor.pxEl('selForma').value = '';
@@ -7413,13 +7419,11 @@ try {
       var ehLeitura = metaAcao.tipo === 'leitura';
       tentativas = metaAcao.repetirAutomaticamente ? Math.max(1, Math.min(2, Number(tentativas) || 2)) : 1;
       const controleCancelamento = action === 'cancelarOperacaoWeb' || action === 'concluirRecuperacaoOperacaoWeb';
-      const exigePacoteNovo = ['previaRachadinhaWeb','registrarRachadinhaWeb','previaRecuperacaoOperacaoWeb','concluirRecuperacaoOperacaoWeb'].includes(action);
-      if(['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(action)&&protocoloServidorGestor<7){await window.apiCall('getDadosCompletos',null,1);if(protocoloServidorGestor<7)throw new Error('Publique o Backend/Code.gs atualizado no Apps Script antes de editar valores. Os campos foram preservados.');}
-      if(exigePacoteNovo && protocoloServidorGestor<6){await window.apiCall('getDadosCompletos',null,1);if(protocoloServidorGestor<6)throw new Error('Publique também o novo Backend/Code.gs no Apps Script para usar esta atualização.');}
-      if (metaAcao.diarioFinanceiro && protocoloServidorGestor < 5) {
-        if (!verificacaoProtocoloGestor) verificacaoProtocoloGestor = window.apiCall('getDadosCompletos', null, 1).finally(function () { verificacaoProtocoloGestor = null; });
+      const minimoProtocolo=protocoloMinimoAcaoGestor(action,param);
+      if(protocoloServidorGestor<minimoProtocolo){
+        if(!verificacaoProtocoloGestor)verificacaoProtocoloGestor=window.apiCall('getDadosCompletos',null,1).finally(()=>{verificacaoProtocoloGestor=null;});
         await verificacaoProtocoloGestor;
-        if (protocoloServidorGestor < 5) throw new Error('Atualize a implantação do Apps Script antes de gravar: a nuvem ainda está com uma versão anterior do aplicativo. Seus dados continuam neste aparelho.');
+        if(protocoloServidorGestor<minimoProtocolo)throw Error('Atualize a implantação do Apps Script antes de usar esta ação. Seus campos e envios foram preservados.');
       }
       if(action==='sincronizarLoteWeb'&&Array.isArray(param))prepararMutacaoGestor(action,param);
       var chaveJournal = null;
@@ -8242,7 +8246,7 @@ function normalizarTemposServidorGestor(action, meta) {
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs','controleAnualConsultasEvitadas','estadoIntervaloMs','estadoValoresMs','estadoFormulasMs','estadoLeituras','estadoDimensoesEvitadas','estadoCelulasLidas','diarioEscritaMs','diarioFlushInicialMs','diarioAgendamentoMs','diarioProntoMs','diarioFlushProntoMs','aplicarConferenciaAnexosMs','aplicarConferenciaFinanceiraMs','anoMetadadosReutilizados','atualizacaoOrigemPrepararMs','atualizacaoOrigemAplicarMs','catalogoAnosLeituraMs','anoIntervaloMs','acaoPrincipalMs','atividadeRegistroMs','abasIntervaloMs','abasDimensoesEvitadas','anoIntervaloAplicacaoMs','anoIntervaloConsultaMs','anoIntervalosLidos']){
+    for(const campo of ['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs','controleAnualConsultasEvitadas','estadoIntervaloMs','estadoValoresMs','estadoFormulasMs','estadoLeituras','estadoDimensoesEvitadas','estadoCelulasLidas','diarioEscritaMs','diarioFlushInicialMs','diarioAgendamentoMs','diarioProntoMs','diarioFlushProntoMs','aplicarConferenciaAnexosMs','aplicarConferenciaFinanceiraMs','anoMetadadosReutilizados','atualizacaoOrigemPrepararMs','atualizacaoOrigemAplicarMs','catalogoAnosLeituraMs','anoIntervaloMs','acaoPrincipalMs','atividadeRegistroMs','abasIntervaloMs','abasDimensoesEvitadas','anoIntervaloAplicacaoMs','anoIntervaloConsultaMs','anoIntervalosLidos','anoCopiasIntermediariasEvitadas','ajustesAnuaisLeituraMs','ordenacaoLeituraMs','ordenacaoPrepararMs','ordenacaoSortMs','ordenacaoRegistros','relatorioRegistrosPreparados','relatorioRegistrosNaoPreparados']){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -9347,8 +9351,6 @@ renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGes
   let resumo=document.getElementById('resumoFiltrosEmpRotina');if(!resumo){resumo=document.createElement('p');resumo.id='resumoFiltrosEmpRotina';resumo.className='text-xs text-slate-200 break-words';box.before(resumo);}resumo.textContent=['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'].map(id=>document.getElementById(id)?.value || '').filter(Boolean).join(' · ') || 'Todos os empréstimos';return r;};
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
-const apiAntesRotinaGestor=window.apiCall;
-window.apiCall=async function(acao,param,...resto){const meta=metadadosAcaoGestor(acao),escopoNovo=['previaEdicaoEmprestimoWeb','editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined,minimo=escopoNovo?17:15;if((meta.exigeProtocoloAtual||escopoNovo)&&protocoloServidorGestor<minimo){await window.apiCall('getDadosCompletos',null,1);if(protocoloServidorGestor<minimo)throw Error('Atualize também o Backend/Code.gs no Apps Script antes de usar este editor. Seus campos e envios foram preservados.');}return apiAntesRotinaGestor(acao,param,...resto);};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -10048,7 +10050,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v208', preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v210', preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -10108,9 +10110,8 @@ const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
 });
 let verificacaoInicialCoordenadaGestor=null;
 function conferirProtocoloAntesMutacaoGestor(acao,param){
-  if(typeof protocoloServidorGestor==='undefined'||typeof metadadosAcaoGestor!=='function'||leiturasDesempenhoGestor.has(acao))return null;
-  const meta=metadadosAcaoGestor(acao),escopo=['editarEmprestimoLinhaWeb'].includes(acao)&&param?.escopoValorParcelas!==undefined;
-  const minimo=Math.max(meta.exigeProtocoloAtual?15:0,escopo?17:0,meta.diarioFinanceiro?5:0,['editarLancamentoLinhaWeb','editarEmprestimoLinhaWeb','editarAssinaturaWeb'].includes(acao)?7:0);
+  if(typeof protocoloServidorGestor==='undefined')return null;
+  const minimo=protocoloMinimoAcaoGestor(acao,param);
   if(protocoloServidorGestor>=minimo)return null;
   if(!verificacaoInicialCoordenadaGestor){
     verificacaoInicialCoordenadaGestor=Promise.resolve().then(async()=>{
