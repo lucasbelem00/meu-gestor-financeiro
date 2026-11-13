@@ -261,3 +261,5 @@ Agenda: a partir de 1024px, grupo Mês/setas e grupo Tipo/Situação ficam lado 
 
 ### v198 — 12/11/2026 (local)
 Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro; tocar outro dia troca seleção. Mantidos filtros Tipo/Situação, foco no botão do dia, aria-pressed e botão Ver o mês inteiro. Operação local, sem nova consulta ou alteração financeira. Conferir seleção/desseleção no celular após publicar.
+
+13/11/2026 — v207 local: Agenda identifica hoje com contorno azul fino, rótulo Hoje e indicação acessível de data atual. Fundos situacionais continuam visíveis; filtro selecionado mantém contorno mais forte. Ações de diagnóstico em Atividade usam grupo flexível com `gap-3` (12px), permitindo quebra no celular.
