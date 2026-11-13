@@ -17,7 +17,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs','controleAnualConsultasEvitadas'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ['resumoComparacaoMs','resumoGravacaoMs','resumoFlushMs','resumoControleMs','resumoCadastrosMs','resumoCatalogosMs','resumoRegistrosMs','resumoLegadosMs','resumoLeituraMs','resumoCalculoMs','resumoDashboardMs','resumoEscritaMs','resumoFormulasMs','atualizacaoMs','prepararBaseMs','prepararManutencaoMs','prepararDiarioMs','aplicarDestinosMs','aplicarLeituraMs','aplicarEscritaMs','aplicarFormatosMs','aplicarFlushMs','aplicarConferenciaMs','prepararCancelamentoMs','prepararPendenciasMs','prepararRecuperacaoMs','prepararReenvioMs','planoMudancasMs','planoAnualMs','atualizacaoPrepararMs','atualizacaoRecorrenciasMs','atualizacaoDadosMs','atualizacaoConferenciaMs','abasPlano','blocosEscritos','celulasEscritas','linhasFormatadas','linhasValidacaoStatus','abrirAbaMs','leituraAnosMs','anosLidos','linhasReordenadas','parcelasIncluidas','filtroLeituraMs','filtroVersaoMs','filtroResumoMs','filtroSelecaoMs','filtroPaginaMs','atividadeIndiceMs','atividadeEventosMs','atividadeMapaMs','atividadeDisponibilidadeMs','planilhasAbertas','planilhasReutilizadas','abrirPlanilhaMs','configProtecaoLeituras','configProtecaoReusos','abasConsultadas','abasReutilizadas','diarioCaracteresPlano','diarioPartes','anexosAgrupados','aplicarFlushes','anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs','anoHashMs','anoValoresLeituras','anoValoresEvitadas','anoLeiturasDirecionadas','hashesCalculados','hashesReutilizados','hashesGrandesReutilizados','bytesHashesGrandes','abasValoresMs','abasFormulasMs','abasLinhasLidas','abasCelulasLidas','anoCelulasValores','anoCelulasFormulas','observacaoMs','controleAnualConsultasEvitadas','estadoIntervaloMs','estadoValoresMs','estadoFormulasMs','estadoLeituras','estadoDimensoesEvitadas','estadoCelulasLidas','diarioEscritaMs','diarioFlushInicialMs','diarioAgendamentoMs','diarioProntoMs','diarioFlushProntoMs','aplicarConferenciaAnexosMs','aplicarConferenciaFinanceiraMs','anoMetadadosReutilizados'])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     const c=detalhes?.concorrencia;
     if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs))TEMPOS_RESPOSTA_GESTOR_.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(c.chamada)&&/^[a-f0-9]{32}$/.test(c.pagina)?{chamada:c.chamada,pagina:c.pagina}:{}),indicativo:true};
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
@@ -3891,9 +3891,14 @@ function migrarIdentidadesGestor_(aba, contexto) {
 }
 
 function lerEstadoAbaGestor_(sh) {
-  if (!sh || sh.getLastRow() === 0) return [];
-  const rng = sh.getDataRange(), valores = rng.getValues(), formulas = rng.getFormulas();
-  return valores.map(function (r, i) { return r.map(function (v, j) { return formulas[i][j] || v; }); });
+  if(!sh)return [];
+  const d=(typeof CONTEXTO_GESTOR_==='undefined'?null:CONTEXTO_GESTOR_?.detalhesGravacao)||(typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_?.detalhesIOGestor);
+  const medir=(etapa,fn)=>d?medirEtapaGravacaoGestor_(d,etapa,fn):fn();
+  // O próprio intervalo informa se está vazio; não consultar getLastRow antes.
+  const rng=medir('estadoIntervaloMs',()=>sh.getDataRange()),valores=medir('estadoValoresMs',()=>rng.getValues()),formulas=medir('estadoFormulasMs',()=>rng.getFormulas());
+  const matriz=valores.map((r,i)=>r.map((v,j)=>formulas[i]?.[j]||v));
+  if(d){d.estadoLeituras=(d.estadoLeituras||0)+1;d.estadoDimensoesEvitadas=(d.estadoDimensoesEvitadas||0)+1;d.estadoCelulasLidas=(d.estadoCelulasLidas||0)+valores.reduce((n,r)=>n+r.length,0);}
+  return matriz.some(r=>r.some(v=>v!==''&&v!=null))?matriz:[];
 }
 function criarPlanilhaVirtualGestor_(ss, contexto) {
   const abas = Object.create(null);
@@ -4171,6 +4176,9 @@ function formatarMoedasPlanoGestor_(sh,linhas,indices) {
   return blocos.reduce((n,b)=>n+b.fim-b.inicio+1,0);
 }
 function aplicarPlanoGestor_(ss, plano, detalhes) {
+  const memoAplicacao=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_,aplicacaoAnterior=memoAplicacao?.aplicandoPlanoGestor;
+  if(memoAplicacao)memoAplicacao.aplicandoPlanoGestor=true;
+  try{
   // O diário já está PRONTO. Anexos técnicos e dados partilham o flush da
   // aplicação; CONFIRMADO permanece uma etapa posterior à conferência.
   const mudancas=plano.mudancas||[],financeiras=mudancas.filter(m=>m.modo!=='anexar');
@@ -4242,14 +4250,15 @@ function aplicarPlanoGestor_(ss, plano, detalhes) {
     });
     aplicarAnexos();
     medir('aplicarFlushMs',()=>{SpreadsheetApp.flush();contar('aplicarFlushes',1);});
-    medir('aplicarConferenciaMs',conferirAnexos);
-    medir('aplicarConferenciaMs',function(){if (hashEstadoGestor_(lerEstadoAbaGestor_(sh)) !== m.depois) throw new Error('A gravação na aba ' + m.nome + ' ainda não corresponde à operação preparada. Ela permanece pendente para conferência.');});
+    medir('aplicarConferenciaMs',()=>medir('aplicarConferenciaAnexosMs',conferirAnexos));
+    medir('aplicarConferenciaMs',()=>medir('aplicarConferenciaFinanceiraMs',function(){if(hashEstadoGestor_(lerEstadoAbaGestor_(sh))!==m.depois)throw new Error('A gravação na aba '+m.nome+' ainda não corresponde à operação preparada. Ela permanece pendente para conferência.');}));
   });
-  if(!anexosAplicados&&anexos.length){aplicarAnexos();medir('aplicarFlushMs',()=>{SpreadsheetApp.flush();contar('aplicarFlushes',1);});medir('aplicarConferenciaMs',conferirAnexos);}
+  if(!anexosAplicados&&anexos.length){aplicarAnexos();medir('aplicarFlushMs',()=>{SpreadsheetApp.flush();contar('aplicarFlushes',1);});medir('aplicarConferenciaMs',()=>medir('aplicarConferenciaAnexosMs',conferirAnexos));}
   medir('aplicarDestinosMs',function(){
   conferirDestinosRestauracaoGestor_(plano,ss);
   conferirDestinosAnuaisPlanoGestor_(ss,plano);
   });
+  }finally{if(memoAplicacao)memoAplicacao.aplicandoPlanoGestor=aplicacaoAnterior;}
 }
 function controlesIncompletosRecuperaveisGestor_(atual, mudanca) {
   // Completar apenas controles vazios de linhas cujo conteúdo financeiro já
@@ -4645,10 +4654,10 @@ function executarOperacaoGestor_(acao, param, executar, leitura) {
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioMs',function(){
     inicio = diario.getLastRow() + 1;
     // Cabeçalho PREPARANDO e partes são um único bloco; PRONTO só após o flush.
-    diario.getRange(inicio,1,partes.length+1,6).setValues([[id,fingerprint,'PREPARANDO',partes.length,'',new Date()]].concat(partes.map(function(p,i){return [id,'','PARTE',i+1,JSON.stringify(p),''];}))); SpreadsheetApp.flush();
+    medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioEscritaMs',()=>diario.getRange(inicio,1,partes.length+1,6).setValues([[id,fingerprint,'PREPARANDO',partes.length,'',new Date()]].concat(partes.map(function(p,i){return [id,'','PARTE',i+1,JSON.stringify(p),''];})))); medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioFlushInicialMs',()=>SpreadsheetApp.flush());
     resultadoIncerto = true;
-    if(ctx.financeiroAlterado)resumoAdiado=solicitarResumoAssincronoGestor_(acao,ctx);
-    diario.getRange(inicio, 3).setValue('PRONTO'); SpreadsheetApp.flush();
+    if(ctx.financeiroAlterado)resumoAdiado=medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioAgendamentoMs',()=>solicitarResumoAssincronoGestor_(acao,ctx));
+    medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioProntoMs',()=>diario.getRange(inicio,3).setValue('PRONTO'));medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'diarioFlushProntoMs',()=>SpreadsheetApp.flush());
     });
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'aplicacaoMs',function(){aplicarPlanoGestor_(real, plano,detalhesGravacaoGestor);});
     medirEtapaGravacaoGestor_(detalhesGravacaoGestor,'confirmacaoMs',function(){diario.getRange(inicio, 3).setValue('CONFIRMADO'); SpreadsheetApp.flush();});
@@ -6474,7 +6483,14 @@ function dadosAnoGestor_(e,somenteAba){
   const inicioLeitura=Date.now();try{
   const ss=medir('anoAbrirMs',()=>abrirPlanilhaPorIdGestor_(e.id));
   // Agrupa só os metadados das abas desta leitura; valores/fórmulas são conferidos normalmente.
-  const folhas=medir('anoMetadadosMs',()=>typeof ss.getSheets==='function'?new Map(ss.getSheets().map(sh=>[sh.getName(),sh])):null);
+  const folhas=medir('anoMetadadosMs',()=>{
+    const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_,nomes=['Leia-me','Lançamentos','Empréstimos'],guardadas=memo?.abasAbertasGestor?.get(ss);
+    if(e.estado==='ABERTO'&&!somenteAba&&!memo?.aplicandoPlanoGestor&&guardadas&&nomes.every(n=>guardadas.has(n))){contar('anoMetadadosReutilizados');return new Map(nomes.map(n=>[n,guardadas.get(n)]));}
+    if(typeof ss.getSheets!=='function')return null;
+    const mapa=new Map(ss.getSheets().map(sh=>[sh.getName(),sh]));
+    if(memo){const bancos=memo.abasAbertasGestor||(memo.abasAbertasGestor=new WeakMap()),abas=bancos.get(ss)||new Map();for(const n of nomes)if(mapa.has(n))abas.set(n,mapa.get(n));bancos.set(ss,abas);}
+    return mapa;
+  });
   const obterFolha=nome=>folhas?folhas.get(nome):obterAbaExecucaoGestor_(ss,nome),info=obterFolha('Leia-me');
   const identidade=medir('anoIdentidadeMs',()=>info?info.getRange(2,2,2,1).getValues():[]);
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');

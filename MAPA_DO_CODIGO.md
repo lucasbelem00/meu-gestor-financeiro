@@ -500,3 +500,8 @@ Módulo2/segurança: doPost (Backend) mede envelope autenticado e redefine RASTR
 
 ### v203 — 12/11/2026 (local)
 Módulo2: criarCoordenadorLeiturasGestor acompanha execuções ativas e prepararAtualizacao/cancelarAtualizacao; forcarAtualizacaoApp (HTML) aguarda guarda antes do reload e recupera falhas. criarSerializadorPaginasGestor coordena somente getDadosCompletos com Web Locks, sem dados compartilhados. Módulos3/5/10: shared/anual.js anexa controleVazio ao snapshot inicial por leitura financeira e evita consulta repetida de dimensão só quando não há mudança financeira/legado.
+
+### v204 — 12/11/2026 (local)
+Módulos1/3/5/10: lerEstadoAbaGestor_ (Backend) lê intervalo integral fresco sem dimensão preliminar, preserva fórmulas e semântica de vazio. shared/anual.js alimenta memo de referências positivas ao enumerar folhas e reutiliza referências em leituras subsequentes do mesmo executor. Executor detalha diário/flush e aplicarPlanoGestor_ separa medições de conferência, sem alterar checkpoint ou recuperação.
+
+Restrição adicional v204: reaproveitamento da enumeração de folhas somente em leitura integral de ano ABERTO, fora de aplicarPlanoGestor_. Aplicação, recuperação dentro da aplicação, leitura direcionada e ano FECHADO enumeram folhas novamente e atualizam referências positivas. A guarda de fase é restaurada no finally, inclusive após erro. Essa restrição preserva reconferência estrutural dos destinos nas etapas críticas.

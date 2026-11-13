@@ -26,7 +26,14 @@ function dadosAnoGestor_(e,somenteAba){
   const inicioLeitura=Date.now();try{
   const ss=medir('anoAbrirMs',()=>abrirPlanilhaPorIdGestor_(e.id));
   // Agrupa só os metadados das abas desta leitura; valores/fórmulas são conferidos normalmente.
-  const folhas=medir('anoMetadadosMs',()=>typeof ss.getSheets==='function'?new Map(ss.getSheets().map(sh=>[sh.getName(),sh])):null);
+  const folhas=medir('anoMetadadosMs',()=>{
+    const memo=typeof HASHES_EXECUCAO_GESTOR_==='undefined'?null:HASHES_EXECUCAO_GESTOR_,nomes=['Leia-me','Lançamentos','Empréstimos'],guardadas=memo?.abasAbertasGestor?.get(ss);
+    if(e.estado==='ABERTO'&&!somenteAba&&!memo?.aplicandoPlanoGestor&&guardadas&&nomes.every(n=>guardadas.has(n))){contar('anoMetadadosReutilizados');return new Map(nomes.map(n=>[n,guardadas.get(n)]));}
+    if(typeof ss.getSheets!=='function')return null;
+    const mapa=new Map(ss.getSheets().map(sh=>[sh.getName(),sh]));
+    if(memo){const bancos=memo.abasAbertasGestor||(memo.abasAbertasGestor=new WeakMap()),abas=bancos.get(ss)||new Map();for(const n of nomes)if(mapa.has(n))abas.set(n,mapa.get(n));bancos.set(ss,abas);}
+    return mapa;
+  });
   const obterFolha=nome=>folhas?folhas.get(nome):obterAbaExecucaoGestor_(ss,nome),info=obterFolha('Leia-me');
   const identidade=medir('anoIdentidadeMs',()=>info?info.getRange(2,2,2,1).getValues():[]);
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');

@@ -453,3 +453,6 @@ Coletar abertura e operações após publicar backend e frontend/proxy. entradas
 
 ### v203 — 12/11/2026 (local)
 Abrir app e acionar Atualizar enquanto consulta está em voo: deve aguardar, preservar rascunhos e não gerar nova página aos600ms. Clique duplicado compartilha espera. Verificar envio já iniciado, consulta superada, falta de conexão após espera e retry da atualização. Duas abas atualizadas da mesma origem: cargas completas serializadas, sem mistura/compartilhamento de resultados; falha da API não repetida pela trava. Navegador sem Web Locks usa caminho normal. Na leitura anual sem mudanças e controle vazio, medir controleAnualConsultasEvitadas; legado presente e alterações financeiras continuam conferidos. Verificar resto das recuperações/anos fechados.
+
+### v204 — 12/11/2026 (local)
+Publicar Apps Script e frontend e repetir operações. Conferir estadoDimensoesEvitadas, anoMetadadosReutilizados e etapas do diário. Aba vazia preserva[]; zero/falso/fórmula vazia não podem desaparecer. Edição externa entre leituras deve ser percebida; identidade anual divergente e hash fechado continuam recusados. Ensaios de interrupção do diário/aplicação devem manter restauração e reenvio sem duplicação. Interpretar subetapas como detalhamento sobreposto e não prometer ganho só por contadores locais.
