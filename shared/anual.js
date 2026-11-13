@@ -8,8 +8,9 @@ const CAB_AJUSTES_ANUAIS_GESTOR_=['Aba','Registro ID','Ano original','SHA256 ori
 function principalAnualGestor_(ss){return ss||(CONTEXTO_GESTOR_?CONTEXTO_GESTOR_.ssReal:obterPlanilhaGestor_());}
 function ativoAnualGestor_(ss){return configProtecaoGestor_().organizacaoAnual===true||Boolean(obterAbaExecucaoGestor_(principalAnualGestor_(ss),ABA_ANOS_GESTOR_));}
 function catalogoAnosGestor_(ss){
-  const sh=obterAbaExecucaoGestor_(ss,ABA_ANOS_GESTOR_);if(!sh||!sh.getLastRow())return [];
-  const linhas=sh.getDataRange().getValues();if(hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('Catálogo dos anos incompatível. Preserve a base de controle.');
+  const sh=obterAbaExecucaoGestor_(ss,ABA_ANOS_GESTOR_);if(!sh)return [];
+  // Uma leitura atual basta: não consultar a dimensão antes de ler o catálogo.
+  const linhas=medirEtapaConsultaGestor_('catalogoAnosLeituraMs',()=>sh.getDataRange().getValues());if(!linhas.some(r=>r.some(v=>v!==''&&v!=null)))return [];if(hashGestor_(linhas[0])!==hashGestor_(CAB_ANOS_GESTOR_))throw Error('Catálogo dos anos incompatível. Preserve a base de controle.');
   const anos=new Set(),ids=new Set();return linhas.slice(1).filter(r=>r.some(v=>v!==''&&v!=null)).map(function(r){
     const ano=Number(r[0]),id=String(r[1]);if(!Number.isInteger(ano)||ano<ANO_MIN_COMPETENCIA_GESTOR_||ano>ANO_MAX_COMPETENCIA_GESTOR_||anos.has(ano)||ids.has(id)||!/^[A-Za-z0-9_-]{8,160}$/.test(id)||!['ABERTO','FECHADO'].includes(r[2])||r[5]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||(r[2]==='FECHADO'&&!/^[a-f0-9]{64}$/.test(r[3])))throw Error('Destino anual inválido ou repetido. Preserve o catálogo.');
     anos.add(ano);ids.add(id);return {ano:ano,id:id,estado:r[2],hash:String(r[3]||''),fechadoEm:r[4]||'',origem:r[5]};
@@ -38,7 +39,7 @@ function dadosAnoGestor_(e,somenteAba){
   const identidade=medir('anoIdentidadeMs',()=>info?info.getRange(2,2,2,1).getValues():[]);
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){
-    const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=sh.getDataRange();
+    const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=medir('anoIntervaloMs',()=>sh.getDataRange());
     const formulas=medir('anoFormulasMs',()=>rg.getFormulas());if(detalhes)detalhes.anoCelulasFormulas=(detalhes.anoCelulasFormulas||0)+formulas.reduce((n,r)=>n+r.length,0);
     if(formulas.some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');
     if(somenteAba&&somenteAba!==nome){contar('anoValoresEvitadas');return null;}
