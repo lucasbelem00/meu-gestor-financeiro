@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v207';
+const CACHE_NAME = 'gestor-gastos-v208';
 
 async function buscarManifestoAtualGestor(request){
   const controlador=new AbortController(),prazo=setTimeout(()=>controlador.abort(),8000);

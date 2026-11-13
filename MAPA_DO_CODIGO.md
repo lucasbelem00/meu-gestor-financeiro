@@ -509,3 +509,5 @@ Restrição adicional v204: reaproveitamento da enumeração de folhas somente e
 Manutenção 13/11/2026 (v205 local): `criarInformadorOrigemAnualGestor_` prepara um visitante local da origem anual; `informarOrigemAnualResultadoGestor_` continua como entrada compatível. A atualização confirmada reutiliza o visitante somente no Painel e Histórico da mesma resposta, após validações. Novas subetapas numéricas: preparação e aplicação da origem anual, contidas na conferência da atualização.
 
 v206 local (13/11/2026): catálogo anual usa leitura única de conteúdo para detectar vazio, sem dimensão preliminar; validações preservadas. Diagnóstico discrimina leitura do catálogo, obtenção de intervalo anual, ação principal e registro da atividade. Tempos são subetapas dos totais existentes, sem chamadas adicionais para medição.
+
+v208 local (13/11/2026): abertura virtual usa conteúdo atual para detectar vazio, sem dimensão preliminar. Métricas de obtenção de intervalo das abas virtuais e contagem de dimensões evitadas; intervalos anuais separados entre consulta e aplicação. Nenhuma memória de conteúdo ampliada entre operações.

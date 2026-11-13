@@ -39,7 +39,8 @@ function dadosAnoGestor_(e,somenteAba){
   const identidade=medir('anoIdentidadeMs',()=>info?info.getRange(2,2,2,1).getValues():[]);
   if(identidade[0]?.[0]!==propriedade_(CHAVE_ID_PLANILHA_GESTOR)||Number(identidade[1]?.[0])!==e.ano)throw Error('A planilha anual não pertence a esta base de controle.');
   const dados={ano:e.ano,abas:['Lançamentos','Empréstimos'].map(function(nome){
-    const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const rg=medir('anoIntervaloMs',()=>sh.getDataRange());
+    const sh=obterFolha(nome);if(!sh)throw Error('Ano sem a aba '+nome);const faseIntervalo=typeof HASHES_EXECUCAO_GESTOR_!=='undefined'&&HASHES_EXECUCAO_GESTOR_?.aplicandoPlanoGestor?'anoIntervaloAplicacaoMs':'anoIntervaloConsultaMs';
+    const rg=medir('anoIntervaloMs',()=>medir(faseIntervalo,()=>sh.getDataRange()));contar('anoIntervalosLidos');
     const formulas=medir('anoFormulasMs',()=>rg.getFormulas());if(detalhes)detalhes.anoCelulasFormulas=(detalhes.anoCelulasFormulas||0)+formulas.reduce((n,r)=>n+r.length,0);
     if(formulas.some(r=>r.some(Boolean)))throw Error('Há fórmulas nos registros anuais. Preserve a personalização antes de continuar.');
     if(somenteAba&&somenteAba!==nome){contar('anoValoresEvitadas');return null;}
