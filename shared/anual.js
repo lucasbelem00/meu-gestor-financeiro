@@ -90,6 +90,7 @@ function matrizFinanceiraAnualGestor_(ss,nome,leituraLocal){
   if(leitura){leitura.controleVazio=leitura.controleVazio||new Map();leitura.controleVazio.set(nome,!valoresOriginais.slice(1).some(r=>r.some(v=>v!==''&&v!=null)));}
   const incluir=r=>{if(!r.some(v=>v!==''&&v!=null))return;if(!r[11])throw Error('Registro sem identificação em '+nome+'. Preserve os dados e confira a sincronização.');if(mapa.has(String(r[11])))throw Error('Registro repetido entre os anos em '+nome+'. Uma transferência anual pode estar pendente; confira Atividade e sincronização.');mapa.set(String(r[11]),copiarGestor_(r));};
   for(const e of leitura?leitura.catalogo:catalogoAnosGestor_(ss)){
+    leitura?.verificarPrioridade?.();
     let dados;try{const projecao=leitura?.somenteAba===nome&&e.estado==='ABERTO'?nome:null;const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash+(projecao?':'+projecao:'');if(leitura?.anos.has(chave)){dados=leitura.anos.get(chave);const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.anoCopiasIntermediariasEvitadas=(d.anoCopiasIntermediariasEvitadas||0)+1;}else{dados=dadosAnoGestor_(e,projecao||undefined);if(leitura)leitura.anos.set(chave,copiarGestor_(dados));}}catch(erro){if(!['previaRestauracaoBackupWeb','restaurarBackupDadosWeb'].includes(CONTEXTO_GESTOR_?.action))throw erro;(CONTEXTO_GESTOR_.anosIndisponiveis||(CONTEXTO_GESTOR_.anosIndisponiveis=new Set())).add(e.ano);continue;}
     for(const r of dados.abas.find(a=>a.nome===nome).valores.slice(1))incluir(r);
   }

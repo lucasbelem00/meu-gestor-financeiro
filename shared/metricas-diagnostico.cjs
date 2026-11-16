@@ -1,5 +1,7 @@
 // Fonte única de campos numéricos de diagnóstico, incorporada pelo gerador.
 module.exports = Object.freeze([
+  "resumoPrioridadeMs",
+  "resumoCedeuUso",
   "atualizacaoAcessoriosDispensados",
   "diarioDimensaoBuscaMs",
   "anexoDimensaoMs",

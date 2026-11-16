@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v226 — módulo 10 e integração 2/5/6: shared/relatorios.js rotinaResumoPlanilhaGestor fornece callback cooperativo de prioridade somente à leitura automática; atualizarResumoNativoGestor_ aceita terceiro argumento opcional, registrosResumoNativoGestor_ propaga à montagem anual. shared/anual.js consulta callback antes de cada ano, sem mudança para consumidores comuns. gravarResumoConferidoGestor evita consultas redundantes de capacidade. Novos campos numéricos resumoPrioridadeMs/resumoCedeuUso no diagnóstico do resumo.
+
+
 v225 — módulo 2 e integração de consultas 5/6/8/10: interface/desempenho.js amplia serializador Web Locks a todas as leituras do catálogo e adia recarga visual completa em página oculta. Protocolo direto e mutações mantêm caminhos próprios. Métrica entrePaginas.coordenadasPorAcao permite verificar adesão à fila por ação. Sem mudança no backend.
 
 

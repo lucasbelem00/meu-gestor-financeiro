@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v226 — publicar backend/frontend. Quando resumo automático estiver lendo, iniciar consulta/cadastro: a rotina pode ceder no próximo checkpoint, ficar pendente sem erro e concluir em gatilho posterior. Conferir resumoCedeuUso=1 e resumoPrioridadeMs em ultimaExecucao.etapas; atualizadoEm não deve avançar em leitura adiada. Comparar registros financeiros e resumo anterior antes/depois da cessão. Ação chegada após início da escrita deve aguardar a conclusão, sem resumo parcial. Adiamento mantém limite existente de cinco minutos e requer nova leitura na retomada; cache indisponível não suspende indefinidamente. Não criar outro gatilho nem conceder permissões novas.
+
+
 Reteste v225 — publicar frontend e atualizar ambas as instâncias. Duas abas do mesmo endereço: iniciar Painel e Mensal/Anual simultaneamente; consultas devem aguardar a fila do navegador. Conferir entrePaginas.coordenadasPorAcao/esperaMs, sem compartilhar respostas. Recarregar aba oculta não deve iniciar recarga visual até ficar visível; consulta de protocolo necessária a novo envio continua permitida. Mutações não devem ser repetidas nem esperar circularmente pela fila de leituras. Comparar uma rodada em uma instância e outra com duas, identificando que outro aparelho/origem não usa essa coordenação.
 
 
