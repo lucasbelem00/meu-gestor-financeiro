@@ -1,5 +1,14 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Correção da atualização visual após empréstimos v221 local — revisão 16/11/2026
+
+Rodada v220: respostas de salvar/editar/excluir empréstimos recebidas, pendências financeiras zero, seguidas de INTERFACE_RENDER repetido em renderizarDados. Imagem informa tentativa de alterar propriedade Sortable de null. renderListaFormas destruía sortableInstance sem limpar referência; cargas seguintes fora da edição chamavam destroy novamente em instância com el=null. Correção: captura referência anterior, zera vínculo, destrói somente instância cujo el ainda corresponde ao elemento, antes de substituir conteúdo. Categorias recebe mesma verificação defensiva. Não altera backend, valores financeiros nem ordem salva.
+
+Rodada recebida inclui transportes de página anterior: cadastro de empréstimo 18,20 s, edição 18,32 s, exclusão 21,12 s; atualizações visuais falharam depois das respostas. Capacidade v220 comprovada: uma consulta evitada no cadastro e duas em edição/exclusão. Não comprova ganho global. Diagnóstico copiado após recarregar apresenta execucoes/correlacao vazias na nova página; histórico persistido ainda conserva erros anteriores, comportamento esperado do recorte por página.
+
+Interface/cache v221, protocolo 19. Validação local: 1.378 testes aprovados, zero falhas (testes-v221-final.log), incluindo dois novos cenários que reproduzem destruição repetida e referência previamente encerrada. CSS, espelhos e dist preparados; diff --check aprovado. Publicação frontend e verificação real de atualizações sucessivas pendentes. Backend permanece v220. Não repetir cadastros financeiros apenas por falha ao desenhar tela.
+
+
 ## Capacidade da gravação e correlação de tempos v220 local — revisão 16/11/2026
 
 garantirCapacidadeAplicacaoGestor_ evita getMaxRows/getMaxColumns somente quando a matriz real recém-conferida já comprova que o intervalo cabe. Em crescimento ou aba vazia, consulta capacidade e insere apenas o necessário. Não usa tamanho do plano desejado como prova nem cache entre operações. Aplicação continua lendo estado/fórmulas, verificando hashes, registrando diário e conferindo depois do flush. Benefício esperado: menos chamadas de metadados em edição/exclusão e, quando possível, cadastro; não há ganho real medido antes da publicação. Novos campos aplicarCapacidadeMs, aplicarCapacidadeConsultas e aplicarCapacidadeConsultasEvitadas.

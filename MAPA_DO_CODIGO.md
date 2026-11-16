@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v221 — módulos 5/9 e integração de atualização confirmada 2/4: renderListaFormas no index encerra Sortable anterior uma única vez, limpa referência e valida el antes de destroy. renderizarListaCategorias usa mesma proteção. Corrige INTERFACE_RENDER após sucessivas cargas, sem mudança no backend ou reordenação financeira.
+
+
 v220 — módulos 2/10, integrações de gravação 3/4/8/9: Backend/Code.gs garantirCapacidadeAplicacaoGestor_ usa matriz real recém-lida como limite inferior da grade, consultando capacidade se necessário crescer. interface/desempenho.js correlacionarTemposDiagnosticoGestor relaciona transporte/doPost por página+chamada+ação; montarDiagnosticoGestor no index incorpora correlação sem repetir leitura do armazenamento. Campos numéricos de capacidade na fonte shared/metricas-diagnostico.cjs.
 
 

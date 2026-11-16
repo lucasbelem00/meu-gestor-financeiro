@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v221 — publicar frontend. Entrar em gerenciamento de Formas de Pagamento, sair, atualizar várias vezes e cadastrar/editar/excluir um empréstimo de teste. A tela deve refletir respostas sem INTERFACE_RENDER; voltar ao gerenciamento e testar arrastar/salvar ordem. Referência Sortable encerrada não pode ser destruída novamente. Não repetir cadastro só por erro visual; conferir existência antes. Diagnóstico após recarga mantém histórico antigo, mas execuções/correlação da página nova começam vazias.
+
+
 Reteste v220 — publicar backend e frontend. Criar/editar/excluir pessoal e empréstimo; incluir operação que acrescenta linhas e manter verificação em tabela vazia. Conferir aplicarCapacidadeConsultas/Evitadas, valores salvos e ausência de duplicação após reenvio protegido. Diagnóstico deve informar versão 4 e correlacaoTempos somente da página atual; duração externa não pode ser negativa nem misturar ações/chamadas. Comparar várias amostras; espera do proxy e tempo doPost se sobrepõem, não somar. Barreira PRONTO/CONFIRMADO e recuperação continuam obrigatórias.
 
 
