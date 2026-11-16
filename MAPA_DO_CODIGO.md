@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v225 — módulo 2 e integração de consultas 5/6/8/10: interface/desempenho.js amplia serializador Web Locks a todas as leituras do catálogo e adia recarga visual completa em página oculta. Protocolo direto e mutações mantêm caminhos próprios. Métrica entrePaginas.coordenadasPorAcao permite verificar adesão à fila por ação. Sem mudança no backend.
+
+
 v224 — módulos 2/3/4/5/6/8/10: interface/desempenho.js coordena leituras durante mutações, protege registros de listas em recarga e preserva acessórios do cache parcial. index inclui guardas em editar/excluir pessoal/terceiros e opta por resposta financeira enxuta em novos pedidos; interface/faturas.js e recorrencias.js usam mesma opção. Backend criarPlanilhaVirtualGestor_ seleciona projeção pessoal em consultas restritas; shared/anual.js diferencia chave parcial/integral e mantém anos fechados completos. getDadosCompletos aceita opção interna financeira apenas no contexto de snapshot; montarAtualizacaoDadosConfirmadaGestor_ dispensa notas/estatísticas sob opt-in e exporta contagem.
 
 

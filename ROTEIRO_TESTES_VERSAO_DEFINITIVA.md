@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v225 — publicar frontend e atualizar ambas as instâncias. Duas abas do mesmo endereço: iniciar Painel e Mensal/Anual simultaneamente; consultas devem aguardar a fila do navegador. Conferir entrePaginas.coordenadasPorAcao/esperaMs, sem compartilhar respostas. Recarregar aba oculta não deve iniciar recarga visual até ficar visível; consulta de protocolo necessária a novo envio continua permitida. Mutações não devem ser repetidas nem esperar circularmente pela fila de leituras. Comparar uma rodada em uma instância e outra com duas, identificando que outro aparelho/origem não usa essa coordenação.
+
+
 Reteste v224 — publicar backend/frontend juntos. Durante atualização da lista, tentar editar/excluir/receber: deve aguardar sem enviar mutação sobre registro antigo; navegar, preencher novo e fechar/cancelar modal continua possível. Em falha, usar Tentar atualizar, sem liberar versão antiga. Abrir Mensal/Anual enquanto salva: leitura deve aguardar envio, sem repetir gravação nem promover resultado anterior. Conferir fórmulas indevidas em terceiros e ano fechado alterado ainda recusados em consulta pessoal. Confirmar totais e parcelas cruzando anos. Após salvar, testar notas existentes/pendentes e recarregar app: acessórios anteriores permanecem recuperáveis, enquanto consulta completa volta a conferi-los. Novo diagnóstico deve incluir anoValoresEvitadas, atualizacaoAcessoriosDispensados e atualizacaoRegistros (pendente/desatualizado/bloqueadas). Fazer várias amostras de cadastro/edição/exclusão sem iniciar exclusão sobre lista atualizando.
 
 

@@ -1,5 +1,24 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Coordenação de consultas v225 local — revisão 16/11/2026
+
+Recarga visual getDadosCompletos com predicado de continuidade agora aguarda visibilidade antes de enviar, evitando consulta completa iniciada por página oculta. Consulta direta de protocolo permanece livre; ao voltar a página, continuidade/geração são verificadas normalmente. Não cancela requisição já recebida pelo Google.
+
+Serializador entre páginas usa o mesmo Web Lock já existente para todas as ações do catálogo leitura, em vez de somente getDadosCompletos. Leituras de Mensal/Anual/Recorrências/Atividade de abas do mesmo navegador e origem aguardam a fila antes de chegar ao Google. Mutações permanecem fora dessa fila: não alterar ordem financeira nem introduzir espera circular com consulta de protocolo. Fallback se Web Locks indisponível ou falhar antes do callback mantém um envio; erro após envio não é repetido. Diagnóstico entrePaginas acrescenta coordenadasPorAcao, somente contagens. Limite: não coordena aparelhos/navegadores distintos, origens diferentes, gatilhos ou versão antiga do app. A observação de outra consulta na rodada v224 não prova que ambas compartilhavam origem/versão; não prometer eliminação de toda espera por trava.
+
+Mudança reduz concorrência evitável, não acelera por si as leituras anuais obrigatórias. Não há compartilhamento de respostas entre páginas nem cache financeiro novo. Interface/cache v225, backend permanece v224, medição 4 e protocolo 19. Validação local: 1.397 testes aprovados, zero falhas (testes-v225-final.log), incluindo recarga visual oculta/protocolo livre e consultas distintas entre páginas com mutação fora da fila. CSS, espelhos e dist preparados; diff --check aprovado. Publicação somente frontend e rodada real pendentes.
+
+
+## Rodada real v224 — revisão 16/11/2026
+
+Confirma interface v224 e alterações no servidor: seis mutações com atualizacaoAcessoriosDispensados=1; Mensal, Anual e Recorrências com três leituras direcionadas e três leituras de valores evitadas em cada consulta. Seis retratos confirmados aplicados, sem recarga completa após cada mutação. Treze chamadas bem-sucedidas, sem consultas descartadas, serviço ocupado ou pendências financeiras. Estado de listas atualizado, zero ações bloqueadas: a rodada não exercitou tentativa de editar/excluir durante recarga, portanto não comprova uso real dessa guarda.
+
+Tempos no aparelho: Painel 18,58 s; novo pessoal 20,43 s; edição 18,74 s; exclusão 16,17 s; Mensal 10,22 s; Anual 12,64 s; Planejamento 4,43/4,13 s; Recorrências 11,34 s; novo empréstimo 15,46 s; edição 15,42 s; exclusão 15,27 s. Amostras isoladas: não demonstram melhora geral; leituras de relatórios ficaram mais lentas apesar do menor número de valores carregados. Leitura anual custa 4,19–4,88 s nos relatórios/recorrências; resto da consulta também contribui. Fora do doPost 1,79–3,91 s, sem correlações ausentes/inconsistentes.
+
+Achado novo: carga inicial esperou 7,748 s pela trava, de 15,565 s no executor. Indicador consultivo de concorrência aponta outra getDadosCompletos, em outra página; não é prova absoluta da origem, pois a observação pode expirar ou sobrepor-se a outras rotinas. Não atribuir essa espera ao cálculo do Painel nem ao resumo em segundo plano. Próxima investigação: sobreposição de cargas entre páginas/instâncias e custo anual remanescente. Para comparação controlada, evitar atualizar simultaneamente outras instâncias durante uma rodada, sem alterar dados nem desativar proteções.
+
+Resumo em segundo plano sem erro, pedido mais recente pendente; fotografia isolada não comprova travamento. Nenhum código alterado nesta análise.
+
 ## Três frentes de desempenho v224 local — revisão 16/11/2026
 
 1. Consultas/listas: Mensal, Anual e Planejamento agora aguardam mutações já enviadas nesta página, como Histórico/Recorrências. Navegação e primeira consulta de protocolo continuam livres. Uma resposta anterior ao pagamento é descartada, mas sua repetição só é enviada após a gravação; teste que antes previa quatro chamadas passa a exigir três, sem promover valor antigo. Controle de atualização registra pendente/desatualizado/bloqueadas; apenas resposta da recarga atual confirmada libera ações sobre registros. Formulários novos e navegação permanecem livres, Cancelar/fechar modal não é bloqueado. Lista de pessoas fica inert durante recarga; Histórico mantém seu controle próprio de paginação, com aviso e guarda nas ações de editar/excluir. API da interface recusa mutações sobre registros antigos antes de enviar, com DADOS_EM_ATUALIZACAO. Em falha, retry existente continua disponível. Não remove versões do backend.
