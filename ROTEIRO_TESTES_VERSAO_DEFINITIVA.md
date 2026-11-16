@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v222 — publicar backend/frontend. Cadastrar, editar e excluir testes pessoal/terceiros, conferir Atividade e copiar diagnóstico na mesma página. Comparar diarioDimensaoBuscaMs e etapas anexo* sem somá-las aos totais de preparação/aplicação. Preservar reenvio protegido sem duplicação e bloqueio de histórico divergente. Limites das buscas iniciais nunca devem ser reaproveitados após recuperar/escrever nem entre aparelhos. Ganho real precisa de várias amostras.
+
+
 Reteste v221 — publicar frontend. Entrar em gerenciamento de Formas de Pagamento, sair, atualizar várias vezes e cadastrar/editar/excluir um empréstimo de teste. A tela deve refletir respostas sem INTERFACE_RENDER; voltar ao gerenciamento e testar arrastar/salvar ordem. Referência Sortable encerrada não pode ser destruída novamente. Não repetir cadastro só por erro visual; conferir existência antes. Diagnóstico após recarga mantém histórico antigo, mas execuções/correlação da página nova começam vazias.
 
 

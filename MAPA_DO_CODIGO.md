@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v222 — módulos 2/10 com integração a todas as mutações: executor passa limite local da aba às buscas iniciais no diário; localizarLinhasTecnicasGestor_ aceita limite opcional vinculado à aba. aplicarAnexoTecnicoGestor_ reutiliza dimensão apenas dentro de sua execução e recebe detalhes opcionais para sete novas medições. Recuperação, consulta posterior e anexo do diário continuam com leituras próprias.
+
+
 v221 — módulos 5/9 e integração de atualização confirmada 2/4: renderListaFormas no index encerra Sortable anterior uma única vez, limpa referência e valida el antes de destroy. renderizarListaCategorias usa mesma proteção. Corrige INTERFACE_RENDER após sucessivas cargas, sem mudança no backend ou reordenação financeira.
 
 

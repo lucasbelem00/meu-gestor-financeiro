@@ -1,5 +1,14 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Preparação do diário e aplicação do histórico v222 local — revisão 16/11/2026
+
+Executor lê uma dimensão para as buscas iniciais de cancelamento/pedido e PRONTO sob a mesma trava. Limite explícito passado a localizarLinhasTecnicasGestor_ e localizarCabecalhosOperacaoGestor_, vinculado ao objeto da aba, sem cache global/persistente. Não reutiliza limite ao anexar operação, recuperar plano ou buscar novamente após recuperação; caminhos sem limite continuam lendo dimensão atual. Evita uma consulta de dimensão no fluxo de mutação normal. aplicarAnexoTecnicoGestor_ também lê dimensão uma única vez para conferir reenvio e posição do anexo. Preserva recusa de sobreposição, expansão da grade, flush agrupado e conferência posterior.
+
+Diagnóstico acrescenta diarioDimensaoBuscaMs e anexoDimensaoMs/ConferenciaMs/CapacidadeMs/EscritaMs/ApresentacaoMs/FlushMs. As subetapas estão contidas em preparação/aplicação, não somar novamente aos totais. Sem conteúdo do diário. Objetivo é reduzir chamadas repetidas e medir parte ainda opaca da gravação. Ganho provável limitado; leituras anuais, barreiras duráveis e tempo externo ao doPost continuam relevantes. Não há evidência para retirar verificações de duplicidade, hash de ano fechado ou confirmação final.
+
+Interface/cache v222, medição 4 e protocolo 19 preservados. Validação local: 1.381 testes aprovados, zero falhas (testes-v222-final.log), incluindo três novos cenários de limite por aba/consulta posterior, anexo idempotente e recusa de sobreposição. CSS, espelhos e dist preparados; diff --check aprovado. Publicar backend/frontend e medir na conta permanece pendente. Sem novas permissões, publicação automática ou alterações em dados reais.
+
+
 ## Correção da atualização visual após empréstimos v221 local — revisão 16/11/2026
 
 Rodada v220: respostas de salvar/editar/excluir empréstimos recebidas, pendências financeiras zero, seguidas de INTERFACE_RENDER repetido em renderizarDados. Imagem informa tentativa de alterar propriedade Sortable de null. renderListaFormas destruía sortableInstance sem limpar referência; cargas seguintes fora da edição chamavam destroy novamente em instância com el=null. Correção: captura referência anterior, zera vínculo, destrói somente instância cujo el ainda corresponde ao elemento, antes de substituir conteúdo. Categorias recebe mesma verificação defensiva. Não altera backend, valores financeiros nem ordem salva.
