@@ -265,3 +265,5 @@ Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro
 13/11/2026 — v207 local: Agenda identifica hoje com contorno azul fino, rótulo Hoje e indicação acessível de data atual. Fundos situacionais continuam visíveis; filtro selecionado mantém contorno mais forte. Ações de diagnóstico em Atividade usam grupo flexível com `gap-3` (12px), permitindo quebra no celular.
 
 16/11/2026 — v214 local: Criar recorrência no editor de empréstimos fica no mesmo conjunto visual das ações de recebimento parcial e mover para pessoal, sem borda superior; espaçamento preservado. Editor de gasto pessoal mantém sua separação.
+
+16/11/2026 — v215 local: os três atalhos expansíveis do editor de empréstimos compartilham um grupo vertical com gap-2 (8px), sem padding extra no terceiro atalho. Painéis ocultos não acrescentam espaço; editor pessoal preservado.

@@ -98,7 +98,7 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
     const r=abrir(...args),m=document.getElementById(modalId);if(!m?.querySelector)return r;
     let area=m.querySelector('[data-secao-recorrencia-editor]'),botao;
     if(!area){
-      area=elementoRecorrenciaGestor('div','',tipo==='terceiros'?'pt-2':'pt-2 border-t border-slate-700');area.setAttribute('data-secao-recorrencia-editor','true');
+      area=elementoRecorrenciaGestor('div','',tipo==='terceiros'?'min-w-0':'pt-2 border-t border-slate-700');area.setAttribute('data-secao-recorrencia-editor','true');
       const titulo=elementoRecorrenciaGestor('button','','w-full bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition');titulo.type='button';titulo.setAttribute('aria-expanded','false');
       const rotulo=elementoRecorrenciaGestor('span','📌 Criar recorrência','rotulo-expansivel-gestor'),seta=elementoRecorrenciaGestor('span','▼','seta-expansivel-gestor');seta.setAttribute('aria-hidden','true');titulo.append(rotulo,seta);
       const painel=elementoRecorrenciaGestor('div','','hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-violet-400/40 space-y-2.5');painel.id=modalId+'RecorrenciaCampos';titulo.setAttribute('aria-controls',painel.id);
@@ -106,7 +106,7 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
       for(const [v,t]of [['revisao','Variável — revisar a cada mês'],['automatico','Fixo — repetir automaticamente']]){const o=elementoRecorrenciaGestor('option',t);o.value=v;modo.append(o);}modo.value='revisao';label.append(modo);painel.append(label);area._modo=modo;area._previa=elementoRecorrenciaGestor('p','','text-xs text-violet-200 whitespace-pre-line');painel.append(area._previa);
       botao=elementoRecorrenciaGestor('button','📌 Criar recorrência','w-full rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-300 py-2.5 px-3 text-xs font-bold');botao.type='button';botao.setAttribute('data-criar-recorrencia-editor','true');painel.append(botao);
       titulo.onclick=()=>{const aberto=titulo.getAttribute('aria-expanded')==='true';titulo.setAttribute('aria-expanded',String(!aberto));painel.classList.toggle('hidden',aberto);seta.textContent=aberto?'▼':'▲';};
-      area.append(titulo,painel);const form=m.querySelector('form'),rodape=form.querySelector('button[type="submit"]')?.closest('div');form.insertBefore(area,rodape||null);
+      area.append(titulo,painel);const form=m.querySelector('form'),rodape=form.querySelector('button[type="submit"]')?.closest('div');const grupo=tipo==='terceiros'?m.querySelector('#acoesEditorEmprestimoGestor'):null;if(grupo)grupo.append(area);else form.insertBefore(area,rodape||null);
     }else{
       botao=area.querySelector('[data-criar-recorrencia-editor]');const titulo=area.querySelector('[aria-expanded]'),painel=document.getElementById(modalId+'RecorrenciaCampos');titulo.setAttribute('aria-expanded','false');painel.classList.add('hidden');titulo.querySelector('.seta-expansivel-gestor').textContent='▼';
     }
