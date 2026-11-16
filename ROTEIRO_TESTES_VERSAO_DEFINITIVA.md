@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v218 — após publicar backend e frontend, abrir Painel e executar um novo lançamento e uma edição. Copiar diagnóstico: conferir os oito campos painelFormas/Pessoal/Terceiros quando a carga completa for executada. Comparar tempos totais e leituras com a rodada anterior, sem somar subetapas aos respectivos totais. Conferir totais, formas arquivadas, ausência de empréstimos e tabelas vazias; reabrir após salvar para validar dados atuais. Código local não comprova ganho na conta.
+
+
 Reteste visual v180 — Pix: percentual normal/80%/100%/acima100% segue valores de referência já existentes, com textos Referência atingida/excedida e estado neutro sem limite válido. Terceiros do mês incluem recebidos; meses futuros não entram na linha mensal. Total no mês soma somente pessoal/terceiros da competência, não recebíveis gerais ou pagamentos futuros. Resumo global a receber continua no Painel. História/categoria/forma clicáveis seguem como proposta, ainda não implementadas. Conferir celular/computador após publicar frontend.
 
 

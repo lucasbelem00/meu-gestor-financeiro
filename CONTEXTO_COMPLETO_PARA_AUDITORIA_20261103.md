@@ -1,5 +1,12 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Desempenho e diagnóstico v218 local — revisão 16/11/2026
+
+getDadosCompletos consulta uma única vez a última linha de cada tabela de formas, lançamentos e empréstimos, após a manutenção existente. Elimina três consultas repetidas em cargas com dados, sem manter dimensões entre execuções. Não modifica valores, datas, locks, versões, diário ou conferência anual. Em contexto virtual essas consultas já eram em memória; o benefício direto é principalmente nas leituras de abas reais. Ganho esperado limitado, sem estimativa em segundos antes da próxima rodada.
+
+Diagnóstico numérico ampliado na fonte shared/metricas-diagnostico.cjs: painelFormasDimensaoMs/ValoresMs; painelPessoalDimensaoMs/ValoresMs/ExibicaoMs; painelTerceirosDimensaoMs/ValoresMs/ExibicaoMs. As etapas medem as leituras da carga completa, inclusive quando gerada após confirmação; são subetapas e não devem ser somadas novamente aos totais que já as contêm. Sem informações financeiras ou mensagens brutas. Interface/cache v218, protocolo 19 preservado. Publicação de backend e frontend e comparação real ainda pendentes. Validação local v218: 1.368 testes aprovados, zero falhas (testes-v218-final-2.log); CSS, espelhos e dist preparados e diff --check aprovado. Primeira execução apontou somente duas expectativas de versão antiga, atualizadas antes da repetição completa. Publicação remota e ganho real continuam pendentes.
+
+
 ## Largura da Mensal e leitura anual direcionada v191 local — 11/11/2026
 
 Foto de Lucas mostrou mês/ano cortado no celular. Cabeçalho Mensal recebe classes próprias barra-periodo-mensal-gestor/navegacao-mensal-gestor: grid com setas de 32 px e centro minmax(0,1fr), navegação e campo month a 100% no celular, padding horizontal reduzido e datetime-edit sem padding extra. Desktop usa navegação de 280 px. Agenda/Anual não recebem essas classes. Sem alterar período, setas, PDF ou regras financeiras. Conferência visual real ainda pendente.

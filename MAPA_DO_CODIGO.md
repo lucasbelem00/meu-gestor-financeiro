@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v218 — módulos 5 e 2: getDadosCompletos evita dimensões duplicadas nas três tabelas e mede dimensão/valores/exibição separadamente. shared/metricas-diagnostico.cjs incorpora oito campos numéricos no transporte e diagnóstico frontend. Não há novo cache de dados nem mudança das regras financeiras.
+
+
 v180 — interface/perfil.js resumoTerceirosFormaVisualGestor passa a retornar somente gastosMes da competência atual; não calcula saldo geral. renderListaFormas exibe percentual Pix pelos valores existentes e rótulos de referência, além de total pessoal+terceiros registrado no mês. Nenhuma nova consulta ou alteração de backend. Módulos 5/9.
 
 

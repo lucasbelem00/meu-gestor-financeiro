@@ -17,7 +17,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ["diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ["painelFormasDimensaoMs","painelFormasValoresMs","painelPessoalDimensaoMs","painelPessoalValoresMs","painelPessoalExibicaoMs","painelTerceirosDimensaoMs","painelTerceirosValoresMs","painelTerceirosExibicaoMs","diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     const c=detalhes?.concorrencia;
     if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs))TEMPOS_RESPOSTA_GESTOR_.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(c.chamada)&&/^[a-f0-9]{32}$/.test(c.pagina)?{chamada:c.chamada,pagina:c.pagina}:{}),indicativo:true};
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
@@ -1613,9 +1613,9 @@ function getDadosCompletos() {
 
     let listaFormasPagto = [];
     let mapLowerToOriginal = Object.create(null);
-    if (pagtoSheet && pagtoSheet.getLastRow() >= 7) {
-      const uL = pagtoSheet.getLastRow();
-      const rawP = pagtoSheet.getRange(7, 2, uL - 6, 8).getValues();
+    const uL = medirEtapaConsultaGestor_('painelFormasDimensaoMs',()=>pagtoSheet ? pagtoSheet.getLastRow() : 0);
+    if (uL >= 7) {
+      const rawP = medirEtapaConsultaGestor_('painelFormasValoresMs',()=>pagtoSheet.getRange(7, 2, uL - 6, 8).getValues());
       rawP.forEach((r, idx) => {
         if (r[0] && String(r[0]).trim() !== '') {
           let n = String(r[0]).trim();
@@ -1684,10 +1684,10 @@ function getDadosCompletos() {
     let calcAberto = 0, calcPago = 0, calcCompromisso = 0, calcGeral = 0;
     let mapCatTotal = Object.create(null);
 
-    if (lancSheet && lancSheet.getLastRow() > 1) {
-      const uL_Lanc = lancSheet.getLastRow();
-      const lancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getValues();
-      const dispLancData = lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getDisplayValues();
+    const uL_Lanc = medirEtapaConsultaGestor_('painelPessoalDimensaoMs',()=>lancSheet ? lancSheet.getLastRow() : 0);
+    if (uL_Lanc >= 2) {
+      const lancData = medirEtapaConsultaGestor_('painelPessoalValoresMs',()=>lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getValues());
+      const dispLancData = medirEtapaConsultaGestor_('painelPessoalExibicaoMs',()=>lancSheet.getRange(2, 1, uL_Lanc - 1, COLUNAS_GESTOR_).getDisplayValues());
       const seriesInvalidas = new Set(lancData.filter(function(r) { return limparApostrofo(r[6])==='∞/∞' && serieRecorrenteGestor_(r).invalida; }).map(function(r) { return String(r[12] || (normalizarTexto(r[1])+'_'+normalizarTexto(r[2]))); }));
 
       lancData.forEach((r, idx) => {
@@ -1907,10 +1907,10 @@ function getDadosCompletos() {
     let empKpiAtrasados = 0;
     let freqPessoasEmp = Object.create(null),registrosEmprestimosAlerta=[];
 
-    if (empSheet && empSheet.getLastRow() > 1) {
-      const uLEmp = empSheet.getLastRow();
-      const rawEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getValues();
-      const dispEmp = empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getDisplayValues();
+    const uLEmp = medirEtapaConsultaGestor_('painelTerceirosDimensaoMs',()=>empSheet ? empSheet.getLastRow() : 0);
+    if (uLEmp >= 2) {
+      const rawEmp = medirEtapaConsultaGestor_('painelTerceirosValoresMs',()=>empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getValues());
+      const dispEmp = medirEtapaConsultaGestor_('painelTerceirosExibicaoMs',()=>empSheet.getRange(2, 1, uLEmp - 1, COLUNAS_GESTOR_).getDisplayValues());
 
       registrosEmprestimosAlerta=rawEmp;
       rawEmp.forEach((r, idx) => {
