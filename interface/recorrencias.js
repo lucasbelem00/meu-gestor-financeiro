@@ -98,7 +98,7 @@ function instalarAtalhoRecorrenciaEdicaoGestor(nome,modalId,tipo){
     const r=abrir(...args),m=document.getElementById(modalId);if(!m?.querySelector)return r;
     let area=m.querySelector('[data-secao-recorrencia-editor]'),botao;
     if(!area){
-      area=elementoRecorrenciaGestor('div','','pt-2 border-t border-slate-700');area.setAttribute('data-secao-recorrencia-editor','true');
+      area=elementoRecorrenciaGestor('div','',tipo==='terceiros'?'pt-2':'pt-2 border-t border-slate-700');area.setAttribute('data-secao-recorrencia-editor','true');
       const titulo=elementoRecorrenciaGestor('button','','w-full bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-300 font-bold py-2.5 px-3 rounded-xl text-xs botao-expansivel-gestor transition');titulo.type='button';titulo.setAttribute('aria-expanded','false');
       const rotulo=elementoRecorrenciaGestor('span','📌 Criar recorrência','rotulo-expansivel-gestor'),seta=elementoRecorrenciaGestor('span','▼','seta-expansivel-gestor');seta.setAttribute('aria-hidden','true');titulo.append(rotulo,seta);
       const painel=elementoRecorrenciaGestor('div','','hidden mt-2.5 p-3.5 rounded-xl bg-slate-900/80 border border-violet-400/40 space-y-2.5');painel.id=modalId+'RecorrenciaCampos';titulo.setAttribute('aria-controls',painel.id);
