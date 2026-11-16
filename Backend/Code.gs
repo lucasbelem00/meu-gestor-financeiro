@@ -17,7 +17,7 @@ function registrarTemposRespostaGestor_(acao, inicio, espera, preparacao, execuc
     TEMPOS_RESPOSTA_GESTOR_ = { versao: 1, acao: String(acao), totalMs: total, esperaLockMs: etapas[0], preparacaoMs: etapas[1], execucaoMs: etapas[2], planoMs: etapas[3], gravacaoMs: etapas[4], outrosMs: Math.max(0, total - etapas.reduce((a,b) => a+b, 0)) };
     TEMPOS_RESPOSTA_GESTOR_.inicioServidorMs=inicio;TEMPOS_RESPOSTA_GESTOR_.fimServidorMs=Date.now();
     if(detalhes)TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao=Object.fromEntries(['diarioMs','aplicacaoMs','confirmacaoMs','resumoMs','manutencaoMs'].map(k=>[k,Math.max(0,Math.round(Number(detalhes[k])||0))]));
-    if(detalhes)for(const k of ["painelFormasDimensaoMs","painelFormasValoresMs","painelPessoalDimensaoMs","painelPessoalValoresMs","painelPessoalExibicaoMs","painelTerceirosDimensaoMs","painelTerceirosValoresMs","painelTerceirosExibicaoMs","diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
+    if(detalhes)for(const k of ["atividadeComparacaoMs","atividadeAbaMs","atividadeDimensaoMs","atividadeCabecalhoMs","planoAnualCopiasEvitadas","painelFormasDimensaoMs","painelFormasValoresMs","painelPessoalDimensaoMs","painelPessoalValoresMs","painelPessoalExibicaoMs","painelTerceirosDimensaoMs","painelTerceirosValoresMs","painelTerceirosExibicaoMs","diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"])if(typeof detalhes[k]==='number'&&Number.isFinite(detalhes[k]))TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao[k]=Math.max(0,Math.round(detalhes[k]));
     const c=detalhes?.concorrencia;
     if(c&&c.indicativo===true&&/^[A-Za-z]{1,80}$/.test(c.acao)&&Number.isFinite(c.inicioServidorMs)&&c.inicioServidorMs>=0&&(c.fimServidorMs===undefined||Number.isFinite(c.fimServidorMs)&&c.fimServidorMs>=c.inicioServidorMs))TEMPOS_RESPOSTA_GESTOR_.concorrencia={acao:c.acao,inicioServidorMs:c.inicioServidorMs,...(c.fimServidorMs===undefined?{}:{fimServidorMs:c.fimServidorMs}),...(/^[a-f0-9]{32}$/.test(c.chamada)&&/^[a-f0-9]{32}$/.test(c.pagina)?{chamada:c.chamada,pagina:c.pagina}:{}),indicativo:true};
     console.log(JSON.stringify({tipo:'gestor_tempo',...TEMPOS_RESPOSTA_GESTOR_}));
@@ -5033,7 +5033,9 @@ function resumirRegistroAtividade_(r, aba) {
 }
 
 function registrarAtividadeGestor_(ctx) {
+  const medir=(nome,fn)=>ctx.detalhesGravacao?medirEtapaGravacaoGestor_(ctx.detalhesGravacao,nome,fn):fn();
   const alteracoes = [];
+  medir('atividadeComparacaoMs',()=>{
   Object.keys(ctx.ss.abas).filter(ehAbaRegistrosGestor_).forEach(function (nome) {
     const aba = ctx.ss.abas[nome], atuais = new Map();
     aba.valores.slice(1).forEach(function (r) { if (r[11]) atuais.set(String(r[11]), r); });
@@ -5046,10 +5048,12 @@ function registrarAtividadeGestor_(ctx) {
       if ((!antes && depois) || (antes && !depois) || (antes && depois && hashRegistroGestor_(antes) !== hashRegistroGestor_(depois))) alteracoes.push({ aba: nome, id: id, antes: antes ? copiarGestor_(antes) : null, depois: depois ? copiarGestor_(depois) : null });
     });
   });
+  });
   const sh = ctx.ss.abas[ABA_ATIVIDADE_GESTOR_] || null;
   const cabecalhoAtividade = ['Evento', 'Data', 'Ação', 'Resumo', 'Tipo', 'Conteúdo'];
-  const real = sh || ctx.ssReal.getSheetByName(ABA_ATIVIDADE_GESTOR_);
-  if (real && real.getLastRow() && !real.getRange(1, 1, 1, 6).getValues()[0].every(function (v, i) { return v === cabecalhoAtividade[i]; })) throw new Error('A aba _Gestor_Atividade já contém dados de outro formato. Preserve-a antes de usar o histórico.');
+  const real = sh || medir('atividadeAbaMs',()=>obterAbaExecucaoGestor_(ctx.ssReal,ABA_ATIVIDADE_GESTOR_));
+  const ultimaLinha=medir('atividadeDimensaoMs',()=>real ? real.getLastRow() : 0);
+  if (real && ultimaLinha && !medir('atividadeCabecalhoMs',()=>real.getRange(1, 1, 1, 6).getValues())[0].every(function (v, i) { return v === cabecalhoAtividade[i]; })) throw new Error('A aba _Gestor_Atividade já contém dados de outro formato. Preserve-a antes de usar o histórico.');
   const id = ctx.action + ':' + ctx.param.requestId;
   const rotulo = ROTULOS_ATIVIDADE_GESTOR_[ctx.action] || 'Dados atualizados';
   const amostra = alteracoes[0], registro = amostra && (amostra.depois || amostra.antes);
@@ -5061,10 +5065,10 @@ function registrarAtividadeGestor_(ctx) {
   const texto = JSON.stringify(serializarGestor_(evento)), partes = texto.match(/[\s\S]{1,12000}/g) || [''];
   const valores = [[id, evento.data, ctx.action, rotulo, 'EVENTO', partes.length]].concat(partes.map(function (p, i) { return [id, '', '', '', 'PARTE ' + (i + 1), JSON.stringify(p)]; }));
   if (sh) {
-    if (!sh.getLastRow()) sh.getRange(1,1,1,6).setValues([cabecalhoAtividade]);
-    sh.getRange(sh.getLastRow()+1,1,valores.length,6).setValues(valores);
+    if (!ultimaLinha) sh.getRange(1,1,1,6).setValues([cabecalhoAtividade]);
+    sh.getRange(Math.max(1,ultimaLinha)+1,1,valores.length,6).setValues(valores);
   } else {
-    const inicio = real ? real.getLastRow()+1 : 1;
+    const inicio = ultimaLinha+1;
     const linhas = inicio === 1 ? [cabecalhoAtividade].concat(valores) : valores;
     ctx.anexosTecnicos = ctx.anexosTecnicos || [];
     ctx.anexosTecnicos.push({modo:'anexar', nome:ABA_ATIVIDADE_GESTOR_, inicio:inicio, valores:linhas});
@@ -6679,7 +6683,9 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   const lerAno=e=>{
     const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
     if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
-    return copiarGestor_(anosConferidos.get(chave));
+    // Mapa privado deste plano; consumidores apenas leem. O diff copia sua entrada.
+    if(ctx.detalhesGravacao)ctx.detalhesGravacao.planoAnualCopiasEvitadas=(ctx.detalhesGravacao.planoAnualCopiasEvitadas||0)+1;
+    return anosConferidos.get(chave);
   };
   for(const nome of ['Lançamentos','Empréstimos']){
     const aba=ctx.ss.abas[nome];if(!aba)continue;

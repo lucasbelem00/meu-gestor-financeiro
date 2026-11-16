@@ -1,5 +1,22 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Atividade e plano anual v219 local — revisão 16/11/2026
+
+registrarAtividadeGestor_ reutiliza a dimensão da aba na validação do cabeçalho e na posição do anexo: uma consulta em vez de duas. A referência positiva da aba usa obterAbaExecucaoGestor_; não memoriza ausência nem células entre operações. Cabeçalho incompatível continua bloqueando; aba vazia recebe cabeçalho antes do evento. Anexo permanece no plano recuperável, com conferências e barreiras do diário preservadas.
+
+No mapa privado anosConferidos de desdobrarPlanoAnualGestor_, lerAno deixa de copiar o ano inteiro a cada acesso de leitura. Entrada inicial é copiada; funções de diff continuam copiando antesConferido e registros de saída são independentes. Não reutiliza dados entre execuções nem remove leitura de anos fechados ou revalidação dos destinos na aplicação.
+
+Diagnóstico acrescenta atividadeComparacaoMs, atividadeAbaMs, atividadeDimensaoMs, atividadeCabecalhoMs e planoAnualCopiasEvitadas. São subetapas/contagem, sem conteúdo dos registros. Expectativa: redução limitada de I/O e alocações; não há comprovação de ganho real nesta versão antes de publicar e medir. Interface/cache v219, protocolo 19. Validação local: 1.370 testes aprovados, zero falhas (testes-v219-final.log), incluindo dois cenários novos de dimensão/posição e cabeçalho incompatível/aba vazia. CSS, espelhos e dist preparados; diff --check aprovado. Publicação de backend/frontend e nova rodada real pendentes.
+
+
+## Rodada real v218 — revisão 16/11/2026
+
+Diagnóstico recebido confirma interface v218 e novos campos no backend. Análise restrita à página atual: 14 chamadas bem-sucedidas, sem falhas, ocupação ou pendências financeiras; seis atualizações confirmadas aplicadas sem nova carga completa depois de cada mutação. Tempos no aparelho: Painel 10,16 s; Histórico 8,99 s; novo pessoal 22,28 s; edição pessoal 15,39 s; exclusão pessoal 21,61 s; Mensal 9,42 s; Anual 7,27 s; Planejamento 4,58/3,19 s; Recorrências 7,38 s; novo empréstimo 13,79 s; edição 18,57 s; exclusão 18,37 s. Amostras isoladas e cenários diferentes não comprovam ganho generalizado; salvar/excluir pessoal continuam prioritários.
+
+Novos campos painel* somam poucos milissegundos porque as leituras nesta rota são virtuais, após carregar a origem; não significam que a obtenção real dos dados foi barata. Leitura anual custa 2,29–4,36 s; aquisição de intervalos e conferências continuam relevantes. No novo pessoal: servidor 19,12 s, ação principal 6,28 s, registro de atividade 1,02 s; fase de gravação 9,63 s contém diário 2,72 s, aplicação 4,33 s e atualização confirmada 1,66 s, além das demais subetapas. Locks 0,10–0,30 s não explicam a demora. Renderização de exemplos 60–118 ms e Mensal 20 ms. Diferença entre chamada no aparelho e entrada doPost inclui inicialização/entrega HTTP e transporte; não atribuir tudo à rede nem à Vercel.
+
+Resumo em segundo plano: última execução 10,17 s, leitura 7,25 s (registros 5,29 s). Há pedido posterior à última conclusão, pendente e sem erro; uma fotografia não comprova travamento. Próximo foco: origem anual, atividade e aplicação/diário, separando custos reais antes de alterar as barreiras de confirmação. Nenhuma nova alteração de código financeiro nesta análise.
+
 ## Desempenho e diagnóstico v218 local — revisão 16/11/2026
 
 getDadosCompletos consulta uma única vez a última linha de cada tabela de formas, lançamentos e empréstimos, após a manutenção existente. Elimina três consultas repetidas em cargas com dados, sem manter dimensões entre execuções. Não modifica valores, datas, locks, versões, diário ou conferência anual. Em contexto virtual essas consultas já eram em memória; o benefício direto é principalmente nas leituras de abas reais. Ganho esperado limitado, sem estimativa em segundos antes da próxima rodada.

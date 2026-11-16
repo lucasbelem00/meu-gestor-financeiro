@@ -190,7 +190,9 @@ function desdobrarPlanoAnualGestor_(ctx,mudancas){
   const lerAno=e=>{
     const chave=e.ano+':'+e.id+':'+e.estado+':'+e.hash;
     if(!anosConferidos.has(chave))anosConferidos.set(chave,dadosAnoGestor_(e));
-    return copiarGestor_(anosConferidos.get(chave));
+    // Mapa privado deste plano; consumidores apenas leem. O diff copia sua entrada.
+    if(ctx.detalhesGravacao)ctx.detalhesGravacao.planoAnualCopiasEvitadas=(ctx.detalhesGravacao.planoAnualCopiasEvitadas||0)+1;
+    return anosConferidos.get(chave);
   };
   for(const nome of ['Lançamentos','Empréstimos']){
     const aba=ctx.ss.abas[nome];if(!aba)continue;

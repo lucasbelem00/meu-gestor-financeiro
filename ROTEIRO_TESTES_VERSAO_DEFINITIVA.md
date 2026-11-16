@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v219 — publicar backend e frontend juntos. Criar, editar e excluir teste pessoal e de terceiros; conferir Atividade e reversão permitida. Comparar atividadeRegistroMs com subetapas atividadeComparacao/Aba/Dimensao/CabecalhoMs e planoAnualCopiasEvitadas. Testar mudança entre competências/anos e preservar recusa de ano fechado alterado. Nenhuma nova permissão. Comparar tempos de múltiplas amostras, sem prometer ganho por contagem de cópias evitadas.
+
+
 Reteste v218 — após publicar backend e frontend, abrir Painel e executar um novo lançamento e uma edição. Copiar diagnóstico: conferir os oito campos painelFormas/Pessoal/Terceiros quando a carga completa for executada. Comparar tempos totais e leituras com a rodada anterior, sem somar subetapas aos respectivos totais. Conferir totais, formas arquivadas, ausência de empréstimos e tabelas vazias; reabrir após salvar para validar dados atuais. Código local não comprova ganho na conta.
 
 

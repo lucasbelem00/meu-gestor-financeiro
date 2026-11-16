@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v219 — módulos 2/10 e integrações 3/4/5/6: registrarAtividadeGestor_ consulta dimensão uma vez e mede comparação/aba/dimensão/cabeçalho. shared/anual.js desdobrarPlanoAnualGestor_ usa referência somente de leitura do mapa privado do plano, mantendo cópias no diff e conferências reais. Diagnóstico numérico central exporta quatro tempos e uma contagem adicionais.
+
+
 v218 — módulos 5 e 2: getDadosCompletos evita dimensões duplicadas nas três tabelas e mede dimensão/valores/exibição separadamente. shared/metricas-diagnostico.cjs incorpora oito campos numéricos no transporte e diagnóstico frontend. Não há novo cache de dados nem mudança das regras financeiras.
 
 
