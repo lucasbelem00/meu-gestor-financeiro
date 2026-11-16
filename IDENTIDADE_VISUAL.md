@@ -269,3 +269,5 @@ Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro
 16/11/2026 — v215 local: os três atalhos expansíveis do editor de empréstimos compartilham um grupo vertical com gap-2 (8px), sem padding extra no terceiro atalho. Painéis ocultos não acrescentam espaço; editor pessoal preservado.
 
 16/11/2026 — v216 local: editores pessoal e de empréstimos compartilham grupo de ações expansíveis com gap-2 (8px), sem divisórias entre atalhos. Adiantar parcelas mantém exibição condicional no editor pessoal; uma borda superior separa o conjunto do formulário.
+
+16/11/2026 — v217 local: rodapés de edição pessoal e empréstimo usam a mesma linha superior `border-slate-700`, separando Cancelar/Atualizar das funções opcionais. Entre funções expansíveis permanece gap de 8px sem linhas internas.

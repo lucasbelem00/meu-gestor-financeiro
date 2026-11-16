@@ -1576,3 +1576,7 @@ Servidor salvar14.382ms: execução4.181, plano842, gravação8.473; diário2.54
 - v216 local somente frontend: ações finais do editor pessoal (adiantar quando disponível, mover para empréstimos e criar recorrência) ficam num grupo vertical com gap de 8px e uma única separação superior do restante do formulário. Sem divisórias ou padding adicionais entre ações, seguindo empréstimos. Painéis e referências existentes preservados.
 - Backend/regras financeiras inalterados; publicação/visual no aparelho pendentes.
 - Validação local v216: 88 testes relacionados aprovados sem falhas (`testes-v216-visual.log`), CSS/interfaces sincronizados, pacote estático preparado e diferenças sem erros. Nenhuma publicação pelo agente; somente frontend precisa mudar. Última suíte completa permanece v213, 1.368 testes, não repetida para este ajuste visual.
+
+### 16/11/2026 — rodapés dos editores v217 local
+- Editor pessoal recebe a mesma borda superior discreta e padding do rodapé de empréstimos, antes de Cancelar/Atualizar. O grupo de funções continua sem divisórias internas, com gap de 8px. Alteração apenas visual; backend e regras financeiras preservados. Publicação/visual no aparelho pendentes.
+- Validação local v217: 70 testes relacionados passaram sem falhas (`testes-v217-visual.log`), CSS/interfaces sincronizados, pacote estático preparado e diferenças sem erros. Última suíte completa continua v213 (1.368 testes), não repetida nesta correção visual. Publicar somente frontend; não publicado pelo agente.
