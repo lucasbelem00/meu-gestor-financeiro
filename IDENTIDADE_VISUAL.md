@@ -267,3 +267,5 @@ Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro
 16/11/2026 — v214 local: Criar recorrência no editor de empréstimos fica no mesmo conjunto visual das ações de recebimento parcial e mover para pessoal, sem borda superior; espaçamento preservado. Editor de gasto pessoal mantém sua separação.
 
 16/11/2026 — v215 local: os três atalhos expansíveis do editor de empréstimos compartilham um grupo vertical com gap-2 (8px), sem padding extra no terceiro atalho. Painéis ocultos não acrescentam espaço; editor pessoal preservado.
+
+16/11/2026 — v216 local: editores pessoal e de empréstimos compartilham grupo de ações expansíveis com gap-2 (8px), sem divisórias entre atalhos. Adiantar parcelas mantém exibição condicional no editor pessoal; uma borda superior separa o conjunto do formulário.
