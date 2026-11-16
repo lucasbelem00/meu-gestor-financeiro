@@ -22,3 +22,5 @@ test('empréstimo herdado confirma uma única gravação e limpa só a cópia en
 test('falha de armazenamento antes da reserva impede envio e conserva o formulário',async()=>{
  const a=ambienteEnvio(),p=a.pagina();p.c.gravarArmazenamentoGestor=()=>{throw Error('Sem espaço');};await p.enviar();assert.equal(a.envios.length,0);assert.equal(p.el('inpDesc').value,'Almoço fictício');assert.equal(p.c.salvandoGastoTrava,false);
 });
+
+test('aviso do empréstimo distingue formulário concluído de alteração durante o envio',async()=>{const a=ambienteEnvio(),p=a.pagina();await p.enviar(true);assert(p.avisos.some(v=>v[0]==='Empréstimo salvo'&&v[1]==='Registro confirmado.'));const q=a.pagina(),api=q.c.apiCall;q.c.apiCall=async(...args)=>{const r=await api(...args);q.el('inpEmpDesc').value='Outro rascunho';return r;};await q.enviar(true);assert.equal(q.el('inpEmpDesc').value,'Outro rascunho');assert(q.avisos.some(v=>v[0]==='Empréstimo salvo'&&/campos atuais foram preservados/.test(v[1])));});

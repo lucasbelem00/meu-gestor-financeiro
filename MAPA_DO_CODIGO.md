@@ -1,5 +1,11 @@
 # Mapa do código do Gestor de Gastos
 
+v224 — módulos 2/3/4/5/6/8/10: interface/desempenho.js coordena leituras durante mutações, protege registros de listas em recarga e preserva acessórios do cache parcial. index inclui guardas em editar/excluir pessoal/terceiros e opta por resposta financeira enxuta em novos pedidos; interface/faturas.js e recorrencias.js usam mesma opção. Backend criarPlanilhaVirtualGestor_ seleciona projeção pessoal em consultas restritas; shared/anual.js diferencia chave parcial/integral e mantém anos fechados completos. getDadosCompletos aceita opção interna financeira apenas no contexto de snapshot; montarAtualizacaoDadosConfirmadaGestor_ dispensa notas/estatísticas sob opt-in e exporta contagem.
+
+
+v223 — módulos 2/4: gravarEmprestimoSeguroGestor distingue conclusão efetiva do formulário e preservação de campos no aviso de confirmação. Não altera payload, backend nem fluxo protegido do reenvio.
+
+
 v222 — módulos 2/10 com integração a todas as mutações: executor passa limite local da aba às buscas iniciais no diário; localizarLinhasTecnicasGestor_ aceita limite opcional vinculado à aba. aplicarAnexoTecnicoGestor_ reutiliza dimensão apenas dentro de sua execução e recebe detalhes opcionais para sete novas medições. Recuperação, consulta posterior e anexo do diário continuam com leituras próprias.
 
 

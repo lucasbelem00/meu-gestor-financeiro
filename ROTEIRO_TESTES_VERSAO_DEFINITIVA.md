@@ -1,5 +1,11 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v224 — publicar backend/frontend juntos. Durante atualização da lista, tentar editar/excluir/receber: deve aguardar sem enviar mutação sobre registro antigo; navegar, preencher novo e fechar/cancelar modal continua possível. Em falha, usar Tentar atualizar, sem liberar versão antiga. Abrir Mensal/Anual enquanto salva: leitura deve aguardar envio, sem repetir gravação nem promover resultado anterior. Conferir fórmulas indevidas em terceiros e ano fechado alterado ainda recusados em consulta pessoal. Confirmar totais e parcelas cruzando anos. Após salvar, testar notas existentes/pendentes e recarregar app: acessórios anteriores permanecem recuperáveis, enquanto consulta completa volta a conferi-los. Novo diagnóstico deve incluir anoValoresEvitadas, atualizacaoAcessoriosDispensados e atualizacaoRegistros (pendente/desatualizado/bloqueadas). Fazer várias amostras de cadastro/edição/exclusão sem iniciar exclusão sobre lista atualizando.
+
+
+Reteste v223 — publicar frontend. Novo empréstimo confirmado com formulário inalterado deve limpar e mostrar Registro confirmado. Se campos mudarem durante envio ou reenvio protegido corresponder a outro rascunho, preservar campos e informar isso. Após editar, aguardar atualização da lista antes de excluir; recusa de referência antiga deve permanecer, sem duplicação nem remoção indevida.
+
+
 Reteste v222 — publicar backend/frontend. Cadastrar, editar e excluir testes pessoal/terceiros, conferir Atividade e copiar diagnóstico na mesma página. Comparar diarioDimensaoBuscaMs e etapas anexo* sem somá-las aos totais de preparação/aplicação. Preservar reenvio protegido sem duplicação e bloqueio de histórico divergente. Limites das buscas iniciais nunca devem ser reaproveitados após recuperar/escrever nem entre aparelhos. Ganho real precisa de várias amostras.
 
 

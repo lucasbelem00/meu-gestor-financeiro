@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v222');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v224');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -280,11 +280,10 @@ test('pagamento invalida antes e depois, e resposta atravessada por gravação n
   const c=coordenador({executar:(acao)=>new Promise(resolve=>chamadas.push({acao,resolve}))});
   const antiga=c.chamar('obterRelatorioMes','10/2026');await aguardar();
   const pagamento=c.chamar('registrarPagamentoFaturaWeb',{valor:40});await aguardar();
-  chamadas[0].resolve({pago:0});await aguardar();assert.equal(chamadas.length,3);
-  chamadas[1].resolve({pago:40});await pagamento;
-  chamadas[2].resolve({pago:0});await aguardar();assert.equal(chamadas.length,4);
-  chamadas[3].resolve({pago:40});const confirmado=await antiga;
-  assert.equal(confirmado.pago,40);assert.equal(c.metricas().descartadas,2);
+  chamadas[0].resolve({pago:0});await aguardar();assert.equal(chamadas.length,2);
+  chamadas[1].resolve({pago:40});await pagamento;await aguardar();assert.equal(chamadas.length,3);
+  chamadas[2].resolve({pago:40});const confirmado=await antiga;
+  assert.equal(confirmado.pago,40);assert.equal(c.metricas().descartadas,1);
   assert.equal((await c.chamar('obterRelatorioMes','10/2026')).pago,40);
 });
 
@@ -512,3 +511,7 @@ test('recorrências confirmadas têm consumo único e não atravessam retomada d
 test('resumo técnico por ação preserva amostras e mediana, sem parâmetros financeiros',()=>{const {ctx}=ambiente(async()=>({}));const r=ctx.resumirExecucoesDiagnosticoGestor([{acao:'salvarPlanejamentoWeb',duracaoMs:10,estado:'sucesso'},{acao:'salvarPlanejamentoWeb',duracaoMs:30,estado:'falha'},{acao:'obterRelatorioMes',duracaoMs:20,estado:'sucesso'}]);assert.equal(r[0].amostras,2);assert.equal(r[0].medianaMs,20);assert.equal(r[0].maximoMs,30);assert.equal(r[0].falhas,1);assert.equal(r[1].amostras,1);});
 
 test('Planejamento reaproveita leitura breve e invalida por gravação, foco e prazo',async()=>{let agora=1000,chamadas=0;const c=coordenador({agora:()=>agora,leituras:new Set([...leituras,'obterPlanejamentoWeb']),cacheaveis:['obterPlanejamentoWeb'],executar:async acao=>{chamadas++;return acao==='obterPlanejamentoWeb'?{linhas:[['ID']],versao:'v1'}:{sucesso:true};}});await c.chamar('obterPlanejamentoWeb',{});await c.chamar('obterPlanejamentoWeb',{});assert.equal(chamadas,1);c.invalidar('foco');await c.chamar('obterPlanejamentoWeb',{});assert.equal(chamadas,2);agora+=16000;await c.chamar('obterPlanejamentoWeb',{});assert.equal(chamadas,3);await c.chamar('salvarPlanejamentoWeb',{});await c.chamar('obterPlanejamentoWeb',{});assert.equal(chamadas,5);});
+
+test('Mensal e Anual aguardam gravação enviada antes de disputar leitura',async()=>{const calls=[];const c=coordenador({executar:(acao)=>new Promise(resolve=>calls.push({acao,resolve}))});const envio=c.chamar('salvarLancamentoWeb',{});await aguardar();const mensal=c.chamar('obterRelatorioMes','10/2026'),anual=c.chamar('obterRelatorioAnual','2026');await aguardar();assert.deepEqual(calls.map(x=>x.acao),['salvarLancamentoWeb']);calls[0].resolve({sucesso:true});await envio;await aguardar();assert.equal(calls.length,3);for(const call of calls.slice(1))call.resolve({ok:true});await Promise.all([mensal,anual]);assert(c.metricas().esperasConsultas.some(e=>e.motivo==='gravacao'));});
+
+test('recarga protege ações existentes sem bloquear novo lançamento nem navegação',async()=>{let concluir;const calls=[];const a=ambiente(async acao=>{calls.push(acao);return {sucesso:true};},false,{carregarDados:()=>new Promise(resolve=>{concluir=resolve;})});const recarga=a.ctx.carregarDados();await aguardar();await assert.rejects(a.ctx.apiCall('excluirEmprestimoWeb',{}),e=>e.codigo==='DADOS_EM_ATUALIZACAO');assert.equal(calls.length,0);await a.ctx.apiCall('salvarLancamentoWeb',{});assert.deepEqual(calls,['salvarLancamentoWeb']);assert.doesNotThrow(()=>a.ctx.setAba('novo'));concluir(true);await recarga;await a.ctx.apiCall('excluirEmprestimoWeb',{});assert.deepEqual(calls,['salvarLancamentoWeb','excluirEmprestimoWeb']);});

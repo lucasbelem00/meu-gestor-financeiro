@@ -1,5 +1,8 @@
 # Identidade visual do webapp
 
+v224 — listas em atualização mostram aviso curto de status acima dos registros. Pessoas em Empréstimos bloqueiam interação até resposta atual confirmada; Histórico mantém seu bloqueio próprio e guardas de edição/exclusão. Não escurecer nem bloquear a página toda, navegação ou Cancelar dos modais. Falha mantém informação de lista desatualizada com ação de retry já existente.
+
+
 v180 — Pix retoma percentual de uso com mesmas faixas de atenção dos cartões; linguagem da referência de gastos (atingida/excedida), sem tratar como crédito bancário. Resumo de terceiros passa a 🤝 + valor de terceiros e Total no mês, somente competência atual, como cartões. Retira total geral a receber do card Pix; permanece em Pagamentos e recebimentos. Pagamentos futuros continuam com rótulo separado.
 
 

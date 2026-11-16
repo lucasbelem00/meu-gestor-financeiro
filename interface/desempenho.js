@@ -135,7 +135,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     // Histórico não disputa a trava com a edição já enviada nesta aba.
     // Não bloquear consultas internas de protocolo/confirmação da mutação.
-    if(leiturasDeTela.has(acao)&&mutacoesPendentes.size){
+    if((leiturasDeTela.has(acao)||cacheaveis.has(acao))&&mutacoesPendentes.size){
       return aguardarConsulta(mutacoesPendentes,'gravacao',()=>consultar(acao,param,extras,repeticoes,continuar,tentativasOcupadas));
     }
     // A repetição de uma carga antiga pode nascer depois que a edição começou.
@@ -304,7 +304,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v222', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v224', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -376,6 +376,7 @@ function conferirProtocoloAntesMutacaoGestor(acao,param){
   return verificacaoInicialCoordenadaGestor.then(()=>{if(protocoloServidorGestor<minimo)throw new Error('Atualize a implantação do Apps Script antes de gravar. Seus campos foram preservados.');});
 }
 window.apiCall = function apiCoordenadaDesempenhoGestor(acao, param, ...extras) {
+  if(['editarLancamentoLinhaWeb','excluirLancamentoWeb','editarEmprestimoLinhaWeb','excluirEmprestimoWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao)&&!controleAtualizacaoRegistrosGestor.permitir()){const e=new Error('Aguarde a atualização da lista antes de alterar este registro.');e.codigo='DADOS_EM_ATUALIZACAO';return Promise.reject(e);}
   const verificacao=conferirProtocoloAntesMutacaoGestor(acao,param);
   if(verificacao)return verificacao.then(()=>apiCoordenadaDesempenhoGestor(acao,param,...extras));
   const estadoMensal = acao === 'obterRelatorioMes' && cargaMensalDesempenhoGestor?.mes === String(param) ? cargaMensalDesempenhoGestor : null;
@@ -390,7 +391,7 @@ window.apiCall = function apiCoordenadaDesempenhoGestor(acao, param, ...extras) 
 function invalidarLeiturasDesempenhoGestor(motivo) { coordenadorLeiturasDesempenhoGestor.invalidar(motivo); }
 function cancelarEsperaAtualizacaoAppGestor(){coordenadorLeiturasDesempenhoGestor.cancelarAtualizacao();}
 function aguardarOperacoesAntesAtualizarAppGestor(){return coordenadorLeiturasDesempenhoGestor.prepararAtualizacao();}
-function obterMetricasDesempenhoGestor() { return {...coordenadorLeiturasDesempenhoGestor.metricas(),entrePaginas:serializadorPaginasGestor.metricas()}; }
+function obterMetricasDesempenhoGestor() { return {...coordenadorLeiturasDesempenhoGestor.metricas(),entrePaginas:serializadorPaginasGestor.metricas(),atualizacaoRegistros:controleAtualizacaoRegistrosGestor.estado()}; }
 let retomarFiltroHistoricoGestor=false;
 function capturarHistoricoAtualizacaoGestor(){
   if(typeof abaAtivaAtual==='undefined'||abaAtivaAtual!=='lancamentos'||typeof offsetAtual==='undefined'||offsetAtual!==0||typeof filtrosAtuais==='undefined')return null;
@@ -503,6 +504,35 @@ if (typeof carregarMensalAntesCoordenacaoDesempenhoGestor === 'function') {
   };
 }
 
+// Protege apenas ações sobre dados existentes; formulários novos e navegação seguem livres.
+function criarControleAtualizacaoRegistrosGestor(aoMudar){
+  let sequencia=0,pendente=false,desatualizado=false,bloqueadas=0;
+  const estado=()=>({pendente,desatualizado,bloqueadas});
+  return {iniciar(){const id=++sequencia;pendente=true;desatualizado=true;aoMudar?.(estado());return id;},
+    concluir(id,ok){if(id!==sequencia)return;pendente=false;desatualizado=!ok;aoMudar?.(estado());},
+    permitir(){if(!pendente&&!desatualizado)return true;bloqueadas++;return false;},estado};
+}
+const listasProtegidasAtualizacaoGestor=new Map();
+function apresentarAtualizacaoRegistrosGestor(estado){
+  for(const id of ['listaResumoPessoasEmp','lista-lancamentos']){
+    const el=document.getElementById(id);if(!el)continue;
+    let item=listasProtegidasAtualizacaoGestor.get(el);
+    if(!item){const aviso=document.createElement('p');aviso.className='text-sm text-sky-200 py-2';aviso.setAttribute('role','status');el.before(aviso);item={aviso,inertAnterior:el.inert};listasProtegidasAtualizacaoGestor.set(el,item);}
+    const bloqueado=estado.pendente||estado.desatualizado;
+    if(bloqueado&&!item.bloqueado)item.inertAnterior=el.inert;
+    // Histórico já controla inert na sua paginação; suas ações usam a guarda abaixo.
+    if(id==='listaResumoPessoasEmp')el.inert=bloqueado?true:item.inertAnterior;item.bloqueado=bloqueado;
+    item.aviso.hidden=!bloqueado;item.aviso.textContent=estado.pendente?'Atualizando registros… Aguarde para editar, receber ou excluir.':'A lista precisa ser atualizada antes de editar, receber ou excluir.';
+  }
+}
+const controleAtualizacaoRegistrosGestor=criarControleAtualizacaoRegistrosGestor(apresentarAtualizacaoRegistrosGestor);
+function permitirAcaoRegistroAtualGestor(){if(controleAtualizacaoRegistrosGestor.permitir())return true;mostrarAviso('Aguarde a atualização','Confira a lista atualizada antes de alterar este registro. Você pode continuar navegando.');return false;}
+function cacheComAcessoriosPreservadosGestor(dados,cacheAnterior){
+  if(dados?.atualizacaoFinanceiraEnxuta!==true)return dados;
+  let anterior;try{anterior=typeof cacheAnterior==='string'?JSON.parse(cacheAnterior):cacheAnterior;}catch(_){return dados;}
+  if(!anterior||anterior.epocaRestauracao!==dados.epocaRestauracao)return dados;
+  const copia={...dados};for(const k of ['anotacoes','notasRevision','erroNotas','historicoTecnico'])if(copia[k]===undefined&&anterior[k]!==undefined)copia[k]=anterior[k];return copia;
+}
 // Vários consumidores podem aguardar a mesma atualização, com um único render.
 // Uma gravação que começar ou terminar abre uma nova geração de atualização.
 const carregarDadosAntesCoordenacaoGestor = window.carregarDados;
@@ -513,7 +543,9 @@ window.carregarDados = function(...args) {
   const versao = coordenadorLeiturasDesempenhoGestor.geracao();
   if (recargaCoordenadaDesempenhoGestor?.versao === versao) return recargaCoordenadaDesempenhoGestor.promessa;
   const atual = { versao, promessa: null };
-  atual.promessa = Promise.resolve().then(() => carregarDadosAntesCoordenacaoGestor(...args)).finally(() => {
+  const token=controleAtualizacaoRegistrosGestor.iniciar();let confirmado=false;
+  atual.promessa = Promise.resolve().then(() => carregarDadosAntesCoordenacaoGestor(...args)).then(ok=>{confirmado=ok===true;return ok;}).finally(() => {
+    controleAtualizacaoRegistrosGestor.concluir(token,confirmado);
     if (recargaCoordenadaDesempenhoGestor === atual) recargaCoordenadaDesempenhoGestor = null;
   });
   recargaCoordenadaDesempenhoGestor = atual;
