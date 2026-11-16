@@ -1,6 +1,10 @@
-// Fonte única de nomes numéricos; o gerador incorpora a lista nos destinos.
-// Não contém parâmetros, valores financeiros, URLs ou credenciais.
+// Fonte única de campos numéricos de diagnóstico, incorporada pelo gerador.
 module.exports = Object.freeze([
+  "diarioMs",
+  "aplicacaoMs",
+  "confirmacaoMs",
+  "resumoMs",
+  "manutencaoMs",
   "resumoComparacaoMs",
   "resumoGravacaoMs",
   "resumoFlushMs",
@@ -118,6 +122,6 @@ module.exports = Object.freeze([
   "ordenacaoRegistros",
   "relatorioRegistrosPreparados",
   "relatorioRegistrosNaoPreparados",
-  "tipo",
-  "prioridade"
+  "atualizacaoRecorrenciasRecusada",
+  "atualizacaoListaRecorrenciasMs"
 ]);

@@ -9,6 +9,11 @@ function agendarBuscaEmprestimosGestor(){
   clearTimeout(buscaEmprestimosPendenteGestor);
   buscaEmprestimosPendenteGestor=setTimeout(()=>{buscaEmprestimosPendenteGestor=null;renderizarPainelEmprestimos();},160);
 }
+function resumirExecucoesDiagnosticoGestor(execucoes){
+  const grupos=new Map();
+  for(const e of execucoes){const g=grupos.get(e.acao)||{acao:e.acao,amostras:0,sucessos:0,falhas:0,tempos:[]};g.amostras++;g[e.estado==='sucesso'?'sucessos':'falhas']++;g.tempos.push(e.duracaoMs);grupos.set(e.acao,g);}
+  return [...grupos.values()].map(g=>{const t=g.tempos.sort((a,b)=>a-b),i=Math.floor(t.length/2);return {acao:g.acao,amostras:g.amostras,sucessos:g.sucessos,falhas:g.falhas,minimoMs:t[0],medianaMs:t.length%2?t[i]:Math.round((t[i-1]+t[i])/2),maximoMs:t[t.length-1]};});
+}
 function criarCoordenadorLeiturasGestor(opcoes) {
   const agora = opcoes.agora || Date.now;
   const ttl = opcoes.ttlMs ?? 15000;
@@ -43,7 +48,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     });
   }
   let respostaCompletaAtual = null;
-  let atualizacaoConfirmada = null, historicoConfirmado = null;
+  let atualizacaoConfirmada = null, historicoConfirmado = null, recorrenciasConfirmadas=null;
   const metricas = { envios: 0, compartilhadas: 0, cache: 0, descartadas: 0, invalidacoes: 0, atualizacoesConfirmadas: 0, filtrosSuperados:0, ocupadas:0, retentativasOcupado:0, ocupadasEsgotadas:0 };
   const motivosInvalidacao = new Set(['externa','mutacao_inicio','mutacao_fim','carga_completa','online','foco','armazenamento','visivel']);
   const invalidacoesPorMotivo = {}, ultimasInvalidacoes = [], ultimosDescartes = [];
@@ -78,7 +83,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     cache.clear(); bytes = 0;
     respostaCompletaAtual = null;
     if(atualizacaoConfirmada)registrarEstadoAtualizacao('descartada','invalidacao',null);
-    atualizacaoConfirmada = null;historicoConfirmado=null;
+    atualizacaoConfirmada = null;historicoConfirmado=null;recorrenciasConfirmadas=null;
     // Promessas anteriores seguem observadas por seus solicitantes, sem serem
     // reaproveitadas por consultas iniciadas depois desta invalidação.
     consultas.clear();
@@ -226,15 +231,21 @@ function criarCoordenadorLeiturasGestor(opcoes) {
       // Qualquer outra alteração/retomada durante o envio exige consulta normal.
       try{
         const snapshot=respostaConfirmada?.atualizacaoDados,d=snapshot?.dados;
-        const elegivel=param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb'].includes(acao);
+        const elegivel=param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','excluirEmprestimoWeb','confirmarMesRecorrenciaWeb'].includes(acao);
         if(elegivel)registrarEstadoAtualizacao('recebida',!respostaConfirmada?'sem_resposta':!snapshot?'ausente':!mesmaGeracao?'geracao_alterada':respostaConfirmada?.integridade?.bloqueada?'integridade_bloqueada':'para_validar',acao);
-        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb'].includes(acao)&&snapshot?.versao===1&&
+        if(mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&param?.incluirAtualizacaoDados===true&&['salvarLancamentoWeb','editarLancamentoLinhaWeb','salvarCategoriasWeb','excluirLancamentoWeb','registrarPagamentoFaturaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','salvarFormaPagamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','excluirEmprestimoWeb','confirmarMesRecorrenciaWeb'].includes(acao)&&snapshot?.versao===1&&
           d&&typeof d==='object'&&!Array.isArray(d)&&Number(d.protocoloGestor)>=18&&!d.erro&&!d.error&&
           d.integridade&&d.integridade.bloqueada===false&&typeof d.epocaRestauracao==='string'&&
           d.kpis&&d.faturas&&Array.isArray(d.lancamentos)&&Array.isArray(d.formasPagamento)&&
           Array.isArray(d.configCategorias)&&Array.isArray(d.emprestimos?.itens)&&d.versoesConfiguracao){
           const serializado=JSON.stringify(d);
           if(serializado.length*2<=limiteBytes){atualizacaoConfirmada={geracao,instante:agora(),dados:JSON.parse(serializado),historico:copiar(snapshot.historico)};registrarEstadoAtualizacao('guardada','valida',acao);}else registrarEstadoAtualizacao('descartada','tamanho',acao);
+        }
+        const rec=respostaConfirmada?.atualizacaoRecorrencias;
+        if(param?.incluirAtualizacaoRecorrencias===true&&['salvarRecorrenciaWeb','confirmarMesRecorrenciaWeb'].includes(acao)){
+          const valida=mesmaGeracao&&!respostaConfirmada?.integridade?.bloqueada&&rec?.versao===1&&Array.isArray(rec.dados?.itens)&&Array.isArray(rec.dados?.assinaturas);
+          if(valida){recorrenciasConfirmadas={geracao,instante:agora(),dados:copiar(rec.dados)};registrarEstadoAtualizacao('recorrencias','guardada',acao);}
+          else registrarEstadoAtualizacao('recorrencias',!mesmaGeracao?'geracao_alterada':!rec?'ausente':'invalida',acao);
         }
         if(elegivel&&mesmaGeracao&&snapshot&&!atualizacaoConfirmada&&!respostaConfirmada?.integridade?.bloqueada)registrarEstadoAtualizacao('descartada','formato_ou_limite',acao);
       }catch(_){registrarEstadoAtualizacao('descartada','falha_acessoria',acao);/* Não alterar confirmação financeira. */}
@@ -251,6 +262,11 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     prepararAtualizacao:async()=>{preparandoAtualizacao=true;const inicio=agora();while(execucoesAtivas.size||mutacoesPendentes.size||consultas.size){await Promise.allSettled([...execucoesAtivas,...mutacoesPendentes,...consultas.values()]);await Promise.resolve();}esperaAtualizacaoMs=Math.max(0,agora()-inicio);},
     consultarHistorico:(param,continuar)=>consultar('filtrarLancamentosWeb',copiar(param),[],0,continuar),
     consultarDadosRecarga:continuar=>consultar('getDadosCompletos',undefined,[],0,continuar),
+    consumirRecorrenciasConfirmadas:()=>{
+      const item=recorrenciasConfirmadas;recorrenciasConfirmadas=null;
+      if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
+      registrarEstadoAtualizacao('recorrencias','aproveitada');return copiar(item.dados);
+    },
     consumirAtualizacaoConfirmada:()=>{
       const item=atualizacaoConfirmada;atualizacaoConfirmada=null;
       if(!item||item.geracao!==geracao||mutacoesPendentes.size||agora()-item.instante<0||agora()-item.instante>=ttl)return null;
@@ -270,7 +286,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v211', motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v212', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

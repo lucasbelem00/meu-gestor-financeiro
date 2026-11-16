@@ -57,9 +57,14 @@ function sincronizarMotor(){
   const camposMetricas=JSON.stringify(require('../shared/metricas-diagnostico.cjs'));
   for(const nome of ['index.html','Backend/Code.gs']){
     const arquivo=path.join(raiz,nome),conteudo=ler(arquivo,'utf8');
+    const inicio=nome==='index.html'?conteudo.indexOf('function normalizarTemposServidorGestor'):conteudo.indexOf('function registrarTemposRespostaGestor_');
+    const fim=nome==='index.html'?conteudo.indexOf('function registrarDiagnosticoAtividadeGestor',inicio):conteudo.indexOf('function medirEtapaGravacaoGestor_',inicio);
+    if(inicio<0||fim<=inicio)throw Error('Normalizador de métricas ausente: '+nome);
+    const trecho=conteudo.slice(inicio,fim);
     const padrao=nome==='index.html'?/for\(const campo of \[[^\n]+?\]\)/:/if\(detalhes\)for\(const k of \[[^\n]+?\]\)/;
-    if(!padrao.test(conteudo))throw Error('Lista de métricas ausente: '+nome);
-    guardar(arquivo,conteudo.replace(padrao,nome==='index.html'?'for(const campo of '+camposMetricas+')':'if(detalhes)for(const k of '+camposMetricas+')'));
+    if(!padrao.test(trecho))throw Error('Lista de métricas ausente: '+nome);
+    const novo=trecho.replace(padrao,nome==='index.html'?'for(const campo of '+camposMetricas+')':'if(detalhes)for(const k of '+camposMetricas+')');
+    guardar(arquivo,conteudo.slice(0,inicio)+novo+conteudo.slice(fim));
   }
   for(const [destino,conteudo] of pendentes){
     for(let tentativa=0;;tentativa++){

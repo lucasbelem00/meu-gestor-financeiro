@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v211');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v212');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -506,3 +506,7 @@ test('falha da coordenação antes do envio usa caminho normal uma vez e não en
 
 test('recarga visual superada repassa cancelamento ao coordenador e não envia consulta',async()=>{const chamadas=[],a=ambiente(async acao=>{chamadas.push(acao);return {};});await assert.rejects(a.ctx.consultarDadosRecargaGestor(()=>false),e=>e.codigo==='CONSULTA_SUBSTITUIDA');assert.deepEqual(chamadas,[]);});
 test('diagnóstico explica perda por foco e conserva consulta de segurança sem expor conteúdo',async()=>{let concluir;const c=coordenador({executar:()=>new Promise(r=>concluir=r)});const p=c.chamar('salvarLancamentoWeb',{incluirAtualizacaoDados:true,descricao:'DADO PRIVADO'});await aguardar();c.invalidar('foco');concluir({atualizacaoDados:snapshotConfirmado()});await p;assert.equal(c.consumirAtualizacaoConfirmada(),null);const m=c.metricas();assert.equal(m.motivosAtualizacaoConfirmada['recebida:geracao_alterada'],1);assert(m.ultimasAtualizacoesConfirmadas.some(x=>x.invalidacoes.includes('foco')));assert(!JSON.stringify(m).includes('DADO PRIVADO'));});
+
+test('recorrências confirmadas têm consumo único e não atravessam retomada de foco',async()=>{const dados={itens:[],assinaturas:[],mesAtual:'10/2026'},c=coordenador({executar:async()=>({atualizacaoRecorrencias:{versao:1,dados}})});await c.chamar('salvarRecorrenciaWeb',{incluirAtualizacaoRecorrencias:true});assert.equal(JSON.stringify(c.consumirRecorrenciasConfirmadas()),JSON.stringify(dados));assert.equal(c.consumirRecorrenciasConfirmadas(),null);await c.chamar('confirmarMesRecorrenciaWeb',{incluirAtualizacaoRecorrencias:true});c.invalidar('foco');assert.equal(c.consumirRecorrenciasConfirmadas(),null);});
+
+test('resumo técnico por ação preserva amostras e mediana, sem parâmetros financeiros',()=>{const {ctx}=ambiente(async()=>({}));const r=ctx.resumirExecucoesDiagnosticoGestor([{acao:'salvarPlanejamentoWeb',duracaoMs:10,estado:'sucesso'},{acao:'salvarPlanejamentoWeb',duracaoMs:30,estado:'falha'},{acao:'obterRelatorioMes',duracaoMs:20,estado:'sucesso'}]);assert.equal(r[0].amostras,2);assert.equal(r[0].medianaMs,20);assert.equal(r[0].maximoMs,30);assert.equal(r[0].falhas,1);assert.equal(r[1].amostras,1);});

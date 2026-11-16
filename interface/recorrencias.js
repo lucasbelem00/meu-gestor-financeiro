@@ -4,10 +4,14 @@ const epocaModeloRecorrenciaGestor=()=>{try{return localStorage.getItem('gestorE
 function elementoRecorrenciaGestor(tag,texto,classe=''){const e=document.createElement(tag);e.textContent=texto;e.className=classe;return e;}
 function estadoRecorrenciaGestor(texto){const e=document.getElementById('estadoModelosRecorrenciaGestor');if(e)e.textContent=texto;}
 function bloquearRecorrenciasGestor(){document.querySelectorAll('#modelosRecorrenciaGestor button,#modelosRecorrenciaGestor input,#modelosRecorrenciaGestor select').forEach(e=>e.disabled=recorrenciasOcupadasGestor);const b=document.getElementById('btnAtualizarRecorrenciasGestor');if(b){b.textContent=recorrenciasOcupadasGestor?'Atualizando…':'↻ Atualizar';b.setAttribute('aria-busy',String(recorrenciasOcupadasGestor));}}
+function aplicarConsultaRecorrenciasGestor(r){
+  if(!Array.isArray(r?.itens)||!Array.isArray(r?.assinaturas))throw Error('Resposta de recorrências incompatível.');
+  modelosRecorrenciaGestor=r.itens;seriesRecorrenciasGestor=r.assinaturas;mesSeriesRecorrenciasGestor=r.mesAtual||mesSeriesRecorrenciasGestor;renderizarModelosRecorrenciaGestor();estadoRecorrenciaGestor(r.erroAutomatico?'Registro automático a conferir: '+r.erroAutomatico:'Recorrências atualizadas.');
+}
 async function carregarModelosRecorrenciaGestor(){
   if(recorrenciasOcupadasGestor)return;recorrenciasOcupadasGestor=true;bloquearRecorrenciasGestor();
   const epoca=epocaModeloRecorrenciaGestor();estadoRecorrenciaGestor('Consultando recorrências…');
-  try{const r=await apiCall('obterRecorrenciasWeb',{},1);if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada. Consulte novamente.');if(!Array.isArray(r.itens)||!Array.isArray(r.assinaturas))throw Error('Atualize o Apps Script para consultar todas as recorrências juntas.');modelosRecorrenciaGestor=r.itens;seriesRecorrenciasGestor=r.assinaturas;mesSeriesRecorrenciasGestor=r.mesAtual||mesSeriesRecorrenciasGestor;renderizarModelosRecorrenciaGestor();estadoRecorrenciaGestor(r.erroAutomatico?'Registro automático a conferir: '+r.erroAutomatico:'Recorrências atualizadas.');}
+  try{const r=await apiCall('obterRecorrenciasWeb',{},1);if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada. Consulte novamente.');if(!Array.isArray(r.itens)||!Array.isArray(r.assinaturas))throw Error('Atualize o Apps Script para consultar todas as recorrências juntas.');aplicarConsultaRecorrenciasGestor(r);}
   catch(e){estadoRecorrenciaGestor(e.message);}finally{recorrenciasOcupadasGestor=false;bloquearRecorrenciasGestor();restaurarEditorModeloRecorrenciaGestor();}
 }
 function renderizarModelosRecorrenciaGestor(){
@@ -44,11 +48,12 @@ function revisarMesRecorrenciaGestor(m,texto,pular){
 }
 async function enviarModeloRecorrenciaGestor(acao,p){
   if(recorrenciasOcupadasGestor)return;recorrenciasOcupadasGestor=true;bloquearRecorrenciasGestor();let confirmado=false,erroEnvio='';const epoca=epocaModeloRecorrenciaGestor();
-  try{await apiCall(acao,{...p,requestId:novoRequestIdGestor()},1);confirmado=true;if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada durante o envio. Consulte novamente.');estadoRecorrenciaGestor('Alteração confirmada.');if(acao==='salvarRecorrenciaWeb'&&!p.desativar){editorRecorrenciaGestor=null;document.getElementById('editorModeloRecorrenciaGestor').replaceChildren();try{localStorage.removeItem('gestorModeloRecorrenciaRascunhoV1');}catch(_){}}
+  try{await apiCall(acao,{...p,incluirAtualizacaoRecorrencias:true,...(acao==='confirmarMesRecorrenciaWeb'?{incluirAtualizacaoDados:true}:{}),requestId:novoRequestIdGestor()},1);confirmado=true;if(epoca!==epocaModeloRecorrenciaGestor())throw Error('A base foi restaurada durante o envio. Consulte novamente.');estadoRecorrenciaGestor('Alteração confirmada.');if(acao==='salvarRecorrenciaWeb'&&!p.desativar){editorRecorrenciaGestor=null;document.getElementById('editorModeloRecorrenciaGestor').replaceChildren();try{localStorage.removeItem('gestorModeloRecorrenciaRascunhoV1');}catch(_){}}
     if(acao==='confirmarMesRecorrenciaWeb')await carregarDados();
   }catch(e){erroEnvio=confirmado?'Registro confirmado. Consulte o estado atual para visualizar.':e.message+' Consulte novamente antes de repetir um envio sem confirmação.';estadoRecorrenciaGestor(erroEnvio);}
   finally{recorrenciasOcupadasGestor=false;bloquearRecorrenciasGestor();}
-  await carregarModelosRecorrenciaGestor();
+  const atual=typeof coordenadorLeiturasDesempenhoGestor!=='undefined'?coordenadorLeiturasDesempenhoGestor.consumirRecorrenciasConfirmadas():null;
+  if(atual&&!erroEnvio){try{aplicarConsultaRecorrenciasGestor(atual);restaurarEditorModeloRecorrenciaGestor();}catch(_){await carregarModelosRecorrenciaGestor();}}else await carregarModelosRecorrenciaGestor();
   if(erroEnvio)estadoRecorrenciaGestor(erroEnvio);
 }
 function abrirEditorRecorrenciaGestor(modelo={},confirmado=false){

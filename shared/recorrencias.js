@@ -27,7 +27,8 @@ function listarModelosRecorrenciaGestor_(linhas){return linhas.slice(1).map(r=>(
 function conferirModeloPessoalDuplicadoGestor_(descricao,forma){
   if(listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()).some(m=>m.ativo&&m.origem==='pessoal'&&normalizarTexto(m.descricao)===normalizarTexto(descricao)&&chaveFormaGestor_(m.forma)===chaveFormaGestor_(forma)))throw Error('Já existe um modelo ativo desta recorrência. Edite o modelo em Recorrências antes de criar outra série.');
 }
-function obterRecorrenciasWeb(){return executarOperacaoGestor_('obterRecorrenciasWeb',{},()=>({itens:listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()),assinaturas:listarSeriesRecorrenciasGestor_(),mesAtual:formatarCelulaRegistroGestor_(getHojeSeguro(),'MM/yyyy'),erroAutomatico:configProtecaoGestor_().erroRecorrencias||''}),true);}
+function dadosRecorrenciasConsultaGestor_(){return {itens:listarModelosRecorrenciaGestor_(lerModelosRecorrenciaGestor_()),assinaturas:listarSeriesRecorrenciasGestor_(),mesAtual:formatarCelulaRegistroGestor_(getHojeSeguro(),'MM/yyyy'),erroAutomatico:configProtecaoGestor_().erroRecorrencias||''};}
+function obterRecorrenciasWeb(){return executarOperacaoGestor_('obterRecorrenciasWeb',{},dadosRecorrenciasConsultaGestor_,true);}
 function dataModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes);return new Date(p.a,p.m-1,Math.min(m.dia,new Date(p.a,p.m,0).getDate()));}
 function competenciaModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes),d=new Date(p.a,p.m-1+m.defasagem,1);return pad2(d.getMonth()+1)+'/'+d.getFullYear();}
 function avancarModeloRecorrenciaGestor_(m){const p=parseMesFat(m.proximoMes),d=new Date(p.a,p.m,1);m.proximoMes=pad2(d.getMonth()+1)+'/'+d.getFullYear();}
