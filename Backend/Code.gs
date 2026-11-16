@@ -1033,7 +1033,11 @@ function excluirEmprestimoWebInterno_(dados) {
     if (idxAlvo < 0) throw new Error('Registro não encontrado.');
 
     const rawAlvo=lidoEmp.raw[idxAlvo];
-    if(String(rawAlvo[9]||'').trim()==='Recebido'||valorPagoBancoGestor_(rawAlvo,true)>0)throw new Error('Há recebimento ou pagamento registrado nesta parcela. Confira ou desfaça o movimento em Atividade antes de excluir.');
+    const parcelaAlvo=parseNumParcela(limparApostrofo(rawAlvo[6]));
+    // Somente registro único à vista, ainda sem recebimento da pessoa.
+    // A saída automática do Pix/débito não tem pagamento de fatura para desfazer.
+    const imediatoExcluivel=dados.permitirExcluirImediatoSemRecebimento===true&&dados.excluirTodasParcelas!==true&&String(rawAlvo[9]||'').trim()==='A Receber'&&ehPagamentoImediatoGestor_(rawAlvo[3])&&parcelaAlvo.atual===1&&parcelaAlvo.total===1&&indicesMesmaCompra(dispAll,idxAlvo).length===1&&rawAlvo[14]==='Pago'&&[0,centavosGestor_(rawAlvo[7])].includes(centavosGestor_(rawAlvo[17]||0))&&centavosGestor_(rawAlvo[7])>0&&centavosGestor_(valorPagoBancoGestor_(rawAlvo,true))===centavosGestor_(rawAlvo[7]);
+    if(String(rawAlvo[9]||'').trim()==='Recebido'||valorPagoBancoGestor_(rawAlvo,true)>0&&!imediatoExcluivel)throw new Error('Há recebimento ou pagamento registrado nesta parcela. Confira ou desfaça o movimento em Atividade antes de excluir.');
     const linhaInt = idxAlvo + 2;
     const compraId=dispAll[idxAlvo][12];
     if (!dados.excluirTodasParcelas) {

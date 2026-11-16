@@ -23,7 +23,7 @@ test('ações de backup distinguem consulta, preparação, manutenção e grava�
   assert.equal(metadadosAcaoGestor('restaurarBackupDadosWeb').diarioFinanceiro,true);
   assert.equal(metadadosAcaoGestor('concluirRecuperacaoOperacaoWeb').conferirIntegridade,false);
   assert.throws(()=>metadadosAcaoGestor('acaoInexistente'),/não reconhecida/);
-  assert.deepEqual(Object.keys(catalogo).filter(a=>catalogo[a].cacheavel).sort(),['obterRelatorioAnual','obterRelatorioMes']);
+  assert.deepEqual(Object.keys(catalogo).filter(a=>catalogo[a].cacheavel).sort(),['obterPlanejamentoWeb','obterRelatorioAnual','obterRelatorioMes']);
 });
 
 for(const acao of ['obterPartesImportacaoBackupWeb','listarCopiasRestauracaoWeb','obterParteCopiaRestauracaoWeb'])test('falha de consulta '+acao+' não cria pendência financeira nem impede escolher backup',async()=>{

@@ -12,7 +12,7 @@ const CATALOGO_ACOES_GESTOR = (() => {
       exigeProtocoloAtual: ['financeira', 'temporaria', 'manutencao'].includes(tipo),
       alteraDados: tipo !== 'leitura',
       compartilhar: tipo === 'leitura',
-      cacheavel: ['obterRelatorioMes', 'obterRelatorioAnual'].includes(nome)
+      cacheavel: ['obterRelatorioMes', 'obterRelatorioAnual', 'obterPlanejamentoWeb'].includes(nome)
     });
   }
   grupo('leitura', 'obterRecorrenciasWeb previaPularMesFixoWeb obterPlanejamentoWeb getDadosCompletos obterRelatorioMes obterRelatorioAnual filtrarLancamentosWeb exportarBackupDadosWeb previaRestauracaoBackupWeb obterBackupAnteriorWeb obterAtividadeWeb obterFaturaPagamentoWeb previaEdicaoEmprestimoWeb previaDatasDevolucaoWeb previaPagamentoFaturaWeb previaAntecipacaoWeb consultarOperacaoWeb diagnosticarPendenciasWeb previaRecuperacaoOperacaoWeb previaRachadinhaWeb obterStatusProtecaoWeb previaManutencaoProtegidaWeb obterEmprestimosArquivadosWeb obterPartesImportacaoBackupWeb listarCopiasRestauracaoWeb obterParteCopiaRestauracaoWeb');
