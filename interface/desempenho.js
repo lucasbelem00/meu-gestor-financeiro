@@ -14,6 +14,24 @@ function resumirExecucoesDiagnosticoGestor(execucoes){
   for(const e of execucoes){const g=grupos.get(e.acao)||{acao:e.acao,amostras:0,sucessos:0,falhas:0,tempos:[]};g.amostras++;g[e.estado==='sucesso'?'sucessos':'falhas']++;g.tempos.push(e.duracaoMs);grupos.set(e.acao,g);}
   return [...grupos.values()].map(g=>{const t=g.tempos.sort((a,b)=>a-b),i=Math.floor(t.length/2);return {acao:g.acao,amostras:g.amostras,sucessos:g.sucessos,falhas:g.falhas,minimoMs:t[0],medianaMs:t.length%2?t[i]:Math.round((t[i-1]+t[i])/2),maximoMs:t[t.length-1]};});
 }
+// Correlação por chamada/página, sem depender do relógio civil do aparelho.
+// Fora do doPost inclui inicialização/entrega/transporte; não identifica a causa.
+function correlacionarTemposDiagnosticoGestor(transportes,entradas,pagina){
+  const resultado={criterio:'Mesma chamada, página e ação. Fora do doPost inclui inicialização e transporte; não atribui causa.',amostras:[],semCorrespondencia:0,inconsistentes:0};
+  if(!/^[a-f0-9]{32}$/.test(pagina))return resultado;
+  const valido=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=3600000;
+  const chave=e=>e.pagina+'|'+e.chamada+'|'+e.acao,mapa=new Map();
+  for(const e of (Array.isArray(entradas)?entradas:[]).slice(-30))if(e?.pagina===pagina&&/^[a-f0-9]{32}$/.test(e.chamada)&&/^[A-Za-z]{1,80}$/.test(e.acao)){const k=chave(e);mapa.set(k,mapa.has(k)?null:e);}
+  for(const t of (Array.isArray(transportes)?transportes:[]).slice(-30)){
+    if(t?.pagina!==pagina||!/^[a-f0-9]{32}$/.test(t.chamada)||!/^[A-Za-z]{1,80}$/.test(t.acao))continue;
+    const e=mapa.get(chave(t));if(!e){resultado.semCorrespondencia++;continue;}
+    if(!valido(t.totalMs)||!valido(e.totalMedidoMs)||e.totalMedidoMs>t.totalMs){resultado.inconsistentes++;continue;}
+    const r={acao:t.acao,totalClienteMs:Math.round(t.totalMs),totalDoPostMs:Math.round(e.totalMedidoMs),foraDoPostMs:Math.round(t.totalMs-e.totalMedidoMs)};
+    if(t.proxyInstrumentado===true&&valido(t.proxyCabecalhosMs))r.esperaCabecalhosProxyMs=Math.round(t.proxyCabecalhosMs);
+    resultado.amostras.push(r);
+  }
+  return resultado;
+}
 function criarCoordenadorLeiturasGestor(opcoes) {
   const agora = opcoes.agora || Date.now;
   const ttl = opcoes.ttlMs ?? 15000;
@@ -286,7 +304,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v219', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v220', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

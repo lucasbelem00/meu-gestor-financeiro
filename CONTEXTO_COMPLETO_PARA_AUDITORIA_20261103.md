@@ -1,5 +1,22 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Capacidade da gravação e correlação de tempos v220 local — revisão 16/11/2026
+
+garantirCapacidadeAplicacaoGestor_ evita getMaxRows/getMaxColumns somente quando a matriz real recém-conferida já comprova que o intervalo cabe. Em crescimento ou aba vazia, consulta capacidade e insere apenas o necessário. Não usa tamanho do plano desejado como prova nem cache entre operações. Aplicação continua lendo estado/fórmulas, verificando hashes, registrando diário e conferindo depois do flush. Benefício esperado: menos chamadas de metadados em edição/exclusão e, quando possível, cadastro; não há ganho real medido antes da publicação. Novos campos aplicarCapacidadeMs, aplicarCapacidadeConsultas e aplicarCapacidadeConsultasEvitadas.
+
+Diagnóstico medicao.versao 4 adiciona correlacaoTempos, restrita à página atual e no máximo 30 transportes/entradas. Liga somente mesma página, chamada e ação, rejeita duplicidade de entrada e duração incoerente. Mostra totalClienteMs, totalDoPostMs, foraDoPostMs e esperaCabecalhosProxyMs quando disponível. Não depende de subtrair relógios civil/servidor; subtrai durações da mesma chamada. Não atribui a diferença à rede ou Vercel: engloba inicialização anterior ao doPost e entrega/transporte. Espera do proxy se sobrepõe à execução do Google, não somar como fase independente. Sem URLs, payloads ou conteúdo financeiro na correlação.
+
+Interface/cache v220, protocolo 19 preservado. Validação local: 1.376 testes aprovados, zero falhas (testes-v220-final.log), incluindo seis novos cenários de capacidade/crescimento e correlação/privacidade/inconsistência. CSS, espelhos e dist preparados; diff --check aprovado. Publicação de backend/frontend e validação real pendentes. Documentos de mapa e roteiro atualizados. Nenhuma nova permissão necessária.
+
+
+## Rodada real v219 — revisão 16/11/2026
+
+Página atual v219: 12 chamadas concluídas com sucesso, sem pendências financeiras ou serviço ocupado. Seis atualizações confirmadas aplicadas, sem nova consulta completa após cada mutação. Tempos no aparelho: Painel 13,88 s; novo pessoal 19,61 s; edição pessoal 21,93 s; exclusão pessoal 13,58 s; Mensal 9,44 s; Anual 9,92 s; Planejamento 5,84 s; Recorrências 8,49 s; novo empréstimo 24,25 s; edição de empréstimo 14,70 s; exclusão 19,51 s. Melhorias e pioras em amostras únicas: não comprova ganho global.
+
+Novos campos confirmam atividadeRegistroMs entre 115 e 218 ms, comparação 0–3 ms e dimensão/cabeçalho aproximadamente 112–211 ms combinados. Esse registro deixa de ser prioridade frente à leitura anual 2,32–5,13 s e aplicação/diário. Plano anual evita três cópias por mutação (seis na carga), sem prova de ganho em segundos. Maior discrepância: novo empréstimo levou 24,23 s no transporte contra 15,33 s dentro do doPost, diferença de 8,90 s. Demais diferenças ficaram 1,86–3,86 s. Esse intervalo inclui inicialização anterior ao doPost e entrega/transporte; não atribuir somente à rede/Vercel nem somar subetapas sobrepostas.
+
+Resumo: execução anterior 7,07 s, pedido posterior pendente sem erro; não caracteriza travamento por fotografia única. Próximo foco permanece leituras anuais, aplicação/diário e discriminação do tempo externo ao doPost. Nenhum código financeiro modificado nesta análise.
+
 ## Atividade e plano anual v219 local — revisão 16/11/2026
 
 registrarAtividadeGestor_ reutiliza a dimensão da aba na validação do cabeçalho e na posição do anexo: uma consulta em vez de duas. A referência positiva da aba usa obterAbaExecucaoGestor_; não memoriza ausência nem células entre operações. Cabeçalho incompatível continua bloqueando; aba vazia recebe cabeçalho antes do evento. Anexo permanece no plano recuperável, com conferências e barreiras do diário preservadas.

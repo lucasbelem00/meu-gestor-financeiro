@@ -1,5 +1,8 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v220 — publicar backend e frontend. Criar/editar/excluir pessoal e empréstimo; incluir operação que acrescenta linhas e manter verificação em tabela vazia. Conferir aplicarCapacidadeConsultas/Evitadas, valores salvos e ausência de duplicação após reenvio protegido. Diagnóstico deve informar versão 4 e correlacaoTempos somente da página atual; duração externa não pode ser negativa nem misturar ações/chamadas. Comparar várias amostras; espera do proxy e tempo doPost se sobrepõem, não somar. Barreira PRONTO/CONFIRMADO e recuperação continuam obrigatórias.
+
+
 Reteste v219 — publicar backend e frontend juntos. Criar, editar e excluir teste pessoal e de terceiros; conferir Atividade e reversão permitida. Comparar atividadeRegistroMs com subetapas atividadeComparacao/Aba/Dimensao/CabecalhoMs e planoAnualCopiasEvitadas. Testar mudança entre competências/anos e preservar recusa de ano fechado alterado. Nenhuma nova permissão. Comparar tempos de múltiplas amostras, sem prometer ganho por contagem de cópias evitadas.
 
 

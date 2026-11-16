@@ -1,5 +1,8 @@
 // Fonte única de campos numéricos de diagnóstico, incorporada pelo gerador.
 module.exports = Object.freeze([
+  "aplicarCapacidadeMs",
+  "aplicarCapacidadeConsultas",
+  "aplicarCapacidadeConsultasEvitadas",
   "atividadeComparacaoMs",
   "atividadeAbaMs",
   "atividadeDimensaoMs",

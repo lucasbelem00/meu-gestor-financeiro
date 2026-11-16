@@ -1,5 +1,8 @@
 # Mapa do código do Gestor de Gastos
 
+v220 — módulos 2/10, integrações de gravação 3/4/8/9: Backend/Code.gs garantirCapacidadeAplicacaoGestor_ usa matriz real recém-lida como limite inferior da grade, consultando capacidade se necessário crescer. interface/desempenho.js correlacionarTemposDiagnosticoGestor relaciona transporte/doPost por página+chamada+ação; montarDiagnosticoGestor no index incorpora correlação sem repetir leitura do armazenamento. Campos numéricos de capacidade na fonte shared/metricas-diagnostico.cjs.
+
+
 v219 — módulos 2/10 e integrações 3/4/5/6: registrarAtividadeGestor_ consulta dimensão uma vez e mede comparação/aba/dimensão/cabeçalho. shared/anual.js desdobrarPlanoAnualGestor_ usa referência somente de leitura do mapa privado do plano, mantendo cópias no diff e conferências reais. Diagnóstico numérico central exporta quatro tempos e uma contagem adicionais.
 
 
