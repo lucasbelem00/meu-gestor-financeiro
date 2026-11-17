@@ -1,5 +1,11 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+## Parcelas restantes e desfazer em conjunto v227 local — revisão 16/11/2026
+
+Quando o campo **Início** é maior que 1, Novo conserva a data histórica da compra, mas passa a trocar o rótulo de competência para **Fatura da parcela N** e exibe um aviso âmbar: somente N até o total serão registrados; as anteriores não serão criadas nem marcadas como pagas. O aviso mostra o mês atualmente preenchido para a parcela inicial e se atualiza ao editar essa competência. Isso não altera valores, status, regras de atraso ou o backend: a compra continua gerando apenas as linhas restantes, já como o servidor fazia. A pessoa deve informar no campo o mês da fatura real da primeira parcela ainda pendente; não deve trocar a data histórica pela data de hoje.
+
+Atividade e sincronização já registra um único evento para todas as linhas de um mesmo envio. A interface agora nomeia explicitamente o desfazer de compras/empréstimos parcelados, por exemplo **Desfazer lançamento (9 parcelas)**, e a confirmação explica que removerá o grupo inteiro somente se nenhuma parcela tiver mudado depois. Envios ainda incertos continuam em Pendentes e usam o cancelamento protegido; ações confirmadas ficam em Histórico. Teste automatizado novo cria 21x a partir da 13ª, confere somente 13/21…21/21 e confirma que Desfazer remove as nove linhas em conjunto. Interface/cache v227; sem mudança de permissão, protocolo ou publicação remota. Validação local/pacote estático pendentes nesta anotação.
+
 ## Rodada real interface v226 — revisão 16/11/2026
 
 Treze chamadas bem-sucedidas, zero pendências financeiras, consultas descartadas ou serviço ocupado. Seis atualizações confirmadas. Interface v226 confirmada, mas última execução de resumo exibida é anterior à rodada e não contém resumoPrioridadeMs/resumoCedeuUso; não comprova execução/publicação da nova cessão no backend. Resumo continua pendente, sem erro. Não concluir que cessão ocorreu apenas porque não houve espera de vinte segundos.

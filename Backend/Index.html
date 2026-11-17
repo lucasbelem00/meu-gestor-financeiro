@@ -540,13 +540,13 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             </div>
             <div>
               <div class="cabecalho-data-fatura-gestor">
-                <label class="text-xs font-bold text-slate-400 uppercase tracking-wide">Mês da Fatura</label>
+                <label id="rotuloMesFaturaNovoGestor" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Mês da Fatura</label>
                 <div class="flex gap-1">
                   <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpMesFat')" class="btn-periodo-gestor compacto" aria-label="Mês da fatura anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
                   <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpMesFat')" class="btn-periodo-gestor compacto" aria-label="Próximo mês da fatura"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
                 </div>
               </div>
-              <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-semibold focus:border-blue-500 outline-none transition text-center">
+              <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); atualizarPreviewParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-semibold focus:border-blue-500 outline-none transition text-center">
             </div>
           </div>
 
@@ -616,6 +616,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             </div>
           </div>
           <p id="lblPreviewParcelas" class="hidden text-xs text-indigo-300 break-words whitespace-pre-line leading-relaxed" aria-live="polite"></p>
+          <p id="avisoInicioParcelasNovoGestor" class="hidden rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-100" role="status"></p>
 
           <div>
             <div class="flex items-center justify-between mb-1.5">
@@ -3158,11 +3159,15 @@ const DICIONARIO_ACENTOS_PT = {
 
     function atualizarPreviewParcelas() {
       const lbl = document.getElementById('lblPreviewParcelas');
+      const aviso = document.getElementById('avisoInicioParcelasNovoGestor');
+      const rotuloMes = document.getElementById('rotuloMesFaturaNovoGestor');
       if (!lbl) return;
       const val = lerValorMoeda('inpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
       const mostrar=qtd>1&&val>0&&!document.getElementById('checkAssinatura')?.checked;
       lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent='';
+      if (rotuloMes) rotuloMes.textContent='Mês da Fatura';
+      if (aviso) { aviso.hidden=true; aviso.classList.add('hidden'); aviso.textContent=''; }
       if(mostrar){
         const inicio=Number(document.getElementById('inpParcIni')?.value||1);
         if(!Number.isInteger(inicio)||inicio<1||inicio>qtd){lbl.textContent='Informe um início entre 1 e '+qtd+'.';return;}
@@ -3170,6 +3175,14 @@ const DICIONARIO_ACENTOS_PT = {
         const maiores=Math.max(0,resto-inicio+1),menores=qtd-inicio+1-maiores;
         const grupos=[maiores?(inicio===1&&maiores===1?'1ª de ':maiores+' de ')+formatBRL((base+1)/100):'',menores?(maiores?'demais ':'')+menores+' de '+formatBRL(base/100):''].filter(Boolean);
         lbl.textContent='Divisão em '+qtd+' parcelas'+(inicio>1?' · A partir da parcela '+inicio+' de '+qtd:'')+'\n'+grupos.join(' · ');
+        if(inicio>1){
+          const mes=String(document.getElementById('inpMesFat')?.value||'').trim()||'não informado';
+          if(rotuloMes)rotuloMes.textContent='Fatura da parcela '+inicio;
+          if(aviso){
+            aviso.textContent='Serão registrados somente os pagamentos da parcela '+inicio+' até a '+qtd+'. As '+(inicio-1)+' anteriores não serão criadas nem marcadas como pagas. Confira se '+mes+' é o mês da fatura da parcela '+inicio+'.';
+            aviso.hidden=false;aviso.classList.remove('hidden');
+          }
+        }
       }
     }
 
@@ -8223,6 +8236,17 @@ function textoRegistroAtividadeGestor(r) {
   if (!r) return 'Não existia';
   return [r.pessoa, r.descricao, formatBRL(r.valor), r.forma, r.parcela, r.mes, r.situacao, 'Pago ao banco: ' + formatBRL(r.pagoBanco || 0)].filter(Boolean).join(' • ');
 }
+function rotuloDesfazerAtividadeGestor(e) {
+  const quantidade=Math.max(1,Number(e?.quantidade)||1);
+  if(e?.acao==='salvarLancamentoWeb')return quantidade>1?'↩️ Desfazer lançamento ('+quantidade+' parcelas)':'↩️ Desfazer lançamento';
+  if(e?.acao==='salvarEmprestimoWeb')return quantidade>1?'↩️ Desfazer empréstimo ('+quantidade+' parcelas)':'↩️ Desfazer empréstimo';
+  return '↩️ Desfazer ação';
+}
+function mensagemDesfazerAtividadeGestor(e) {
+  const quantidade=Math.max(1,Number(e?.quantidade)||1);
+  if((e?.acao==='salvarLancamentoWeb'||e?.acao==='salvarEmprestimoWeb')&&quantidade>1)return 'Isso removerá de uma vez as '+quantidade+' parcelas criadas por este mesmo envio. As parcelas só serão removidas se nenhuma delas tiver mudado depois.';
+  return 'O app vai conferir se os registros continuam na mesma versão antes de recuperar os dados anteriores.';
+}
 function renderizarHistoricoAtividadeGestor() {
   const box = document.getElementById('listaHistoricoAtividade'); box.replaceChildren();
   if (!paginaAtividadeGestor.length) { box.appendChild(elementoAtividadeGestor('p', 'Nenhuma ação neste histórico.', 'text-sm text-slate-300 py-4')); return; }
@@ -8237,9 +8261,9 @@ function renderizarHistoricoAtividadeGestor() {
       if (e.detalhesTotal > e.detalhes.length) detalhes.appendChild(elementoAtividadeGestor('p', 'Exibindo as primeiras ' + e.detalhes.length + ' alterações.')); card.appendChild(detalhes);
     }
     if (e.podeDesfazer && navigator.onLine) {
-      const b = botaoAtividadeGestor('Desfazer ação', () => mostrarConfirmacao('Desfazer esta ação?', 'O app vai conferir se os registros continuam na mesma versão antes de recuperar os dados anteriores.', async () => {
+      const b = botaoAtividadeGestor(rotuloDesfazerAtividadeGestor(e), () => mostrarConfirmacao('Desfazer esta ação?', mensagemDesfazerAtividadeGestor(e), async () => {
         b.disabled = true;
-        try { await apiCall('desfazerAtividadeWeb', { eventoId: e.id }); mostrarAviso('Ação desfeita', 'Os registros foram recuperados. A recuperação também aparece no histórico.'); await carregarDados(); await carregarHistoricoAtividadeGestor(false); }
+        try { await apiCall('desfazerAtividadeWeb', { eventoId: e.id }); mostrarAviso('Ação desfeita', e.acao==='salvarLancamentoWeb'&&e.quantidade>1?'Todas as '+e.quantidade+' parcelas deste lançamento foram removidas. A recuperação também aparece no histórico.':'Os registros foram recuperados. A recuperação também aparece no histórico.'); await carregarDados(); await carregarHistoricoAtividadeGestor(false); }
         catch (erro) { mostrarAviso('Não foi possível desfazer', erro.message); await carregarHistoricoAtividadeGestor(false); }
         finally { b.disabled = false; }
       }, false, 'Desfazer com conferência', 'neutral')); card.appendChild(b);

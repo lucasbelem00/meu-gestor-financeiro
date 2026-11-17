@@ -18,6 +18,20 @@ test('atividade é gravada junto do lançamento e reenvio não duplica históric
   ctx.salvarLancamentoWeb(p); ctx.salvarLancamentoWeb(p);
   const h = historico(ctx); assert.equal(h.total, 1); assert.equal(h.itens[0].quantidade, 3); assert.equal(h.itens[0].titulo, 'Lançamento criado');
 });
+test('início posterior registra só as parcelas restantes e Atividade as desfaz de uma vez', () => {
+  const { ctx, db } = boot(fixture());
+  const p = { ...launch, descricao: 'Compra antiga', valorTotal: 2100, numParcelas: 21, parcelaInicial: 13, mesPrimeiraFatura: '11/2026', requestId: 'atividade-inicio-posterior-001' };
+  ctx.salvarLancamentoWeb(p);
+  const criadas = db.sheets['Lançamentos'].rows.slice(1).filter(r => r[11]);
+  assert.equal(criadas.length, 9);
+  assert.deepEqual(Array.from(criadas, r => r[6]), ['13/21','14/21','15/21','16/21','17/21','18/21','19/21','20/21','21/21']);
+  assert.equal(criadas[0][8], '11/2026');
+  const evento = historico(ctx).itens.find(e => e.acao === 'salvarLancamentoWeb');
+  assert.equal(evento.quantidade, 9);
+  assert.ok(evento.podeDesfazer, evento.motivo);
+  ctx.desfazerAtividadeWeb({ eventoId: evento.id, requestId: 'atividade-inicio-posterior-desfazer-001' });
+  assert.equal(db.sheets['Lançamentos'].rows.slice(1).filter(r => r[11]).length, 0);
+});
 test('exclusão recupera só registros excluídos sem apagar lançamentos posteriores', () => {
   const { ctx, db } = boot(fixture([personal('Original')])); ler(ctx);
   const r = clone(db.sheets['Lançamentos'].rows[1]); ctx.excluirLancamentoWeb({ ...alvo(r), requestId: 'atividade-excluir-001' });

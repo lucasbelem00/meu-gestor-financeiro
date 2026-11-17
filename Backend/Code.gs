@@ -5025,7 +5025,7 @@ const ROTULOS_ATIVIDADE_GESTOR_ = {
   restaurarBackupDadosWeb: 'Backup restaurado',
   desfazerAtividadeWeb: 'Ação desfeita'
 };
-const ACOES_DESFAZER_GESTOR_ = ['pularMesFixoWeb', 'registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
+const ACOES_DESFAZER_GESTOR_ = ['salvarLancamentoWeb', 'salvarEmprestimoWeb', 'pularMesFixoWeb', 'registrarRachadinhaWeb', 'excluirLancamentoWeb', 'excluirEmprestimoWeb', 'alternarStatusEmprestimoWeb', 'dividirParcelaEmprestimoWeb', 'editarLancamentoLinhaWeb', 'editarEmprestimoLinhaWeb', 'quitarFaturaWeb', 'registrarPagamentoFaturaWeb'];
 
 // Apenas leitura: cache limitado a este executor, sem alterar célula ou hash.
 function formatarDataLeituraGestor_(data,formato){

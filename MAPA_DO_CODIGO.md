@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+v227 — módulos 2/3 e integração 5: Novo identifica explicitamente a competência como fatura da parcela inicial quando Início é posterior a 1 e exibe aviso semântico de que somente parcelas restantes serão gravadas. O fluxo financeiro existente continua gerando somente o intervalo inicial…total. Histórico de Atividade diferencia o desfazer de lote parcelado e confirma a remoção conjunta, preservando a conferência de versão no backend e o caminho separado para pendências incertas. Teste de regressão cobre 21x a partir de 13 e a reversão das nove linhas.
+
 v226 — módulo 10 e integração 2/5/6: shared/relatorios.js rotinaResumoPlanilhaGestor fornece callback cooperativo de prioridade somente à leitura automática; atualizarResumoNativoGestor_ aceita terceiro argumento opcional, registrosResumoNativoGestor_ propaga à montagem anual. shared/anual.js consulta callback antes de cada ano, sem mudança para consumidores comuns. gravarResumoConferidoGestor evita consultas redundantes de capacidade. Novos campos numéricos resumoPrioridadeMs/resumoCedeuUso no diagnóstico do resumo.
 
 

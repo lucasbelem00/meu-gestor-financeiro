@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v227 — Novo, quando Início é posterior a 1, renomeia Mês da Fatura para Fatura da parcela N e mostra orientação âmbar compacta abaixo da prévia. Ela informa que somente as parcelas restantes serão criadas e pede conferência do mês da primeira pendente. Histórico de Atividade usa rótulo explícito para desfazer grupos parcelados, sem criar botão adicional fora do Histórico.
+
 v224 — listas em atualização mostram aviso curto de status acima dos registros. Pessoas em Empréstimos bloqueiam interação até resposta atual confirmada; Histórico mantém seu bloqueio próprio e guardas de edição/exclusão. Não escurecer nem bloquear a página toda, navegação ou Cancelar dos modais. Falha mantém informação de lista desatualizada com ação de retry já existente.
 
 

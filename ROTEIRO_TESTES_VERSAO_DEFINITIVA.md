@@ -1,5 +1,7 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v227 — publicar frontend. Em base de teste, registrar compra de R$ 2.100 em 21x, com Início 13 e Mês da Fatura 11/2026. Conferir rótulo “Fatura da parcela 13”, aviso de que 1–12 não serão criadas e somente nove linhas 13/21…21/21 distribuídas de 11/2026 em diante. Abrir Atividade e sincronização → Histórico: o evento deve indicar nove registros e o botão Desfazer lançamento (9 parcelas). Confirmar: as nove linhas somem juntas. Repetir apenas com registros sem pagamento/edição posterior; Pendentes usam o cancelamento protegido, não o desfazer do Histórico.
+
 Reteste v226 — publicar backend/frontend. Quando resumo automático estiver lendo, iniciar consulta/cadastro: a rotina pode ceder no próximo checkpoint, ficar pendente sem erro e concluir em gatilho posterior. Conferir resumoCedeuUso=1 e resumoPrioridadeMs em ultimaExecucao.etapas; atualizadoEm não deve avançar em leitura adiada. Comparar registros financeiros e resumo anterior antes/depois da cessão. Ação chegada após início da escrita deve aguardar a conclusão, sem resumo parcial. Adiamento mantém limite existente de cinco minutos e requer nova leitura na retomada; cache indisponível não suspende indefinidamente. Não criar outro gatilho nem conceder permissões novas.
 
 
