@@ -41,7 +41,7 @@ test('restante ao estabelecimento não vira acerto fictício nem mensagem de con
 });
 test('taxa marcada com campo vazio não aplica 10% por suposição',()=>{const {c,el}=ambiente();el('rachaTaxa10').checked=true;el('rachaServicoPercentual').value='';assert.throws(()=>c.opcoesContaRachaGestor(),/Informe o serviço/);el('rachaServicoPercentual').value='0';assert.equal(c.opcoesContaRachaGestor().servicoPercentual,0);el('rachaTaxa10').checked=false;el('rachaServicoPercentual').value='';assert.equal(c.opcoesContaRachaGestor().servicoPercentual,0);});
 test('Preencher minha parte usa itens consumidos e não registra automaticamente',()=>{const {c,el,run}=ambiente();c.rachaDetItens.push({id:'bebida',desc:'Bebida',valorCentavos:3000,consumidores:['Ana']});c.lancarParteIndividualDet('Eu',99999);assert.equal(el('inpDesc').value,'Pizza');assert.equal(el('inpValor').value,'50');assert.equal(run('rachaPartePreparadaGestor.valorCentavos'),5000);assert.equal(run('rachaEnvioGuardado'),null);});
-test('descrição combina estabelecimento com os itens da minha parte',()=>{const {c,el}=ambiente();el('rachaLocal').value='Jantar';assert.equal(c.descricaoMinhaParteRachaGestor(),'Jantar — Pizza');});
+test('descrição combina estabelecimento com os itens da minha parte',()=>{const {c,el}=ambiente();el('rachaLocal').value='Jantar';assert.equal(c.descricaoMinhaParteRachaGestor(),'Pizza — Jantar');});
 test('descrição de contas grandes continua curta sem acrescentar sufixo pessoal',()=>{const {c,el}=ambiente();el('rachaLocal').value='🍕'.repeat(300);c.rachaDetItens=Array.from({length:5},(_,i)=>({id:String(i),desc:'Item '+i,valorCentavos:100,consumidores:['Eu']}));const s=c.descricaoMinhaParteRachaGestor();assert(Array.from(s).length<=210);assert(!s.includes('(minha parte)'));assert(!s.includes('\uFFFD'));el('rachaLocal').value='';assert(c.descricaoMinhaParteRachaGestor().includes('(+2 itens)'));});
 test('partes de outras pessoas não são preenchidas como gasto pessoal',()=>{const {c,el,avisos}=ambiente();c.lancarParteIndividualDet('Ana',5000);assert.equal(el('inpDesc').value,'');assert.equal(el('inpValor').value,'');assert.equal(avisos.length,1);});
 test('formulário pessoal em conferência não é substituído',()=>{const {c,el,ses}=ambiente();el('inpDesc').value='Compra pendente';ses.set('lancamentoResultadoIncerto','true');c.preencherParteRachaGestor('Eu',5000);assert.equal(el('inpDesc').value,'Compra pendente');});
@@ -108,4 +108,10 @@ test('atribuição integral permite reverter para pagamentos diretos por pessoa'
  assert.equal(run('rachaDetAjustes.Ana.pagoCentavos'),5000);
  assert.equal(c.calcularRachadinhaDetalhada().transferencias.length,0);
  assert.equal(el('boxReverterPagamentoRacha').hidden,true);
+ assert.equal(el('btnAtribuirPagamentoRacha').disabled,false);
+ assert.equal(el('btnAtribuirPagamentoRacha').textContent,'Atribuir o valor total a mim');
+ c.registrarPagamentoRestanteRachaGestor();
+ assert.equal(run('rachaDetAjustes.Eu.pagoCentavos'),10000);
+ assert.equal(run('rachaDetAjustes.Ana.pagoCentavos'),0);
+ assert.equal(c.calcularRachadinhaDetalhada().transferencias.length,1);
 });

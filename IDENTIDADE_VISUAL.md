@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v233 — Rachadinha coloca os itens antes do nome opcional na descrição e mostra os pagamentos à loja antes de Forma de pagamento. Depois de indicar que cada pessoa pagou sua parte, é possível atribuir o total de volta a si. O atalho individual segue disponível para registrar só a própria parte.
+
 v232 — Rachadinha usa Amigo como nome inicial e o mesmo formatador de título do Novo Lançamento no item. O botão distingue total e restante. Quando eu paguei tudo, a opção de reverter atribui a cada participante a parte que pagou diretamente à loja, sem gerar devoluções. O atalho da parte pessoal já preenche #dividido.
 
 v231 — Rachadinha mantém pelo menos duas pessoas ao remover participantes. Cotas ficam com os nomes para o cálculo, e os valores pagos à loja ficam em uma etapa após o resumo. A ação de atribuir o valor restante só preenche a divisão; a escolha da forma e das parcelas leva à prévia antes da gravação.

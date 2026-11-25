@@ -31,7 +31,7 @@ function descricaoMinhaParteRachaGestor(incluirTodos=false){
   const local=document.getElementById('rachaLocal').value.trim();
   const nomes=modoRachadinhaAtual==='detalhado'?[...new Set(rachaDetItens.filter(it=>incluirTodos||it.consumidores.includes(rachaEu)).map(it=>it.desc.trim()).filter(Boolean))]:[];
   const itens=nomes.slice(0,3).join(' + ')+(nomes.length>3?' (+'+(nomes.length-3)+' itens)':'');
-  const descricao=local&&itens?local+' — '+itens:itens||local||'Conta dividida',letras=Array.from(descricao);
+  const descricao=local&&itens?itens+' — '+local:itens||local||'Conta dividida',letras=Array.from(descricao);
   return letras.length>210?letras.slice(0,209).join('')+'…':descricao;
 }
 function dadosRascunhoRachaGestor(){
@@ -230,10 +230,9 @@ function editarItemRachaGestor(id){if(!alterarRachaPermitidoGestor())return;cons
 function cancelarEdicaoItemRachaGestor(){if(!alterarRachaPermitidoGestor())return;rachaItemEmEdicao=null;document.getElementById('inpItemDescRacha').value='';document.getElementById('inpItemValRacha').value='';document.getElementById('btnIncluirItemRacha').textContent='+ Incluir item';document.getElementById('btnCancelarItemRacha').classList.add('hidden');guardarRascunhoRachaGestor();}
 function removerItemRachaDet(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;const versao=assinaturaEdicaoRachaGestor();mostrarConfirmacao('Remover item?',it.desc+' sairá da conta e o total será recalculado.',()=>{if(divisaoRachaEnviadaGestor()||assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira o item novamente antes de remover.');return;}rachaDetItens=rachaDetItens.filter(x=>x.id!==it.id);if(rachaItemEmEdicao===it.id)cancelarEdicaoItemRachaGestor();calcularRachadinhaDetalhada();},false,'Remover item','neutral');}
 function calcularRachadinhaDetalhada(){
-  atualizarAcoesPagamentoRachaGestor(null);
   guardarRascunhoRachaGestor();const itens=document.getElementById('listaItensRachaDet'),resumo=document.getElementById('listaResumoIndividualRachaDet');
   if(itens)itens.innerHTML=rachaDetItens.map(it=>'<article class="p-3 rounded-xl bg-slate-950 border border-slate-700 space-y-2"><div class="text-xs text-white break-words">'+escaparHTML(it.desc)+' • '+formatBRL((it.valorCentavos ?? Math.round(it.valor*100))/100)+'</div><p class="text-xs text-slate-300 break-words">'+escaparHTML(it.consumidores.join(', '))+'</p><div class="flex gap-2"><button type="button" '+acaoHTML('editarItemRachaGestor',[it.id])+' class="text-xs text-sky-200 border border-slate-600 p-2 rounded-lg">✏️ Editar item</button><button type="button" '+acaoHTML('removerItemRachaDet',[it.id])+' class="text-xs text-rose-200 border border-slate-600 p-2 rounded-lg">🗑️ Remover item</button></div></article>').join('');
-  if(!rachaDetItens.length){if(resumo)resumo.textContent='Adicione os itens para conferir as partes e os acertos.';estadoRachaGestor(null);return null;}
+  if(!rachaDetItens.length){atualizarAcoesPagamentoRachaGestor(null);if(resumo)resumo.textContent='Adicione os itens para conferir as partes e os acertos.';estadoRachaGestor(null);return null;}
   try{const d=calcularDivisaoContaGestor(dadosContaDetalhadaRachaGestor());
     if(resumo){
       const pessoas=d.pessoas.map(p=>{
@@ -249,7 +248,7 @@ function calcularRachadinhaDetalhada(){
     }
     atualizarAcoesPagamentoRachaGestor(d);
     estadoRachaGestor(null);return d;
-  }catch(e){estadoRachaGestor(e);if(resumo)resumo.textContent='Confira os campos destacados pela mensagem antes de copiar ou registrar.';return null;}
+  }catch(e){atualizarAcoesPagamentoRachaGestor(null);estadoRachaGestor(e);if(resumo)resumo.textContent='Confira os campos destacados pela mensagem antes de copiar ou registrar.';return null;}
 }
 function copiarRachadinhaDetalhadaWhats(){const d=calcularRachadinhaDetalhada();if(d)abrirPreviaCobrancaWhats(mensagemDivisaoRachaGestor(d),'Divisão detalhada copiada.');}
 function prepararDetalhamentoRachaGestor(){
@@ -267,15 +266,20 @@ function converterRapidaRachaGestor(r){
 function pagueiTotalRachaGestor(divisao){
   return Boolean(divisao?.totalCentavos && divisao.pessoas.some(p=>p.id===rachaEu && p.pagoCentavos===divisao.totalCentavos));
 }
+function cadaPessoaPagouDiretoRachaGestor(divisao){
+  return Boolean(divisao?.totalCentavos && divisao.pessoas.some(p=>p.id!==rachaEu&&p.finalCentavos>0)
+    && divisao.pessoas.every(p=>p.pagoCentavos===p.finalCentavos));
+}
 function atualizarAcoesPagamentoRachaGestor(divisao){
   const pagar=document.getElementById('btnAtribuirPagamentoRacha');
   const reverter=document.getElementById('boxReverterPagamentoRacha');
   const totalMeu=pagueiTotalRachaGestor(divisao);
   if(pagar){
     const outrosPagaram=divisao?.pessoas.some(p=>p.id!==rachaEu && p.pagoCentavos>0);
-    pagar.textContent=outrosPagaram?'Atribuir o valor restante a mim':'Atribuir o valor total a mim';
+    const pagamentoIndividual=cadaPessoaPagouDiretoRachaGestor(divisao);
+    pagar.textContent=outrosPagaram&&!pagamentoIndividual?'Atribuir o valor restante a mim':'Atribuir o valor total a mim';
     pagar.hidden=totalMeu;
-    pagar.disabled=!divisao||!divisao.pendenteEstabelecimentoCentavos||divisaoRachaEnviadaGestor();
+    pagar.disabled=!divisao||(!divisao.pendenteEstabelecimentoCentavos&&!pagamentoIndividual)||divisaoRachaEnviadaGestor();
   }
   if(reverter)reverter.hidden=!totalMeu||divisaoRachaEnviadaGestor()||!divisao.pessoas.some(p=>p.id!==rachaEu&&p.finalCentavos>0);
 }
@@ -288,12 +292,22 @@ function cadaPessoaPagouSuaParteRachaGestor(){
   }
   renderizarPessoasRachaDet();
   calcularRachadinhaDetalhada();
-  document.getElementById('rachaTituloPagamento')?.focus();
+  document.getElementById('btnAtribuirPagamentoRacha')?.focus();
 }
 function registrarPagamentoRestanteRachaGestor(){if(!alterarRachaPermitidoGestor())return;
   if(!rachaDetItens.length)throw Error('Inclua um item antes de preencher quem pagou.');
-  const conta=dadosContaDetalhadaRachaGestor();conta.pessoas.forEach(p=>p.pagoCentavos=0);const d=calcularDivisaoContaGestor(conta),outros=rachaDetPessoas.filter(p=>p!==rachaEu).reduce((s,p)=>s+Number(rachaDetAjustes[p]?.pagoCentavos || 0),0);
-  if(outros>d.totalCentavos)throw Error('Confira os pagamentos das outras pessoas.');rachaDetAjustes[rachaEu]={...rachaDetAjustes[rachaEu],pagoCentavos:d.totalCentavos-outros};renderizarPessoasRachaDet();calcularRachadinhaDetalhada();
+  const divisao=calcularDivisaoContaGestor(dadosContaDetalhadaRachaGestor());
+  const pagamentoIndividual=cadaPessoaPagouDiretoRachaGestor(divisao);
+  if(pagamentoIndividual){
+    for(const pessoa of divisao.pessoas){
+      rachaDetAjustes[pessoa.id]={...rachaDetAjustes[pessoa.id],pagoCentavos:pessoa.id===rachaEu?divisao.totalCentavos:0};
+    }
+  }else{
+    const minhaParte=divisao.pessoas.find(p=>p.id===rachaEu);
+    rachaDetAjustes[rachaEu]={...rachaDetAjustes[rachaEu],pagoCentavos:minhaParte.pagoCentavos+divisao.pendenteEstabelecimentoCentavos};
+  }
+  renderizarPessoasRachaDet();
+  calcularRachadinhaDetalhada();
 }
 function abrirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Divisão já possui envio','Consulte este envio em Atividade antes de registrar outra divisão.');abrirAtividadeGestor();return;}
@@ -370,7 +384,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const identificar=document.createElement('button');identificar.type='button';identificar.className='w-full rounded-xl border border-amber-400/40 text-amber-200 px-3 py-3 text-xs font-bold';identificar.textContent='Identificar pessoas e registrar partes que adiantei';identificar.addEventListener('click',prepararDetalhamentoRachaGestor);document.getElementById('boxRachaModoRapido').append(identificar);
   const detalhe=document.getElementById('boxRachaModoDetalhado');
   const pagar=document.createElement('button');pagar.type='button';pagar.id='btnAtribuirPagamentoRacha';pagar.className='rounded-xl border border-slate-500 text-slate-200 px-3 py-3 text-xs font-bold';pagar.textContent='Atribuir o valor total a mim';pagar.addEventListener('click',()=>{try{registrarPagamentoRestanteRachaGestor();if(pagar.hidden)document.getElementById('btnCadaPessoaPagouRacha')?.focus();}catch(e){mostrarAviso('Confira a conta',e.message);}});
-  const registrar=document.createElement('button');registrar.type='button';registrar.className='rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Escolher cartão ou Pix e parcelas';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
+  const registrar=document.createElement('button');registrar.type='button';registrar.className='rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Forma de pagamento';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
   const acoes=document.createElement('div');acoes.className='grid grid-cols-1 sm:grid-cols-2 gap-2';acoes.append(pagar,registrar);detalhe.querySelector("#rachaEtapaPagamento").append(acoes);
   document.getElementById('btnCadaPessoaPagouRacha').addEventListener('click',cadaPessoaPagouSuaParteRachaGestor);
   const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
