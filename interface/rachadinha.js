@@ -384,7 +384,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const identificar=document.createElement('button');identificar.type='button';identificar.className='w-full rounded-xl border border-amber-400/40 text-amber-200 px-3 py-3 text-xs font-bold';identificar.textContent='Identificar pessoas e registrar partes que adiantei';identificar.addEventListener('click',prepararDetalhamentoRachaGestor);document.getElementById('boxRachaModoRapido').append(identificar);
   const detalhe=document.getElementById('boxRachaModoDetalhado');
   const pagar=document.createElement('button');pagar.type='button';pagar.id='btnAtribuirPagamentoRacha';pagar.className='rounded-xl border border-slate-500 text-slate-200 px-3 py-3 text-xs font-bold';pagar.textContent='Atribuir o valor total a mim';pagar.addEventListener('click',()=>{try{registrarPagamentoRestanteRachaGestor();if(pagar.hidden)document.getElementById('btnCadaPessoaPagouRacha')?.focus();}catch(e){mostrarAviso('Confira a conta',e.message);}});
-  const registrar=document.createElement('button');registrar.type='button';registrar.className='rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Forma de pagamento';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
+  const registrar=document.createElement('button');registrar.type='button';registrar.className='min-h-11 rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Forma de pagamento';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
   const acoes=document.createElement('div');
   acoes.className='grid grid-cols-1 sm:grid-cols-2 gap-2';
   const atribuicao=document.createElement('div');

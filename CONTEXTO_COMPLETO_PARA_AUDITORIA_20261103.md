@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+v235 — O campo opcional da Rachadinha se chama Local da divisão. Em telas estreitas, os dois modos ocupam uma linha própria, Limpar fica abaixo e os botões principais têm altura mínima de 44 px.
+
 v234 — Atribuir o pagamento e reverter para cada pessoa pagar sua parte alternam no mesmo espaço, ao lado de Forma de pagamento.
 
 v233 — Rachadinha coloca os itens antes do nome opcional na descrição e mostra os pagamentos à loja antes de Forma de pagamento. Depois de indicar que cada pessoa pagou sua parte, é possível atribuir o total de volta a si. O atalho individual segue disponível para registrar só a própria parte.
