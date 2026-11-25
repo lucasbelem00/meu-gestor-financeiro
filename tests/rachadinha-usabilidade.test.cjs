@@ -48,7 +48,7 @@ test('formulário pessoal em conferência não é substituído',()=>{const {c,el
 test('categoria e data já preenchidas exigem confirmação antes de substituir',()=>{const {c,el,confirmacoes}=ambiente();el('selCat').value='Saúde';c.preencherParteRachaGestor('Eu',5000);assert.equal(confirmacoes.length,1);assert.equal(el('selCat').value,'Saúde');confirmacoes[0].fn();assert.equal(el('inpDesc').value,'Pizza');});
 test('confirmação de preenchimento é recusada se a conta ou o formulário mudou',()=>{for(const alterarConta of [false,true]){const {c,el,confirmacoes}=ambiente();el('inpDesc').value='Meu rascunho';c.preencherParteRachaGestor('Eu',5000);if(alterarConta)c.rachaDetItens[0].valorCentavos=20000;else el('inpDesc').value='Novo rascunho';confirmacoes[0].fn();assert.notEqual(el('inpValor').value,'50');assert.equal(el('inpDesc').value,alterarConta?'Meu rascunho':'Novo rascunho');}});
 test('divisão enviada bloqueia mudança de nomes, itens e novos preenchimentos',()=>{const {c,el,run}=ambiente();run("rachaEnvioGuardado={estado:'confirmado',payload:{requestId:'gravado-001'}}");el('inpNovoNomeRacha').value='Bruno';c.adicionarPessoaRachaDet();c.removerItemRachaDet('pizza-001');c.preencherParteRachaGestor('Eu',5000);assert.equal(c.rachaDetPessoas.length,2);assert.equal(c.rachaDetItens.length,1);assert.equal(el('inpValor').value,'');});
-test('confirmação de remoção não opera em uma divisão modificada',()=>{const {c,confirmacoes}=ambiente();c.removerPessoaRachaDet(1);c.rachaDetItens[0].valorCentavos=20000;confirmacoes[0].fn();assert.equal(c.rachaDetPessoas.length,2);c.removerItemRachaDet('pizza-001');c.rachaDetItens[0].desc='Descrição nova';confirmacoes[1].fn();assert.equal(c.rachaDetItens.length,1);});
+test('confirmação de remoção não opera em uma divisão modificada',()=>{const {c,confirmacoes}=ambiente();c.rachaDetPessoas.push('Bruno');c.removerPessoaRachaDet(1);c.rachaDetItens[0].valorCentavos=20000;confirmacoes[0].fn();assert.equal(c.rachaDetPessoas.length,3);c.removerItemRachaDet('pizza-001');c.rachaDetItens[0].desc='Descrição nova';confirmacoes[1].fn();assert.equal(c.rachaDetItens.length,1);});
 test('abrir registro não supõe que eu paguei o restante',()=>{const {c,run,avisos}=ambiente();c.abrirRegistroRachadinhaGestor();assert.equal(run('rachaDetAjustes.Eu?.pagoCentavos || 0'),0);assert.equal(avisos.at(-1)[0],'Informe quem pagou à loja');});
 test('minha parte preparada fica desmarcada na gravação conjunta por padrão',()=>{const {c,el,run}=ambiente();run("rachaDetAjustes={Eu:{pagoCentavos:10000}};rachaPartePreparadaGestor={descricao:'Pizza (minha parte)',valorCentavos:5000}");c.abrirRegistroRachadinhaGestor();assert.equal(el('rachaRegistroMinhaParte').checked,false);assert(el('rachaRegistroEstado').textContent.includes('não será incluída por padrão'));});
 test('prévia atrasada é recusada quando os campos mudam durante a consulta',async()=>{const {c,el,confirmacoes,avisos}=ambiente();let resolver;c.apiCall=()=>new Promise(r=>resolver=r);const p=c.conferirRegistroRachadinhaGestor();el('rachaRegistroMes').value='12/2026';resolver({minhaParteCentavos:5000,emprestimos:[],totalCentavos:10000,dados:{}});await p;assert.equal(confirmacoes.length,0);assert(avisos.at(-1)[1].includes('mudaram'));});
@@ -75,4 +75,16 @@ test('um item compartilhado mostra as partes calculadas e usa seu nome no regist
  assert.match(resumo,/Total da divisão/);
  assert.doesNotMatch(resumo,/Saldo da sua parte|Parte final/);
  assert.equal(c.descricaoMinhaParteRachaGestor(true),'Perfume para a mãe');
+});
+
+test('o único acompanhante pode ser renomeado, mas não pode ser removido',()=>{
+ const {c,el,avisos,confirmacoes}=ambiente();
+ c.renderizarPessoasRachaDet();
+ assert.doesNotMatch(el('listaPessoasRachaDet').innerHTML,/data-racha-remover/);
+ c.removerPessoaRachaDet(1);
+ assert.equal(avisos.at(-1)[0],'Mantenha duas pessoas');
+ assert.equal(confirmacoes.length,0);
+ assert.equal(c.rachaDetPessoas.length,2);
+ c.renomearPessoaRachaGestor(1,'Bruno');
+ assert.equal(c.rachaDetPessoas[1],'Bruno');
 });

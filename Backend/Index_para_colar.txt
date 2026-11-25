@@ -1269,6 +1269,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <button type="button" onclick="copiarRachadinhaDetalhadaWhats()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-3 rounded-xl text-xs shadow-md transition active:scale-95">📲 Prévia para WhatsApp</button>
             </div>
           </div>
+          <section id="rachaEtapaPagamento" aria-labelledby="rachaTituloPagamento" class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+            <h3 id="rachaTituloPagamento" class="text-sm font-bold text-white">Quem pagou à loja?</h3>
+            <p class="text-xs text-slate-300">Se a compra inteira passou no seu cartão, atribua o valor a você. Isso só preenche a divisão. Os lançamentos são gravados após a prévia e a confirmação.</p>
+            <details class="text-xs text-slate-300">
+              <summary class="cursor-pointer">Informar quanto cada pessoa pagou à loja</summary>
+              <div id="rachaPagamentosPorPessoa" class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2"></div>
+            </details>
+          </section>
         </div>
       </div>
 
@@ -5065,17 +5073,21 @@ function renderizarPessoasRachaDet(){
     return `<div class="w-full space-y-2 bg-slate-950/60 p-3 rounded-xl border ${eu?'border-emerald-500/40':'border-slate-700'}">
       <div class="flex items-center justify-between gap-2">
         <span data-racha-rotulo="${i}" class="text-xs font-bold text-white break-words min-w-0">${eu?'Eu (você)':escaparHTML(nome)}</span>
-        ${eu?'':'<button type="button" data-racha-remover="'+i+'" '+acaoHTML('removerPessoaRachaDet',[i])+' class="shrink-0 text-xs text-rose-200 px-3 py-2 rounded-lg border border-slate-600" aria-label="Remover '+escaparHTML(nome)+' da divisão">Remover</button>'}
+        ${eu||pessoas.length<=2?'':'<button type="button" data-racha-remover="'+i+'" '+acaoHTML('removerPessoaRachaDet',[i])+' class="shrink-0 text-xs text-rose-200 px-3 py-2 rounded-lg border border-slate-600" aria-label="Remover '+escaparHTML(nome)+' da divisão">Remover</button>'}
       </div>
       <details data-racha-ajustes="${escaparHTML(nome)}" ${ajustesAbertos.has(nome)?'open':''}>
-        <summary class="cursor-pointer text-xs text-slate-300 py-1">${eu?'Minha cota e pagamento':'Nome, cota e pagamento'}</summary>
+        <summary class="cursor-pointer text-xs text-slate-300 py-1">${eu?'Ajustar minha cota':'Editar nome ou cota'}</summary>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           ${eu?'':`<label class="${campoClasse}"><span class="${rotuloClasse}">Nome</span><input type="text" data-racha-nome="${i}" aria-label="Nome da pessoa ${i+1}" maxlength="80" value="${escaparHTML(nome)}" class="${entradaClasse}"></label>`}
           <label class="${campoClasse}"><span class="${rotuloClasse}">Cota (1 para dividir igualmente)</span><input aria-label="Cota de ${escaparHTML(nome)}" aria-describedby="ajudaCotasRacha" data-racha-peso="${i}" type="text" inputmode="decimal" maxlength="6" value="${escaparHTML(a.pesoTexto ?? a.peso ?? 1)}" class="${entradaClasse}"></label>
-          <label class="${campoClasse}"><span class="${rotuloClasse}">Quanto pagou à loja</span><input aria-label="Pago à loja por ${escaparHTML(nome)}" data-racha-pago="${i}" inputmode="numeric" value="${escaparHTML(a.pagoCentavos?formatBRL(a.pagoCentavos/100):'')}" placeholder="R$ 0,00" class="${entradaClasse}"></label>
         </div>
       </details>
     </div>`;
+  }).join('');
+  const pagamentos=document.getElementById('rachaPagamentosPorPessoa');
+  if(pagamentos)pagamentos.innerHTML=pessoas.map(({nome,i})=>{
+    const pago=rachaDetAjustes[nome]?.pagoCentavos;
+    return `<label class="${campoClasse}">${escaparHTML(nome===rachaEu?'Eu (você)':nome)}<input aria-label="Valor pago à loja por ${escaparHTML(nome)}" data-racha-pago="${i}" inputmode="numeric" value="${pago?formatBRL(pago/100):''}" placeholder="R$ 0,00" class="${entradaClasse}"></label>`;
   }).join('');
   checks.innerHTML=rachaDetPessoas.map((nome,i)=>'<label class="p-2 rounded-lg border border-slate-600 bg-slate-900 text-xs text-slate-200 flex items-center gap-2"><input type="checkbox" class="chk-pessoa-item-racha" data-racha-consumidor="'+escaparHTML(nome)+'" value="'+i+'" '+(!antigos.length||selecionados.has(nome)||novosCompartilham?'checked':'')+'>'+escaparHTML(nome===rachaEu?'Eu':nome)+'</label>').join('');
   atualizarBloqueioRachaGestor();
@@ -5098,7 +5110,7 @@ function renomearPessoaRachaGestor(indice,texto){
   rachaDetPessoas[indice]=nome;rachaDetItens.forEach(it=>it.consumidores=it.consumidores.map(p=>p===antigo?nome:p));rachaDetAjustes[nome]=rachaDetAjustes[antigo] || {};delete rachaDetAjustes[antigo];
   const titulo=document.querySelector('[data-racha-rotulo="'+indice+'"]');if(titulo){titulo.textContent=nome;const ajustes=titulo.parentElement?.nextElementSibling;if(ajustes?.dataset)ajustes.dataset.rachaAjustes=nome;}
   document.querySelector('[data-racha-peso="'+indice+'"]')?.setAttribute('aria-label','Cota de '+nome);
-  document.querySelector('[data-racha-pago="'+indice+'"]')?.setAttribute('aria-label','Pago ao estabelecimento por '+nome);
+  document.querySelector('[data-racha-pago="'+indice+'"]')?.setAttribute('aria-label','Valor pago à loja por '+nome);
   document.querySelector('[data-racha-remover="'+indice+'"]')?.setAttribute('aria-label','Remover '+nome+' da divisão');
   titulo?.setAttribute('title',nome);
   const check=Array.from(document.querySelectorAll('.chk-pessoa-item-racha')).find(e=>Number(e.value)===indice);if(check){check.dataset.rachaConsumidor=nome;if(check.parentElement.lastChild?.nodeType===3)check.parentElement.lastChild.textContent=nome;}
@@ -5109,6 +5121,10 @@ function removerPessoaRachaDet(i){
   if(!alterarRachaPermitidoGestor())return;
   const nome=rachaDetPessoas[i];if(!nome)return;
   if(nome===rachaEu){mostrarAviso('Eu permanece na conta','Você é o participante fixo. Desmarque Eu nos itens que não consumiu.');return;}
+  if(rachaDetPessoas.length<=2){
+    mostrarAviso('Mantenha duas pessoas','A divisão precisa de você e pelo menos mais uma pessoa. Para trocar o participante, edite o nome ou adicione outra pessoa primeiro.');
+    return;
+  }
   const exclusivos=rachaDetItens.filter(it=>it.consumidores.length===1&&it.consumidores[0]===nome);
   if(exclusivos.length){mostrarAviso('Redistribua os itens primeiro',nome+' é a única pessoa em: '+exclusivos.map(it=>it.desc).join(', ')+'. Edite os consumidores antes de remover a pessoa.');return;}
   const versao=assinaturaEdicaoRachaGestor();
@@ -5164,13 +5180,14 @@ function converterRapidaRachaGestor(r){
   rachaDetPessoas=nomes;rachaDetAjustes=Object.create(null);rachaEu=nomes[0];rachaDetItens=r.conta.itens.map(it=>({id:novoRequestIdGestor(),desc:it.descricao,valor:it.valorCentavos/100,valorCentavos:it.valorCentavos,consumidores:it.consumidores.map(id=>mapa.get(id))}));alternarModoRachadinha('detalhado');mostrarAviso('Confira quem consumiu','Renomeie as outras pessoas e use Editar item para conferir os consumidores. Se você bebeu, troque no item Bebida uma das pessoas marcadas por Eu, mantendo a quantidade correta. Nada foi registrado.');
 }
 function registrarPagamentoRestanteRachaGestor(){if(!alterarRachaPermitidoGestor())return;
+  if(!rachaDetItens.length)throw Error('Inclua um item antes de preencher quem pagou.');
   const conta=dadosContaDetalhadaRachaGestor();conta.pessoas.forEach(p=>p.pagoCentavos=0);const d=calcularDivisaoContaGestor(conta),outros=rachaDetPessoas.filter(p=>p!==rachaEu).reduce((s,p)=>s+Number(rachaDetAjustes[p]?.pagoCentavos || 0),0);
   if(outros>d.totalCentavos)throw Error('Confira os pagamentos das outras pessoas.');rachaDetAjustes[rachaEu]={...rachaDetAjustes[rachaEu],pagoCentavos:d.totalCentavos-outros};renderizarPessoasRachaDet();calcularRachadinhaDetalhada();
 }
 function abrirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Divisão já possui envio','Consulte este envio em Atividade antes de registrar outra divisão.');abrirAtividadeGestor();return;}
-  const d=calcularRachadinhaDetalhada();if(!d)return;
-  if(d.pendenteEstabelecimentoCentavos){mostrarAviso('Informe quem pagou à loja','Preencha os pagamentos reais em cada pessoa. Se você pagou todo o restante, use Paguei o restante à loja. Depois toque em Conferir e registrar.');return;}
+  const d=calcularRachadinhaDetalhada();if(!d){if(!rachaDetItens.length)mostrarAviso('Adicione um item','Inclua pelo menos um item antes de preencher o registro.');return;}
+  if(d.pendenteEstabelecimentoCentavos){mostrarAviso('Informe quem pagou à loja','Em Quem pagou à loja?, informe quanto cada pessoa pagou. Se todo o valor passou pelo seu cartão, use Atribuir o valor restante a mim.');return;}
   const atual=d;
   const modal=document.getElementById('modalRegistroRachaGestor');modal._focoAnterior=document.activeElement;
   const forma=document.getElementById('rachaRegistroForma');forma.replaceChildren();forma.add(new Option('Selecione como você pagou…',''));formasGlobais.filter(f=>!f.arquivado&&tipoFormaPagamentoGestor(typeof f==='string'?f:f.nome)!=='resumo').forEach(f=>{const n=typeof f==='string'?f:f.nome;if(n)forma.add(new Option(n,n));});
@@ -5241,16 +5258,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   const cancelar=document.createElement('button');cancelar.id='btnCancelarItemRacha';cancelar.type='button';cancelar.className='hidden text-xs text-slate-200 border border-slate-600 p-2 rounded-lg';cancelar.textContent='Cancelar edição do item';cancelar.addEventListener('click',cancelarEdicaoItemRachaGestor);incluir.after(cancelar);
   const identificar=document.createElement('button');identificar.type='button';identificar.className='w-full rounded-xl border border-amber-400/40 text-amber-200 px-3 py-3 text-xs font-bold';identificar.textContent='Identificar pessoas e registrar partes que adiantei';identificar.addEventListener('click',prepararDetalhamentoRachaGestor);document.getElementById('boxRachaModoRapido').append(identificar);
   const detalhe=document.getElementById('boxRachaModoDetalhado');
-  const pagar=document.createElement('button');pagar.type='button';pagar.className='rounded-xl border border-slate-500 text-slate-200 px-3 py-3 text-xs font-bold';pagar.textContent='Paguei o restante à loja';pagar.addEventListener('click',()=>{try{registrarPagamentoRestanteRachaGestor();}catch(e){mostrarAviso('Confira a conta',e.message);}});
-  const registrar=document.createElement('button');registrar.type='button';registrar.className='rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Conferir e registrar';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
-  const acoes=document.createElement('div');acoes.className='grid grid-cols-1 sm:grid-cols-2 gap-2';acoes.append(pagar,registrar);detalhe.append(acoes);
+  const pagar=document.createElement('button');pagar.type='button';pagar.className='rounded-xl border border-slate-500 text-slate-200 px-3 py-3 text-xs font-bold';pagar.textContent='Atribuir o valor restante a mim';pagar.addEventListener('click',()=>{try{registrarPagamentoRestanteRachaGestor();}catch(e){mostrarAviso('Confira a conta',e.message);}});
+  const registrar=document.createElement('button');registrar.type='button';registrar.className='rounded-xl bg-amber-500 text-slate-950 px-3 py-3 text-xs font-bold';registrar.textContent='Escolher cartão ou Pix e parcelas';registrar.addEventListener('click',abrirRegistroRachadinhaGestor);
+  const acoes=document.createElement('div');acoes.className='grid grid-cols-1 sm:grid-cols-2 gap-2';acoes.append(pagar,registrar);detalhe.querySelector("#rachaEtapaPagamento").append(acoes);
   const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
   modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Registrar divisão e adiantamentos</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><label class="text-xs text-slate-300">Data (DD/MM/AAAA)<input id="rachaRegistroData" required inputmode="numeric" maxlength="10" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label><label class="text-xs text-slate-300">Mês da fatura / recebimento (MM/AAAA)<input id="rachaRegistroMes" required inputmode="numeric" maxlength="7" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><p class="text-xs text-slate-200">A prévia separa seu gasto dos empréstimos por pessoa. Se sua parte já estiver no Histórico, desmarque a opção acima.</p><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">🔎 Conferir prévia antes de gravar</button></form></div>';
   document.body.append(modal);document.getElementById('fecharRegistroRacha').addEventListener('click',fecharRegistroRachaGestor);document.getElementById('formRegistroRacha').addEventListener('submit',e=>{e.preventDefault();conferirRegistroRachadinhaGestor();});document.getElementById('rachaRegistroForma').addEventListener('change',atualizarParcelasRegistroRachaGestor);
   modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();fecharRegistroRachaGestor();}if(e.key==='Tab'){const f=Array.from(modal.querySelectorAll('button,input,select')).filter(el=>!el.disabled&&el.getClientRects().length);if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0]?.focus();}}});
   sub.addEventListener('input',e=>{const t=e.target;
     if(t.dataset.rachaPeso!==undefined){if(!alterarRachaPermitidoGestor())return;const nome=rachaDetPessoas[Number(t.dataset.rachaPeso)],peso=lerCotaRachaGestor(t.value);t.setAttribute('aria-invalid',String(!Number.isFinite(peso)));rachaDetAjustes[nome]={...rachaDetAjustes[nome],pesoTexto:t.value,peso};calcularRachadinhaDetalhada();}
-    else if(t.dataset.rachaPago!==undefined){mascaraMoedaTeclado(t);const nome=rachaDetPessoas[Number(t.dataset.rachaPago)];rachaDetAjustes[nome]={...rachaDetAjustes[nome],pagoCentavos:Math.round(lerValorMoeda(t)*100)};calcularRachadinhaDetalhada();}
+    else if(t.dataset.rachaPago!==undefined){if(!alterarRachaPermitidoGestor())return;mascaraMoedaTeclado(t);const nome=rachaDetPessoas[Number(t.dataset.rachaPago)];rachaDetAjustes[nome]={...rachaDetAjustes[nome],pagoCentavos:Math.round(lerValorMoeda(t)*100)};calcularRachadinhaDetalhada();}
     else if(['rachaDesconto','rachaAcrescimo','rachaServicoPercentual','rachaRateioAcrescimos'].includes(t.id)){if(['rachaDesconto','rachaAcrescimo'].includes(t.id))mascaraMoedaTeclado(t);if(modoRachadinhaAtual==='rapido')calcularRachadinha();else calcularRachadinhaDetalhada();}
     else guardarRascunhoRachaGestor();
   });
@@ -10278,7 +10295,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v230', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v231', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
