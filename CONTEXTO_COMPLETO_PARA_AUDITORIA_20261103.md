@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+v230 — 25/11/2026: Rachadinha chama o modo de Dividir por item, explica o preço integral antes da seleção de participantes e mostra uma parte calculada por pessoa. Nome editável, cota e pagamento individual ficam recolhidos. Registro conjunto aproveita os nomes dos itens na descrição. Regras de rateio, parcelamento, rascunhos e envio permanecem no fluxo existente. Teste visual na Vercel ainda pendente.
+
 v229 — 25/11/2026: Empréstimos reúne Voltar ao padrão e Limpar filtros no topo da consulta. O primeiro volta a A Receber e o segundo inclui todos os status. Histórico aproxima Filtros e Limpar. Mensal coloca o resumo da seleção e sua limpeza no painel dos filtros da fatura. Alteração de interface, sem mudança no backend.
 
 ## Formulários e filtros v228 local — revisão 25/11/2026
