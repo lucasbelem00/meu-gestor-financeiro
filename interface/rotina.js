@@ -104,7 +104,7 @@ function rascunhoRachaVazioRotinaGestor(dados){
     if(campo==='pagoCentavos')return Number(v)!==0;
     return true;
   }));
-  return !texto&&!valor&&!nomesPendentes&&!ajustesReais&&!c.rachaTaxa10&&(!c.rachaRateioAcrescimos||c.rachaRateioAcrescimos==='consumo')&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&pessoas.length===2&&/^eu$/i.test(pessoas[0])&&/^amigo\s*2$/i.test(pessoas[1]);
+  return !texto&&!valor&&!nomesPendentes&&!ajustesReais&&!c.rachaTaxa10&&(!c.rachaRateioAcrescimos||c.rachaRateioAcrescimos==='consumo')&&String(c.rachaQtdPessoas || 2)==='2'&&String(c.rachaQtdBebeu || 1)==='1'&&String(c.rachaServicoPercentual || 10)==='10'&&pessoas.length===2&&/^eu$/i.test(pessoas[0])&&/^amigo(?:\s*2)?$/i.test(pessoas[1]);
 }
 function rascunhoFormularioVazioRotinaGestor(tipo,dados){
   if(!['novo','emp'].includes(tipo))return false;

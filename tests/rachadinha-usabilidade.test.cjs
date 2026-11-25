@@ -56,7 +56,7 @@ test('confirmar prévia antiga não envia quando a divisão mudou depois',async(
 test('abrir conta vazia começa em Comida vs. Bebida e calcula só o modo visível',()=>{const {c,el,run}=ambiente();c.rachaDetPessoas=['Eu','Amigo 2'];el('nome1').value='Amigo 2';c.rachaDetItens=[];run("rachaDetAjustes={};modoRachadinhaAtual='detalhado'");let rapido=0,detalhado=0;c.calcularRachadinha=()=>rapido++;c.calcularRachadinhaDetalhada=()=>detalhado++;c.abrirRachadinhaGestor();assert.equal(run('modoRachadinhaAtual'),'rapido');assert.equal(rapido,1);assert.equal(detalhado,0);assert.equal(el('btnModoRachaRapido')['aria-pressed'],'true');});
 test('nome apagado para redigitar permanece no rascunho e na assinatura de conferência',()=>{const {c,el}=ambiente();const antes=c.assinaturaEdicaoRachaGestor();el('nome1').value='';assert.equal(c.dadosRascunhoRachaGestor().nomesEmEdicao[1],'');assert.notEqual(c.assinaturaEdicaoRachaGestor(),antes);});
 test('conta detalhada útil e envio guardado mantêm o modo ao voltar à ferramenta',()=>{for(const pendente of [false,true]){const {c,run}=ambiente();if(pendente)run("rachaEnvioGuardado={estado:'pendente',payload:{requestId:'racha-pendente-001'}}");c.abrirRachadinhaGestor();assert.equal(run('modoRachadinhaAtual'),'detalhado');assert.equal(c.rachaDetItens[0].desc,'Pizza');if(pendente)assert.equal(run('rachaEnvioGuardado.payload.requestId'),'racha-pendente-001');}});
-test('Limpar confirmado retorna ao modo rápido com campos e pessoas padrão',()=>{const {c,el,run,confirmacoes,storage}=ambiente();el('rachaLocal').value='Jantar';c.limparRachadinhaTudo();confirmacoes[0].fn();assert.equal(run('modoRachadinhaAtual'),'rapido');assert.equal(el('rachaLocal').value,'');assert.equal(c.rachaDetItens.length,0);assert.deepEqual(Array.from(c.rachaDetPessoas),['Eu','Amigo 2']);assert.equal(storage.size,0);});
+test('Limpar confirmado retorna ao modo rápido com campos e pessoas padrão',()=>{const {c,el,run,confirmacoes,storage}=ambiente();el('rachaLocal').value='Jantar';c.limparRachadinhaTudo();confirmacoes[0].fn();assert.equal(run('modoRachadinhaAtual'),'rapido');assert.equal(el('rachaLocal').value,'');assert.equal(c.rachaDetItens.length,0);assert.deepEqual(Array.from(c.rachaDetPessoas),['Eu','Amigo']);assert.equal(storage.size,0);});
 test('confirmação antiga de Limpar preserva texto, consumidor e nome ainda em edição',()=>{for(const mudar of ['texto','consumidor','nome']){const {c,el,checks,confirmacoes,avisos}=ambiente();checks.push({value:'0',checked:true,dataset:{rachaConsumidor:'Eu'}});c.limparRachadinhaTudo();if(mudar==='texto')el('rachaLocal').value='Jantar novo';else if(mudar==='consumidor')checks[0].checked=false;else el('nome1').value='Nome ainda digitando';confirmacoes[0].fn();assert.equal(c.rachaDetItens.length,1);assert.equal(avisos.at(-1)[0],'A divisão mudou');}});
 test('falha ao guardar divisão obrigatória impede a preparação financeira',()=>{const {c}=ambiente();c.guardarRascunhoRotinaGestor=()=>false;assert.equal(c.guardarRascunhoRachaGestor(),false);assert.throws(()=>c.guardarRascunhoRachaGestor(true),/guardar esta divisão/);});
 test('dicas e cores seguem os contextos de empréstimos e gastos pessoais',()=>{const h=fs.readFileSync(path.join(raiz,'index.html'),'utf8');const mover=h.slice(h.indexOf('<!-- CONVERSOR RÁPIDO:'),h.indexOf('id="btnSalvarEdLanc"'));assert(mover.includes('border-amber-500/30'));assert(!mover.includes('bg-sky-500'));assert(h.includes('id="btnSalvarEdLanc" class="w-1/2 bg-blue-600'));assert(h.includes('id="btnSalvarEdEmp" class="w-1/2 bg-amber-500'));assert(h.includes('cotas 2, 1 e 1 dão 50%, 25% e 25%'));assert(h.includes('Digite o preço inteiro do item, antes de dividir.'));});
@@ -87,4 +87,25 @@ test('o único acompanhante pode ser renomeado, mas não pode ser removido',()=>
  assert.equal(c.rachaDetPessoas.length,2);
  c.renomearPessoaRachaGestor(1,'Bruno');
  assert.equal(c.rachaDetPessoas[1],'Bruno');
+});
+
+test('atribuição integral permite reverter para pagamentos diretos por pessoa',()=>{
+ const {c,el,run}=ambiente();
+ c.calcularRachadinhaDetalhada();
+ assert.equal(el('btnAtribuirPagamentoRacha').textContent,'Atribuir o valor total a mim');
+ assert.equal(el('boxReverterPagamentoRacha').hidden,true);
+ run("rachaDetAjustes.Ana={pagoCentavos:1000}");
+ c.calcularRachadinhaDetalhada();
+ assert.equal(el('btnAtribuirPagamentoRacha').textContent,'Atribuir o valor restante a mim');
+ c.registrarPagamentoRestanteRachaGestor();
+ assert.equal(run('rachaDetAjustes.Eu.pagoCentavos'),9000);
+ assert.equal(el('boxReverterPagamentoRacha').hidden,true);
+ run("rachaDetAjustes.Ana.pagoCentavos=0");
+ c.registrarPagamentoRestanteRachaGestor();
+ assert.equal(el('boxReverterPagamentoRacha').hidden,false);
+ c.cadaPessoaPagouSuaParteRachaGestor();
+ assert.equal(run('rachaDetAjustes.Eu.pagoCentavos'),5000);
+ assert.equal(run('rachaDetAjustes.Ana.pagoCentavos'),5000);
+ assert.equal(c.calcularRachadinhaDetalhada().transferencias.length,0);
+ assert.equal(el('boxReverterPagamentoRacha').hidden,true);
 });

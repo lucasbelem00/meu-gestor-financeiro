@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v232 — Rachadinha usa Amigo como nome inicial e o mesmo formatador de título do Novo Lançamento no item. O botão distingue total e restante. Quando eu paguei tudo, a opção de reverter atribui a cada participante a parte que pagou diretamente à loja, sem gerar devoluções. O atalho da parte pessoal já preenche #dividido.
+
 v231 — Rachadinha mantém pelo menos duas pessoas ao remover participantes. Cotas ficam com os nomes para o cálculo, e os valores pagos à loja ficam em uma etapa após o resumo. A ação de atribuir o valor restante só preenche a divisão; a escolha da forma e das parcelas leva à prévia antes da gravação.
 
 v230 — 25/11/2026: Rachadinha chama o modo de Dividir por item, explica o preço integral antes da seleção de participantes e mostra uma parte calculada por pessoa. Nome editável, cota e pagamento individual ficam recolhidos. Registro conjunto aproveita os nomes dos itens na descrição. Regras de rateio, parcelamento, rascunhos e envio permanecem no fluxo existente. Teste visual na Vercel ainda pendente.
