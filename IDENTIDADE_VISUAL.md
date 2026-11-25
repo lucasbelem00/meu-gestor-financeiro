@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v229 — 25/11/2026: Empréstimos reúne Voltar ao padrão e Limpar filtros no topo da consulta. O primeiro volta a A Receber e o segundo inclui todos os status. Histórico aproxima Filtros e Limpar. Mensal coloca o resumo da seleção e sua limpeza no painel dos filtros da fatura. Alteração de interface, sem mudança no backend.
+
 v228 — Mês da fatura em Novo/Empréstimos adota partes MM/AAAA; Data combinada no cadastro/editor usa DD/MM/AAAA em maiúsculas, seleção por parte e avanço pelo teclado, mantendo borda/altura/cores existentes. A prévia de Empréstimos segue a orientação âmbar de Novo para parcelas restantes. Limpar filtros de Empréstimos fica permanentemente alinhado à direita acima da grade de consultas/busca. Histórico mantém contexto de classificação sem ação de limpeza parcial redundante; limpeza global permanece no topo.
 
 v227 — Novo, quando Início é posterior a 1, renomeia Mês da Fatura para Fatura da parcela N e mostra orientação âmbar compacta abaixo da prévia. Ela informa que somente as parcelas restantes serão criadas e pede conferência do mês da primeira pendente. Histórico de Atividade usa rótulo explícito para desfazer grupos parcelados, sem criar botão adicional fora do Histórico.

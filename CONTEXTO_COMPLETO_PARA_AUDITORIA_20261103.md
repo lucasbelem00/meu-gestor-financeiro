@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+v229 — 25/11/2026: Empréstimos reúne Voltar ao padrão e Limpar filtros no topo da consulta. O primeiro volta a A Receber e o segundo inclui todos os status. Histórico aproxima Filtros e Limpar. Mensal coloca o resumo da seleção e sua limpeza no painel dos filtros da fatura. Alteração de interface, sem mudança no backend.
+
 ## Formulários e filtros v228 local — revisão 25/11/2026
 
 Continuação sobre `main` em `2c77234`, obtido do GitHub, sem alterações locais preexistentes neste ambiente. Não há acesso nesta sessão ao antigo checkout do computador de Lucas; possíveis alterações que ficaram somente naquele computador não foram recuperadas nem substituídas.

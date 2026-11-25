@@ -25,11 +25,6 @@ function restaurarFiltrosIniciaisEmpGestor(){
   for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','inpBuscaEmp']){const e=document.getElementById(id);if(e)e.value='';}
   const status=document.getElementById('selFiltroStatusEmp');if(status)status.value='A Receber';renderizarPainelEmprestimos();
 }
-function filtrosIniciaisEmpGestor(){return ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','inpBuscaEmp'].every(id=>!document.getElementById(id)?.value)&&document.getElementById('selFiltroStatusEmp')?.value==='A Receber';}
-function atualizarAtalhoFiltrosProtecaoGestor(){
-  const box=document.getElementById('listaResumoPessoasEmp');if(!box)return;
-  let b=document.getElementById('btnRestaurarFiltrosEmpGestor');if(!b){b=document.createElement('button');b.id='btnRestaurarFiltrosEmpGestor';b.type='button';b.textContent='Voltar ao padrão';b.className='mb-3 rounded-lg border border-slate-500 px-3 py-2 text-xs font-bold text-slate-200';b.setAttribute('aria-label','Voltar aos filtros iniciais: todos os meses a receber');b.onclick=restaurarFiltrosIniciaisEmpGestor;box.before(b);}b.hidden=filtrosIniciaisEmpGestor();
-}
 function solicitarEmprestimosArquivoProtecaoGestor(){
   const view=document.getElementById('subview-emprestimos'),status=document.getElementById('selFiltroStatusEmp')?.value;
   if(!arquivosAnuaisUIProtecaoGestor.length||status==='A Receber'||document.getElementById('painelConsultaEmprestimo')?.hidden||view?.closest('.hidden,[hidden],[aria-hidden="true"]'))return;
@@ -44,7 +39,7 @@ function solicitarEmprestimosArquivoProtecaoGestor(){
   }).catch(e=>{if(pedidoEmprestimosArquivoUIProtecaoGestor===pedido){pedidoEmprestimosArquivoUIProtecaoGestor=null;info.textContent='Os empréstimos antigos não foram carregados: '+e.message;}});
 }
 const renderEmpAntesProtecaoGestor=window.renderizarPainelEmprestimos;
-window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);atualizarAtalhoFiltrosProtecaoGestor();solicitarEmprestimosArquivoProtecaoGestor();return r;};
+window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);solicitarEmprestimosArquivoProtecaoGestor();return r;};
 const renderDadosAntesProtecaoGestor=window.renderizarDados;
 window.renderizarDados=function(dados){
   estadoResumoPlanilhaUIgestor=dados.resumoPlanilha||null;
