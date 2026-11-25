@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v228 — Mês da fatura em Novo/Empréstimos adota partes MM/AAAA; Data combinada no cadastro/editor usa DD/MM/AAAA em maiúsculas, seleção por parte e avanço pelo teclado, mantendo borda/altura/cores existentes. A prévia de Empréstimos segue a orientação âmbar de Novo para parcelas restantes. Limpar filtros de Empréstimos fica permanentemente alinhado à direita acima da grade de consultas/busca. Histórico mantém contexto de classificação sem ação de limpeza parcial redundante; limpeza global permanece no topo.
+
 v227 — Novo, quando Início é posterior a 1, renomeia Mês da Fatura para Fatura da parcela N e mostra orientação âmbar compacta abaixo da prévia. Ela informa que somente as parcelas restantes serão criadas e pede conferência do mês da primeira pendente. Histórico de Atividade usa rótulo explícito para desfazer grupos parcelados, sem criar botão adicional fora do Histórico.
 
 v224 — listas em atualização mostram aviso curto de status acima dos registros. Pessoas em Empréstimos bloqueiam interação até resposta atual confirmada; Histórico mantém seu bloqueio próprio e guardas de edição/exclusão. Não escurecer nem bloquear a página toda, navegação ou Cancelar dos modais. Falha mantém informação de lista desatualizada com ação de retry já existente.

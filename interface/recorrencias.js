@@ -166,7 +166,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const layout=emp?'atualizarLayoutParcelasEmprestimo':'atualizarLayoutParcelas',original=window[layout];
  window[layout]=function(...args){atualizarCadastroRecorrenteGestor(emp);const r=original.apply(this,args);atualizarCadastroRecorrenteGestor(emp);return r;};
  const sufixo=emp?'Emp':'Novo',chk=document.getElementById(emp?'checkRecorrenciaEmpGestor':'checkAssinatura'),modo=document.getElementById('modoRecorrencia'+sufixo+'Gestor');
- const mudar=()=>{window[layout]();if(emp)salvarRascunhoEmp();else salvarRascunho();};
+ const mudar=()=>{if(!emp)sincronizarTipoRecorrenciaNovoGestor();window[layout]();if(emp)salvarRascunhoEmp();else salvarRascunho();};
  chk?.addEventListener('change',mudar);modo?.addEventListener('change',mudar);
  for(const id of emp?['inpEmpData','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpMesFat']:['inpData','inpDataDia','inpDataMes','inpDataAno','inpMesFat'])document.getElementById(id)?.addEventListener('input',()=>atualizarCadastroRecorrenteGestor(emp));
  atualizarCadastroRecorrenteGestor(emp);
@@ -208,3 +208,9 @@ function montarCartoesSeriesRecorrenciasGestor(dados){
 }
 
 function dataProximaRecorrenciaVisualGestor(m){const p=interpretarCompetenciaGestor(m.proximoMes);if(!p.m)return m.proximoMes;const dia=Math.min(m.dia,new Date(p.a,p.m,0).getDate());return String(dia).padStart(2,'0')+'/'+m.proximoMes;}
+
+function sincronizarTipoRecorrenciaNovoGestor(){
+ if(!document.getElementById('checkAssinatura')?.checked)return;
+ const campo=document.getElementById('perfil-novo-tipo');
+ if(campo)campo.value=document.getElementById('modoRecorrenciaNovoGestor')?.value==='automatico'?'fixo':'variavel';
+}

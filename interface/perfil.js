@@ -57,7 +57,7 @@ function abrirPerfilHistoricoGestor(campo,valor,mes){
 function atualizarContextoPerfilHistoricoGestor(){
   let box=document.getElementById('contextoPerfilHistoricoGestor');if(!filtrosAtuais.perfilCampo){if(box)box.hidden=true;return;}
   if(!box){box=document.createElement('div');box.id='contextoPerfilHistoricoGestor';box.className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/40 bg-sky-900/20 text-sm text-sky-100 p-3';document.getElementById('lista-lancamentos').before(box);}
-  box.hidden=false;box.replaceChildren();const texto=document.createElement('span');texto.textContent=(filtrosAtuais.perfilCampo==='pendentes'?'Gastos sem classificação completa':(filtrosAtuais.perfilCampo==='tipo'?'Tipo: ':'Prioridade: ')+rotuloPerfilGastoGestor(filtrosAtuais.perfilValor))+' · '+filtrosAtuais.mes;const limpar=document.createElement('button');limpar.type='button';limpar.className='px-2 py-1 text-rose-300';limpar.textContent='✕ Limpar classificação';limpar.onclick=()=>{delete filtrosAtuais.perfilCampo;delete filtrosAtuais.perfilValor;offsetAtual=0;chamarFiltroBackend(false);};box.append(texto,limpar);
+  box.hidden=false;box.replaceChildren();const texto=document.createElement('span');texto.textContent=(filtrosAtuais.perfilCampo==='pendentes'?'Gastos sem classificação completa':(filtrosAtuais.perfilCampo==='tipo'?'Tipo: ':'Prioridade: ')+rotuloPerfilGastoGestor(filtrosAtuais.perfilValor))+' · '+filtrosAtuais.mes;box.append(texto);
 }
 function renderizarPerfilGastosPainelGestor(dados){
   const perfil=dados?.perfilGastos;let box=document.getElementById('perfilGastosPainelGestor');if(!perfil){if(box)box.hidden=true;return;}

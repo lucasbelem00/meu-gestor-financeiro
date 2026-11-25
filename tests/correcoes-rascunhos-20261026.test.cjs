@@ -46,7 +46,7 @@ test('data automática de cópia antiga não reaparece como rascunho vazio em ou
 });
 
 test('setas dos meses salvam a escolha manual nos dois formulários',async()=>{
- const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8'),a=datas();a.c.atualizarVisorMetaCategoria=()=>{};
+ const html=fs.readFileSync(path.resolve(__dirname,'../index.html'),'utf8'),a=datas();a.c.atualizarVisorMetaCategoria=()=>{};a.c.atualizarPreviewParcelas=()=>{};a.c.atualizarPreviewParcEmp=()=>{};
  for(const [emp,id,fn]of [[false,'inpMesFat','salvarRascunho'],[true,'inpEmpMesFat','salvarRascunhoEmp']])a.c[fn]=()=>a.c.guardarRascunhoRotinaGestor(emp?'emp':'novo',a.c.dadosFormularioRascunhoGestor(emp));
  const i=html.indexOf('    function ajustarMesFatura('),f=html.indexOf('    // Função Caça-PIX',i);vm.runInContext(html.slice(i,f),a.c);
  for(const [emp,id]of [[false,'inpMesFat'],[true,'inpEmpMesFat']]){a.el(id).value='12/2026';a.c.ajustarMesFatura(1,id);assert.equal(a.el(id).value,'01/2027');assert.equal(a.el(id).dataset.escolhaManual,'true');assert.match(a.local.getItem(a.c.chaveRascunhoRotinaGestor(emp?'emp':'novo')),/01\/2027/);}
@@ -57,6 +57,6 @@ test('competência manual recuperada em empréstimos resiste ao recálculo autom
  a.el('selEmpForma').value='Cartao';a.el('inpEmpMesFat').value='02/2027';a.el('inpEmpMesFat').dataset.escolhaManual='true';a.c.guardarRascunhoRotinaGestor('emp',a.c.dadosFormularioRascunhoGestor(true));delete a.el('inpEmpMesFat').dataset.escolhaManual;
  a.c.rascunhosRestauradosGestor=false;a.c.restaurarRascunhosCompletosGestor=()=>a.c.rascunhosRestauradosGestor=true;a.c.renderizarRecuperacaoRascunhosGestor=()=>{};
  vm.runInContext(rotina.slice(rotina.indexOf('const restaurarRascunhoAnteriorRotinaGestor='),rotina.indexOf('function limparCopiaRascunhoRotinaGestor(')),a.c);a.c.restaurarRascunhosCompletosGestor();
- a.c.sincronizarDataTripla=()=>{};a.c.atualizarLayoutParcelasEmprestimo=()=>{};a.c.formaEhCartaoGestor=()=>true;a.c.buscarFormaPagamentoGestor=()=>({});a.c.calcularMesFaturaCartao=()=>({mesFat:'10/2026'});
+ a.c.atualizarPreviewParcEmp=()=>{};a.c.sincronizarDataTripla=()=>{};a.c.atualizarLayoutParcelasEmprestimo=()=>{};a.c.formaEhCartaoGestor=()=>true;a.c.buscarFormaPagamentoGestor=()=>({});a.c.calcularMesFaturaCartao=()=>({mesFat:'10/2026'});
  vm.runInContext(html.slice(html.indexOf('    function atualizarFaturaEmprestimo()'),html.indexOf('    function selecionarPessoaChipEmp(')),a.c);a.c.atualizarFaturaEmprestimo();assert.equal(a.el('inpEmpMesFat').value,'02/2027');
 });

@@ -546,7 +546,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                   <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpMesFat')" class="btn-periodo-gestor compacto" aria-label="Próximo mês da fatura"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
                 </div>
               </div>
-              <input type="text" id="inpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); atualizarPreviewParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-semibold focus:border-blue-500 outline-none transition text-center">
+              <input type="text" id="inpMesFat" onfocus="selecionarParteCalendarioGestor(this)" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarVisorMetaCategoria(); atualizarPreviewParcelas(); salvarRascunho()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-4 text-white font-semibold focus:border-blue-500 outline-none transition text-center">
             </div>
           </div>
 
@@ -611,7 +611,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <div class="flex items-end mb-1.5">
                 <label for="inpParcIni" class="text-xs font-bold text-slate-400 uppercase tracking-wide">Início</label>
               </div>
-              <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="atualizarPreviewParcelas(); salvarRascunho()" required class="w-full min-w-0 h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-1 text-white font-bold text-center focus:border-blue-500 outline-none transition">
+              <input type="number" id="inpParcIni" inputmode="numeric" value="1" min="1" oninput="aoMudarInicioParcelasGestor(false); atualizarPreviewParcelas(); salvarRascunho()" required class="w-full min-w-0 h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-1 text-white font-bold text-center focus:border-blue-500 outline-none transition">
               <div class="flex mt-1.5"><button type="button" onclick="voltarPagamentoAVistaGestor()" class="w-full h-6 min-w-0 inline-flex items-center justify-center whitespace-nowrap leading-none p-0 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30 transition active:scale-95">⚡ À vista</button></div>
             </div>
           </div>
@@ -1013,13 +1013,13 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
               <div>
                 <div class="cabecalho-data-fatura-gestor">
-                  <label class="block text-[11px] leading-tight font-bold text-slate-400 uppercase">Mês da Fatura</label>
+                  <label class="block text-[11px] leading-tight font-bold text-slate-400 uppercase" id="rotuloMesFaturaEmpGestor">Mês da Fatura</label>
                   <div class="flex gap-1">
                     <button type="button" onclick="vibrar(); ajustarMesFatura(-1, 'inpEmpMesFat')" class="btn-periodo-gestor compacto" aria-label="Mês da fatura anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg></button>
                     <button type="button" onclick="vibrar(); ajustarMesFatura(1, 'inpEmpMesFat')" class="btn-periodo-gestor compacto" aria-label="Próximo mês da fatura"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6"/></svg></button>
                   </div>
                 </div>
-                <input type="text" id="inpEmpMesFat" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-2 py-0 text-white text-base font-semibold text-center focus:border-amber-500 outline-none">
+                <input type="text" id="inpEmpMesFat" onfocus="selecionarParteCalendarioGestor(this)" inputmode="numeric" maxlength="7" placeholder="MM/AAAA" oninput="mascaraMesFaturaAPI(this); atualizarPreviewParcEmp(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-2 py-0 text-white text-base font-semibold text-center focus:border-amber-500 outline-none">
               </div>
 
               </div><div class="col-span-2">
@@ -1070,7 +1070,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
               <div id="boxEmpParcIni" class="hidden">
                 <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1.5">Início</label>
-                <input type="number" id="inpEmpParcIni" aria-label="Número da primeira parcela a registrar" inputmode="numeric" value="1" min="1" oninput="salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
+                <input type="number" id="inpEmpParcIni" onfocus="this.select()" aria-label="Número da primeira parcela a registrar" inputmode="numeric" value="1" min="1" oninput="aoMudarInicioParcelasGestor(true); atualizarPreviewParcEmp(); salvarRascunhoEmp()" required class="w-full h-[52px] bg-slate-900 border border-slate-700 rounded-xl px-3 text-white font-bold text-center focus:border-amber-500 outline-none">
 <div class="flex mt-1.5"><button type="button" onclick="voltarPagamentoAVistaEmpGestor()" class="w-full h-6 min-w-0 inline-flex items-center justify-center whitespace-nowrap leading-none p-0 text-[10px] font-bold bg-indigo-500/15 hover:bg-indigo-500/30 text-indigo-300 rounded border border-indigo-500/30">⚡ À vista</button></div>
               </div>
 
@@ -1080,6 +1080,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               </div>
             </div>
             <div id="boxRecorrenciaEmpGestor" class="hidden space-y-2"><label class="block text-xs text-slate-300" for="modoRecorrenciaEmpGestor">Valor da recorrência</label><select id="modoRecorrenciaEmpGestor" class="w-full h-[52px] bg-slate-900 border border-violet-500/40 rounded-xl px-3 text-white"><option value="revisao">Variável — revisar a cada mês</option><option value="automatico">Fixo — repetir automaticamente</option></select><p id="previaRecorrenciaEmpGestor" class="text-xs text-violet-200 whitespace-pre-line" aria-live="polite"></p></div>
+            <p id="avisoInicioParcelasEmpGestor" class="hidden text-xs text-amber-200 break-words" aria-live="polite"></p>
             <p id="lblPreviewParcEmp" class="hidden text-xs text-amber-200 break-words" aria-live="polite"></p>
 
             <div class="pt-2 w-full">
@@ -1096,7 +1097,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <h3 id="tituloResumoPessoasEmp" class="scroll-mt-24 text-sm font-bold text-white">👥 Resumo por Pessoa & Cobrança no WhatsApp</h3>
               <p class="text-[11px] text-slate-400">Filtre o mês da fatura para cobrar e dar baixa rapidamente.</p>
             </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
+            <div class="w-full space-y-2"><div class="flex justify-end"><button type="button" id="btnLimparFiltrosEmpGestor" onclick="limparFiltrosEmpGestor()" class="text-xs font-bold text-slate-300 hover:text-white rounded-lg border border-slate-600 px-3 py-2">🧹 Limpar filtros</button></div><div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 w-full">
               <select id="selFiltroMesEmp" aria-label="Filtrar empréstimos por mês da fatura" onchange="renderizarPainelEmprestimos()" class="minimal min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-amber-500">
                 <option value="">Todos os Meses</option>
               </select>
@@ -1112,7 +1113,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
                 <option value="">Todas as Formas</option>
               </select>
               <input id="inpBuscaEmp" type="search" aria-label="Buscar empréstimos por texto" placeholder="🔎 Pessoa, descrição, data..." oninput="agendarBuscaEmprestimosGestor()" class="col-span-2 sm:col-span-1 min-w-0 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs outline-none placeholder:text-slate-400 focus:border-amber-500">
-            </div>
+            </div></div>
           </div>
 
           <div id="listaResumoPessoasEmp" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -2218,10 +2219,45 @@ const DICIONARIO_ACENTOS_PT = {
     // CAMPO DE DATA TRIPLO (NOVO, EDIÇÃO E EMPRÉSTIMOS)
     // ============================================================================
 
+
     function formatarZeroData(input, tamanho) {
       if (!input) return;
       let v = input.value.replace(/\D/g, '');
       if (v.length > 0 && v.length < tamanho) input.value = v.padStart(tamanho, '0');
+    }
+
+    function mesFaturaDaParcelaInicialGestor(mes,inicio) {
+      const n=Number(inicio||1),p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(String(mes));
+      if(!p||!Number.isInteger(n)||n<1)return mes;
+      const indice=Number(p[2])*12+Number(p[1])-1+n-1;
+      return String(indice%12+1).padStart(2,'0')+'/'+Math.floor(indice/12);
+    }
+
+    function aoMudarInicioParcelasGestor(emp) {
+      const inicio=document.getElementById(emp?'inpEmpParcIni':'inpParcIni'),mes=document.getElementById(emp?'inpEmpMesFat':'inpMesFat');
+      const n=Number(inicio.value),total=Number(document.getElementById(emp?'inpEmpParc':'inpParc').value),anterior=Number(inicio.dataset.inicioAnterior||1);
+      if(!Number.isInteger(n)||n<1||n>total)return;
+      const p=/^(0[1-9]|1[0-2])\/(\d{4})$/.exec(mes.value);
+      if(p){const indice=Number(p[2])*12+Number(p[1])-1+n-anterior;mes.value=String((indice%12+12)%12+1).padStart(2,'0')+'/'+Math.floor(indice/12);}
+      inicio.dataset.inicioAnterior=String(n);
+    }
+
+    // Não reposicionar o cursor no fim ao substituir/apagar no meio do campo.
+    function mascararCalendarioGestor(input, tamanhos) {
+      if(input.type==='hidden')return;
+      const texto=input.value,inicio=input.selectionStart??texto.length,fim=input.selectionEnd??inicio;
+      const digitos=texto.replace(/\D/g,'').slice(0,tamanhos.reduce((a,b)=>a+b,0));
+      let pos=0,formatado='';
+      for(const tamanho of tamanhos){const parte=digitos.slice(pos,pos+tamanho);if(!parte)break;if(formatado)formatado+='/';formatado+=parte;pos+=tamanho;}
+      const mapear=cursor=>{let restantes=texto.slice(0,cursor).replace(/\D/g,'').length,p=0;while(p<formatado.length&&restantes>0){if(/\d/.test(formatado[p]))restantes--;p++;}if(formatado[p]==='/'&&texto[cursor-1]==='/')p++;return p;};
+      input.value=formatado;
+      if(typeof input.setSelectionRange==='function')input.setSelectionRange(mapear(inicio),mapear(fim));
+    }
+
+    function selecionarParteCalendarioGestor(input) {
+      if(/^\d{4}-\d{2}-\d{2}$/.test(input.value))input.value=input.value.slice(8)+'/'+input.value.slice(5,7)+'/'+input.value.slice(0,4);
+      const pos=input.selectionStart||0,inicio=input.value.lastIndexOf('/',Math.max(0,pos-1))+1,proxima=input.value.indexOf('/',pos);
+      if(input.value&&typeof input.setSelectionRange==='function')input.setSelectionRange(inicio,proxima<0?input.value.length:proxima);
     }
 
     function destinoAposParteDataGestor(input,nextId,contexto){
@@ -3164,6 +3200,8 @@ const DICIONARIO_ACENTOS_PT = {
       if (!lbl) return;
       const val = lerValorMoeda('inpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpParc')?.value, 10) || 1);
+      const campoInicio=document.getElementById('inpParcIni');
+      if(campoInicio&&Number.isInteger(Number(campoInicio.value))&&Number(campoInicio.value)>=1&&Number(campoInicio.value)<=qtd)campoInicio.dataset.inicioAnterior=campoInicio.value;
       const mostrar=qtd>1&&val>0&&!document.getElementById('checkAssinatura')?.checked;
       lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent='';
       if (rotuloMes) rotuloMes.textContent='Mês da Fatura';
@@ -3187,7 +3225,7 @@ const DICIONARIO_ACENTOS_PT = {
     }
 
     function voltarPagamentoAVistaGestor(){
-      vibrar();document.getElementById('inpParc').value='1';document.getElementById('inpParcIni').value='1';atualizarLayoutParcelas();salvarRascunho();
+      vibrar();document.getElementById('inpParc').value='1';document.getElementById('inpParcIni').value='1';aoMudarInicioParcelasGestor(false);atualizarLayoutParcelas();salvarRascunho();
     }
 
     function atualizarRotuloParcelasNovoGestor(){
@@ -3222,6 +3260,7 @@ const DICIONARIO_ACENTOS_PT = {
       if (chkAss || !permiteParcelamentoFormaGestor(nomeForma,document.getElementById('chkPixParcelado')?.checked)) {
         inpParc.value = 1;
         inpParcIni.value = 1;
+        aoMudarInicioParcelasGestor(false);
         boxParc.classList.add('hidden');
         boxParcIni.classList.add('hidden');
         grid.className = 'grid grid-cols-1 gap-3';
@@ -3235,6 +3274,7 @@ const DICIONARIO_ACENTOS_PT = {
           boxValor.className = 'col-span-1 min-w-0';
         } else {
           inpParcIni.value = 1;
+        aoMudarInicioParcelasGestor(false);
           boxParcIni.classList.add('hidden');
           grid.className = 'grid grid-cols-2 gap-3';
           boxValor.className = 'col-span-1';
@@ -3313,7 +3353,7 @@ const DICIONARIO_ACENTOS_PT = {
       if (!formaObj || dataCompraStr.length !== 10) return;
 
       const calc = calcularMesFaturaCartao(formaObj, dataCompraStr);
-      if (inpMesFat && inpMesFat.dataset.escolhaManual!=='true') inpMesFat.value = calc.mesFat;
+      if (inpMesFat && inpMesFat.dataset.escolhaManual!=='true') inpMesFat.value = mesFaturaDaParcelaInicialGestor(calc.mesFat, document.getElementById('inpParcIni')?.value);
 
       if (boxInfo) {
         boxInfo.classList.remove('hidden');
@@ -3327,6 +3367,7 @@ const DICIONARIO_ACENTOS_PT = {
         }
       }
       atualizarVisorMetaCategoria();
+      atualizarPreviewParcelas();
     }
 
     function atualizarVisorMetaCategoria() {
@@ -3696,6 +3737,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       atualizarEstiloChipsRapidosHist('');
       offsetAtual = 0;
       estadoIntegracaoInterfaceGestor.pxVersaoConsultaHistorico = null;
+      atualizarContextoPerfilHistoricoGestor();
       var barra = estadoIntegracaoInterfaceGestor.pxEl('barraSomaFiltro'); if (barra) barra.classList.add('hidden');
       renderTabelaLancamentos(ultimosLancamentosCache, false);
       chamarFiltroBackend(false); // reconfere "carregar mais" a partir do zero
@@ -4115,10 +4157,33 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
     function atualizarPreviewParcEmp() {
       const lbl = document.getElementById('lblPreviewParcEmp');
+      const aviso = document.getElementById('avisoInicioParcelasEmpGestor');
+      const rotuloMes = document.getElementById('rotuloMesFaturaEmpGestor');
       if (!lbl) return;
       const val = lerValorMoeda('inpEmpValor');
       const qtd = Math.max(1, parseInt(document.getElementById('inpEmpParc')?.value, 10) || 1);
-      const mostrar=qtd>1&&val>0;lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent=mostrar?resumoParcelasExatasGestor(val,qtd):'';
+      const campoInicio=document.getElementById('inpEmpParcIni');
+      if(campoInicio&&Number.isInteger(Number(campoInicio.value))&&Number(campoInicio.value)>=1&&Number(campoInicio.value)<=qtd)campoInicio.dataset.inicioAnterior=campoInicio.value;
+      const mostrar=qtd>1&&val>0&&!document.getElementById('checkRecorrenciaEmpGestor')?.checked;
+      lbl.hidden=!mostrar;lbl.classList.toggle('hidden',!mostrar);lbl.textContent='';
+      if (rotuloMes) rotuloMes.textContent='Mês da Fatura';
+      if (aviso) { aviso.hidden=true; aviso.classList.add('hidden'); aviso.textContent=''; }
+      if(mostrar){
+        const inicio=Number(document.getElementById('inpEmpParcIni')?.value||1);
+        if(!Number.isInteger(inicio)||inicio<1||inicio>qtd){lbl.textContent='Informe um início entre 1 e '+qtd+'.';return;}
+        const centavos=Math.round(val*100),base=Math.floor(centavos/qtd),resto=centavos%qtd;
+        const maiores=Math.max(0,resto-inicio+1),menores=qtd-inicio+1-maiores;
+        const grupos=[maiores?(inicio===1&&maiores===1?'1ª de ':maiores+' de ')+formatBRL((base+1)/100):'',menores?(maiores?'demais ':'')+menores+' de '+formatBRL(base/100):''].filter(Boolean);
+        lbl.textContent='Divisão em '+qtd+' parcelas'+(inicio>1?' · A partir da parcela '+inicio+' de '+qtd:'')+'\n'+grupos.join(' · ');
+        if(inicio>1){
+          const mes=String(document.getElementById('inpEmpMesFat')?.value||'').trim()||'não informado';
+          if(rotuloMes)rotuloMes.textContent='Fatura da parcela '+inicio;
+          if(aviso){
+            aviso.textContent='Serão registrados somente os pagamentos da parcela '+inicio+' até a '+qtd+'. As '+(inicio-1)+' anteriores não serão criadas nem marcadas como pagas. Confira se '+mes+' é o mês da fatura da parcela '+inicio+'.';
+            aviso.hidden=false;aviso.classList.remove('hidden');
+          }
+        }
+      }
     }
 
     function atualizarLayoutParcelasEmprestimo() {
@@ -4139,6 +4204,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       if (document.getElementById('checkRecorrenciaEmpGestor')?.checked || !permiteParcelamentoFormaGestor(forma,document.getElementById('chkPixRecebimento')?.checked)) {
         inpParc.value = '1';
         inpParcIni.value = '1';
+        aoMudarInicioParcelasGestor(true);
         boxParc.classList.add('hidden');
         boxParcIni.classList.add('hidden');
         grid.className = 'grid grid-cols-2 gap-3 mb-2';
@@ -4154,6 +4220,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           boxObs.className = 'col-span-full';
         } else {
           inpParcIni.value = '1';
+        aoMudarInicioParcelasGestor(true);
           boxParcIni.classList.add('hidden');
           grid.className = 'grid grid-cols-2 gap-3 mb-2';
           boxValor.className = 'col-span-1 min-w-0';
@@ -4173,17 +4240,19 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       if (!nomeForma || dataStr.length !== 10 || !inpMesFat) return;
       const pagamentoAVista = !formaEhCartaoGestor(nomeForma);
       if (pagamentoAVista) {
-        if (!inpMesFat.value) {
+        if (inpMesFat.dataset.escolhaManual!=='true') {
           const [dia, mes, ano] = dataStr.split('/');
-          inpMesFat.value = `${mes}/${ano}`;
+          inpMesFat.value = mesFaturaDaParcelaInicialGestor(`${mes}/${ano}`, document.getElementById('inpEmpParcIni')?.value);
         }
+        atualizarPreviewParcEmp();
         return;
       }
       const formaObj = buscarFormaPagamentoGestor(nomeForma);
       if (formaObj) {
         const calc = calcularMesFaturaCartao(formaObj, dataStr);
-        if(inpMesFat.dataset.escolhaManual!=='true')inpMesFat.value = calc.mesFat;
+        if(inpMesFat.dataset.escolhaManual!=='true')inpMesFat.value = mesFaturaDaParcelaInicialGestor(calc.mesFat, document.getElementById('inpEmpParcIni')?.value);
       }
+      atualizarPreviewParcEmp();
     }
 
     function selecionarPessoaChipEmp(nome) {
@@ -4696,7 +4765,7 @@ function abrirPerfilHistoricoGestor(campo,valor,mes){
 function atualizarContextoPerfilHistoricoGestor(){
   let box=document.getElementById('contextoPerfilHistoricoGestor');if(!filtrosAtuais.perfilCampo){if(box)box.hidden=true;return;}
   if(!box){box=document.createElement('div');box.id='contextoPerfilHistoricoGestor';box.className='flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-500/40 bg-sky-900/20 text-sm text-sky-100 p-3';document.getElementById('lista-lancamentos').before(box);}
-  box.hidden=false;box.replaceChildren();const texto=document.createElement('span');texto.textContent=(filtrosAtuais.perfilCampo==='pendentes'?'Gastos sem classificação completa':(filtrosAtuais.perfilCampo==='tipo'?'Tipo: ':'Prioridade: ')+rotuloPerfilGastoGestor(filtrosAtuais.perfilValor))+' · '+filtrosAtuais.mes;const limpar=document.createElement('button');limpar.type='button';limpar.className='px-2 py-1 text-rose-300';limpar.textContent='✕ Limpar classificação';limpar.onclick=()=>{delete filtrosAtuais.perfilCampo;delete filtrosAtuais.perfilValor;offsetAtual=0;chamarFiltroBackend(false);};box.append(texto,limpar);
+  box.hidden=false;box.replaceChildren();const texto=document.createElement('span');texto.textContent=(filtrosAtuais.perfilCampo==='pendentes'?'Gastos sem classificação completa':(filtrosAtuais.perfilCampo==='tipo'?'Tipo: ':'Prioridade: ')+rotuloPerfilGastoGestor(filtrosAtuais.perfilValor))+' · '+filtrosAtuais.mes;box.append(texto);
 }
 function renderizarPerfilGastosPainelGestor(dados){
   const perfil=dados?.perfilGastos;let box=document.getElementById('perfilGastosPainelGestor');if(!perfil){if(box)box.hidden=true;return;}
@@ -7187,7 +7256,7 @@ function limparSimuladorTudo(silencioso=false) {
       if (m > 12) { m = 1; a++; }
       if (m < 1) { m = 12; a--; }
       inp.value = `${String(m).padStart(2, '0')}/${a}`;
-      if(['inpMesFat','inpEmpMesFat'].includes(idInput)){inp.dataset.escolhaManual='true';if(idInput==='inpMesFat'){atualizarVisorMetaCategoria();salvarRascunho();}else salvarRascunhoEmp();}
+      if(['inpMesFat','inpEmpMesFat'].includes(idInput)){inp.dataset.escolhaManual='true';if(idInput==='inpMesFat'){atualizarVisorMetaCategoria();salvarRascunho();}else salvarRascunhoEmp();if(idInput==='inpMesFat')atualizarPreviewParcelas();else atualizarPreviewParcEmp();}
     }
 
     // Função Caça-PIX (Extrai valor automaticamente da área de transferência)
@@ -7240,6 +7309,7 @@ function limparSimuladorTudo(silencioso=false) {
   const btn = document.getElementById('btnGastoFixo');
   if (!chk || !btn) return;
   chk.checked = !chk.checked;
+  sincronizarTipoRecorrenciaNovoGestor();
   if (chk.checked) {
     btn.className = 'text-[10px] font-bold bg-emerald-600 text-white px-2.5 py-1 rounded-lg border border-emerald-500 transition active:scale-95 flex items-center gap-1 shadow-sm';
     atualizarCadastroRecorrenteGestor(false);
@@ -7252,9 +7322,7 @@ function limparSimuladorTudo(silencioso=false) {
 
     // --- 3. MÁSCARA INTELIGENTE DO MÊS FATURA (MM/AAAA) ---
     function mascaraMesFaturaAPI(input) {
-      let v = input.value.replace(/\D/g, ''); // Remove tudo que não é número
-      if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 6); // Coloca a barra
-      input.value = v;
+      if(input.type!=='hidden')mascararCalendarioGestor(input, [2,4]);
     }
 
     // --- 4. RASCUNHO AUTO-SAVE (Prevenção contra perda de dados offline) ---
@@ -9341,7 +9409,7 @@ function modoRecebimentoEditorRotinaGestor(modal,ativo){
 }
 function protegerEditorRotinaGestor(abrir,fechar,id){
   const originalAbrir=window[abrir],originalFechar=window[fechar];
-  window[abrir]=function(...args){const m=document.getElementById(id),origem=document.activeElement;if(typeof reiniciarControlesEditorEnvioGestor==='function')reiniciarControlesEditorEnvioGestor(m);if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data.slice(6)+'-'+data.slice(3,5)+'-'+data.slice(0,2):'';const escopo=document.getElementById('escopoDataCombinadaEmpGestor');if(escopo)escopo.value='parcela';const ajuda=document.getElementById('ajudaEscopoDataEmpGestor');if(ajuda)ajuda.hidden=true;m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));focarEditorGestor(m,origem);return r;};
+  window[abrir]=function(...args){const m=document.getElementById(id),origem=document.activeElement;if(typeof reiniciarControlesEditorEnvioGestor==='function')reiniciarControlesEditorEnvioGestor(m);if(id==='modalEdicaoEmp')modoRecebimentoEditorRotinaGestor(m,false);const r=originalAbrir(...args);m._sessaoEdicao=novoRequestIdGestor();if(id==='modalEdicaoEmp'){const ref=detalhesReferenciaGestor(args[0]),it=(emprestimosGlobal.itens || []).find(i=>String(i.registroId)===String(ref?.registroId)),data=it?.dataCombinada || '',campo=document.getElementById('inpEdEmpCombinada');if(campo)campo.value=/^\d{2}\/\d{2}\/\d{4}$/.test(data)?data:'';const escopo=document.getElementById('escopoDataCombinadaEmpGestor');if(escopo)escopo.value='parcela';const ajuda=document.getElementById('ajudaEscopoDataEmpGestor');if(ajuda)ajuda.hidden=true;m._assinaturaEditorRecebimento=assinaturaEditorRecebimentoRotinaGestor(m.querySelector('form'));}m._assinaturaInicial=assinaturaFormularioRotinaGestor(m.querySelector('form'));focarEditorGestor(m,origem);return r;};
   window[fechar]=function(forcar=false){const m=document.getElementById(id),form=m.querySelector('form'),visivel=!m.classList.contains('hidden');if(forcar || !visivel || !m._assinaturaInicial || m._assinaturaInicial===assinaturaFormularioRotinaGestor(form)){originalFechar();if(visivel)devolverFocoEditorGestor(m);return;}
     const sessao=m._sessaoEdicao,atual=assinaturaFormularioRotinaGestor(form);mostrarConfirmacao('Descartar alterações da edição?','As mudanças ainda não enviadas serão descartadas. Uma operação que já foi enviada continua protegida em Atividade.',()=>{if(m._sessaoEdicao!==sessao||assinaturaFormularioRotinaGestor(form)!==atual){mostrarAviso('A edição mudou','Confira os campos antes de fechar.');return;}originalFechar();devolverFocoEditorGestor(m);},false,'Descartar alterações','neutral');};
 }
@@ -9386,7 +9454,7 @@ extrairValorPixAoColar=function(event,idValor,idDesc){
 };
 const painelEmpAnteriorRotinaGestor=renderizarPainelEmprestimos;
 renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGestor(...args),box=document.getElementById('listaResumoPessoasEmp');if(!box)return r;for(const [id,texto]of [['selFiltroMesEmp','Todos os meses'],['selFiltroPessoaEmp','Todas as pessoas'],['selFiltroFormaEmp','Todas as formas']]){const op=Array.from(document.getElementById(id)?.options || []).find(o=>o.value==='');if(op)op.textContent=texto;}const status=document.getElementById('selFiltroStatusEmp').value;
-  if(box.textContent.includes('Nenhum registro')){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor],['Limpar filtros',limparFiltrosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
+  if(box.textContent.includes('Nenhum registro')){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
   let resumo=document.getElementById('resumoFiltrosEmpRotina');if(!resumo){resumo=document.createElement('p');resumo.id='resumoFiltrosEmpRotina';resumo.className='text-xs text-slate-200 break-words';box.before(resumo);}resumo.textContent=['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'].map(id=>document.getElementById(id)?.value || '').filter(Boolean).join(' · ') || 'Todos os empréstimos';return r;};
 const dadosAntesRotinaGestor=renderizarDados;
 renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
@@ -9412,14 +9480,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('selFiltroRelPeriodo')?.setAttribute('aria-label','Mês e ano da fatura');
   for(const [id,emp]of [['formLancamento',false],['formEmprestimo',true]]){const f=document.getElementById(id);const b=f?.parentElement?.querySelector('button[onclick="'+(emp?'limparFormularioEmprestimo()':'limparFormularioNovoGasto()')+'"]');if(b)b.onclick=()=>pedirLimpezaFormularioGestor(emp);}
   document.addEventListener('change',e=>{if(['selForma','selCat','inpMesFat','selEmpForma'].includes(e.target.id)){e.target.dataset.escolhaManual='true';if(['selForma','selEmpForma'].includes(e.target.id))delete document.getElementById(e.target.id==='selForma'?'inpMesFat':'inpEmpMesFat').dataset.escolhaManual;}},true);
-  document.addEventListener('input',e=>{if(['inpMesFat','inpDataDia','inpDataMes','inpDataAno','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno'].includes(e.target.id))e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
+  document.addEventListener('input',e=>{if(['inpMesFat','inpEmpMesFat','inpDataDia','inpDataMes','inpDataAno','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno'].includes(e.target.id))e.target.dataset.escolhaManual='true';if(['inpDividirEmpValor','inpEdEmpValor'].includes(e.target.id))atualizarPreviaRecebimentoRotinaGestor();});
   const painel=document.getElementById('painelDividirEmpCampos');if(painel){const resumo=document.createElement('p');resumo.id='previaRecebimentoRotina';resumo.className='text-xs text-amber-100 leading-relaxed';resumo.setAttribute('role','status');painel.prepend(resumo);document.getElementById('inpDividirEmpValor').setAttribute('aria-label','Valor recebido agora');}
   const form=document.getElementById('formEmprestimo');if(form){const nav=document.createElement('div');nav.className='flex gap-2 mb-3';nav.setAttribute('role','group');nav.setAttribute('aria-label','Modo de empréstimos');const consultar=document.createElement('button'),novo=document.createElement('button');for(const b of [consultar,novo]){b.type='button';b.className='flex-1 rounded-xl border border-slate-600 bg-slate-800 px-3 py-3 text-sm font-bold text-slate-100';nav.append(b);}consultar.id='btnConsultarEmprestimos';novo.id='btnNovoEmprestimo';consultar.textContent='Consultar empréstimos';novo.textContent='Novo empréstimo';consultar.onclick=()=>alternarModoEmprestimosGestor('consulta');novo.onclick=()=>alternarModoEmprestimosGestor('novo',true);form.parentElement.before(nav);alternarModoEmprestimosGestor('consulta');}
   const explicacao=document.getElementById('horizonte-explicacao');if(explicacao){const d=document.createElement('details'),s=document.createElement('summary');d.className='text-xs text-slate-300 my-2';s.textContent='Entenda os valores';s.className='cursor-pointer py-2';explicacao.before(d);d.append(s,explicacao);const irma=d.nextElementSibling;if(irma?.tagName==='P')d.append(irma);}
   const detalheKpi=document.createElement('details'),tituloKpi=document.createElement('summary'),regraKpi=document.createElement('p');detalheKpi.className='text-xs text-slate-300 mb-2';tituloKpi.id='escopoKpiRotina';tituloKpi.textContent='Seus gastos · Entenda os indicadores';tituloKpi.className='cursor-pointer py-2';regraKpi.textContent='Em aberto e Pago: valores pessoais da competência deste mês. Total do mês: seus gastos nessa competência (mês da fatura), incluindo valores pagos e em aberto. O mês da fatura pode ser diferente do mês da compra. Total registrado: todos os meses e anos, incluindo parcelas futuras já gravadas. Exclui empréstimos, cancelamentos e valores apenas previstos.';regraKpi.className='mt-2';detalheKpi.append(tituloKpi,regraKpi);const kpi=document.getElementById('kpi-aberto')?.closest('section');if(kpi)kpi.before(detalheKpi);
   const intervalo=document.createElement('p');intervalo.id='intervaloHorizonteRotina';intervalo.className='text-xs font-bold text-sky-200 mb-2';document.getElementById('rolagemHorizonteGestor')?.before(intervalo);
   const formas=document.getElementById('lista-formas');if(formas){const b=document.createElement('button');b.id='btnAlternarArquivadosGestor';b.type='button';b.hidden=!(formasGlobais||[]).some(f=>f.arquivado);b.className='rounded-xl border border-slate-600 px-3 py-2 mb-3 text-xs text-slate-200';b.textContent='Mostrar arquivados';b.setAttribute('aria-pressed','false');b.onclick=()=>{window.exibirArquivadosGestor=!window.exibirArquivadosGestor;renderListaFormas();};formas.before(b);}
-  for(const [formId,id,texto]of [['formEmprestimo','inpEmpCombinada','Data combinada da primeira devolução (opcional; demais parcelas mensais)'],['modalEdicaoEmp','inpEdEmpCombinada','Data combinada de devolução (opcional)']]){const destino=document.getElementById(formId);if(!destino)continue;const l=document.createElement('label');l.className='block text-xs text-slate-300 mt-3';l.textContent=texto;const i=document.createElement('input');i.type='date';i.id=id;i.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';l.append(i);const f=destino.tagName==='FORM'?destino:destino.querySelector('form');const acao=f.querySelector('button[type="submit"]')?.parentElement;if(acao)acao.before(l);else f.append(l);i.onchange=()=>formId==='formEmprestimo'&&salvarRascunhoEmp();}
+  for(const [formId,id,texto]of [['formEmprestimo','inpEmpCombinada','Data combinada da primeira devolução (opcional; demais parcelas mensais)'],['modalEdicaoEmp','inpEdEmpCombinada','Data combinada de devolução (opcional)']]){const destino=document.getElementById(formId);if(!destino)continue;const l=document.createElement('label');l.className='block text-xs text-slate-300 mt-3';l.textContent=texto;const i=document.createElement('input');i.type='text';i.inputMode='numeric';i.maxLength=10;i.placeholder='DD/MM/AAAA';i.setAttribute('aria-label',texto);i.onfocus=()=>selecionarParteCalendarioGestor(i);i.oninput=()=>{mascararCalendarioGestor(i,[2,2,4]);if(formId==='formEmprestimo')salvarRascunhoEmp();};i.id=id;i.className='block w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';l.append(i);const f=destino.tagName==='FORM'?destino:destino.querySelector('form');const acao=f.querySelector('button[type="submit"]')?.parentElement;if(acao)acao.before(l);else f.append(l);i.onchange=()=>formId==='formEmprestimo'&&salvarRascunhoEmp();}
   const inicio=document.createElement('input');inicio.id='inpAssInicio';inicio.placeholder='MM/AAAA';inicio.maxLength=7;inicio.inputMode='numeric';inicio.className='w-full rounded-xl bg-slate-900 border border-slate-600 p-3 text-white';inicio.setAttribute('aria-label','Novas condições a partir do mês');const fAss=document.getElementById('modalEdicaoAss')?.querySelector('form');if(fAss){const l=document.createElement('label');l.className='block text-xs text-slate-300';const titulo=document.createElement('span');titulo.id='rotuloInicioAssGestor';titulo.textContent='Novas condições a partir de (MM/AAAA)';l.append(titulo,inicio);fAss.prepend(l);const hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());inicio.value=String(hoje.getMonth()+1).padStart(2,'0')+'/'+hoje.getFullYear();}
   renderizarRecuperacaoRascunhosGestor();
 });
@@ -9436,6 +9504,41 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 // Só corrige padrões automáticos de formulários inteiramente vazios e sem envio.
+// Mantém os IDs/valores usados por rascunho e envio; divide apenas a edição visual.
+function dividirCampoCalendarioGestor(id, dataCompleta=false){
+ const original=document.getElementById(id);if(!original||original.dataset.calendarioDividido)return;
+ const descritor=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+ const obrigatorio=original.required,valorInicial=original.value;
+ const caixa=document.createElement('div');caixa.className=original.className+' flex items-center justify-center gap-1 focus-within:ring-1 focus-within:ring-blue-500';
+ caixa.setAttribute('role','group');caixa.setAttribute('aria-label',original.getAttribute('aria-label')||(dataCompleta?'Data combinada':'Mês da fatura'));
+ const nomes=dataCompleta?['Dia','Mês','Ano']:['Mês','Ano'],tamanhos=dataCompleta?[2,2,4]:[2,4],campos=[];
+ const normalizar=v=>dataCompleta&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v.slice(8)+'/'+v.slice(5,7)+'/'+v.slice(0,4):v;
+ function validar(){
+  const preenchido=campos.some(c=>c.value),partes=campos.map(c=>Number(c.value));let erro='';
+  if(preenchido&&campos.some((c,i)=>c.value.length!==tamanhos[i]))erro='Complete '+(dataCompleta?'a data em DD/MM/AAAA.':'o mês em MM/AAAA.');
+  else if(preenchido){const [dia,mes,ano]=dataCompleta?partes:[1,...partes],d=new Date(ano,mes-1,dia);if(ano<1900||ano>9999||d.getFullYear()!==ano||d.getMonth()!==mes-1||d.getDate()!==dia)erro='Informe '+(dataCompleta?'uma data válida.':'um mês válido.');}
+  campos.forEach(c=>{c.required=obrigatorio||preenchido;c.setCustomValidity(erro);});
+ }
+ function sincronizar(v){const partes=normalizar(String(v||'')).split('/');campos.forEach((c,i)=>c.value=partes[i]||'');validar();}
+ nomes.forEach((nome,i)=>{
+  if(i){const barra=document.createElement('span');barra.textContent='/';barra.className='text-slate-500 select-none';caixa.append(barra);}
+  const c=document.createElement('input');c.type='text';c.id=id+nome.normalize('NFD').replace(/[\u0300-\u036f]/g,'');c.inputMode='numeric';c.maxLength=tamanhos[i];c.placeholder=nome==='Dia'?'DD':nome==='Mês'?'MM':'AAAA';c.setAttribute('aria-label',nome+' — '+caixa.getAttribute('aria-label'));c.className=(tamanhos[i]===4?'w-12':'w-7')+' bg-transparent text-center text-white outline-none focus:text-blue-400';
+  c.onfocus=()=>c.select();
+  const emitir=()=>{descritor.set.call(original,campos.some(c=>c.value)?campos.map(c=>c.value).join('/'):'');validar();original.dispatchEvent(new Event('input',{bubbles:true}));};
+  c.oninput=()=>{c.value=c.value.replace(/\D/g,'').slice(0,tamanhos[i]);emitir();if(c.value.length===tamanhos[i])campos[i+1]?.focus();};
+  c.onkeydown=e=>{if(e.key==='/'&&campos[i+1]){e.preventDefault();if(c.value)c.value=c.value.padStart(tamanhos[i],'0');emitir();campos[i+1].focus();}else if(e.key==='Backspace'&&!c.value&&campos[i-1]){e.preventDefault();campos[i-1].focus();}};
+  c.onblur=()=>{if(c.value&&tamanhos[i]===2)c.value=c.value.padStart(2,'0');emitir();};
+  campos.push(c);caixa.append(c);
+ });
+ original.before(caixa);original.type='hidden';original.required=false;original.dataset.calendarioDividido='true';
+ Object.defineProperty(original,'value',{configurable:true,get(){return descritor.get.call(this);},set(v){const valor=normalizar(String(v??''));descritor.set.call(this,valor);sincronizar(valor);}});
+ original.value=valorInicial;
+}
+if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()=>{
+ for(const id of ['inpMesFat','inpEmpMesFat'])dividirCampoCalendarioGestor(id);
+ for(const id of ['inpEmpCombinada','inpEdEmpCombinada'])dividirCampoCalendarioGestor(id,true);
+});
+
 function atualizarDatasAutomaticasRelogioGestor(){
  for(const emp of [false,true]){
   const tipo=emp?'emp':'novo',form=document.getElementById(emp?'formEmprestimo':'formLancamento');
@@ -9791,7 +9894,7 @@ if(typeof document!=='undefined')document.addEventListener('DOMContentLoaded',()
  const layout=emp?'atualizarLayoutParcelasEmprestimo':'atualizarLayoutParcelas',original=window[layout];
  window[layout]=function(...args){atualizarCadastroRecorrenteGestor(emp);const r=original.apply(this,args);atualizarCadastroRecorrenteGestor(emp);return r;};
  const sufixo=emp?'Emp':'Novo',chk=document.getElementById(emp?'checkRecorrenciaEmpGestor':'checkAssinatura'),modo=document.getElementById('modoRecorrencia'+sufixo+'Gestor');
- const mudar=()=>{window[layout]();if(emp)salvarRascunhoEmp();else salvarRascunho();};
+ const mudar=()=>{if(!emp)sincronizarTipoRecorrenciaNovoGestor();window[layout]();if(emp)salvarRascunhoEmp();else salvarRascunho();};
  chk?.addEventListener('change',mudar);modo?.addEventListener('change',mudar);
  for(const id of emp?['inpEmpData','inpEmpDataDia','inpEmpDataMes','inpEmpDataAno','inpEmpMesFat']:['inpData','inpDataDia','inpDataMes','inpDataAno','inpMesFat'])document.getElementById(id)?.addEventListener('input',()=>atualizarCadastroRecorrenteGestor(emp));
  atualizarCadastroRecorrenteGestor(emp);
@@ -9833,6 +9936,12 @@ function montarCartoesSeriesRecorrenciasGestor(dados){
 }
 
 function dataProximaRecorrenciaVisualGestor(m){const p=interpretarCompetenciaGestor(m.proximoMes);if(!p.m)return m.proximoMes;const dia=Math.min(m.dia,new Date(p.a,p.m,0).getDate());return String(dia).padStart(2,'0')+'/'+m.proximoMes;}
+
+function sincronizarTipoRecorrenciaNovoGestor(){
+ if(!document.getElementById('checkAssinatura')?.checked)return;
+ const campo=document.getElementById('perfil-novo-tipo');
+ if(campo)campo.value=document.getElementById('modoRecorrenciaNovoGestor')?.value==='automatico'?'fixo':'variavel';
+}
 // FIM INTERFACE RECORRENCIAS GERADA
 // INICIO INTERFACE DESEMPENHO GERADA
 // Leituras coordenadas e trabalho visual apenas nas telas que estão abertas.
@@ -10141,7 +10250,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v226', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v228', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
