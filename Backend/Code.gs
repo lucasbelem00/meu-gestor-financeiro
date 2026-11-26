@@ -3342,6 +3342,8 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao) {
   const nomesCfg = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
   const linhas = [];
   const datasOrdenacao=new Map();
+  const formasRelatorio=new Map();
+  const categoriasRelatorio=new Map();
   lido.raw.forEach(function (r, i) {
     if(Array.isArray(anosPreparacao)){const ano=parseMesFat(r[8]).a;if(!anosPreparacao.includes(ano)){const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.relatorioRegistrosNaoPreparados=(d.relatorioRegistrosNaoPreparados||0)+1;return;}}
     const d = lido.disp[i].slice();
@@ -3354,11 +3356,22 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao) {
     if (!desc) return;
     const parc = limparApostrofo(d[6]);
     const infoParc = parseNumParcela(parc);
+    const formaOriginal=d[2];
+    if(!formasRelatorio.has(formaOriginal)){
+      formasRelatorio.set(formaOriginal,{
+        forma:nomeFormaLeituraGestor_(formaOriginal,ss),
+        tipoForma:tipoFormaGestor_(formaOriginal,ss)
+      });
+    }
+    const categoriaOriginal=d[3];
+    if(!categoriasRelatorio.has(categoriaOriginal)){
+      categoriasRelatorio.set(categoriaOriginal,resolverCategoria(categoriaOriginal,nomesCfg));
+    }
     const linha={
       idx: lido.refs[i].linha-2, arquivado:lido.refs[i].arquivado, d: d, r: r, desc: desc,
-      forma: nomeFormaLeituraGestor_(d[2], ss), tipoForma: tipoFormaGestor_(d[2], ss),
+      ...formasRelatorio.get(formaOriginal),
       cat: String(d[3] || '').trim() || 'Sem Categoria',
-      catRes: resolverCategoria(d[3], nomesCfg),
+      catRes: categoriasRelatorio.get(categoriaOriginal),
       parc: parc, infoParc: infoParc,
       valor: extractNum(r[7]),
       mes: limparApostrofo(d[8]),
@@ -3375,10 +3388,10 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao) {
   return linhas.sort(function(a,b){return datasOrdenacao.get(a)-datasOrdenacao.get(b) || a.infoMes.time-b.infoMes.time || a.infoParc.atual-b.infoParc.atual;});
 }
 
-function calcularResumoParcelas(linhas) {
+function calcularResumoParcelas(linhas, chaves) {
   const mapa = Object.create(null);
   linhas.forEach(function (l) {
-    if (isStatusCancelado(l.status) || l.infoParc.total <= 1 || l.parc === '∞/∞') return;
+    if ((chaves&&!chaves.has(l.chave)) || isStatusCancelado(l.status) || l.infoParc.total <= 1 || l.parc === '∞/∞') return;
     if (!mapa[l.chave]) mapa[l.chave] = { faltam: 0, maxTime: -Infinity, fimMes: '' };
     if (!isStatusPago(l.status)) {
       const m = mapa[l.chave];
@@ -3641,7 +3654,6 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
     const conflito = new Error('O Histórico mudou durante a consulta. Atualize a lista antes de continuar ou copiar o resumo.');
     conflito.codigo = 'CONSULTA_ALTERADA'; throw conflito;
   }
-  const resumo = medirEtapaConsultaGestor_('filtroResumoMs',()=>calcularResumoParcelas(todas));
   const hoje = getHojeSeguro();
   const mesAtual = pad2(hoje.getMonth() + 1) + '/' + hoje.getFullYear();
 
@@ -3690,14 +3702,16 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
     return true;
   }));
 
-  const maisRecentesPrimeiro = filtrados.slice().reverse();
   const soma = filtrados.reduce(function (acc, l) { return acc + (isStatusCancelado(l.status) ? 0 : l.valor); }, 0);
-  const pagina = maisRecentesPrimeiro.slice(off, off + lim);
+  const fim=Math.max(0,filtrados.length-off);
+  const pagina=filtrados.slice(Math.max(0,fim-lim),fim).reverse();
+  const chaves=new Set(pagina.map(l=>l.chave));
+  const resumo=medirEtapaConsultaGestor_('filtroResumoMs',()=>chaves.size?calcularResumoParcelas(todas,chaves):Object.create(null));
 
   return {
     versaoConsulta: versaoConsulta,
     itens: medirEtapaConsultaGestor_('filtroPaginaMs',()=>pagina.map(l=>itemLancamento(l,resumo,'historico'))),
-    temMais: (off + lim) < maisRecentesPrimeiro.length,
+    temMais: (off + lim) < filtrados.length,
     qtdTotal: filtrados.length,
     somaTotal: formatBRL(soma),
     somaMetade: formatBRL(soma / 2)

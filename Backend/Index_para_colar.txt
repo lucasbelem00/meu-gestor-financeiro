@@ -3473,7 +3473,24 @@ const DICIONARIO_ACENTOS_PT = {
 
     function ordenarDescricoesAutofillGestor(mapa) {
       const numero=valor=>Number.isFinite(Number(valor))?Math.max(0,Number(valor)):0;
-      return Object.values(mapa||{}).filter(item=>item&&typeof item.original==='string'&&item.original.trim()).sort((a,b)=>numero(b.frequencia)-numero(a.frequencia)||numero(b.ultimaCompraEm)-numero(a.ultimaCompraEm)||a.original.localeCompare(b.original,'pt-BR',{sensitivity:'base'})||a.original.localeCompare(b.original,'pt-BR'));
+      const compararBase=ordenarDescricoesAutofillGestor.compararBase??=new Intl.Collator('pt-BR',{sensitivity:'base'}).compare;
+      const comparar=ordenarDescricoesAutofillGestor.comparar??=new Intl.Collator('pt-BR').compare;
+      return Object.values(mapa||{}).filter(item=>item&&typeof item.original==='string'&&item.original.trim())
+        .map(item=>({item,frequencia:numero(item.frequencia),ultimaCompra:numero(item.ultimaCompraEm)}))
+        .sort((a,b)=>b.frequencia-a.frequencia||b.ultimaCompra-a.ultimaCompra||compararBase(a.item.original,b.item.original)||comparar(a.item.original,b.item.original))
+        .map(a=>a.item);
+    }
+    function atualizarSugestoesDatalistGestor(lista,valores){
+      if(!lista)return;
+      const atuais=lista.options;
+      if(atuais.length===valores.length&&valores.every((valor,i)=>atuais[i].value===valor))return;
+      const fragmento=document.createDocumentFragment();
+      for(const valor of valores){
+        const opcao=document.createElement('option');
+        opcao.value=valor;
+        fragmento.appendChild(opcao);
+      }
+      lista.replaceChildren(fragmento);
     }
     function checarAutopreenchimento() {
       atualizarSugestaoTagsFrequentes('');
@@ -7306,14 +7323,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
 
       dicionarioAutofill = Object.assign(Object.create(null), dados.autofill || {});
       dicionarioPrefixosAutofill = Object.assign(Object.create(null), dados.autofillPrefixos || {});
-      const dl = document.getElementById('listaDescricoes');
-      if (dl) {
-        dl.innerHTML = '';
-        ordenarDescricoesAutofillGestor(dicionarioAutofill).forEach(item => { const option = document.createElement('option'); option.value = String(item.original || ''); dl.appendChild(option); });
-      }
-
-      const dlTags = document.getElementById('listaTagsUI');
-      if (dlTags) { dlTags.innerHTML = ''; opcoesTagsGlobal.forEach(t => { const option = document.createElement('option'); option.value = String(t); dlTags.appendChild(option); }); }
+      const dl=document.getElementById('listaDescricoes');
+      if(dl)atualizarSugestoesDatalistGestor(dl,ordenarDescricoesAutofillGestor(dicionarioAutofill).map(item=>String(item.original||'')));
+      atualizarSugestoesDatalistGestor(document.getElementById('listaTagsUI'),opcoesTagsGlobal.map(String));
 
       if (dados.kpis) {
         document.getElementById('kpi-aberto').textContent = dados.kpis.totalAberto || '...';
@@ -10551,7 +10563,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v239', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v240', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

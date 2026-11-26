@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gestor-gastos-v239';
+const CACHE_NAME = 'gestor-gastos-v240';
 
 async function buscarManifestoAtualGestor(request){
   const controlador=new AbortController(),prazo=setTimeout(()=>controlador.abort(),8000);
@@ -41,7 +41,7 @@ async function navegarPaginaGestor(request,event){
   // A atualização tem seu próprio prazo. A cópia local não precisa aguardar
   // esse prazo inteiro para abrir, e a API privada continua fora do cache.
   if(event.waitUntil)event.waitUntil(rede.then(()=>{}));
-  let prazoAbertura;const resposta=await Promise.race([rede,new Promise(resolve=>{prazoAbertura=setTimeout(()=>resolve(null),3500);})]);clearTimeout(prazoAbertura);
+  let prazoAbertura;const resposta=await Promise.race([rede,new Promise(resolve=>{prazoAbertura=setTimeout(()=>resolve(null),1200);})]);clearTimeout(prazoAbertura);
   const copia=resposta?null:await buscarCopiaPaginaGestor(request);
   return resposta||copia||(await rede)||new Response('Não foi possível abrir a cópia offline. Conecte-se à internet e aguarde o carregamento completo do app.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});
 }
