@@ -186,7 +186,75 @@ function atualizarRotuloParcelasSimuladorGestor(){
 }
 function iniciarEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(Number(c.value||1)===1)c.value='';atualizarRotuloParcelasSimuladorGestor();}
 function concluirEdicaoParcelasSimuladorGestor(){const c=document.getElementById('simParcelas');if(!c.value||Number(c.value)===1)c.value='1';rodarSimuladorCompra();}
+function calcularOfertaSimuladorGestor(totalCentavos,parcelas,limiteCentavos){
+  if(!Number.isSafeInteger(totalCentavos)||!Number.isInteger(parcelas)||parcelas<1||parcelas>600||totalCentavos<parcelas)return null;
+  const base=Math.floor(totalCentavos/parcelas);
+  return {totalCentavos,parcelas,base,resto:totalCentavos%parcelas,
+    limiteRestante:Number.isSafeInteger(limiteCentavos)?limiteCentavos-totalCentavos:null};
+}
+function atualizarComparacaoOfertasGestor(){
+  const painel=document.getElementById('simCompararOfertas');
+  if(!painel?.open)return;
+  const nome=document.getElementById('simCartao').value;
+  const cartao=nome&&buscarFormaPagamentoGestor(nome);
+  const limite=cartao&&formaEhCartaoGestor(cartao)&&!cartao.arquivado&&typeof cartao.disponivelRaw==='number'
+    ?Math.round(cartao.disponivelRaw*100):null;
+  const ofertas=[];
+  for(const [i,bloco] of Array.from(painel.querySelectorAll('[data-oferta-sim]')).entries()){
+    const valor=bloco.querySelector('[data-oferta-valor]');
+    const qtd=bloco.querySelector('[data-oferta-parcelas]');
+    const saida=bloco.querySelector('[data-oferta-resultado]');
+    const oferta=calcularOfertaSimuladorGestor(Math.round(lerValorMoeda(valor)*100),Number(qtd.value),limite);
+    let texto='';
+    if(oferta){
+      const {totalCentavos,parcelas,base,resto,limiteRestante}=oferta;
+      const grupos=resto?[resto+'x de '+formatBRL((base+1)/100),(parcelas-resto)+'x de '+formatBRL(base/100)]:[parcelas+'x de '+formatBRL(base/100)];
+      texto=grupos.join(' + ')+' · Total '+formatBRL(totalCentavos/100);
+      if(limiteRestante!==null)texto+=' · '+(limiteRestante<0?'Ultrapassa o limite em '+formatBRL(-limiteRestante/100):'Limite que sobra: '+formatBRL(limiteRestante/100));
+      ofertas.push({...oferta,nome:'Oferta '+(i+1)});
+    }else if(valor.value)texto='Confira o total e as parcelas (1 a 600, com pelo menos um centavo por parcela).';
+    if(saida.textContent!==texto)saida.textContent=texto;
+  }
+  let resumo=limite===null?'Selecione um cartão com limite disponível para ver o impacto.':'Limite calculado para cada oferta separadamente, com base no saldo carregado.';
+  if(ofertas.length>=2){
+    const menor=Math.min(...ofertas.map(o=>o.totalCentavos));
+    const nomes=ofertas.filter(o=>o.totalCentavos===menor).map(o=>o.nome).join(' e ');
+    resumo='Menor total: '+nomes+' · '+formatBRL(menor/100)+'. '+resumo;
+  }
+  const status=document.getElementById('simResumoOfertas');
+  if(status.textContent!==resumo)status.textContent=resumo;
+}
+function iniciarComparacaoOfertasGestor(){
+  const painel=document.getElementById('simCompararOfertas');
+  if(!painel)return;
+  const lista=document.getElementById('simListaOfertas');
+  const adicionar=document.getElementById('simAdicionarOferta');
+  function criarOferta(){
+    const numero=lista.children.length+1;
+    if(numero>3)return;
+    const bloco=document.createElement('section');
+    bloco.dataset.ofertaSim='';
+    bloco.className='min-w-0 rounded-lg border border-slate-700 p-2 space-y-2';
+    bloco.innerHTML=`<h3 class="font-bold text-white text-sm">Oferta ${numero}</h3>
+      <label class="block text-xs text-slate-300">Preço total (R$)<input data-oferta-valor aria-label="Preço total da oferta ${numero}" inputmode="numeric" placeholder="R$ 0,00" class="block w-full rounded border border-slate-600 bg-slate-900 p-2 text-white"></label>
+      <label class="block text-xs text-slate-300">Parcelas<input data-oferta-parcelas aria-label="Parcelas da oferta ${numero}" type="number" min="1" max="600" value="1" class="block w-full rounded border border-slate-600 bg-slate-900 p-2 text-white"></label>
+      <p data-oferta-resultado class="text-xs text-slate-200 break-words"></p>`;
+    lista.append(bloco);
+    adicionar.hidden=numero===3;
+  }
+  painel.addEventListener('toggle',()=>{
+    if(painel.open&&!lista.children.length){criarOferta();criarOferta();}
+    atualizarComparacaoOfertasGestor();
+  });
+  lista.addEventListener('input',e=>{
+    if(e.target.hasAttribute('data-oferta-valor'))mascaraMoedaTeclado(e.target);
+    atualizarComparacaoOfertasGestor();
+  });
+  adicionar.addEventListener('click',()=>{criarOferta();lista.lastElementChild.querySelector('input').focus();});
+}
+if(typeof document!=='undefined')document.addEventListener?.('DOMContentLoaded',iniciarComparacaoOfertasGestor);
 function rodarSimuladorCompra() {
+  atualizarComparacaoOfertasGestor();
   atualizarRotuloParcelasSimuladorGestor();
   const box=document.getElementById('boxResultadoSimulador');if(!box)return;
   let s;try{s=lerSimulacaoGestor();}catch(e){box.textContent=e.message;return;}
@@ -196,12 +264,13 @@ function rodarSimuladorCompra() {
   const ultima=lerJSONLocalGestor('gestorUltimaAtualizacaoV1',null);
   html+=`<p class="text-[11px] text-slate-300">Base: ${ultima?escaparHTML(new Date(ultima).toLocaleString('pt-BR')):'dados carregados no aparelho'}. ${navigator.onLine?'':'Offline: os saldos podem estar desatualizados.'}</p>`;
   html+='<div class="space-y-2"><p class="text-xs text-slate-300">Escolha o cartão · limite após a compra completa</p>';
-  cartoes.forEach(c=>{const calc=calcularMesFaturaCartao(c,s.data),disp=Number(c.disponivelRaw||0)-s.valor;html+=`<button type="button" ${acaoHTML('selecionarCartaoSimulador',[c.nome])} aria-pressed="${s.forma===c.nome}" class="w-full rounded-xl border p-3 text-left ${s.forma===c.nome?'border-sky-400 bg-sky-950':'border-slate-600 bg-slate-900'}"><span class="flex justify-between gap-2"><strong class="text-white">${escaparHTML(c.nome)}</strong><strong class="${disp<0?'text-rose-300':'text-emerald-300'}">${formatBRL(disp)}</strong></span><span class="block text-xs text-slate-300 mt-1">Primeira fatura: ${escaparHTML(calc.mesFat)}</span></button>`;});
+  let mesSelecionado;
+  cartoes.forEach(c=>{const calc=calcularMesFaturaCartao(c,s.data);if(c.nome===s.forma)mesSelecionado=calc.mesFat;const disp=Number(c.disponivelRaw||0)-s.valor;html+=`<button type="button" ${acaoHTML('selecionarCartaoSimulador',[c.nome])} aria-pressed="${s.forma===c.nome}" class="w-full rounded-xl border p-3 text-left ${s.forma===c.nome?'border-sky-400 bg-sky-950':'border-slate-600 bg-slate-900'}"><span class="flex justify-between gap-2"><strong class="text-white">${escaparHTML(c.nome)}</strong><strong class="${disp<0?'text-rose-300':'text-emerald-300'}">${formatBRL(disp)}</strong></span><span class="block text-xs text-slate-300 mt-1">Primeira fatura: ${escaparHTML(calc.mesFat)}</span></button>`;});
   html+='</div><p class="text-[10px] text-slate-300">O limite é o saldo atual menos esta compra. A simulação não presume outros pagamentos ou compras até a data escolhida.</p>';
   if(!cartoes.length)html+='<p class="text-xs text-slate-300">Cadastre um cartão para comparar o limite e as faturas.</p>';
   const c=buscarFormaPagamentoGestor(s.forma);
   if(c&&formaEhCartaoGestor(c)){
-    const mes=calcularMesFaturaCartao(c,s.data).mesFat,[m,a]=mes.split('/').map(Number),q=simuladorExpandidoGestor?s.n:Math.min(6,s.n);
+    const mes=mesSelecionado||calcularMesFaturaCartao(c,s.data).mesFat,[m,a]=mes.split('/').map(Number),q=simuladorExpandidoGestor?s.n:Math.min(6,s.n);
     html+='<section class="space-y-2"><h3 class="text-xs font-bold text-white">Saldo projetado a pagar · inclui terceiros e fixos previstos</h3>';
     if(!horizonteDetalhadoGestor)html+='<p class="text-xs text-amber-200">Atualize o Apps Script e os dados antes de conferir a projeção completa.</p>';
     for(let i=0;i<q;i++){

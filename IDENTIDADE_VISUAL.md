@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v239 — Comparar ofertas fica recolhido no Simulador. Mostra até três alternativas, em cartões empilhados no celular, com totais, parcelas e limite restante por oferta. As duas calculadoras recolhidas deixam o preenchimento em espera até serem abertas.
+
 v238 — A calculadora de cotas fica recolhida em Como funcionam as cotas? e mostra valor, percentual e cota por pessoa. A coluna de entrada é selecionável e a aplicação das cotas é explícita.
 
 v237 — A Rachadinha migra o exemplo Amigo 2 para Amigo em rascunhos editáveis, preservando itens e pagamentos. A gravação confirmada dispara uma única recarga. Renderizações idênticas da Rachadinha reaproveitam as listas e o app reutiliza o formatador de moeda.

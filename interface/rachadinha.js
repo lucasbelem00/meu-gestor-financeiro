@@ -40,6 +40,8 @@ function renderizarCalculadoraCotasRachaGestor(reiniciar=false){
   const lista=document.getElementById('calcCotasPessoasRacha');
   const modo=document.getElementById('calcCotasModoRacha');
   if(!lista||!modo||!colunasCotasRachaGestor[modo.value])return;
+  const detalhes=lista.closest?.('details');
+  if(detalhes&&!detalhes.open){if(reiniciar)participantesCalcCotasRachaGestor='';return;}
   const participantes=JSON.stringify(rachaDetPessoas);
   if(reiniciar||participantesCalcCotasRachaGestor!==participantes){
     participantesCalcCotasRachaGestor=participantes;
@@ -469,6 +471,7 @@ function limparRachadinhaTudo(){
 document.addEventListener('DOMContentLoaded',()=>{
   const sub=document.getElementById('subview-rachadinha');
   const calcModo=document.getElementById('calcCotasModoRacha');
+  calcModo?.closest?.('details')?.addEventListener('toggle',()=>renderizarCalculadoraCotasRachaGestor());
   calcModo?.addEventListener('change',()=>renderizarCalculadoraCotasRachaGestor(true));
   document.getElementById('calcCotasPessoasRacha')?.addEventListener('input',atualizarCalculadoraCotasRachaGestor);
   document.getElementById('calcCotasAplicarRacha')?.addEventListener('click',aplicarCalculadoraCotasRachaGestor);

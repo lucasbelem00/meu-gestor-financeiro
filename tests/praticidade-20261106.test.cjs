@@ -39,3 +39,15 @@ test('recebimento exige concordância e distingue parte da parcela e quitação 
  confirmacao[2]();await Promise.resolve();assert.equal(parciais,valor<100?1:0);assert.equal(integrais,valor===100?1:0);
  }
 });
+
+test('ofertas preservam centavos e descontam o preço total do limite',()=>{
+ const fonte=fs.readFileSync('interface/usabilidade.js','utf8');
+ const c=vm.createContext({});
+ vm.runInContext(fonte.slice(fonte.indexOf('function calcularOfertaSimuladorGestor'),fonte.indexOf('function atualizarComparacaoOfertasGestor')),c);
+ const oferta=c.calcularOfertaSimuladorGestor(10001,3,9000);
+ assert.equal(oferta.base,3333);
+ assert.equal(oferta.resto,2);
+ assert.equal(oferta.limiteRestante,-1001);
+ assert.equal(c.calcularOfertaSimuladorGestor(10000,1,null).limiteRestante,null);
+ assert.equal(c.calcularOfertaSimuladorGestor(2,3,9000),null);
+});
