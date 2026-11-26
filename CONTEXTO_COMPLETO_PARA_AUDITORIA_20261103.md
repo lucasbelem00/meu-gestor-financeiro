@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 26/11/2026 — O Histórico agrupa por data do lançamento, preserva a continuidade do dia ao carregar outra página e permite remover cada filtro ativo. O filtro de classificação reutiliza a consulta do painel de perfil. Novo, Rachadinha e Empréstimos usam Salvando, Sincronizado e Envio em conferência nos respectivos estados, preservando as regras de confirmação e retomada. Alteração de interface nos módulos Histórico, Novo, Rachadinha e Empréstimos. A verificação com dados da conta fica pendente. Compilação e 1.419 testes automatizados aprovados sobre a base da branch New.
+
 Revisão 26/11/2026 — Histórico (módulo 5) exibe Essencial ou Ajustável ao lado da categoria conforme a prioridade do lançamento. Registros sem prioridade reconhecida ficam sem marcador. Alteração de interface. Conferência visual com os lançamentos da conta está pendente.
 
 v236 — Limpar volta ao cabeçalho da Rachadinha. Sem pagamentos explícitos, a parte calculada de cada pessoa preenche os valores pagos à loja; atribuir o total continua sendo uma ação explícita. A confirmação de gravação aparece após a resposta do servidor, antes da atualização das listas.

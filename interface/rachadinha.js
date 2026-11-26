@@ -484,7 +484,7 @@ async function conferirRegistroRachadinhaGestor(){
       if(divisaoRachaEnviadaGestor())return;
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}
       const payload={...previa.dados,assinatura:previa.assinatura,requestId:rachaRegistroId || ('racha-'+String(rachaDetItens[0].id))};rachaEnvioGuardado={estado:'pendente',assinatura:previa.assinatura,payload};
-      botao.disabled=true;botao.textContent='Sincronizando…';
+      botao.disabled=true;botao.textContent='Salvando…';
       try{
         guardarRascunhoRachaGestor(true);
         await apiCall('registrarRachadinhaWeb',payload,1);
@@ -492,9 +492,15 @@ async function conferirRegistroRachadinhaGestor(){
         guardarRascunhoRachaGestor(true);
         fecharRegistroRachaGestor();
         exibirComprovanteRachadinhaGestor(dados,previa);
-        mostrarAviso('Divisão sincronizada','Consulte os registros pelo resumo da divisão.');
+        mostrarAviso('Sincronizado','A divisão foi confirmada. Consulte os registros pelo resumo da divisão.');
       }
-      catch(e){if(!e.resultadoIncerto&&!localStorage.getItem('gestorMutacaoV3:'+payload.requestId))rachaEnvioGuardado=null;guardarRascunhoRachaGestor();mostrarAviso('Confira a divisão',e.message);return;}
+      catch(e){
+        const pendente = e.resultadoIncerto || localStorage.getItem('gestorMutacaoV3:'+payload.requestId);
+        if(!pendente)rachaEnvioGuardado=null;
+        guardarRascunhoRachaGestor();
+        mostrarAviso(pendente?'Envio em conferência':'Confira a divisão',pendente?'Consulte a confirmação em Atividade e sincronização antes de registrar outra divisão.':e.message);
+        return;
+      }
       finally{botao.disabled=false;botao.textContent='Conferir e continuar';}
       Promise.resolve().then(()=>carregarDados()).catch(e=>console.warn('Atualização após registrar divisão:',e));
     },false,'Registrar divisão','success');

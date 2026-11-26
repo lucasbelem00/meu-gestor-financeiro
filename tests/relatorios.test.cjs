@@ -32,10 +32,10 @@ function contextoRelatorio() {
 
 test('detalhar categoria do Anual mantém o ano até a consulta do Histórico', () => {
   const ctx = contextoRelatorio();
-  const campos = Object.fromEntries(['inpBusca', 'filtAno', 'filtMes', 'filtForma', 'filtCat', 'filtTag', 'filtStatus', 'selFiltroAnoSimples'].map(id => [id, { value: id === 'selFiltroAnoSimples' ? '2026' : '' }]));
+  const campos = Object.fromEntries(['inpBusca', 'filtAno', 'filtMes', 'filtForma', 'filtCat', 'filtTag', 'filtStatus', 'filtPerfilHistorico', 'selFiltroAnoSimples'].map(id => [id, { value: id === 'selFiltroAnoSimples' ? '2026' : '' }]));
   let filtro;
   const front = vm.createContext({ document: { getElementById: id => campos[id] }, setAba() {}, filtrosAtuais: {}, atualizarEstiloChipsRapidosHist() {}, aplicarFiltros() { filtro = { ano: campos.filtAno.value, mes: campos.filtMes.value, categoria: campos.filtCat.value }; } });
-  vm.runInContext(html.slice(html.indexOf('    function atualizarIndicadorAnoHistorico('), html.indexOf('    function atualizarEstiloChipsRapidosHist(')), front);
+  vm.runInContext(html.slice(html.indexOf('    function auditarItemAnual('), html.indexOf('    function atualizarEstiloChipsRapidosHist(')), front);
   front.auditarItemAnual('categoria', 'Alimentação');
   assert.equal(filtro.ano, '2026');
   assert.equal(ctx.obterRelatorioAnual(2026).totalRaw, 30);

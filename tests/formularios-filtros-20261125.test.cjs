@@ -18,7 +18,7 @@ test('seleção da recorrência sincroniza somente tipo, preservando prioridade 
  for(const [modo,tipo]of [['automatico','fixo'],['revisao','variavel']]){a.el('modoRecorrenciaNovoGestor').value=modo;a.c.sincronizarTipoRecorrenciaNovoGestor();assert.equal(a.el('perfil-novo-tipo').value,tipo);assert.equal(a.el('perfil-novo-prioridade').value,'essencial');}a.el('checkAssinatura').checked=false;a.el('perfil-novo-tipo').value='fixo';a.c.sincronizarTipoRecorrenciaNovoGestor();assert.equal(a.el('perfil-novo-tipo').value,'fixo');
 });
 test('limpar consulta de empréstimos remove todos os filtros e inclui recebidos',()=>{const a=ambiente();let renders=0;a.c.renderizarPainelEmprestimos=()=>renders++;vm.runInContext(rotina.slice(rotina.indexOf('function limparFiltrosEmpGestor()'),rotina.indexOf("ACOES_RENDERIZADAS.add('mostrarRecebidosEmpGestor')")),a.c);for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'])a.el(id).value='selecionado';a.c.limparFiltrosEmpGestor();for(const id of ['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'])assert.equal(a.el(id).value,'');assert.equal(renders,1);});
-test('Histórico mantém somente a limpeza global e remove contexto e paginação',()=>{const a=ambiente();let pedidos=0;a.c.estadoIntegracaoInterfaceGestor={pxEl:a.el};a.c.atualizarIndicadorAnoHistorico=()=>{};a.c.toggleBotaoLimpar=()=>{};a.c.atualizarEstiloChipsRapidosHist=()=>{};a.c.renderTabelaLancamentos=()=>{};a.c.ultimosLancamentosCache=[];a.c.atualizarContextoPerfilHistoricoGestor=()=>{};a.c.chamarFiltroBackend=()=>pedidos++;a.c.filtrosAtuais={ano:'2026',perfilCampo:'tipo',perfilValor:'fixo',termo:'teste'};a.c.offsetAtual=50;vm.runInContext(html.slice(html.indexOf('    function limparFiltros()'),html.indexOf('    function temAlgumFiltroAtivo()')),a.c);a.c.limparFiltros();assert.equal(a.c.offsetAtual,0);assert.equal(a.c.filtrosAtuais.perfilCampo,undefined);assert.equal(a.el('filtAno').value,'');assert.equal(a.el('inpBusca').value,'');assert.equal(pedidos,1);const perfil=fs.readFileSync('interface/perfil.js','utf8');assert(!perfil.slice(perfil.indexOf('function atualizarContextoPerfilHistoricoGestor'),perfil.indexOf('function renderizarPerfilGastosPainelGestor')).includes("createElement('button')"));});
+test('Limpar remove todos os filtros do Histórico e reinicia a paginação',()=>{const a=ambiente();let pedidos=0;a.c.estadoIntegracaoInterfaceGestor={pxEl:a.el};a.c.toggleBotaoLimpar=()=>{};a.c.atualizarEstiloChipsRapidosHist=()=>{};a.c.renderTabelaLancamentos=()=>{};a.c.ultimosLancamentosCache=[];a.c.atualizarContextoPerfilHistoricoGestor=()=>{};a.c.chamarFiltroBackend=()=>pedidos++;a.c.filtrosAtuais={ano:'2026',perfilCampo:'tipo',perfilValor:'fixo',termo:'teste'};a.c.offsetAtual=50;vm.runInContext(html.slice(html.indexOf('    function limparFiltros()'),html.indexOf('    function temAlgumFiltroAtivo()')),a.c);a.c.limparFiltros();assert.equal(a.c.offsetAtual,0);assert.equal(a.c.filtrosAtuais.perfilCampo,undefined);assert.equal(a.el('filtAno').value,'');assert.equal(a.el('inpBusca').value,'');assert.equal(pedidos,1);assert.equal(a.el('filtPerfilHistorico').value,'');});
 
 function calendario(){
  const elementos=new Map();let ativo=null,eventos=0;
@@ -48,4 +48,27 @@ test('data combinada mantém padrão em maiúsculas, recebe ISO antigo, recusa d
  assert.equal(original.value,'25/11/2026');assert.equal(dia.placeholder,'DD');assert.equal(mes.placeholder,'MM');assert.equal(ano.placeholder,'AAAA');
  dia.value='31';mes.value='02';ano.value='2027';dia.oninput();assert(!dia.checkValidity());dia.value='28';dia.oninput();assert(dia.checkValidity());assert.equal(original.value,'28/02/2027');
  dia.value='';mes.value='';ano.value='';dia.oninput();assert.equal(original.value,'');assert(dia.checkValidity());assert(!dia.required);
+});
+
+test('remover um filtro do Histórico preserva as demais seleções e inicia nova consulta', () => {
+  const a = ambiente();
+  const painel = a.el('filtrosAtivosHistorico');
+  painel.replaceChildren = (...chips) => { painel.children = chips; };
+  painel.querySelector = () => null;
+  a.c.document.createElement = () => ({ setAttribute() {} });
+  a.c.document.querySelector = () => null;
+  a.c.filtrosAtuais = { mes: '11/2026', perfilCampo: 'prioridade', perfilValor: 'ajustavel' };
+  a.el('filtMes').value = '11/2026';
+  a.el('filtPerfilHistorico').value = 'prioridade:ajustavel';
+  a.el('filtPerfilHistorico').selectedOptions = [{ textContent: 'Ajustável' }];
+  let consultas = 0;
+  a.c.aplicarFiltros = () => { consultas++; };
+
+  vm.runInContext(html.slice(html.indexOf('    function atualizarFiltrosAtivosHistoricoGestor('), html.indexOf('    function auditarItemAnual(')), a.c);
+  a.c.atualizarFiltrosAtivosHistoricoGestor();
+  assert.deepEqual(painel.children.map(chip => chip.textContent), ['novembro de 2026 ×', 'Ajustável ×']);
+  painel.children[1].onclick();
+  assert.equal(a.el('filtPerfilHistorico').value, '');
+  assert.equal(a.el('filtMes').value, '11/2026');
+  assert.equal(consultas, 1);
 });

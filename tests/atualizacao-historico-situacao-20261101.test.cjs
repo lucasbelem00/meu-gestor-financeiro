@@ -8,3 +8,20 @@ test('consulta com lançamentos conclui Histórico e limite sem falso erro de co
 test('Histórico destaca vencimento de hoje e preserva pago e ocorrência pulada',()=>{const a=ambiente();class Hoje extends Date{constructor(...args){super(...(args.length?args:[2026,10,3,12]));}}a.c.Date=Hoje;a.c.formasGlobais=[{nome:'Cartao',tipo:'cartao',vencimento:1}];a.c.renderTabelaLancamentos([linha('Em Aberto'),linha('Pago'),linha('Ocorrência Pulada')]);const h=a.el('lista-lancamentos').innerHTML;assert.equal((h.match(/Vence hoje/g)||[]).length,1);assert.match(h,/border-yellow-300/);assert.match(h,/badge-Pago/);assert.match(h,/Ocorrência Pulada/);});
 
 test('Histórico mostra o valor parcialmente pago e o saldo sem tratar como quitado',()=>{const a=ambiente(),r=linha('Em Aberto');r[18]=20;r[19]=30;a.c.renderTabelaLancamentos([r]);const h=a.el('lista-lancamentos').innerHTML;assert.match(h,/Pago ao banco: R\$ 20/);assert.match(h,/Falta pagar: R\$ 30/);});
+
+test('Histórico inicia cada dia uma vez, inclusive quando a página começa no mesmo dia', () => {
+  const a = ambiente();
+  a.c.hojeSituacaoVisualGestor = () => Date.UTC(2026, 10, 26) / 86400000;
+  const registro = data => {
+    const r = linha('Pago');
+    r[0] = data;
+    return r;
+  };
+
+  a.c.renderTabelaLancamentos([registro('26/11/2026')]);
+  a.c.renderTabelaLancamentos([registro('26/11/2026'), registro('25/11/2026'), registro('24/11/2025')], true);
+
+  const titulos = Array.from(a.el('lista-lancamentos').innerHTML.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g), m => m[1]);
+  assert.deepEqual(titulos, ['Hoje', 'Ontem', '24 de novembro de 2025']);
+  assert.equal(a.c.itensFiltradosAtualCache.length, 4);
+});

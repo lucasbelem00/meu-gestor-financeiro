@@ -50,7 +50,7 @@ function iniciarHistoricoModaisGestor(){
   modalEdicaoLanc:()=>window.fecharModalEdicaoLanc(),
   modalForma:()=>window.fecharModalForma(),
   modalEdicaoAss:()=>window.fecharModalEdicaoAss(),
-  modalFiltros:()=>window.fecharModalFiltros(),
+  modalFiltros:()=>window.cancelarFiltrosHistoricoGestor(),
   modalPagamentoFaturaGestor:()=>window.fecharPagamentoFaturaGestor(),
   modalMenuMobile:()=>window.fecharMenuMobile(),
   modalExportarDados:()=>window.fecharExportacaoDados(),

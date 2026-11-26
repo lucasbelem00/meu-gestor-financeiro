@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+26/11/2026 — Histórico usa cabeçalhos por dia, com descrição e valor na primeira linha do card. Em telas estreitas, descrição, metadados, valores e ações podem quebrar linha. Filtros ativos aparecem como botões removíveis, e o painel de filtros rola em telas de pouca altura. Novo, Rachadinha e Empréstimos compartilham os rótulos de gravação e confirmação.
+
 26/11/2026 — No Histórico, a prioridade aparece na linha da categoria como texto com um ponto pequeno, verde para Essencial e amarelo para Ajustável. A linha pode quebrar em telas estreitas.
 
 v242 — Início usa cartões clicáveis para Fatura e Empréstimos, lado a lado quando houver largura. Vencimentos, devoluções e avisos de proteção ficam em um quadro abaixo dos cartões, com atalho para a Agenda. Barra móvel usa rótulos constantes, toque mínimo de 44 px, espaço seguro inferior e destaque verde na ação Novo. A confirmação da Rachadinha usa o mesmo vocabulário de sincronização e um resumo em lista que quebra linhas para nomes longos.
