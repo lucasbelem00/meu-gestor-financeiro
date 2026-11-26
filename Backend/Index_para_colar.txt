@@ -3056,7 +3056,13 @@ const DICIONARIO_ACENTOS_PT = {
       navDesktop.innerHTML = ''; navMobile.innerHTML = '';
 
       const abasPrincipais = ['dashboard', 'relatorio', 'novo', 'lancamentos'];
-      const iconesMobile = { dashboard: '⌂', relatorio: '▤', novo: '+', lancamentos: '≡' };
+      const iconeContornoMobile = formas => `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" focusable="false">${formas}</svg>`;
+      const iconesMobile = {
+        dashboard: '⌂',
+        relatorio: iconeContornoMobile('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18m-14 5h3"/>'),
+        novo: '+',
+        lancamentos: iconeContornoMobile('<path d="M6 3l2 1.5L10 3l2 1.5L14 3l2 1.5L18 3v18l-2-1.5L14 21l-2-1.5L10 21l-2-1.5L6 21V3zM9 9h6m-6 4h6m-6 4h3"/>')
+      };
       abasPrincipais.forEach(id => {
         const config = abasConfig.find(a => a.id === id);
         navDesktop.innerHTML += `<button type="button" ${acaoHTML('setAba', [id])} id="btn-desk-${id}" class="tab-btn-global whitespace-nowrap px-4 py-2 rounded-lg font-bold text-xs ${config.cor} hover:text-white transition cursor-pointer">${escaparHTML(config.icone)} ${escaparHTML(config.titulo)}</button>`;
