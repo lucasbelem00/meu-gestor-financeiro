@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v238 — A calculadora de cotas fica recolhida em Como funcionam as cotas? e mostra valor, percentual e cota por pessoa. A coluna de entrada é selecionável e a aplicação das cotas é explícita.
+
 v237 — A Rachadinha migra o exemplo Amigo 2 para Amigo em rascunhos editáveis, preservando itens e pagamentos. A gravação confirmada dispara uma única recarga. Renderizações idênticas da Rachadinha reaproveitam as listas e o app reutiliza o formatador de moeda.
 
 v236 — Limpar volta ao cabeçalho da Rachadinha. Sem pagamentos explícitos, a parte calculada de cada pessoa preenche os valores pagos à loja; atribuir o total continua sendo uma ação explícita. A confirmação de gravação aparece após a resposta do servidor, antes da atualização das listas.

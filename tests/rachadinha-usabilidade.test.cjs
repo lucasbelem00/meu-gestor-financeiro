@@ -136,3 +136,15 @@ test('nome padrão legado migra junto com os itens e pagamentos do rascunho',()=
  assert.deepEqual(Array.from(c.rachaDetItens[0].consumidores),['Eu','Amigo']);
  assert.equal(run('rachaDetAjustes.Amigo.pagoCentavos'),2500);
 });
+
+test('calculadora converte 90/60 e 60%/40% em cotas 3 e 2, com centavos conservados',()=>{
+ const {c}=ambiente();
+ const valores=c.calcularCotasRachaGestor('valor',['90,00','60,00'],0);
+ assert.deepEqual(Array.from(valores.cotas),[3,2]);
+ assert.deepEqual(Array.from(valores.percentuais),[60,40]);
+ const percentuais=c.calcularCotasRachaGestor('percentual',['60','40'],15001);
+ assert.deepEqual(Array.from(percentuais.valores),[9001,6000]);
+ assert.deepEqual(Array.from(c.calcularCotasRachaGestor('cota',['1,5','0,5'],0).percentuais),[75,25]);
+ assert.throws(()=>c.calcularCotasRachaGestor('percentual',['60','30'],0),/100%/);
+ assert.throws(()=>c.calcularCotasRachaGestor('valor',['90','0'],0),/maior que zero/);
+});

@@ -16,6 +16,78 @@ function assinaturaEdicaoRachaGestor(){
   return JSON.stringify(dadosRascunhoRachaGestor());
 }
 function lerCotaRachaGestor(valor){const s=String(valor).trim().replace(',','.');if(!/^\d{1,3}(?:\.\d{1,2})?$/.test(s))return NaN;const n=Number(s);return n>=0.01&&n<=100?n:NaN;}
+const colunasCotasRachaGestor={valor:'Valor (R$)',percentual:'Percentual (%)',cota:'Cota'};
+let participantesCalcCotasRachaGestor='';
+function calcularCotasRachaGestor(modo,entradas,subtotal){
+  const numeros=entradas.map(valor=>{
+    const texto=String(valor).trim().replace(',','.');
+    return /^\d{1,9}(?:\.\d{1,2})?$/.test(texto)?Math.round(Number(texto)*100):0;
+  });
+  if(numeros.length<2||numeros.some(n=>n<=0))throw Error('Informe um número maior que zero para cada pessoa.');
+  const soma=numeros.reduce((a,b)=>a+b,0);
+  if(modo==='percentual'&&soma!==10000)throw Error('Os percentuais precisam somar 100%.');
+  const mdc=(a,b)=>{while(b)[a,b]=[b,a%b];return a;};
+  const divisor=numeros.reduce(mdc);
+  const proporcao=numeros.map(n=>n/divisor);
+  const cotas=modo==='cota'?numeros.map(n=>n/100):Math.max(...proporcao)<=100?proporcao:proporcao.map(n=>n/100);
+  if(cotas.some(n=>n<0.01||n>100))throw Error('Essa proporção exige cotas fora do intervalo de 0,01 a 100. Ajuste os valores.');
+  const total=modo==='valor'?soma:subtotal;
+  const pessoas=cotas.map((peso,i)=>({id:String(i),nome:'Pessoa '+(i+1),peso}));
+  const valores=total>0?calcularDivisaoContaGestor({pessoas,itens:[{id:'referencia',valorCentavos:total,consumidores:pessoas.map(p=>p.id)}]}).pessoas.map(p=>p.finalCentavos):[];
+  return {cotas,percentuais:numeros.map(n=>100*n/soma),valores,total};
+}
+function renderizarCalculadoraCotasRachaGestor(reiniciar=false){
+  const lista=document.getElementById('calcCotasPessoasRacha');
+  const modo=document.getElementById('calcCotasModoRacha');
+  if(!lista||!modo||!colunasCotasRachaGestor[modo.value])return;
+  const participantes=JSON.stringify(rachaDetPessoas);
+  if(reiniciar||participantesCalcCotasRachaGestor!==participantes){
+    participantesCalcCotasRachaGestor=participantes;
+    lista.innerHTML=rachaDetPessoas.map(nome=>`<div class="rounded-lg border border-slate-700 p-2 space-y-1">
+      <strong class="block break-words text-white">${escaparHTML(nome===rachaEu?'Eu (você)':nome)}</strong>
+      <div class="grid grid-cols-3 gap-1.5">${Object.entries(colunasCotasRachaGestor).map(([chave,rotulo])=>`<label class="min-w-0">${rotulo}
+        <input data-calc-cotas="${chave}" aria-label="${rotulo} de ${escaparHTML(nome)}" inputmode="decimal" maxlength="12"
+          ${chave===modo.value?'':'readonly'} value="${chave==='cota'&&modo.value==='cota'?escaparHTML(String(rachaDetAjustes[nome]?.pesoTexto??rachaDetAjustes[nome]?.peso??1)):''}"
+          class="block w-full min-w-0 rounded border border-slate-600 bg-slate-900 px-1.5 py-2 text-white read-only:text-slate-400">
+      </label>`).join('')}</div>
+    </div>`).join('');
+  }
+  return atualizarCalculadoraCotasRachaGestor();
+}
+function atualizarCalculadoraCotasRachaGestor(){
+  const modo=document.getElementById('calcCotasModoRacha')?.value;
+  const lista=document.getElementById('calcCotasPessoasRacha');
+  if(!lista||!colunasCotasRachaGestor[modo])return null;
+  const campos=chave=>Array.from(lista.querySelectorAll('[data-calc-cotas="'+chave+'"]'));
+  const entradas=campos(modo).map(e=>e.value);
+  const status=document.getElementById('calcCotasStatusRacha');
+  const aplicar=document.getElementById('calcCotasAplicarRacha');
+  aplicar.disabled=true;
+  for(const chave of Object.keys(colunasCotasRachaGestor))if(chave!==modo)campos(chave).forEach(e=>e.value='');
+  if(!entradas.some(v=>v.trim())){status.textContent='';return null;}
+  try{
+    const subtotal=rachaDetItens.reduce((total,item)=>total+(item.valorCentavos??Math.round(item.valor*100)),0);
+    const resultado=calcularCotasRachaGestor(modo,entradas,subtotal);
+    const formatar=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:2,useGrouping:false});
+    if(modo!=='cota')campos('cota').forEach((e,i)=>e.value=formatar(resultado.cotas[i]));
+    if(modo!=='percentual')campos('percentual').forEach((e,i)=>e.value=formatar(resultado.percentuais[i]));
+    if(modo!=='valor')campos('valor').forEach((e,i)=>e.value=resultado.total?formatBRL(resultado.valores[i]/100):'');
+    status.textContent=modo==='valor'?'Total informado: '+formatBRL(resultado.total/100):resultado.total?'Valores de referência sobre o subtotal de '+formatBRL(resultado.total/100)+'.':'Inclua um item para ver os valores de referência em reais.';
+    aplicar.disabled=divisaoRachaEnviadaGestor();
+    return resultado;
+  }catch(erro){status.textContent=erro.message;return null;}
+}
+function aplicarCalculadoraCotasRachaGestor(){
+  if(!alterarRachaPermitidoGestor()||participantesCalcCotasRachaGestor!==JSON.stringify(rachaDetPessoas))return;
+  const resultado=atualizarCalculadoraCotasRachaGestor();
+  if(!resultado)return;
+  rachaDetPessoas.forEach((nome,i)=>{
+    rachaDetAjustes[nome]={...rachaDetAjustes[nome],peso:resultado.cotas[i],pesoTexto:String(resultado.cotas[i])};
+  });
+  renderizarPessoasRachaDet();
+  calcularRachadinhaDetalhada();
+  document.getElementById('calcCotasStatusRacha').textContent='Cotas aplicadas à divisão.';
+}
 function cotaPessoaRachaGestor(nome){const a=rachaDetAjustes[nome] || {};return a.pesoTexto!==undefined?lerCotaRachaGestor(a.pesoTexto):Number(a.peso ?? 1);}
 function fixarPessoaEuRachaGestor(){
   const mapa=new Map(rachaDetPessoas.map(n=>[n,n]));
@@ -185,6 +257,7 @@ function renderizarPessoasRachaDet(){
   }).join('');
   checks.innerHTML=rachaDetPessoas.map((nome,i)=>'<label class="p-2 rounded-lg border border-slate-600 bg-slate-900 text-xs text-slate-200 flex items-center gap-2"><input type="checkbox" class="chk-pessoa-item-racha" data-racha-consumidor="'+escaparHTML(nome)+'" value="'+i+'" '+(!antigos.length||selecionados.has(nome)||novosCompartilham?'checked':'')+'>'+escaparHTML(nome===rachaEu?'Eu':nome)+'</label>').join('');
   atualizarBloqueioRachaGestor();
+  renderizarCalculadoraCotasRachaGestor();
 }
 
 function adicionarPessoaRachaDet(){
@@ -208,6 +281,7 @@ function renomearPessoaRachaGestor(indice,texto){
   document.querySelector('[data-racha-remover="'+indice+'"]')?.setAttribute('aria-label','Remover '+nome+' da divisão');
   titulo?.setAttribute('title',nome);
   const check=Array.from(document.querySelectorAll('.chk-pessoa-item-racha')).find(e=>Number(e.value)===indice);if(check){check.dataset.rachaConsumidor=nome;if(check.parentElement.lastChild?.nodeType===3)check.parentElement.lastChild.textContent=nome;}
+  renderizarCalculadoraCotasRachaGestor();
   calcularRachadinhaDetalhada();
 }
 
@@ -270,6 +344,7 @@ function calcularRachadinhaDetalhada(){
       if(pessoa)campo.value=formatBRL(pessoa.pagoCentavos/100);
     }
     atualizarAcoesPagamentoRachaGestor(d);
+    renderizarCalculadoraCotasRachaGestor();
     estadoRachaGestor(null);return d;
   }catch(e){atualizarAcoesPagamentoRachaGestor(null);estadoRachaGestor(e);exibirListaRachaGestor(resumo,'Confira os campos destacados pela mensagem antes de copiar ou registrar.');return null;}
 }
@@ -388,11 +463,15 @@ function limparRachadinhaTudo(){
     if(assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira os campos novamente antes de limpar. Seu preenchimento foi preservado.');return;}
     rachaRestaurando=true;rachaDetPessoas=['Eu','Amigo'];rachaDetItens=[];rachaDetAjustes=Object.create(null);rachaEu='Eu';rachaItemEmEdicao=null;rachaEnvioGuardado=null;rachaRegistroId=null;rachaPartePreparadaGestor=null;
     CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=false;else e.value=id==='rachaQtdPessoas'?2:id==='rachaQtdBebeu'?1:id==='rachaServicoPercentual'?10:id==='rachaRateioAcrescimos'?'consumo':'';}});
-    rachaRestaurando=false;alternarModoRachadinha('rapido');guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
+    rachaRestaurando=false;renderizarCalculadoraCotasRachaGestor(true);alternarModoRachadinha('rapido');guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
   },false,'Limpar divisão','neutral');
 }
 document.addEventListener('DOMContentLoaded',()=>{
   const sub=document.getElementById('subview-rachadinha');
+  const calcModo=document.getElementById('calcCotasModoRacha');
+  calcModo?.addEventListener('change',()=>renderizarCalculadoraCotasRachaGestor(true));
+  document.getElementById('calcCotasPessoasRacha')?.addEventListener('input',atualizarCalculadoraCotasRachaGestor);
+  document.getElementById('calcCotasAplicarRacha')?.addEventListener('click',aplicarCalculadoraCotasRachaGestor);
   const opcoes=document.createElement('details');opcoes.className='rounded-xl border border-slate-600 p-3 text-xs text-slate-200';
   opcoes.innerHTML='<summary class="cursor-pointer font-bold py-1">Mais opções — serviço, desconto e acréscimos</summary><div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3"><label>Serviço (%)<input id="rachaServicoPercentual" type="number" min="0" max="100" step="0.01" value="10" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label><label>Desconto da conta<input id="rachaDesconto" inputmode="numeric" placeholder="R$ 0,00" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label><label>Acréscimos (entrega, couvert…)<input id="rachaAcrescimo" inputmode="numeric" placeholder="R$ 0,00" class="w-full bg-slate-950 border border-slate-600 rounded-lg p-2 mt-1 text-white"></label></div><p class="mt-3 leading-relaxed">Ative a opção de serviço para aplicar o percentual escolhido. O desconto é rateado pelo consumo; o serviço incide sobre o consumo após desconto. Acréscimos são rateados pelo consumo, sem nova taxa de serviço.</p>';
   sub.insertBefore(opcoes,document.getElementById('boxRachaModoRapido'));
@@ -423,6 +502,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.body.append(modal);document.getElementById('fecharRegistroRacha').addEventListener('click',fecharRegistroRachaGestor);document.getElementById('formRegistroRacha').addEventListener('submit',e=>{e.preventDefault();conferirRegistroRachadinhaGestor();});document.getElementById('rachaRegistroForma').addEventListener('change',atualizarParcelasRegistroRachaGestor);
   modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();fecharRegistroRachaGestor();}if(e.key==='Tab'){const f=Array.from(modal.querySelectorAll('button,input,select')).filter(el=>!el.disabled&&el.getClientRects().length);if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0]?.focus();}}});
   sub.addEventListener('input',e=>{const t=e.target;
+    if(t.dataset.calcCotas!==undefined)return;
     if(t.dataset.rachaPeso!==undefined){if(!alterarRachaPermitidoGestor())return;const nome=rachaDetPessoas[Number(t.dataset.rachaPeso)],peso=lerCotaRachaGestor(t.value);t.setAttribute('aria-invalid',String(!Number.isFinite(peso)));rachaDetAjustes[nome]={...rachaDetAjustes[nome],pesoTexto:t.value,peso};calcularRachadinhaDetalhada();}
     else if(t.dataset.rachaPago!==undefined){if(!alterarRachaPermitidoGestor())return;
       if(!rachaDetPessoas.some(nome=>rachaDetAjustes[nome]?.pagoCentavos!==undefined)){
