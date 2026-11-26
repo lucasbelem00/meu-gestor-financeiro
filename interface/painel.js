@@ -79,7 +79,7 @@ async function salvarLimitePessoalPainelGestor(limpar=false){
   }catch(e){mostrarAviso('Limite não confirmado',e.message);}finally{envioLimitePessoalGestor=false;liberar();}
 }
 const renderDadosAntesRotinaPainelGestor=window.renderizarDados;
-window.renderizarDados=function(dados){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados);}finally{renderizarRotinaPainelGestor();}};
+window.renderizarDados=function(dados,origemCache){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados,origemCache);}finally{renderizarRotinaPainelGestor();}};
 window.addEventListener('storage',e=>{if(e.key==='gestorLimitePessoalV1')renderizarRotinaPainelGestor();});
 function organizarPainelDiarioGestor(){
   const raiz=document.getElementById('view-dashboard');if(!raiz||document.getElementById('resumoMesPainelGestor'))return;

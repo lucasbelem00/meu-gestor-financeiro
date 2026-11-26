@@ -2,7 +2,7 @@
 let dadosResumoFaturasGestor=null;
 const resumosFaturasGestor=new Map();
 const renderDadosAntesFaturasGestor=window.renderizarDados;
-window.renderizarDados=function(dados){dadosResumoFaturasGestor=dados;return renderDadosAntesFaturasGestor(dados);};
+window.renderizarDados=function(dados,origemCache){dadosResumoFaturasGestor=dados;return renderDadosAntesFaturasGestor(dados,origemCache);};
 function normalizarResumoFaturaGestor(f){
   const itens=f.itens||[];
   return {forma:f.forma,mesFatura:f.mesFatura,total:f.total,pago:f.pago,restante:f.restante,

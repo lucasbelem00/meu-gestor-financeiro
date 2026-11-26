@@ -4347,19 +4347,37 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
 
       if (selMes && selPes) {
         const vMes = selMes.value, vPes = selPes.value, vForma = selForma?.value || '';
-        const mesesEmp = [...new Set(todosItens.map(i => i.mesFatura).concat(typeof arquivosAnuaisUIProtecaoGestor!=='undefined'?arquivosAnuaisUIProtecaoGestor.flatMap(a=>a.meses||[]):[]).filter(Boolean))].sort((a, b) => {
-          const [mA, aA] = String(a).split('/').map(Number), [mB, aB] = String(b).split('/').map(Number);
-          return new Date(aA, mA - 1, 1) - new Date(aB, mB - 1, 1);
-        });
-        selMes.innerHTML = '<option value="">Todos os Meses</option>' + mesesEmp.map(m => `<option value="${escaparHTML(m)}">${escaparHTML(m)}</option>`).join('');
-        const pessoasEmp = [...new Map(todosItens.map(i => String(i.pessoa || '').trim()).filter(Boolean).map(p=>[normalizarTexto(p),p])).values()].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-        const formasEmp = [...new Set(todosItens.map(i => String(i.forma || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
-        selPes.innerHTML = '<option value="">Todas as Pessoas</option>' + pessoasEmp.map(p => `<option value="${escaparHTML(p)}">${escaparHTML(p)}</option>`).join('');
+        const meses=new Map(), pessoas=new Map(), formas=new Set();
+        const registrarMes=mes=>{
+          if(!mes||meses.has(mes))return;
+          const [m,a]=String(mes).split('/').map(Number);
+          meses.set(mes,new Date(a,m-1,1).getTime());
+        };
+        for(const item of todosItens){
+          registrarMes(item.mesFatura);
+          const pessoa=String(item.pessoa||'').trim(),forma=String(item.forma||'').trim();
+          if(pessoa)pessoas.set(normalizarTexto(pessoa),pessoa);
+          if(forma)formas.add(forma);
+        }
+        if(typeof arquivosAnuaisUIProtecaoGestor!=='undefined'){
+          for(const arquivo of arquivosAnuaisUIProtecaoGestor)for(const mes of arquivo.meses||[])registrarMes(mes);
+        }
+        const mesesEmp=[...meses.keys()].sort((a,b)=>meses.get(a)-meses.get(b));
+        const pessoasEmp=[...pessoas.values()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        const formasEmp=[...formas].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+        const atualizarOpcoes=(campo,rotulo,opcoes)=>{
+          if(!campo)return;
+          const atuais=campo.options;
+          if(atuais?.length===opcoes.length+1&&atuais[0].value===''&&atuais[0].textContent===rotulo&&opcoes.every((v,i)=>atuais[i+1].value===v))return;
+          campo.innerHTML='<option value="">'+rotulo+'</option>'+opcoes.map(v=>`<option value="${escaparHTML(v)}">${escaparHTML(v)}</option>`).join('');
+        };
+        atualizarOpcoes(selMes,'Todos os meses',mesesEmp);
+        atualizarOpcoes(selPes,'Todas as pessoas',pessoasEmp);
+        atualizarOpcoes(selForma,'Todas as formas',formasEmp);
         if (vMes && mesesEmp.includes(vMes)) selMes.value = vMes;
         selMes.dataset.iniciado = '1';
-        if(vPes){const nome=pessoasEmp.find(p=>normalizarTexto(p)===normalizarTexto(vPes));if(nome)selPes.value=nome;}
+        if(vPes){const nome=pessoas.get(normalizarTexto(vPes));if(nome)selPes.value=nome;}
         if (selForma) {
-          selForma.innerHTML = '<option value="">Todas as Formas</option>' + formasEmp.map(f => `<option value="${escaparHTML(f)}">${escaparHTML(f)}</option>`).join('');
           if (vForma && formasEmp.includes(vForma)) selForma.value = vForma;
         }
       }
@@ -4370,9 +4388,10 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       const fForma = selForma?.value || '';
       const fBusca = String(inpBusca?.value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
 
+      const pessoaFiltro=fPes?normalizarTexto(fPes):'';
       const filtrados = todosItens.filter(item => {
         if (fMes && item.mesFatura !== fMes) return false;
-        if (fPes && normalizarTexto(item.pessoa) !== normalizarTexto(fPes)) return false;
+        if (fPes && normalizarTexto(item.pessoa) !== pessoaFiltro) return false;
         if (fSt && item.status !== fSt) return false;
         if (fForma && item.forma !== fForma) return false;
         if (fBusca) {
@@ -4384,23 +4403,30 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       });
 
       const mapaPessoas = Object.create(null);
+      const situacoes=new Map();
+      const hoje=typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date();
       filtrados.forEach(it => {
         const pessoaNome=String(it.pessoa||'Desconhecido').trim(),chavePessoa=normalizarTexto(pessoaNome);
         if (!mapaPessoas[chavePessoa]) mapaPessoas[chavePessoa] = { nome: pessoaNome, aReceber: 0, recebido: 0, itens: [] };
         if (it.status === 'Recebido') mapaPessoas[chavePessoa].recebido += (it.valorRaw || 0);
         else mapaPessoas[chavePessoa].aReceber += (it.valorRaw || 0);
-        mapaPessoas[chavePessoa].itens.push(it);
+        const grupo=mapaPessoas[chavePessoa];
+        const situacao=situacaoRecebimentoVisualGestor(it,hoje);
+        situacoes.set(it,situacao);
+        if(!grupo.situacao||situacao.prioridade>grupo.situacao.prioridade)grupo.situacao=situacao;
+        grupo.itens.push(it);
       });
 
       const boxPessoas = document.getElementById('listaResumoPessoasEmp');
       const arrPessoas = Object.values(mapaPessoas).sort((a, b) => b.aReceber - a.aReceber);
 
       if (boxPessoas) {
+        boxPessoas.dataset.semResultados=String(arrPessoas.length===0);
         if (arrPessoas.length === 0) {
           boxPessoas.innerHTML = '<div class="col-span-full py-4 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-dashed border-slate-800">Nenhum registro para o filtro selecionado.</div>';
         } else {
           boxPessoas.innerHTML = arrPessoas.map(p => {
-            const soRecebido=fSt==='Recebido'||(p.aReceber<0.005&&p.recebido>0),situacaoPessoa=p.itens.map(i=>situacaoRecebimentoVisualGestor(i)).sort((a,b)=>b.prioridade-a.prioridade)[0];
+            const soRecebido=fSt==='Recebido'||(p.aReceber<0.005&&p.recebido>0),situacaoPessoa=p.situacao;
             const btnQuitarMes = p.aReceber > 0
               ? `<button type="button" ${acaoHTML('quitarMesPessoaEmprestimo', [p.nome, fMes, p.itens.filter(i => i.status !== 'Recebido').map(i => ({ id: i.registroId, versao: i.versao })), p.aReceber])} class="flex-1 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 py-2 px-3 rounded-xl text-xs font-bold transition">✅ Receber itens filtrados</button>`
               : '';
@@ -4433,7 +4459,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
         } else {
           boxItens.innerHTML = filtrados.map(it => {
             const isRec = it.status === 'Recebido';
-            const situacao=situacaoRecebimentoVisualGestor(it),recebidoParcela=(recebidosParcelas.get(chaveParcelaRecebidaVisualGestor(it))||0)/100;
+            const situacao=situacoes.get(it),recebidoParcela=(recebidosParcelas.get(chaveParcelaRecebidaVisualGestor(it))||0)/100;
             const badge=situacao.fundo;
             const saldoBanco=Number.isFinite(it.saldoBancoRaw)?it.saldoBancoRaw:(it.estadoBanco==='Pago'?0:Number(it.valorRaw||0));
             const imediato=formaEhImediataGestor(it.forma),pagoBanco=Number.isFinite(it.pagoBancoRaw)?it.pagoBancoRaw:Math.max(0,Number(it.valorRaw||0)-saldoBanco),situacaoBanco=situacaoBancoVisualGestor({total:Number(it.valorRaw||0),pago:pagoBanco,saldo:saldoBanco,forma:it.forma,mesFatura:it.mesFatura,vencimento:formaSituacaoVisualGestor(it.forma).vencimento,imediato});
@@ -5269,11 +5295,11 @@ function adicionarItemRachaDet(){if(!alterarRachaPermitidoGestor())return;
   if(!rachaItemEmEdicao&&rachaDetItens.length>=500){mostrarAviso('Limite da divisão','Use até 500 itens por conta.');return;}
   const item={id:rachaItemEmEdicao || novoRequestIdGestor(),desc,valor:valor/100,valorCentavos:valor,consumidores};
   if(rachaItemEmEdicao){const i=rachaDetItens.findIndex(it=>it.id===rachaItemEmEdicao);if(i<0)return;rachaDetItens[i]=item;}else rachaDetItens.push(item);
-  cancelarEdicaoItemRachaGestor();calcularRachadinhaDetalhada();
+  cancelarEdicaoItemRachaGestor(false);calcularRachadinhaDetalhada();
 }
 function editarItemRachaGestor(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;rachaItemEmEdicao=it.id;document.getElementById('inpItemDescRacha').value=it.desc;definirValorMoeda('inpItemValRacha',it.valorCentavos/100);document.querySelectorAll('.chk-pessoa-item-racha').forEach(e=>e.checked=it.consumidores.includes(rachaDetPessoas[Number(e.value)]));document.getElementById('btnIncluirItemRacha').textContent='Salvar item';document.getElementById('btnCancelarItemRacha').classList.remove('hidden');document.getElementById('inpItemDescRacha').focus();guardarRascunhoRachaGestor();}
-function cancelarEdicaoItemRachaGestor(){if(!alterarRachaPermitidoGestor())return;rachaItemEmEdicao=null;document.getElementById('inpItemDescRacha').value='';document.getElementById('inpItemValRacha').value='';document.getElementById('btnIncluirItemRacha').textContent='+ Incluir item';document.getElementById('btnCancelarItemRacha').classList.add('hidden');guardarRascunhoRachaGestor();}
-function removerItemRachaDet(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;const versao=assinaturaEdicaoRachaGestor();mostrarConfirmacao('Remover item?',it.desc+' sairá da conta e o total será recalculado.',()=>{if(divisaoRachaEnviadaGestor()||assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira o item novamente antes de remover.');return;}rachaDetItens=rachaDetItens.filter(x=>x.id!==it.id);if(rachaItemEmEdicao===it.id)cancelarEdicaoItemRachaGestor();calcularRachadinhaDetalhada();},false,'Remover item','neutral');}
+function cancelarEdicaoItemRachaGestor(guardar=true){if(!alterarRachaPermitidoGestor())return;rachaItemEmEdicao=null;document.getElementById('inpItemDescRacha').value='';document.getElementById('inpItemValRacha').value='';document.getElementById('btnIncluirItemRacha').textContent='+ Incluir item';document.getElementById('btnCancelarItemRacha').classList.add('hidden');if(guardar)guardarRascunhoRachaGestor();}
+function removerItemRachaDet(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;const versao=assinaturaEdicaoRachaGestor();mostrarConfirmacao('Remover item?',it.desc+' sairá da conta e o total será recalculado.',()=>{if(divisaoRachaEnviadaGestor()||assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira o item novamente antes de remover.');return;}rachaDetItens=rachaDetItens.filter(x=>x.id!==it.id);if(rachaItemEmEdicao===it.id)cancelarEdicaoItemRachaGestor(false);calcularRachadinhaDetalhada();},false,'Remover item','neutral');}
 const htmlRachadinhaPorListaGestor=new WeakMap();
 function exibirListaRachaGestor(lista,html){
   if(!lista||htmlRachadinhaPorListaGestor.get(lista)===html)return;
@@ -8225,12 +8251,12 @@ try {
   /* Protecao contra < > " nos textos (cards, empréstimos, assinaturas, notas) */
   seguro('escape', function () {
     var origDados = window.renderizarDados;
-    window.renderizarDados = function (dados) {
+    window.renderizarDados = function (dados, origemCache) {
       if (dados && typeof dados === 'object') {
         pxConfigCatsServidor = JSON.parse(JSON.stringify(dados.configCategorias || []));
         if (!modoEdicaoCategorias) pxRenomeacoesCat = Object.create(null);
       }
-      return origDados(dados);
+      return origDados(dados, origemCache);
     };
 
 
@@ -8757,7 +8783,7 @@ async function copiarDiagnosticoGestor() {
 let dadosResumoFaturasGestor=null;
 const resumosFaturasGestor=new Map();
 const renderDadosAntesFaturasGestor=window.renderizarDados;
-window.renderizarDados=function(dados){dadosResumoFaturasGestor=dados;return renderDadosAntesFaturasGestor(dados);};
+window.renderizarDados=function(dados,origemCache){dadosResumoFaturasGestor=dados;return renderDadosAntesFaturasGestor(dados,origemCache);};
 function normalizarResumoFaturaGestor(f){
   const itens=f.itens||[];
   return {forma:f.forma,mesFatura:f.mesFatura,total:f.total,pago:f.pago,restante:f.restante,
@@ -8999,7 +9025,7 @@ async function salvarLimitePessoalPainelGestor(limpar=false){
   }catch(e){mostrarAviso('Limite não confirmado',e.message);}finally{envioLimitePessoalGestor=false;liberar();}
 }
 const renderDadosAntesRotinaPainelGestor=window.renderizarDados;
-window.renderizarDados=function(dados){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados);}finally{renderizarRotinaPainelGestor();}};
+window.renderizarDados=function(dados,origemCache){dadosRotinaPainelGestor=dados;try{return renderDadosAntesRotinaPainelGestor(dados,origemCache);}finally{renderizarRotinaPainelGestor();}};
 window.addEventListener('storage',e=>{if(e.key==='gestorLimitePessoalV1')renderizarRotinaPainelGestor();});
 function organizarPainelDiarioGestor(){
   const raiz=document.getElementById('view-dashboard');if(!raiz||document.getElementById('resumoMesPainelGestor'))return;
@@ -9766,11 +9792,16 @@ extrairValorPixAoColar=function(event,idValor,idDesc){
   if(opcoes.length>1)escolherValorColadoRotinaGestor(opcoes,aplicar);else mostrarConfirmacao('Substituir o valor preenchido?','Usar '+formatBRL(opcoes[0].valor)+' em vez de '+formatBRL(lerValorMoeda(idValor))+'?',()=>aplicar(opcoes[0].valor),false,'Usar valor colado','neutral');
 };
 const painelEmpAnteriorRotinaGestor=renderizarPainelEmprestimos;
-renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGestor(...args),box=document.getElementById('listaResumoPessoasEmp');if(!box)return r;for(const [id,texto]of [['selFiltroMesEmp','Todos os meses'],['selFiltroPessoaEmp','Todas as pessoas'],['selFiltroFormaEmp','Todas as formas']]){const op=Array.from(document.getElementById(id)?.options || []).find(o=>o.value==='');if(op)op.textContent=texto;}const status=document.getElementById('selFiltroStatusEmp').value;
-  if(box.textContent.includes('Nenhum registro')){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
+renderizarPainelEmprestimos=function(...args){
+  const r=painelEmpAnteriorRotinaGestor(...args);
+  if(document.getElementById('painelConsultaEmprestimo')?.hidden)return r;
+  const box=document.getElementById('listaResumoPessoasEmp');
+  if(!box)return r;
+  const status=document.getElementById('selFiltroStatusEmp')?.value;
+  if(box.dataset.semResultados==='true'){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
   let resumo=document.getElementById('resumoFiltrosEmpRotina');if(!resumo){resumo=document.createElement('p');resumo.id='resumoFiltrosEmpRotina';resumo.className='text-xs text-slate-200 break-words';box.before(resumo);}resumo.textContent=['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'].map(id=>document.getElementById(id)?.value || '').filter(Boolean).join(' · ') || 'Todos os empréstimos';return r;};
 const dadosAntesRotinaGestor=renderizarDados;
-renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
+renderizarDados=function(dados,origemCache){const r=dadosAntesRotinaGestor(dados,origemCache);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}
@@ -9934,7 +9965,7 @@ function renderizarAgendaGestor(){
   }
 }
 const dadosAntesAgendaGestor=window.renderizarDados;
-window.renderizarDados=function(dados){const r=dadosAntesAgendaGestor(dados);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
+window.renderizarDados=function(dados,origemCache){const r=dadosAntesAgendaGestor(dados,origemCache);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
 const abaAntesAgendaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
 
@@ -10563,7 +10594,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v240', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v241', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -11684,11 +11715,11 @@ function solicitarEmprestimosArquivoProtecaoGestor(){
 const renderEmpAntesProtecaoGestor=window.renderizarPainelEmprestimos;
 window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);solicitarEmprestimosArquivoProtecaoGestor();return r;};
 const renderDadosAntesProtecaoGestor=window.renderizarDados;
-window.renderizarDados=function(dados){
+window.renderizarDados=function(dados,origemCache){
   estadoResumoPlanilhaUIgestor=dados.resumoPlanilha||null;
   const novo=Array.isArray(dados.arquivosAnuais)?dados.arquivosAnuais:[];
   if(JSON.stringify(novo)!==JSON.stringify(arquivosAnuaisUIProtecaoGestor)){geracaoArquivosUIProtecaoGestor++;emprestimosArquivoUIProtecaoGestor=[];chaveEmprestimosArquivoUIProtecaoGestor='';pedidoEmprestimosArquivoUIProtecaoGestor=null;}
-  arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
+  arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados,origemCache);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
 };
 const setAbaAntesArquivosProtecaoGestor=window.setAba;
 window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length){if(typeof atualizarHistoricoAoEntrarGestor==='function')atualizarHistoricoAoEntrarGestor();else chamarFiltroBackend(false,true);}return r;};

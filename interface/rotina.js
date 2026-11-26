@@ -296,11 +296,16 @@ extrairValorPixAoColar=function(event,idValor,idDesc){
   if(opcoes.length>1)escolherValorColadoRotinaGestor(opcoes,aplicar);else mostrarConfirmacao('Substituir o valor preenchido?','Usar '+formatBRL(opcoes[0].valor)+' em vez de '+formatBRL(lerValorMoeda(idValor))+'?',()=>aplicar(opcoes[0].valor),false,'Usar valor colado','neutral');
 };
 const painelEmpAnteriorRotinaGestor=renderizarPainelEmprestimos;
-renderizarPainelEmprestimos=function(...args){const r=painelEmpAnteriorRotinaGestor(...args),box=document.getElementById('listaResumoPessoasEmp');if(!box)return r;for(const [id,texto]of [['selFiltroMesEmp','Todos os meses'],['selFiltroPessoaEmp','Todas as pessoas'],['selFiltroFormaEmp','Todas as formas']]){const op=Array.from(document.getElementById(id)?.options || []).find(o=>o.value==='');if(op)op.textContent=texto;}const status=document.getElementById('selFiltroStatusEmp').value;
-  if(box.textContent.includes('Nenhum registro')){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
+renderizarPainelEmprestimos=function(...args){
+  const r=painelEmpAnteriorRotinaGestor(...args);
+  if(document.getElementById('painelConsultaEmprestimo')?.hidden)return r;
+  const box=document.getElementById('listaResumoPessoasEmp');
+  if(!box)return r;
+  const status=document.getElementById('selFiltroStatusEmp')?.value;
+  if(box.dataset.semResultados==='true'){const p=document.createElement('p');p.className='text-xs text-slate-200 mt-2';p.textContent=status==='A Receber'?'Não há pendências para estes filtros. O recebimento pode estar em Recebidos.':'Nenhum resultado para esta combinação.';box.append(p);for(const [nome,acao]of [['Ver recebidos',mostrarRecebidosEmpGestor]]){const b=document.createElement('button');b.type='button';b.textContent=nome;b.className='rounded-lg border border-slate-600 px-3 py-2 text-xs text-white mr-2';b.onclick=acao;box.append(b);}}
   let resumo=document.getElementById('resumoFiltrosEmpRotina');if(!resumo){resumo=document.createElement('p');resumo.id='resumoFiltrosEmpRotina';resumo.className='text-xs text-slate-200 break-words';box.before(resumo);}resumo.textContent=['selFiltroMesEmp','selFiltroPessoaEmp','selFiltroFormaEmp','selFiltroStatusEmp','inpBuscaEmp'].map(id=>document.getElementById(id)?.value || '').filter(Boolean).join(' · ') || 'Todos os empréstimos';return r;};
 const dadosAntesRotinaGestor=renderizarDados;
-renderizarDados=function(dados){const r=dadosAntesRotinaGestor(dados);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
+renderizarDados=function(dados,origemCache){const r=dadosAntesRotinaGestor(dados,origemCache);const escopo=document.getElementById('escopoKpiRotina');if(escopo)escopo.textContent='Seus gastos · '+(dados.faturas?.mesAtual || '')+' · Entenda os indicadores';renderizarRecuperacaoRascunhosGestor();return r;};
 function alternarModoEmprestimosGestor(modo,rolar=false){
   const novo=modo==='novo',cadastro=document.getElementById('painelNovoEmprestimo'),consulta=document.getElementById('painelConsultaEmprestimo');
   for(const [painel,visivel]of [[cadastro,novo],[consulta,!novo]])if(painel){painel.hidden=!visivel;painel.inert=!visivel;painel.setAttribute('aria-hidden',String(!visivel));}

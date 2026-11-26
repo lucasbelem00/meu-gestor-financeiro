@@ -42,3 +42,28 @@ test('metade restaura o valor original e remove apenas a tag automática',()=>{
  require('./fixtures/integracao-interface-ui.cjs')(c,'alternarMetadeValor','removerTagDivididoAutomatica');c.alternarMetadeValor();assert.equal(valor.value,12.75);assert.equal(tags.value,'#casal, #dividido');c.alternarMetadeValor();assert.equal(valor.value,25.50);assert.equal(tags.value,'#casal');assert.deepEqual(estados,[true,false]);
  tags.value='#dividido, #casal';c.alternarMetadeValor();c.alternarMetadeValor();assert.equal(tags.value,'#dividido, #casal');
 });
+
+test('renderização da cópia local preserva a origem até a camada que decide consultar Histórico',()=>{
+ const chamadas=[];
+ const c=vm.createContext({
+  renderizarDados:(dados,origemCache)=>{if(!origemCache)chamadas.push(dados);},
+  modoEdicaoCategorias:false,document:{getElementById:()=>null},
+  renderizarRotinaPainelGestor(){},renderizarRecuperacaoRascunhosGestor(){},
+  renderizarAlertaProtecaoPainelGestor(){},arquivosAnuaisUIProtecaoGestor:[]
+ });
+ c.window=c;
+ const escape=trecho(html,"  seguro('escape', function ()", '  /* ----------------------------------------------------------------- 11 */');
+ c.seguro=(_nome,fn)=>fn();
+ vm.runInContext(escape,c);
+ for(const [arquivo,nome] of [['faturas','renderDadosAntesFaturasGestor'],['painel','renderDadosAntesRotinaPainelGestor'],['rotina','dadosAntesRotinaGestor'],['agenda','dadosAntesAgendaGestor']]){
+  const fonte=fs.readFileSync('interface/'+arquivo+'.js','utf8');
+  const linhas=fonte.slice(fonte.indexOf('const '+nome+'=')).split('\n');
+  vm.runInContext(linhas.slice(0,2).join('\n'),c);
+ }
+ const protecao=fs.readFileSync('interface/protecao.js','utf8');
+ vm.runInContext(trecho(protecao,'const renderDadosAntesProtecaoGestor=','const setAbaAntesArquivosProtecaoGestor='),c);
+ c.renderizarDados({},true);
+ assert.equal(chamadas.length,0);
+ c.renderizarDados({});
+ assert.equal(chamadas.length,1);
+});

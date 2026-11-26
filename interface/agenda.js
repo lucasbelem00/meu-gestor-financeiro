@@ -67,7 +67,7 @@ function renderizarAgendaGestor(){
   }
 }
 const dadosAntesAgendaGestor=window.renderizarDados;
-window.renderizarDados=function(dados){const r=dadosAntesAgendaGestor(dados);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
+window.renderizarDados=function(dados,origemCache){const r=dadosAntesAgendaGestor(dados,origemCache);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
 const abaAntesAgendaGestor=window.setAba;
 window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
 

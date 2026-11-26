@@ -41,11 +41,11 @@ function solicitarEmprestimosArquivoProtecaoGestor(){
 const renderEmpAntesProtecaoGestor=window.renderizarPainelEmprestimos;
 window.renderizarPainelEmprestimos=function(...args){const r=renderEmpAntesProtecaoGestor(...args);solicitarEmprestimosArquivoProtecaoGestor();return r;};
 const renderDadosAntesProtecaoGestor=window.renderizarDados;
-window.renderizarDados=function(dados){
+window.renderizarDados=function(dados,origemCache){
   estadoResumoPlanilhaUIgestor=dados.resumoPlanilha||null;
   const novo=Array.isArray(dados.arquivosAnuais)?dados.arquivosAnuais:[];
   if(JSON.stringify(novo)!==JSON.stringify(arquivosAnuaisUIProtecaoGestor)){geracaoArquivosUIProtecaoGestor++;emprestimosArquivoUIProtecaoGestor=[];chaveEmprestimosArquivoUIProtecaoGestor='';pedidoEmprestimosArquivoUIProtecaoGestor=null;}
-  arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
+  arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados,origemCache);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
 };
 const setAbaAntesArquivosProtecaoGestor=window.setAba;
 window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length){if(typeof atualizarHistoricoAoEntrarGestor==='function')atualizarHistoricoAoEntrarGestor();else chamarFiltroBackend(false,true);}return r;};
