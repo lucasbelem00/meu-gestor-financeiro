@@ -339,7 +339,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       <div id="conteudoCentralNavegacao" class="space-y-5">
       <!-- Grupo 1: Ferramentas Práticas e Empréstimos -->
       <div>
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1">Ferramentas</span>
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2.5 px-1"><span aria-hidden="true">🧰</span> Ferramentas</span>
         <div class="grid grid-cols-2 gap-2.5">
           <button data-menu-aba="ferramentas" data-menu-ferramenta="emprestimos" onclick="abrirFerramenta('emprestimos')" class="col-span-2 flex items-center justify-between p-3.5 rounded-2xl border text-left transition active:scale-95 menu-atalho bg-slate-800/80 hover:bg-slate-700 border-slate-700/80">
             <div class="flex items-center gap-3 min-w-0">
@@ -952,7 +952,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
       <section class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Em Aberto</span><div id="kpi-aberto" class="text-lg sm:text-xl font-bold text-amber-400 mt-1">...</div></div>
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Pago</span><div id="kpi-pago" class="text-lg sm:text-xl font-bold text-emerald-400 mt-1">...</div></div>
-        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total do mês</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
+        <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Seus gastos do mês</span><div id="kpi-comp" class="text-lg sm:text-xl font-bold text-blue-400 mt-1">...</div></div>
         <div class="card-glass p-4"><span class="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">Total registrado</span><div id="kpi-geral" class="text-lg sm:text-xl font-bold text-purple-400 mt-1">...</div><span class="block text-[10px] text-slate-300 mt-1">Todos os meses e anos</span></div>
       </section>
 
