@@ -409,6 +409,31 @@ function registrarPagamentoRestanteRachaGestor(){if(!alterarRachaPermitidoGestor
   renderizarPessoasRachaDet();
   calcularRachadinhaDetalhada();
 }
+function renderizarResumoAplicacaoRachaGestor(divisao){
+  const resumo=document.getElementById('resumoAplicacaoRacha');
+  const minhaParte=divisao.pessoas.find(p=>p.id===rachaEu);
+  const incluir=document.getElementById('rachaRegistroMinhaParte').checked;
+  const devolucoes=divisao.transferencias.filter(t=>t.para===rachaEu);
+  const recebidos=new Set(Array.from(document.querySelectorAll('[data-racha-recebido]:checked'),e=>e.dataset.rachaRecebido));
+  const linhas=[
+    ['Você pagou à loja',minhaParte.pagoCentavos],
+    [incluir?'Seu gasto no Histórico':'Sua parte fora deste registro',minhaParte.finalCentavos],
+    ...devolucoes.map(t=>[t.de+(recebidos.has(t.de)?' · já recebido':' · a receber'),t.valorCentavos])
+  ];
+  resumo.replaceChildren();
+  for(const [rotulo,centavos] of linhas){
+    const item=document.createElement('li'),nome=document.createElement('span'),valor=document.createElement('strong');
+    nome.textContent=rotulo;
+    valor.textContent=formatBRL(centavos/100);
+    item.append(nome,valor);
+    resumo.append(item);
+  }
+  if(!devolucoes.length){
+    const item=document.createElement('li');
+    item.textContent='Sem devoluções para você.';
+    resumo.append(item);
+  }
+}
 function abrirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Divisão já possui envio','Consulte este envio em Atividade antes de registrar outra divisão.');abrirAtividadeGestor();return;}
   const d=calcularRachadinhaDetalhada();if(!d){if(!rachaDetItens.length)mostrarAviso('Adicione um item','Inclua pelo menos um item antes de preencher o registro.');return;}
@@ -422,8 +447,17 @@ function abrirRegistroRachadinhaGestor(){
   const recebidos=document.getElementById('rachaRegistroRecebidos');recebidos.replaceChildren();
   atual.transferencias.filter(t=>t.para===rachaEu).forEach(t=>{const label=document.createElement('label');label.className='flex items-center gap-2 text-xs text-slate-200 py-2';const check=document.createElement('input');check.type='checkbox';check.dataset.rachaRecebido=t.de;label.append(check,document.createTextNode(t.de+' já devolveu '+formatBRL(t.valorCentavos/100)+' para mim'));recebidos.append(label);});
   document.getElementById('rachaRegistroMinhaParte').checked=!rachaPartePreparadaGestor;
-  document.getElementById('rachaRegistroEstado').textContent='Você pagou '+formatBRL(atual.pessoas.find(p=>p.id===rachaEu).pagoCentavos/100)+' ao estabelecimento. Confira a forma usada e o mês da fatura.'+(rachaPartePreparadaGestor?' Sua parte já foi preenchida antes no Novo Registro: ela não será incluída por padrão. Confira se foi salva antes de marcar essa opção.':'');
-  modal.classList.remove('hidden');forma.focus();atualizarParcelasRegistroRachaGestor();
+  document.getElementById('rachaRegistroEstado').textContent=rachaPartePreparadaGestor
+    ?'A parte que você preencheu em Novo lançamento não será incluída por padrão. Marque a opção se ela ainda não estiver no Histórico.':'';
+  document.getElementById('formRegistroRacha').onchange=e=>{
+    if(e.target.id==='rachaRegistroMinhaParte'||e.target.dataset.rachaRecebido!==undefined)renderizarResumoAplicacaoRachaGestor(atual);
+  };
+  modal.classList.remove('hidden');
+  modal.firstElementChild?.scrollTo(0,0);
+  forma.focus({preventScroll:true});
+  atualizarParcelasRegistroRachaGestor();
+  document.getElementById('rachaRegistroData').dataset.ultimaDataCalculada=data;
+  renderizarResumoAplicacaoRachaGestor(atual);
 }
 function atualizarParcelasRegistroRachaGestor(){const nome=document.getElementById('rachaRegistroForma').value,cartao=formaEhCartaoGestor(nome);document.getElementById('rachaRegistroBoxParcelas').classList.toggle('hidden',!cartao);if(!cartao)document.getElementById('rachaRegistroParcelas').value=1;const data=document.getElementById('rachaRegistroData').value,forma=buscarFormaPagamentoGestor(nome);if(/^\d{2}\/\d{2}\/\d{4}$/.test(data)&&forma){const calculo=calcularMesFaturaCartao(forma,data);if(calculo.mesFat)document.getElementById('rachaRegistroMes').value=calculo.mesFat;}}
 function fecharRegistroRachaGestor(){const m=document.getElementById('modalRegistroRachaGestor');m.classList.add('hidden');m._focoAnterior?.focus();}
@@ -435,7 +469,7 @@ function textoParcelamentoRachadinhaGestor(plano){
 }
 async function conferirRegistroRachadinhaGestor(){
   if(divisaoRachaEnviadaGestor()){mostrarAviso('Confira o envio existente','Consulte Atividade antes de preparar outra gravação desta divisão.');abrirAtividadeGestor();return;}
-  const botao=document.getElementById('btnPreviaRegistroRacha');if(botao.disabled)return;botao.disabled=true;
+  const botao=document.getElementById('btnPreviaRegistroRacha');if(botao.disabled)return;botao.disabled=true;botao.textContent='Conferindo parcelas…';
   try{
     if(!navigator.onLine)throw Error('Conecte-se para conferir e registrar a divisão. O rascunho continua guardado.');
     const dados={conta:dadosContaDetalhadaRachaGestor(),euId:rachaEu,formaPagto:document.getElementById('rachaRegistroForma').value,dataCompra:document.getElementById('rachaRegistroData').value,mesPrimeiraFatura:document.getElementById('rachaRegistroMes').value,numParcelas:Number(document.getElementById('rachaRegistroParcelas').value),pixParcelado:false,categoria:document.getElementById('rachaRegistroCategoria').value,incluirMinhaParte:document.getElementById('rachaRegistroMinhaParte').checked,recebidos:Array.from(document.querySelectorAll('[data-racha-recebido]:checked')).map(e=>e.dataset.rachaRecebido),descricao:descricaoMinhaParteRachaGestor(true)};
@@ -450,11 +484,34 @@ async function conferirRegistroRachadinhaGestor(){
       if(divisaoRachaEnviadaGestor())return;
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}
       const payload={...previa.dados,assinatura:previa.assinatura,requestId:rachaRegistroId || ('racha-'+String(rachaDetItens[0].id))};rachaEnvioGuardado={estado:'pendente',assinatura:previa.assinatura,payload};
-      try{guardarRascunhoRachaGestor(true);await apiCall('registrarRachadinhaWeb',payload,1);rachaEnvioGuardado.estado='confirmado';guardarRascunhoRachaGestor(true);fecharRegistroRachaGestor();mostrarAviso('Divisão registrada','Sua parte e os adiantamentos selecionados foram gravados juntos.');}
+      botao.disabled=true;botao.textContent='Sincronizando…';
+      try{
+        guardarRascunhoRachaGestor(true);
+        await apiCall('registrarRachadinhaWeb',payload,1);
+        rachaEnvioGuardado.estado='confirmado';
+        guardarRascunhoRachaGestor(true);
+        fecharRegistroRachaGestor();
+        exibirComprovanteRachadinhaGestor(dados,previa);
+        mostrarAviso('Divisão sincronizada','Consulte os registros pelo resumo da divisão.');
+      }
       catch(e){if(!e.resultadoIncerto&&!localStorage.getItem('gestorMutacaoV3:'+payload.requestId))rachaEnvioGuardado=null;guardarRascunhoRachaGestor();mostrarAviso('Confira a divisão',e.message);return;}
+      finally{botao.disabled=false;botao.textContent='Conferir e continuar';}
       Promise.resolve().then(()=>carregarDados()).catch(e=>console.warn('Atualização após registrar divisão:',e));
     },false,'Registrar divisão','success');
-  }catch(e){mostrarAviso('Prévia indisponível',e.message);}finally{botao.disabled=false;}
+  }catch(e){mostrarAviso('Prévia indisponível',e.message);}finally{botao.disabled=false;botao.textContent='Conferir e continuar';}
+}
+function exibirComprovanteRachadinhaGestor(dados,previa){
+  const comprovante=document.getElementById('comprovanteRachaGestor');
+  if(!comprovante)return;
+  const historico=comprovante.querySelector('[data-racha-historico]');
+  historico.hidden=!dados.incluirMinhaParte||previa.minhaParteCentavos<=0;
+  historico.onclick=()=>{
+    setAba('lancamentos');
+    reiniciarConsultaHistoricoGestor(dados.descricao);
+  };
+  comprovante.querySelector('[data-racha-emprestimos]').hidden=!previa.emprestimos.length;
+  comprovante.hidden=false;
+  comprovante.focus({preventScroll:true});
 }
 function concluirRegistroRachadinhaLocalGestor(p,cancelado=false){if(rachaEnvioGuardado?.payload?.requestId===p.requestId){rachaEnvioGuardado=cancelado?null:{...rachaEnvioGuardado,estado:'confirmado'};guardarRascunhoRachaGestor();}}
 function limparRachadinhaTudo(){
@@ -463,6 +520,7 @@ function limparRachadinhaTudo(){
   mostrarConfirmacao('Limpar esta divisão?','Pessoas, itens e pagamentos desta ferramenta serão apagados. Os lançamentos já gravados no Histórico e em Empréstimos serão preservados.',()=>{
     if(rachaEnvioGuardado?.estado==='pendente'||(!rachaEnvioGuardado&&divisaoRachaEnviadaGestor())){mostrarAviso('Confira o envio','O envio continua guardado; consulte Atividade antes de limpar.');return;}
     if(assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira os campos novamente antes de limpar. Seu preenchimento foi preservado.');return;}
+    const comprovante=document.getElementById('comprovanteRachaGestor');if(comprovante)comprovante.hidden=true;
     rachaRestaurando=true;rachaDetPessoas=['Eu','Amigo'];rachaDetItens=[];rachaDetAjustes=Object.create(null);rachaEu='Eu';rachaItemEmEdicao=null;rachaEnvioGuardado=null;rachaRegistroId=null;rachaPartePreparadaGestor=null;
     CAMPOS_RASCUNHO_RACHA.forEach(id=>{const e=document.getElementById(id);if(e){if(e.type==='checkbox')e.checked=false;else e.value=id==='rachaQtdPessoas'?2:id==='rachaQtdBebeu'?1:id==='rachaServicoPercentual'?10:id==='rachaRateioAcrescimos'?'consumo':'';}});
     rachaRestaurando=false;renderizarCalculadoraCotasRachaGestor(true);alternarModoRachadinha('rapido');guardarRascunhoRachaGestor();mostrarAviso('Divisão limpa','Os registros já gravados continuam preservados.');
@@ -498,11 +556,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   pagar.classList.add('w-full','min-h-11');
   atribuicao.append(pagar,reverter);
   acoes.append(atribuicao,registrar);
-  detalhe.querySelector('#rachaEtapaPagamento').append(acoes);
+  const comprovante=document.createElement('section');
+  comprovante.id='comprovanteRachaGestor';
+  comprovante.hidden=true;
+  comprovante.tabIndex=-1;
+  comprovante.setAttribute('aria-labelledby','tituloComprovanteRachaGestor');
+  comprovante.className='rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 space-y-2';
+  comprovante.innerHTML='<h3 id="tituloComprovanteRachaGestor" class="font-bold text-emerald-200">Divisão sincronizada</h3><div class="flex flex-wrap gap-2"><button type="button" data-racha-historico class="min-h-11 px-2 text-sm underline">Ver no Histórico</button><button type="button" data-racha-emprestimos class="min-h-11 px-2 text-sm underline">Ver Empréstimos</button></div>';
+  comprovante.querySelector('[data-racha-emprestimos]').onclick=()=>abrirResumoEmprestimos();
+  detalhe.querySelector('#rachaEtapaPagamento').append(acoes,comprovante);
   document.getElementById('btnCadaPessoaPagouRacha').addEventListener('click',cadaPessoaPagouSuaParteRachaGestor);
   const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
-  modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85vh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Registrar divisão e adiantamentos</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><label class="text-xs text-slate-300">Data (DD/MM/AAAA)<input id="rachaRegistroData" required inputmode="numeric" maxlength="10" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label><label class="text-xs text-slate-300">Mês da fatura / recebimento (MM/AAAA)<input id="rachaRegistroMes" required inputmode="numeric" maxlength="7" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><p class="text-xs text-slate-200">A prévia separa seu gasto dos empréstimos por pessoa. Se sua parte já estiver no Histórico, desmarque a opção acima.</p><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">🔎 Conferir prévia antes de gravar</button></form></div>';
+  modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85dvh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Forma de pagamento</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select required id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><div class="text-xs text-slate-300">Data da compra<input id="rachaRegistroData" aria-label="Data da compra" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><div class="text-xs text-slate-300">Mês da fatura ou recebimento<input id="rachaRegistroMes" aria-label="Mês da fatura ou recebimento" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><section aria-labelledby="tituloResumoAplicacaoRacha" class="rounded-xl bg-slate-900 border border-slate-600 p-3"><h3 id="tituloResumoAplicacaoRacha" class="mb-2 text-sm font-bold text-white">O que será registrado</h3><ul id="resumoAplicacaoRacha" class="space-y-1.5 text-sm text-slate-200"></ul></section><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">Conferir e continuar</button></form></div>';
   document.body.append(modal);document.getElementById('fecharRegistroRacha').addEventListener('click',fecharRegistroRachaGestor);document.getElementById('formRegistroRacha').addEventListener('submit',e=>{e.preventDefault();conferirRegistroRachadinhaGestor();});document.getElementById('rachaRegistroForma').addEventListener('change',atualizarParcelasRegistroRachaGestor);
+  dividirCampoCalendarioGestor('rachaRegistroData',true);
+  dividirCampoCalendarioGestor('rachaRegistroMes');
+  const dataRegistro=document.getElementById('rachaRegistroData');
+  dataRegistro.addEventListener('input',()=>{
+    if(dataRegistro.value===dataRegistro.dataset.ultimaDataCalculada||!/^\d{2}\/\d{2}\/\d{4}$/.test(dataRegistro.value))return;
+    dataRegistro.dataset.ultimaDataCalculada=dataRegistro.value;
+    atualizarParcelasRegistroRachaGestor();
+  });
   modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();fecharRegistroRachaGestor();}if(e.key==='Tab'){const f=Array.from(modal.querySelectorAll('button,input,select')).filter(el=>!el.disabled&&el.getClientRects().length);if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0]?.focus();}}});
   sub.addEventListener('input',e=>{const t=e.target;
     if(t.dataset.calcCotas!==undefined)return;

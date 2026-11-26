@@ -43,8 +43,21 @@ function renderizarResultadoLimitePessoalGestor(resumo,r,config){
   if(config.incluirPrevistos){const detalhe=criar('div','','rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-2');detalhe.append(criar('p','Fixos previstos incluídos','text-xs text-slate-300'),criar('p',formatBRL(r.previsto/100),'font-bold text-violet-300'),criar('p','Total considerado: '+formatBRL(r.total/100),'text-sm text-slate-200'));resumo.append(detalhe);}
   resumo.append(criar('p','Gastos já pagos continuam contando. O valor restante é uma margem do seu limite, não saldo bancário.','text-xs text-slate-300'));
 }
+function renderizarCartoesInicioGestor(dados){
+  const titulo=document.getElementById('inicioTituloFaturaGestor');
+  if(!titulo)return;
+  const mes=dados.faturas?.mesAtual, totais=dados.faturas?.horizonte?.totalBanco;
+  titulo.textContent=mes?'Fatura do mês · '+mes:'Fatura do mês';
+  document.getElementById('inicioValorFaturaGestor').textContent=mes&&totais
+    ?formatBRL(Object.values(totais).reduce((soma,forma)=>soma+(Number(forma?.[mes])||0),0)):'—';
+  const qtd=dados.alertasVencimento?.length;
+  document.getElementById('inicioVencimentosGestor').textContent=Number.isInteger(qtd)
+    ?(qtd===0?'Sem alertas':qtd+(qtd===1?' alerta':' alertas')):'—';
+  document.getElementById('inicioReceberGestor').textContent=dados.emprestimos?.kpis?.totalAReceberGeral??'—';
+}
 function renderizarRotinaPainelGestor(){
   const dados=dadosRotinaPainelGestor;if(!dados){const resumo=document.getElementById('resumoLimitePessoalGestor');if(resumo)resumo.textContent='Aguardando os gastos do mês. Você pode guardar seu limite agora; o resultado aparece quando a consulta estiver disponível.';return;}
+  renderizarCartoesInicioGestor(dados);
   renderizarLimitePessoalPainelGestor(dados);
   if(typeof renderizarPerfilGastosPainelGestor==='function')renderizarPerfilGastosPainelGestor(dados);
   const acaoTerceiros=document.getElementById('resumoTerceirosPainelGestor');if(acaoTerceiros)acaoTerceiros.textContent='A receber de terceiros: '+(dados.emprestimos?.kpis?.totalAReceberGeral||'R$ 0,00')+' • todos os meses';

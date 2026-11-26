@@ -6,6 +6,7 @@ function ambiente(){
  const doc={getElementById:el,body:{append(){}},activeElement:null,createElement:()=>el(crypto.randomUUID()),createTextNode:t=>({textContent:t}),addEventListener:(t,fn)=>eventos.push(fn),querySelector:s=>{let m=/\[data-racha-(nome|peso|rotulo)="(\d+)"\]/.exec(s);return m?el(m[1]+m[2]):el('selecionado');},querySelectorAll:s=>s.includes('chk-pessoa')?checks.filter(e=>!s.includes(':checked')||e.checked):[]};
  el('nome0').value='Eu';el('nome1').value='Ana';let htmlPessoas='';Object.defineProperty(el('listaPessoasRachaDet'),'innerHTML',{get:()=>htmlPessoas,set(v){htmlPessoas=v;for(const m of v.matchAll(/<input[^>]*data-racha-nome="(\d+)"[^>]*value="([^"]*)"/g))el('nome'+m[1]).value=m[2];}});
  const c=vm.createContext({console,document:doc,rachaDetPessoas:['Eu','Ana'],rachaDetItens:[{id:'pizza-001',desc:'Pizza',valor:100,valorCentavos:10000,consumidores:['Eu','Ana']}],modoRachadinhaAtual:'detalhado',localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,String(v))},sessionStorage:{getItem:k=>ses.get(k)||null},novoRequestIdGestor:()=>crypto.randomUUID(),gravarArmazenamentoGestor:(k,v)=>{storage.set(k,v);return true},mostrarAviso:(t,m)=>avisos.push([t,m]),mostrarConfirmacao:(t,m,fn)=>confirmacoes.push({t,m,fn}),escaparHTML:s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),acaoHTML:(nome,args)=>'data-gestor-acao="'+nome+'" data-args="'+JSON.stringify(args).replace(/"/g,'&quot;')+'"',formatBRL:n=>Number(n).toFixed(2),formatarTituloInteligente:s=>s,normalizarTexto:s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),lerValorMoeda:campo=>Number(String(typeof campo==='string'?el(campo).value:campo.value).replace(',','.'))||0,definirValorMoeda:(id,n)=>el(id).value=String(n),limparFormularioNovoGasto(){el('inpDesc').value='';el('inpValor').value='';el('selCat').value='';},checarAutopreenchimento(){},sincronizarChipsTags(){},salvarRascunho(){},setAba(){},salvandoGastoTrava:false,navigator:{onLine:true},abrirAtividadeGestor(){},carregarDados:async()=>true,formasGlobais:[{nome:'Cartao',tipo:'cartao'}],tipoFormaPagamentoGestor:n=>n==='Cartao'?'cartao':'resumo',formaEhCartaoGestor:n=>n==='Cartao',buscarFormaPagamentoGestor:()=>({nome:'Cartao'}),calcularMesFaturaCartao:()=>({mesFat:'11/2026'}),Option:function(text,value){this.text=text;this.value=value;},mascaraMoedaTeclado(){},mascaraMesFaturaAPI(){}});
+ c.dividirCampoCalendarioGestor=()=>{};
  c.sessionStorage.setItem=(k,v)=>ses.set(k,String(v));
  c.gravarArmazenamentoGestor=(k,v,o={})=>{(o.sessao?ses:storage).set(k,String(v));return true;};
  c.lerJSONLocalGestor=(k,p)=>{try{return JSON.parse(storage.get(k)) || p;}catch(_){return p;}};
@@ -147,4 +148,24 @@ test('calculadora converte 90/60 e 60%/40% em cotas 3 e 2, com centavos conserva
  assert.deepEqual(Array.from(c.calcularCotasRachaGestor('cota',['1,5','0,5'],0).percentuais),[75,25]);
  assert.throws(()=>c.calcularCotasRachaGestor('percentual',['60','30'],0),/100%/);
  assert.throws(()=>c.calcularCotasRachaGestor('valor',['90','0'],0),/maior que zero/);
+});
+
+test('prévia visível diferencia total pago, gasto pessoal e devolução',()=>{
+ const {c,el,run}=ambiente();
+ const linhas=[];
+ el('resumoAplicacaoRacha').append=item=>linhas.push(item);
+ el('resumoAplicacaoRacha').replaceChildren=()=>{linhas.length=0;};
+ c.document.createElement=()=>({append(...filhos){this.filhos=filhos;}});
+ run("rachaDetAjustes={Eu:{pagoCentavos:10000}}");
+ const divisao=c.calcularDivisaoContaGestor(c.dadosContaDetalhadaRachaGestor());
+ c.renderizarResumoAplicacaoRachaGestor(divisao);
+ assert.deepEqual(linhas.map(l=>Array.from(l.filhos,e=>e.textContent)),[
+  ['Você pagou à loja','100.00'],['Seu gasto no Histórico','50.00'],['Ana · a receber','50.00']
+ ]);
+ el('rachaRegistroMinhaParte').checked=false;
+ c.document.querySelectorAll=()=>[{dataset:{rachaRecebido:'Ana'}}];
+ c.renderizarResumoAplicacaoRachaGestor(divisao);
+ assert.deepEqual(linhas.slice(1).map(l=>Array.from(l.filhos,e=>e.textContent)),[
+  ['Sua parte fora deste registro','50.00'],['Ana · já recebido','50.00']
+ ]);
 });

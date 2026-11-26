@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v242 — Início usa cartões clicáveis para Fatura, Vencimentos e Empréstimos. A fatura ocupa toda a primeira linha no celular e abre o conjunto de três colunas em telas maiores. Barra móvel usa rótulos constantes, toque mínimo de 44 px, espaço seguro inferior e destaque verde na ação Novo. A confirmação da Rachadinha usa o mesmo vocabulário de sincronização e um resumo em lista que quebra linhas para nomes longos.
+
 v239 — Comparar ofertas fica recolhido no Simulador. Mostra até três alternativas, em cartões empilhados no celular, com totais, parcelas e limite restante por oferta. As duas calculadoras recolhidas deixam o preenchimento em espera até serem abertas.
 
 v238 — A calculadora de cotas fica recolhida em Como funcionam as cotas? e mostra valor, percentual e cota por pessoa. A coluna de entrada é selecionável e a aplicação das cotas é explícita.
