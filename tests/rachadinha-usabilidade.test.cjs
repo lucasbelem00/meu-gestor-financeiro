@@ -49,7 +49,7 @@ test('categoria e data já preenchidas exigem confirmação antes de substituir'
 test('confirmação de preenchimento é recusada se a conta ou o formulário mudou',()=>{for(const alterarConta of [false,true]){const {c,el,confirmacoes}=ambiente();el('inpDesc').value='Meu rascunho';c.preencherParteRachaGestor('Eu',5000);if(alterarConta)c.rachaDetItens[0].valorCentavos=20000;else el('inpDesc').value='Novo rascunho';confirmacoes[0].fn();assert.notEqual(el('inpValor').value,'50');assert.equal(el('inpDesc').value,alterarConta?'Meu rascunho':'Novo rascunho');}});
 test('divisão enviada bloqueia mudança de nomes, itens e novos preenchimentos',()=>{const {c,el,run}=ambiente();run("rachaEnvioGuardado={estado:'confirmado',payload:{requestId:'gravado-001'}}");el('inpNovoNomeRacha').value='Bruno';c.adicionarPessoaRachaDet();c.removerItemRachaDet('pizza-001');c.preencherParteRachaGestor('Eu',5000);assert.equal(c.rachaDetPessoas.length,2);assert.equal(c.rachaDetItens.length,1);assert.equal(el('inpValor').value,'');});
 test('confirmação de remoção não opera em uma divisão modificada',()=>{const {c,confirmacoes}=ambiente();c.rachaDetPessoas.push('Bruno');c.removerPessoaRachaDet(1);c.rachaDetItens[0].valorCentavos=20000;confirmacoes[0].fn();assert.equal(c.rachaDetPessoas.length,3);c.removerItemRachaDet('pizza-001');c.rachaDetItens[0].desc='Descrição nova';confirmacoes[1].fn();assert.equal(c.rachaDetItens.length,1);});
-test('abrir registro não supõe que eu paguei o restante',()=>{const {c,run,avisos}=ambiente();c.abrirRegistroRachadinhaGestor();assert.equal(run('rachaDetAjustes.Eu?.pagoCentavos || 0'),0);assert.equal(avisos.at(-1)[0],'Informe quem pagou à loja');});
+test('abrir registro não supõe que eu paguei o restante',()=>{const {c,run,avisos}=ambiente();run("rachaDetAjustes.Eu={pagoCentavos:0}");c.abrirRegistroRachadinhaGestor();assert.equal(run('rachaDetAjustes.Eu?.pagoCentavos || 0'),0);assert.equal(avisos.at(-1)[0],'Informe quem pagou à loja');});
 test('minha parte preparada fica desmarcada na gravação conjunta por padrão',()=>{const {c,el,run}=ambiente();run("rachaDetAjustes={Eu:{pagoCentavos:10000}};rachaPartePreparadaGestor={descricao:'Pizza (minha parte)',valorCentavos:5000}");c.abrirRegistroRachadinhaGestor();assert.equal(el('rachaRegistroMinhaParte').checked,false);assert(el('rachaRegistroEstado').textContent.includes('não será incluída por padrão'));});
 test('prévia atrasada é recusada quando os campos mudam durante a consulta',async()=>{const {c,el,confirmacoes,avisos}=ambiente();let resolver;c.apiCall=()=>new Promise(r=>resolver=r);const p=c.conferirRegistroRachadinhaGestor();el('rachaRegistroMes').value='12/2026';resolver({minhaParteCentavos:5000,emprestimos:[],totalCentavos:10000,dados:{}});await p;assert.equal(confirmacoes.length,0);assert(avisos.at(-1)[1].includes('mudaram'));});
 test('confirmar prévia antiga não envia quando a divisão mudou depois',async()=>{const {c,el,confirmacoes,avisos}=ambiente();let envios=0;c.apiCall=async(a,d)=>{if(a==='previaRachadinhaWeb')return{minhaParteCentavos:5000,emprestimos:[],totalCentavos:10000,dados:d,assinatura:'teste'};envios++;return{};};await c.conferirRegistroRachadinhaGestor();assert.equal(confirmacoes.length,1);el('rachaLocal').value='Conta alterada';await confirmacoes[0].fn();assert.equal(envios,0);assert.equal(avisos.at(-1)[0],'A prévia mudou');});
@@ -104,8 +104,7 @@ test('atribuição integral permite reverter para pagamentos diretos por pessoa'
  c.registrarPagamentoRestanteRachaGestor();
  assert.equal(el('boxReverterPagamentoRacha').hidden,false);
  c.cadaPessoaPagouSuaParteRachaGestor();
- assert.equal(run('rachaDetAjustes.Eu.pagoCentavos'),5000);
- assert.equal(run('rachaDetAjustes.Ana.pagoCentavos'),5000);
+ assert.deepEqual(Array.from(c.dadosContaDetalhadaRachaGestor().pessoas,p=>p.pagoCentavos),[5000,5000]);
  assert.equal(c.calcularRachadinhaDetalhada().transferencias.length,0);
  assert.equal(el('boxReverterPagamentoRacha').hidden,true);
  assert.equal(el('btnAtribuirPagamentoRacha').disabled,false);
@@ -114,4 +113,13 @@ test('atribuição integral permite reverter para pagamentos diretos por pessoa'
  assert.equal(run('rachaDetAjustes.Eu.pagoCentavos'),10000);
  assert.equal(run('rachaDetAjustes.Ana.pagoCentavos'),0);
  assert.equal(c.calcularRachadinhaDetalhada().transferencias.length,1);
+});
+
+test('rascunho sem pagamentos explícitos acompanha a parte calculada de cada pessoa',()=>{
+ const {c,run}=ambiente();
+ const pagos=()=>Array.from(c.dadosContaDetalhadaRachaGestor().pessoas,p=>p.pagoCentavos);
+ assert.deepEqual(pagos(),[5000,5000]);
+ c.rachaDetItens[0].valorCentavos=12000;
+ assert.deepEqual(pagos(),[6000,6000]);
+ assert.equal(run('rachaDetAjustes.Eu?.pagoCentavos'),undefined);
 });

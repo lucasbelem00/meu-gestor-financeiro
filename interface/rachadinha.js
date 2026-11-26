@@ -60,7 +60,14 @@ function opcoesContaRachaGestor() {
   return {servicoPercentual:percentual,descontoCentavos:Math.round(lerValorMoeda('rachaDesconto')*100),acrescimoCentavos:Math.round(lerValorMoeda('rachaAcrescimo')*100),rateioAcrescimos:document.getElementById('rachaRateioAcrescimos')?.value||'consumo'};
 }
 function dadosContaDetalhadaRachaGestor() {
-  return {...opcoesContaRachaGestor(),pessoas:rachaDetPessoas.map(nome=>({id:nome,nome,peso:cotaPessoaRachaGestor(nome),pagoCentavos:Number(rachaDetAjustes[nome]?.pagoCentavos || 0)})),itens:rachaDetItens.map(it=>({id:String(it.id),descricao:it.desc,valorCentavos:it.valorCentavos ?? Math.round(it.valor*100),consumidores:it.consumidores.slice()}))};
+  const conta={...opcoesContaRachaGestor(),pessoas:rachaDetPessoas.map(nome=>({id:nome,nome,peso:cotaPessoaRachaGestor(nome),pagoCentavos:Number(rachaDetAjustes[nome]?.pagoCentavos || 0)})),itens:rachaDetItens.map(it=>({id:String(it.id),descricao:it.desc,valorCentavos:it.valorCentavos ?? Math.round(it.valor*100),consumidores:it.consumidores.slice()}))};
+  if(conta.itens.length && !rachaDetPessoas.some(nome=>rachaDetAjustes[nome]?.pagoCentavos!==undefined)){
+    const divisao=calcularDivisaoContaGestor(conta);
+    for(const pessoa of conta.pessoas){
+      pessoa.pagoCentavos=divisao.pessoas.find(p=>p.id===pessoa.id).finalCentavos;
+    }
+  }
+  return conta;
 }
 function estadoRachaGestor(erro) { const el=document.getElementById('estadoCalculoRacha');if(el){el.textContent=erro?.message || '';el.classList.toggle('hidden',!erro);} }
 function alternarModoRachadinha(modo) {
@@ -237,7 +244,7 @@ function calcularRachadinhaDetalhada(){
     if(resumo){
       const pessoas=d.pessoas.map(p=>{
         const nome=p.id===rachaEu?'Minha parte':p.nome;
-        const detalhe=p.pagoCentavos?' · Pagou à loja '+formatBRL(p.pagoCentavos/100):'';
+        const detalhe=p.pagoCentavos&&p.pagoCentavos!==p.finalCentavos?' · Pagou à loja '+formatBRL(p.pagoCentavos/100):'';
         return '<div class="flex justify-between gap-2 p-3 rounded-xl border border-slate-700 bg-slate-950"><span class="text-white break-words min-w-0">'+escaparHTML(nome)+detalhe+'</span><strong class="text-white shrink-0">'+formatBRL(p.finalCentavos/100)+'</strong></div>';
       }).join('');
       const falta=d.pendenteEstabelecimentoCentavos?'<p class="text-slate-300">Falta informar quem pagou à loja: '+formatBRL(d.pendenteEstabelecimentoCentavos/100)+'</p>':'';
@@ -245,6 +252,12 @@ function calcularRachadinhaDetalhada(){
       const minha=d.pessoas.find(p=>p.id===rachaEu);
       const atalho=minha?.finalCentavos?'<details class="text-slate-300 py-1"><summary class="cursor-pointer">Registrar apenas minha parte</summary><button type="button" '+acaoHTML('lancarParteIndividualDet',[minha.id])+' class="mt-2 text-blue-200 border border-blue-400/40 p-2 rounded-lg">Preencher minha parte no Novo Registro</button></details>':'';
       resumo.innerHTML=pessoas+'<p class="font-bold text-white py-2">Total da divisão: '+formatBRL(d.totalCentavos/100)+'</p>'+falta+(falta?'':acertos)+atalho;
+    }
+    for(const campo of document.getElementById('rachaPagamentosPorPessoa')?.querySelectorAll('[data-racha-pago]') || []){
+      if(campo===document.activeElement)continue;
+      const nome=rachaDetPessoas[Number(campo.dataset.rachaPago)];
+      const pessoa=d.pessoas.find(p=>p.id===nome);
+      if(pessoa)campo.value=formatBRL(pessoa.pagoCentavos/100);
     }
     atualizarAcoesPagamentoRachaGestor(d);
     estadoRachaGestor(null);return d;
@@ -288,7 +301,7 @@ function cadaPessoaPagouSuaParteRachaGestor(){
   const divisao=calcularRachadinhaDetalhada();
   if(!pagueiTotalRachaGestor(divisao)||!divisao.pessoas.some(p=>p.id!==rachaEu&&p.finalCentavos>0))return;
   for(const pessoa of divisao.pessoas){
-    rachaDetAjustes[pessoa.id]={...rachaDetAjustes[pessoa.id],pagoCentavos:pessoa.finalCentavos};
+    if(rachaDetAjustes[pessoa.id])delete rachaDetAjustes[pessoa.id].pagoCentavos;
   }
   renderizarPessoasRachaDet();
   calcularRachadinhaDetalhada();
@@ -351,7 +364,8 @@ async function conferirRegistroRachadinhaGestor(){
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}
       const payload={...previa.dados,assinatura:previa.assinatura,requestId:rachaRegistroId || ('racha-'+String(rachaDetItens[0].id))};rachaEnvioGuardado={estado:'pendente',assinatura:previa.assinatura,payload};
       try{guardarRascunhoRachaGestor(true);await apiCall('registrarRachadinhaWeb',payload,1);rachaEnvioGuardado.estado='confirmado';guardarRascunhoRachaGestor(true);fecharRegistroRachaGestor();await carregarDados();mostrarAviso('Divisão registrada','Sua parte e os adiantamentos selecionados foram gravados juntos.');}
-      catch(e){if(!e.resultadoIncerto&&!localStorage.getItem('gestorMutacaoV3:'+payload.requestId))rachaEnvioGuardado=null;guardarRascunhoRachaGestor();mostrarAviso('Confira a divisão',e.message);}
+      catch(e){if(!e.resultadoIncerto&&!localStorage.getItem('gestorMutacaoV3:'+payload.requestId))rachaEnvioGuardado=null;guardarRascunhoRachaGestor();mostrarAviso('Confira a divisão',e.message);return;}
+      Promise.resolve().then(()=>carregarDados()).catch(e=>console.warn('Atualização após registrar divisão:',e));
     },false,'Registrar divisão','success');
   }catch(e){mostrarAviso('Prévia indisponível',e.message);}finally{botao.disabled=false;}
 }
@@ -400,7 +414,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   modal.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();fecharRegistroRachaGestor();}if(e.key==='Tab'){const f=Array.from(modal.querySelectorAll('button,input,select')).filter(el=>!el.disabled&&el.getClientRects().length);if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f.at(-1)?.focus();}else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0]?.focus();}}});
   sub.addEventListener('input',e=>{const t=e.target;
     if(t.dataset.rachaPeso!==undefined){if(!alterarRachaPermitidoGestor())return;const nome=rachaDetPessoas[Number(t.dataset.rachaPeso)],peso=lerCotaRachaGestor(t.value);t.setAttribute('aria-invalid',String(!Number.isFinite(peso)));rachaDetAjustes[nome]={...rachaDetAjustes[nome],pesoTexto:t.value,peso};calcularRachadinhaDetalhada();}
-    else if(t.dataset.rachaPago!==undefined){if(!alterarRachaPermitidoGestor())return;mascaraMoedaTeclado(t);const nome=rachaDetPessoas[Number(t.dataset.rachaPago)];rachaDetAjustes[nome]={...rachaDetAjustes[nome],pagoCentavos:Math.round(lerValorMoeda(t)*100)};calcularRachadinhaDetalhada();}
+    else if(t.dataset.rachaPago!==undefined){if(!alterarRachaPermitidoGestor())return;
+      if(!rachaDetPessoas.some(nome=>rachaDetAjustes[nome]?.pagoCentavos!==undefined)){
+        let pessoas;
+        try{pessoas=dadosContaDetalhadaRachaGestor().pessoas;}catch(_){calcularRachadinhaDetalhada();return;}
+        for(const p of pessoas)rachaDetAjustes[p.id]={...rachaDetAjustes[p.id],pagoCentavos:p.pagoCentavos};
+      }
+      mascaraMoedaTeclado(t);const nome=rachaDetPessoas[Number(t.dataset.rachaPago)];rachaDetAjustes[nome]={...rachaDetAjustes[nome],pagoCentavos:Math.round(lerValorMoeda(t)*100)};calcularRachadinhaDetalhada();}
     else if(['rachaDesconto','rachaAcrescimo','rachaServicoPercentual','rachaRateioAcrescimos'].includes(t.id)){if(['rachaDesconto','rachaAcrescimo'].includes(t.id))mascaraMoedaTeclado(t);if(modoRachadinhaAtual==='rapido')calcularRachadinha();else calcularRachadinhaDetalhada();}
     else guardarRascunhoRachaGestor();
   });
