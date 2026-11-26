@@ -1,6 +1,6 @@
 # Identidade visual do webapp
 
-v242 — Início usa cartões clicáveis para Fatura, Vencimentos e Empréstimos. A fatura ocupa toda a primeira linha no celular e abre o conjunto de três colunas em telas maiores. Barra móvel usa rótulos constantes, toque mínimo de 44 px, espaço seguro inferior e destaque verde na ação Novo. A confirmação da Rachadinha usa o mesmo vocabulário de sincronização e um resumo em lista que quebra linhas para nomes longos.
+v242 — Início usa cartões clicáveis para Fatura e Empréstimos, lado a lado quando houver largura. Vencimentos, devoluções e avisos de proteção ficam em um quadro abaixo dos cartões, com atalho para a Agenda. Barra móvel usa rótulos constantes, toque mínimo de 44 px, espaço seguro inferior e destaque verde na ação Novo. A confirmação da Rachadinha usa o mesmo vocabulário de sincronização e um resumo em lista que quebra linhas para nomes longos.
 
 v239 — Comparar ofertas fica recolhido no Simulador. Mostra até três alternativas, em cartões empilhados no celular, com totais, parcelas e limite restante por oferta. As duas calculadoras recolhidas deixam o preenchimento em espera até serem abertas.
 

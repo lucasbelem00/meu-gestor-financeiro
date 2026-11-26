@@ -50,9 +50,6 @@ function renderizarCartoesInicioGestor(dados){
   titulo.textContent=mes?'Fatura do mês · '+mes:'Fatura do mês';
   document.getElementById('inicioValorFaturaGestor').textContent=mes&&totais
     ?formatBRL(Object.values(totais).reduce((soma,forma)=>soma+(Number(forma?.[mes])||0),0)):'—';
-  const qtd=dados.alertasVencimento?.length;
-  document.getElementById('inicioVencimentosGestor').textContent=Number.isInteger(qtd)
-    ?(qtd===0?'Sem alertas':qtd+(qtd===1?' alerta':' alertas')):'—';
   document.getElementById('inicioReceberGestor').textContent=dados.emprestimos?.kpis?.totalAReceberGeral??'—';
 }
 function renderizarRotinaPainelGestor(){
@@ -60,16 +57,21 @@ function renderizarRotinaPainelGestor(){
   renderizarCartoesInicioGestor(dados);
   renderizarLimitePessoalPainelGestor(dados);
   if(typeof renderizarPerfilGastosPainelGestor==='function')renderizarPerfilGastosPainelGestor(dados);
-  const acaoTerceiros=document.getElementById('resumoTerceirosPainelGestor');if(acaoTerceiros)acaoTerceiros.textContent='A receber de terceiros: '+(dados.emprestimos?.kpis?.totalAReceberGeral||'R$ 0,00')+' • todos os meses';
   const box=document.getElementById('devolucoesPainelGestor'),lista=document.getElementById('listaDevolucoesPainelGestor');
   if(box&&lista){
     const itens=listarDevolucoesPainelGestor(dados.emprestimos?.itens);box.hidden=!itens.length;lista.replaceChildren();
-    document.getElementById('tituloDevolucoesPainelGestor').textContent='🤝 Recebimentos para acompanhar • '+itens.length+' pendência(s)';
     itens.slice(0,12).forEach(i=>{const b=document.createElement('button');b.type='button';b.className='w-full rounded-xl border p-3 text-left text-xs '+i.situacao.fundo;const titulo=document.createElement('strong'),detalhe=document.createElement('span');titulo.className='block font-bold';titulo.textContent=i.pessoa+' • '+formatBRL(i.valorRaw);detalhe.className='block mt-1';detalhe.textContent=(i.dataCombinada||'Parcela de '+i.mesFatura)+' • '+i.situacao.texto+' • Falta receber: '+formatBRL(i.valorRaw)+' • '+i.descricao;b.append(titulo,detalhe);b.onclick=()=>abrirDevolucaoPainelGestor(i);lista.append(b);});
     if(itens.length>12){const p=document.createElement('p');p.className='text-xs text-slate-300';p.textContent='Mostrando as primeiras 12. Confira as demais em Empréstimos.';lista.append(p);}
   }
-  const semAvisos=document.getElementById('semAvisosPainelGestor');if(semAvisos)semAvisos.hidden=!(document.getElementById('bannerVencimentoFatura')?.classList?.contains('hidden')&&document.getElementById('devolucoesPainelGestor')?.hidden);
-
+  atualizarAvisosVaziosPainelGestor();
+}
+function atualizarAvisosVaziosPainelGestor(){
+  const vazio=document.getElementById('semAvisosPainelGestor');
+  if(!vazio)return;
+  vazio.hidden=!(dadosRotinaPainelGestor
+    && document.getElementById('bannerVencimentoFatura')?.classList?.contains('hidden')
+    && document.getElementById('devolucoesPainelGestor')?.hidden
+    && document.getElementById('alertaProtecaoPainelGestor')?.hidden);
 }
 function renderizarLimitePessoalPainelGestor(dados){
   const resumo=document.getElementById('resumoLimitePessoalGestor');if(!resumo)return;
@@ -102,17 +104,25 @@ function organizarPainelDiarioGestor(){
   const criar=(tag,texto,classe)=>{const e=document.createElement(tag);if(texto)e.textContent=texto;if(classe)e.className=classe;return e;};
   const resumo=criar('section',null,'space-y-3');resumo.id='resumoMesPainelGestor';resumo.append(criar('h2','Seu mês','text-base font-bold text-white'));
   const total=document.getElementById('kpi-comp').parentElement;total.classList.add('col-span-2','sm:col-span-1');kpis.className='grid grid-cols-2 sm:grid-cols-3 gap-3';kpis.append(total,document.getElementById('kpi-aberto').parentElement,document.getElementById('kpi-pago').parentElement);if(geral)geral.remove();resumo.append(kpis);if(explicacao)resumo.append(explicacao);
-  const atencao=criar('section',null,'space-y-3');atencao.append(criar('h2','O que precisa de atenção','text-base font-bold text-white'));for(const id of ['bannerVencimentoFatura','devolucoesPainelGestor']){const e=document.getElementById(id);if(e)atencao.append(e);}
+  const atencao=criar('section',null,'card-glass p-4 space-y-3');
+  const cabecalho=criar('div',null,'flex flex-wrap items-center justify-between gap-2');
+  const tituloAtencao=criar('h2','O que precisa de atenção','text-base font-bold text-white');
+  tituloAtencao.id='tituloAtencaoPainelGestor';
+  atencao.setAttribute('aria-labelledby',tituloAtencao.id);
+  const agenda=criar('button','Ver agenda','min-h-11 text-sm font-semibold text-sky-300 underline');
+  agenda.type='button';agenda.onclick=()=>setAba('agenda');
+  cabecalho.append(tituloAtencao,agenda);atencao.append(cabecalho);
+  for(const id of ['bannerVencimentoFatura','devolucoesPainelGestor']){const e=document.getElementById(id);if(e)atencao.append(e);}
   const alertaProtecao=criar('div',null,'hidden');alertaProtecao.id='alertaProtecaoPainelGestor';alertaProtecao.hidden=true;atencao.append(alertaProtecao);
-  const vazio=criar('p','Sem avisos de vencimento ou devolução nos próximos 7 dias.','text-xs text-slate-300');vazio.id='semAvisosPainelGestor';vazio.hidden=true;atencao.append(vazio);
-  // O resumo geral de terceiros fica junto da ação; não repete um segundo banner.
+  const vazio=criar('p','Tudo em dia por aqui.','text-xs text-slate-300');vazio.id='semAvisosPainelGestor';vazio.hidden=true;atencao.append(vazio);
+  // O total a receber aparece no cartão de Início.
   const banner=document.getElementById('bannerEmprestimosDash');if(banner){banner.style.display='none';banner.hidden=true;}
-  const acoes=raiz.querySelector('[aria-label="Pagamentos e recebimentos"]');if(acoes){acoes.className='card-glass p-4 space-y-3';const p=criar('p',null,'text-xs text-amber-200');p.id='resumoTerceirosPainelGestor';acoes.querySelector('h3')?.after(p);}
+  const acoes=raiz.querySelector('[aria-label="Pagamentos e recebimentos"]');if(acoes)acoes.className='card-glass p-4 space-y-3';
   // A mesma grade empilha no celular; no computador mantém gráfico e Horizonte lado a lado.
   const comparacao=criar('div',null,'grid grid-cols-1 lg:grid-cols-3 gap-6');comparacao.id='comparacaoPainelGestor';grafico.classList.add('lg:order-1');horizonte.classList.add('lg:order-2');comparacao.append(horizonte,grafico);
   const analise=criar('section',null,'space-y-3');analise.append(criar('h2','Análise e planejamento','text-base font-bold text-white'));const limite=document.getElementById('limitePessoalPainelGestor');if(limite)analise.append(limite);
   if(geral){const d=criar('details',null,'space-y-2');d.append(criar('summary','Consultar todo o histórico registrado','text-xs text-slate-300 cursor-pointer py-2'),geral);analise.append(d);}
-  raiz.append(resumo,atencao);if(acoes)raiz.append(acoes);raiz.append(comparacao,analise);if(grade&&!grade.children.length)grade.remove();
+  raiz.append(atencao,resumo);if(acoes)raiz.append(acoes);raiz.append(comparacao,analise);if(grade&&!grade.children.length)grade.remove();
   renderizarRotinaPainelGestor();
 }
 document.addEventListener('DOMContentLoaded',organizarPainelDiarioGestor);

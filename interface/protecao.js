@@ -1,7 +1,7 @@
 let estadoResumoPlanilhaUIgestor=null;
 function renderizarAlertaProtecaoPainelGestor(s){
  const box=document.getElementById('alertaProtecaoPainelGestor');if(!box)return;
- const falha=Boolean(s&&(s.falhaResumo||s.falhaRotina||s.falhaRelatorios||s.falhaAtivacao||s.falhaConfiguracao));box.replaceChildren();box.hidden=!falha;box.className=falha?'rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 space-y-2':'hidden';if(!falha)return;
+ const falha=Boolean(s&&(s.falhaResumo||s.falhaRotina||s.falhaRelatorios||s.falhaAtivacao||s.falhaConfiguracao));box.replaceChildren();box.hidden=!falha;box.className=falha?'rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 space-y-2':'hidden';if(typeof atualizarAvisosVaziosPainelGestor==='function')atualizarAvisosVaziosPainelGestor();if(!falha)return;
  const p=document.createElement('p');p.className='text-sm text-amber-200';p.textContent='Proteção automática precisa de atenção. Confira os detalhes do backup e dos arquivos anuais.';box.append(p);
  const b=document.createElement('button');b.type='button';b.className='rounded-lg border border-amber-400/50 px-3 py-2 text-xs font-bold text-amber-200';b.textContent='Conferir proteção';b.onclick=()=>abrirExportacaoDados();box.append(b);
 }
