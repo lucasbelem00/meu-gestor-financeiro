@@ -24,6 +24,7 @@ function fixarPessoaEuRachaGestor(){
   const minha=rachaDetPessoas.includes(rachaEu)?rachaEu:rachaDetPessoas.find(n=>normalizarTexto(n)==='eu') || rachaDetPessoas[0];
   const usados=new Set(rachaDetPessoas.filter(n=>n!==minha&&normalizarTexto(n)!=='eu').map(normalizarTexto));usados.add('eu');
   rachaDetPessoas.forEach((nome,i)=>{if(nome===minha){mapa.set(nome,'Eu');return;}if(normalizarTexto(nome)==='eu'){let novo='Pessoa '+(i+1),sufixo=2;while(usados.has(normalizarTexto(novo)))novo='Pessoa '+(i+1)+' ('+(sufixo++)+')';usados.add(normalizarTexto(novo));mapa.set(nome,novo);}});
+  if(minha==='Eu'&&rachaDetPessoas[1]==='Amigo 2'&&!usados.has('amigo'))mapa.set('Amigo 2','Amigo');
   const ajustes=Object.create(null);rachaDetPessoas.forEach(n=>ajustes[mapa.get(n)]=rachaDetAjustes[n] || {});
   rachaDetPessoas=rachaDetPessoas.map(n=>mapa.get(n));rachaDetItens.forEach(it=>it.consumidores=it.consumidores.map(n=>mapa.get(n) || n));rachaDetAjustes=ajustes;rachaEu='Eu';return mapa;
 }
@@ -47,10 +48,9 @@ function abrirRachadinhaGestor(){
 function guardarRascunhoRachaGestor(obrigatorio=false) {
   if(rachaRestaurando){if(obrigatorio)throw Error('Confira o rascunho guardado antes de registrar esta divisão.');return false;}
   atualizarBloqueioRachaGestor();
-  const gravarArmazenamentoGestor=(chave,texto)=>guardarRascunhoRotinaGestor('racha',JSON.parse(texto),obrigatorio);
   try{
     if(!rachaRegistroId&&rachaDetItens.length)rachaRegistroId='racha-'+String(rachaDetItens[0].id);
-    const salvo=gravarArmazenamentoGestor('gestorRachadinhaRascunhoV1',JSON.stringify(dadosRascunhoRachaGestor()));
+    const salvo=guardarRascunhoRotinaGestor('racha',dadosRascunhoRachaGestor(),obrigatorio);
     if(!salvo&&obrigatorio)throw Error('Não foi possível guardar esta divisão. Libere espaço no aparelho antes de registrar.');return salvo;
   }catch(e){if(obrigatorio)throw e;if(!rachaAvisouArmazenamento){rachaAvisouArmazenamento=true;mostrarAviso('Rascunho não guardado','Mantenha esta página aberta e libere espaço no aparelho antes de registrar a divisão.');}return false;}
 }
@@ -68,6 +68,10 @@ function dadosContaDetalhadaRachaGestor() {
     }
   }
   return conta;
+}
+function atualizarLocalRachaGestor(){
+  if(modoRachadinhaAtual==='rapido')calcularRachadinha();
+  else calcularRachadinhaDetalhada();
 }
 function estadoRachaGestor(erro) { const el=document.getElementById('estadoCalculoRacha');if(el){el.textContent=erro?.message || '';el.classList.toggle('hidden',!erro);} }
 function alternarModoRachadinha(modo) {
@@ -236,10 +240,16 @@ function adicionarItemRachaDet(){if(!alterarRachaPermitidoGestor())return;
 function editarItemRachaGestor(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;rachaItemEmEdicao=it.id;document.getElementById('inpItemDescRacha').value=it.desc;definirValorMoeda('inpItemValRacha',it.valorCentavos/100);document.querySelectorAll('.chk-pessoa-item-racha').forEach(e=>e.checked=it.consumidores.includes(rachaDetPessoas[Number(e.value)]));document.getElementById('btnIncluirItemRacha').textContent='Salvar item';document.getElementById('btnCancelarItemRacha').classList.remove('hidden');document.getElementById('inpItemDescRacha').focus();guardarRascunhoRachaGestor();}
 function cancelarEdicaoItemRachaGestor(){if(!alterarRachaPermitidoGestor())return;rachaItemEmEdicao=null;document.getElementById('inpItemDescRacha').value='';document.getElementById('inpItemValRacha').value='';document.getElementById('btnIncluirItemRacha').textContent='+ Incluir item';document.getElementById('btnCancelarItemRacha').classList.add('hidden');guardarRascunhoRachaGestor();}
 function removerItemRachaDet(id){if(!alterarRachaPermitidoGestor())return;const it=rachaDetItens.find(x=>String(x.id)===String(id));if(!it)return;const versao=assinaturaEdicaoRachaGestor();mostrarConfirmacao('Remover item?',it.desc+' sairá da conta e o total será recalculado.',()=>{if(divisaoRachaEnviadaGestor()||assinaturaEdicaoRachaGestor()!==versao){mostrarAviso('A divisão mudou','Confira o item novamente antes de remover.');return;}rachaDetItens=rachaDetItens.filter(x=>x.id!==it.id);if(rachaItemEmEdicao===it.id)cancelarEdicaoItemRachaGestor();calcularRachadinhaDetalhada();},false,'Remover item','neutral');}
+const htmlRachadinhaPorListaGestor=new WeakMap();
+function exibirListaRachaGestor(lista,html){
+  if(!lista||htmlRachadinhaPorListaGestor.get(lista)===html)return;
+  lista.innerHTML=html;
+  htmlRachadinhaPorListaGestor.set(lista,html);
+}
 function calcularRachadinhaDetalhada(){
   guardarRascunhoRachaGestor();const itens=document.getElementById('listaItensRachaDet'),resumo=document.getElementById('listaResumoIndividualRachaDet');
-  if(itens)itens.innerHTML=rachaDetItens.map(it=>'<article class="p-3 rounded-xl bg-slate-950 border border-slate-700 space-y-2"><div class="text-xs text-white break-words">'+escaparHTML(it.desc)+' • '+formatBRL((it.valorCentavos ?? Math.round(it.valor*100))/100)+'</div><p class="text-xs text-slate-300 break-words">'+escaparHTML(it.consumidores.join(', '))+'</p><div class="flex gap-2"><button type="button" '+acaoHTML('editarItemRachaGestor',[it.id])+' class="text-xs text-sky-200 border border-slate-600 p-2 rounded-lg">✏️ Editar item</button><button type="button" '+acaoHTML('removerItemRachaDet',[it.id])+' class="text-xs text-rose-200 border border-slate-600 p-2 rounded-lg">🗑️ Remover item</button></div></article>').join('');
-  if(!rachaDetItens.length){atualizarAcoesPagamentoRachaGestor(null);if(resumo)resumo.textContent='Adicione os itens para conferir as partes e os acertos.';estadoRachaGestor(null);return null;}
+  if(itens)exibirListaRachaGestor(itens,rachaDetItens.map(it=>'<article class="p-3 rounded-xl bg-slate-950 border border-slate-700 space-y-2"><div class="text-xs text-white break-words">'+escaparHTML(it.desc)+' • '+formatBRL((it.valorCentavos ?? Math.round(it.valor*100))/100)+'</div><p class="text-xs text-slate-300 break-words">'+escaparHTML(it.consumidores.join(', '))+'</p><div class="flex gap-2"><button type="button" '+acaoHTML('editarItemRachaGestor',[it.id])+' class="text-xs text-sky-200 border border-slate-600 p-2 rounded-lg">✏️ Editar item</button><button type="button" '+acaoHTML('removerItemRachaDet',[it.id])+' class="text-xs text-rose-200 border border-slate-600 p-2 rounded-lg">🗑️ Remover item</button></div></article>').join(''));
+  if(!rachaDetItens.length){atualizarAcoesPagamentoRachaGestor(null);exibirListaRachaGestor(resumo,'Adicione os itens para conferir as partes e os acertos.');estadoRachaGestor(null);return null;}
   try{const d=calcularDivisaoContaGestor(dadosContaDetalhadaRachaGestor());
     if(resumo){
       const pessoas=d.pessoas.map(p=>{
@@ -251,7 +261,7 @@ function calcularRachadinhaDetalhada(){
       const acertos=d.transferencias.map(t=>'<p class="text-amber-200 break-words">'+escaparHTML(t.de)+' deve devolver '+formatBRL(t.valorCentavos/100)+' a '+escaparHTML(t.para===rachaEu?'você':t.para)+'.</p>').join('');
       const minha=d.pessoas.find(p=>p.id===rachaEu);
       const atalho=minha?.finalCentavos?'<details class="text-slate-300 py-1"><summary class="cursor-pointer">Registrar apenas minha parte</summary><button type="button" '+acaoHTML('lancarParteIndividualDet',[minha.id])+' class="mt-2 text-blue-200 border border-blue-400/40 p-2 rounded-lg">Preencher minha parte no Novo Registro</button></details>':'';
-      resumo.innerHTML=pessoas+'<p class="font-bold text-white py-2">Total da divisão: '+formatBRL(d.totalCentavos/100)+'</p>'+falta+(falta?'':acertos)+atalho;
+      exibirListaRachaGestor(resumo,pessoas+'<p class="font-bold text-white py-2">Total da divisão: '+formatBRL(d.totalCentavos/100)+'</p>'+falta+(falta?'':acertos)+atalho);
     }
     for(const campo of document.getElementById('rachaPagamentosPorPessoa')?.querySelectorAll('[data-racha-pago]') || []){
       if(campo===document.activeElement)continue;
@@ -261,7 +271,7 @@ function calcularRachadinhaDetalhada(){
     }
     atualizarAcoesPagamentoRachaGestor(d);
     estadoRachaGestor(null);return d;
-  }catch(e){atualizarAcoesPagamentoRachaGestor(null);estadoRachaGestor(e);if(resumo)resumo.textContent='Confira os campos destacados pela mensagem antes de copiar ou registrar.';return null;}
+  }catch(e){atualizarAcoesPagamentoRachaGestor(null);estadoRachaGestor(e);exibirListaRachaGestor(resumo,'Confira os campos destacados pela mensagem antes de copiar ou registrar.');return null;}
 }
 function copiarRachadinhaDetalhadaWhats(){const d=calcularRachadinhaDetalhada();if(d)abrirPreviaCobrancaWhats(mensagemDivisaoRachaGestor(d),'Divisão detalhada copiada.');}
 function prepararDetalhamentoRachaGestor(){
@@ -363,7 +373,7 @@ async function conferirRegistroRachadinhaGestor(){
       if(divisaoRachaEnviadaGestor())return;
       if(assinar()!==versao||document.getElementById('modalRegistroRachaGestor').classList.contains('hidden')){mostrarAviso('A prévia mudou','Confira os campos novamente antes de registrar. Nenhum lançamento foi enviado.');return;}
       const payload={...previa.dados,assinatura:previa.assinatura,requestId:rachaRegistroId || ('racha-'+String(rachaDetItens[0].id))};rachaEnvioGuardado={estado:'pendente',assinatura:previa.assinatura,payload};
-      try{guardarRascunhoRachaGestor(true);await apiCall('registrarRachadinhaWeb',payload,1);rachaEnvioGuardado.estado='confirmado';guardarRascunhoRachaGestor(true);fecharRegistroRachaGestor();await carregarDados();mostrarAviso('Divisão registrada','Sua parte e os adiantamentos selecionados foram gravados juntos.');}
+      try{guardarRascunhoRachaGestor(true);await apiCall('registrarRachadinhaWeb',payload,1);rachaEnvioGuardado.estado='confirmado';guardarRascunhoRachaGestor(true);fecharRegistroRachaGestor();mostrarAviso('Divisão registrada','Sua parte e os adiantamentos selecionados foram gravados juntos.');}
       catch(e){if(!e.resultadoIncerto&&!localStorage.getItem('gestorMutacaoV3:'+payload.requestId))rachaEnvioGuardado=null;guardarRascunhoRachaGestor();mostrarAviso('Confira a divisão',e.message);return;}
       Promise.resolve().then(()=>carregarDados()).catch(e=>console.warn('Atualização após registrar divisão:',e));
     },false,'Registrar divisão','success');

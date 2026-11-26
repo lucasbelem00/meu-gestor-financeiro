@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+v237 — A Rachadinha migra o exemplo Amigo 2 para Amigo em rascunhos editáveis, preservando itens e pagamentos. A gravação confirmada dispara uma única recarga. Renderizações idênticas da Rachadinha reaproveitam as listas e o app reutiliza o formatador de moeda.
+
 v236 — Limpar volta ao cabeçalho da Rachadinha. Sem pagamentos explícitos, a parte calculada de cada pessoa preenche os valores pagos à loja; atribuir o total continua sendo uma ação explícita. A confirmação de gravação aparece após a resposta do servidor, antes da atualização das listas.
 
 v235 — O campo opcional da Rachadinha se chama Local da divisão. Em telas estreitas, os dois modos ocupam uma linha própria, Limpar fica abaixo e os botões principais têm altura mínima de 44 px.

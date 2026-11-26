@@ -123,3 +123,16 @@ test('rascunho sem pagamentos explícitos acompanha a parte calculada de cada pe
  assert.deepEqual(pagos(),[6000,6000]);
  assert.equal(run('rachaDetAjustes.Eu?.pagoCentavos'),undefined);
 });
+
+
+test('nome padrão legado migra junto com os itens e pagamentos do rascunho',()=>{
+ const {c,run}=ambiente();
+ c.rachaDetPessoas=['Eu','Amigo 2'];
+ c.rachaDetItens[0].consumidores=['Eu','Amigo 2'];
+ run("rachaDetAjustes['Amigo 2']={pagoCentavos:2500}");
+ const mapa=c.fixarPessoaEuRachaGestor();
+ assert.equal(mapa.get('Amigo 2'),'Amigo');
+ assert.deepEqual(Array.from(c.rachaDetPessoas),['Eu','Amigo']);
+ assert.deepEqual(Array.from(c.rachaDetItens[0].consumidores),['Eu','Amigo']);
+ assert.equal(run('rachaDetAjustes.Amigo.pagoCentavos'),2500);
+});
