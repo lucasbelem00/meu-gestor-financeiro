@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 26/11/2026 — Histórico (módulo 5) exibe Essencial ou Ajustável ao lado da categoria conforme a prioridade do lançamento. Registros sem prioridade reconhecida ficam sem marcador. Alteração de interface. Conferência visual com os lançamentos da conta está pendente.
+
 v236 — Limpar volta ao cabeçalho da Rachadinha. Sem pagamentos explícitos, a parte calculada de cada pessoa preenche os valores pagos à loja; atribuir o total continua sendo uma ação explícita. A confirmação de gravação aparece após a resposta do servidor, antes da atualização das listas.
 
 v235 — O campo opcional da Rachadinha se chama Local da divisão. Em telas estreitas, os dois modos ocupam uma linha própria, Limpar fica abaixo e os botões principais têm altura mínima de 44 px.

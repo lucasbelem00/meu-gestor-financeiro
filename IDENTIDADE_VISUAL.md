@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+26/11/2026 — No Histórico, a prioridade aparece na linha da categoria como texto com um ponto pequeno, verde para Essencial e amarelo para Ajustável. A linha pode quebrar em telas estreitas.
+
 v242 — Início usa cartões clicáveis para Fatura e Empréstimos, lado a lado quando houver largura. Vencimentos, devoluções e avisos de proteção ficam em um quadro abaixo dos cartões, com atalho para a Agenda. Barra móvel usa rótulos constantes, toque mínimo de 44 px, espaço seguro inferior e destaque verde na ação Novo. A confirmação da Rachadinha usa o mesmo vocabulário de sincronização e um resumo em lista que quebra linhas para nomes longos.
 
 v239 — Comparar ofertas fica recolhido no Simulador. Mostra até três alternativas, em cartões empilhados no celular, com totais, parcelas e limite restante por oferta. As duas calculadoras recolhidas deixam o preenchimento em espera até serem abertas.
