@@ -27,7 +27,7 @@ test('área inteira filtra sem executar pagamento; conferir pagamento não alter
   class Element{constructor(dataset,parent=null){this.dataset=dataset;this.parent=parent;this.tagName='BUTTON';}closest(){return this.dataset?.gestorAcao?this:this.parent;}}
   const c=vm.createContext({Element,ACOES_RENDERIZADAS:new Set(['aplicarFiltroInternoMensal','quitarFaturaCartaoMes']),
     document:{addEventListener:(tipo,fn)=>{if(tipo==='click')clicar=fn;},getElementById:()=>({set innerHTML(v){markup=v;}})},
-    escaparHTML:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),formatBRL:n=>'R$ '+n.toFixed(2),formaEhCartaoGestor:()=>true,formaSituacaoVisualGestor:()=>({vencimento:20}),vencimentoFaturaBancarioGestor:()=>({data:'20/10/2026'}),
+    escaparHTML:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),formatBRL:n=>'R$ '+n.toFixed(2),formaEhCartaoGestor:()=>true,hojeSituacaoVisualGestor:()=>19,estiloSituacaoVisualGestor:(codigo,texto)=>({texto,cor:codigo,fundo:codigo}),formaSituacaoVisualGestor:()=>({vencimento:20}),vencimentoFaturaBancarioGestor:()=>({data:'20/10/2026'}),
     res:{totalRaw:100,formas:[{nome:'PicPay',total:0,totalBanco:208,abertoBanco:75,terceiros:208}]},mesFiltro:'10/2026',
     aplicarFiltroInternoMensal:(...args)=>chamadas.push(['filtro',...args]),quitarFaturaCartaoMes:(...args)=>chamadas.push(['pagamento',...args])});c.window=c;
   vm.runInContext(html.slice(html.indexOf('    function acaoHTML('),html.indexOf('    function selecionarCartaoSimulador(')),c);
@@ -71,4 +71,15 @@ test('mensal inclui pagamentos parciais tanto em com pagamento como com saldo',(
  assert.deepEqual(Array.from(c.filtrarItensMensaisGestor(itens,{status:['aberto']}),l=>l[1]),['Parcial','Sem pagar']);
  assert.deepEqual(Array.from(c.filtrarItensMensaisGestor(itens,{status:['parcial'],tipoGasto:['rigido']}),l=>l[1]),['Parcial']);
  assert.deepEqual(Array.from(c.filtrarItensMensaisGestor(itens,{status:['quitado']}),l=>l[1]),['Quitado']);
+});
+
+test('ordena vencidos, vencimento de hoje e próximos antes dos sem data e quitados',()=>{
+ const dias={'Vence hoje':19,'Vencido recente':18,'Mais antigo':10,'Futuro primeiro':20,'Futuro segundo':25,'Quitado':5};
+ const saldo=nome=>nome==='Quitado'?0:10;
+ const formas=['Pix','Sem data','Futuro segundo','Quitado','Vencido recente','Vence hoje','Mais antigo','Futuro primeiro'].map(nome=>({nome,total:50,abertoBanco:saldo(nome)}));
+ const el={innerHTML:''},c=vm.createContext({res:{formas},mesFiltro:'11/2026',document:{getElementById:()=>el},formaEhCartaoGestor:f=>f.nome!=='Pix',formatBRL:String,escaparHTML:String,acaoHTML:()=>'',hojeSituacaoVisualGestor:()=>19,formaSituacaoVisualGestor:()=>({}),vencimentoFaturaBancarioGestor:nome=>dias[nome]?{dia:dias[nome],data:String(dias[nome])}:null,estiloSituacaoVisualGestor:(codigo,texto)=>({cor:codigo,fundo:codigo,texto})});
+ const i=html.indexOf("        let htmlFormas = '';");
+ vm.runInContext(html.slice(i,html.indexOf('        const boxTags =',i)),c);
+ assert.deepEqual([...el.innerHTML.matchAll(/data-forma="([^"]+)"/g)].map(m=>m[1]),['Mais antigo','Vencido recente','Vence hoje','Futuro primeiro','Futuro segundo','Sem data','Quitado','Pix']);
+ for(const rotulo of ['Vencida','Vence hoje','A vencer','Sem vencimento cadastrado','Quitada']) assert(el.innerHTML.includes('>'+rotulo+'</span>'));
 });

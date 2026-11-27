@@ -1,7 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {boot,fixture,personal,loan}=require('./fixtures/gestor-mocks.cjs');
 const html=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8'),i=html.indexOf("        let htmlFormas = '';"),f=html.indexOf("        const boxTags =",i);
-function render(res){const el={innerHTML:''},c=vm.createContext({res,mesFiltro:'10/2026',document:{getElementById:()=>el},formaEhCartaoGestor:f=>f.tipo==='cartao',formaSituacaoVisualGestor:()=>({}),vencimentoFaturaBancarioGestor:()=>null,formatBRL:n=>'R$ '+Number(n).toFixed(2).replace('.',','),escaparHTML:s=>s,acaoHTML:()=>''});vm.runInContext(html.slice(i,f),c);return el.innerHTML;}
+function render(res){const el={innerHTML:''},c=vm.createContext({res,mesFiltro:'10/2026',document:{getElementById:()=>el},formaEhCartaoGestor:f=>f.tipo==='cartao',hojeSituacaoVisualGestor:()=>19,estiloSituacaoVisualGestor:(codigo,texto)=>({texto,cor:codigo,fundo:codigo}),formaSituacaoVisualGestor:()=>({}),vencimentoFaturaBancarioGestor:()=>null,formatBRL:n=>'R$ '+Number(n).toFixed(2).replace('.',','),escaparHTML:s=>s,acaoHTML:()=>''});vm.runInContext(html.slice(i,f),c);return el.innerHTML;}
 test('cartão quitado perde só a ação de pagamento; empréstimos recebidos continuam no mês',()=>{
  const {ctx}=boot(fixture([personal('Meu gasto',100,'1/1','10/2026','Pago')],[loan('Ana','Recebido',70,'Cartao')]));ctx.console={log(){}};ctx.executarAcaoApi_('getDadosCompletos',null);
  let rel=ctx.executarAcaoApi_('obterRelatorioMes','10/2026');assert.match(render(rel),/Conferir fatura/);assert.equal(rel.formas[0].abertoBanco,70);assert.equal(rel.formas[0].terceiros,70);

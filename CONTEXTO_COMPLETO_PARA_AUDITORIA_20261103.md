@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Fatura Mensal prioriza cartões em aberto em ordem de vencimento bancário. Cartões sem vencimento vêm depois dos que têm data, seguidos pelos quitados e por outras formas. Os rótulos usam a mesma paleta de O que precisa de atenção. Validação na conta real pendente.
+
 Revisão 27/11/2026. A confirmação Sincronizado usa um aviso flutuante compacto. Envios incertos de Novo Lançamento, Empréstimos e Rachadinha mostram acesso direto à Atividade. O aviso geral usa o diário existente e desaparece quando não há mais envios em conferência. A fila offline mantém o indicador próprio. Validação na conta real pendente.
 
 Revisão 27/11/2026. Ferramentas volta às abas no topo para trocar de tarefa com um toque. Menu e abas seguem a mesma ordem, começando por Empréstimos, Dividir uma conta e Simular uma compra. Planejamento permanece no menu. Validação na conta real pendente.
