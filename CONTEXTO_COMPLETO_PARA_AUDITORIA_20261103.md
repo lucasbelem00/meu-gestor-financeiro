@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Empréstimos mostra os saldos da seleção por pessoa. As parcelas, datas combinadas e ações ficam na seção expansível da pessoa, com a seleção preservada durante a recarga e abertura automática ao escolher uma pessoa no filtro. Receber itens filtrados inclui apenas parcelas em aberto editáveis. Validação na conta real pendente.
+
 Revisão 27/11/2026. Fatura Mensal exibe, antes dos gráficos, o saldo a pagar e o vencimento de cada cartão com a ação Conferir fatura. A composição separa total, gastos pessoais e gastos de terceiros. Na troca do mês, os cartões anteriores ficam cobertos até a consulta terminar. A tela usa o relatório mensal e o calendário bancário existentes. Validação na conta real pendente.
 
 Revisão 27/11/2026. Novo Lançamento prioriza descrição, valor, forma e categoria. Data, competência e opções avançadas têm seções recolhíveis com resumo. A prévia de parcelas fica visível para conferência. A validação abre a seção que contém um campo inválido. Validação na conta real pendente.

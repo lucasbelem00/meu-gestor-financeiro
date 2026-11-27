@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+27/11/2026 — Empréstimos usa um resumo expansível por pessoa, com nome, quantidade de parcelas, saldo da seleção e avisos de prazo. As parcelas e as ações aparecem ao expandir o resumo. Nome e valores podem quebrar linha no celular.
+
 27/11/2026 — Fatura Mensal destaca o saldo a pagar e o vencimento de cada cartão. Total da fatura, seus gastos e gastos de terceiros aparecem abaixo. Conferir fatura fica ao lado do saldo em aberto e a área do cartão filtra os lançamentos.
 
 27/11/2026 — Novo Lançamento mostra descrição, valor, forma e categoria primeiro. Os resumos de Data e fatura e Mais opções mostram o que está preenchido. As seções expandem no próprio formulário. Classificação do gasto usa o mesmo fundo, a mesma borda e o mesmo estilo de título.
