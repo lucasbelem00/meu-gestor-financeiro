@@ -5265,7 +5265,7 @@ function desfazerAtividadeWeb(param) {
       const indiceForma=a.aba==='Empréstimos'?3:2;
       r[indiceForma]=nomeFormaLeituraGestor_(r[indiceForma],ss);
       if(a.aba==='Lançamentos'){
-        categorias ??= listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
+        if (!categorias) categorias = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
         r[3]=resolverCategoria(r[3],categorias);
       }
       r[13] = Math.max(Number(a.antes[13] || 1), Number(a.depois && a.depois[13] || 0)) + 1;
