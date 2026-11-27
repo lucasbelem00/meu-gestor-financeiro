@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v248. Vencimentos do Início abrem Conferir fatura com cartão e mês preenchidos. Alertas de devolução rotulam o destino no cartão e destacam a parcela focada em Empréstimos. Pix agendado abre seu lançamento.
+
 Revisão 27/11/2026 · v246. Balanço Anual exibe a comparação quando há base válida e expande o gráfico de evolução ao lado do ranking em telas largas.
 
 Revisão 27/11/2026 · v245. Os filtros Essencial e Ajustável nos cartões do Histórico usam a mesma altura dos filtros de forma e categoria. A edição segue na branch New para testes.
