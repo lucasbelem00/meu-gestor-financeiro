@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v246. Balanço Anual exibe a comparação quando há base válida e expande o gráfico de evolução ao lado do ranking em telas largas.
+
 Revisão 27/11/2026 · v245. Os filtros Essencial e Ajustável nos cartões do Histórico usam a mesma altura dos filtros de forma e categoria. A edição segue na branch New para testes.
 
 Revisão 27/11/2026 · v244. Avisos usam fundo, borda e texto da cor de cada estado. Erros, pendências e validações sem detalhe recebem instrução legível. O Diagnóstico mostra andamento, conclusão, falta de rede ou falha junto ao botão Atualizar dados. Filtros de prioridade do Histórico são acessíveis nos próprios cartões e preservam os demais filtros. Revisão dos retornos de navegação e filtros, salvamento, exclusão e recuperação, planilha e ferramentas. Reativar forma passou a confirmar a mudança. Código do Balanço Anual e otimização do resumo publicados no Apps Script existente, versão 51 na cópia e 136 na principal. A comparação de latência real segue pendente.

@@ -329,7 +329,7 @@ No resumo do Início, a Fatura do mês ocupa toda a largura quando o saldo a rec
 
 ### Comparação no Balanço Anual
 
-A comparação vem antes dos indicadores do ano. Os dois totais aparecem empilhados em telas estreitas e lado a lado a partir do breakpoint de tablet. As categorias com aumento usam botões de largura total, com texto que quebra linha e valor destacado em rosa. Todo destaque abre o Histórico.
+Quando há base comparável, a comparação vem antes dos indicadores do ano. Em telas largas, o gráfico de evolução acompanha a altura do ranking de categorias. Os dois totais aparecem empilhados em telas estreitas e lado a lado a partir do breakpoint de tablet. As categorias com aumento usam botões de largura total, com texto que quebra linha e valor destacado em rosa. Todo destaque abre o Histórico.
 
 ### Retorno de ações e prioridade no Histórico
 
