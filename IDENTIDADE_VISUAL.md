@@ -330,3 +330,7 @@ No resumo do Início, a Fatura do mês ocupa toda a largura quando o saldo a rec
 ### Comparação no Balanço Anual
 
 A comparação vem antes dos indicadores do ano. Os dois totais aparecem empilhados em telas estreitas e lado a lado a partir do breakpoint de tablet. As categorias com aumento usam botões de largura total, com texto que quebra linha e valor destacado em rosa. Todo destaque abre o Histórico.
+
+### Retorno de ações e prioridade no Histórico
+
+Os avisos flutuantes e os retornos de Atualizar dados no Diagnóstico usam cor de fundo, borda e texto para distinguir informação, sucesso, atenção e falha. Os rótulos Essencial e Ajustável nos cartões do Histórico indicam seleção pelo fundo e pelo estado aria-pressed.
