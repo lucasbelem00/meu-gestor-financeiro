@@ -40,14 +40,14 @@ function preencherPerfilLancamentoGestor(modo,p){
   for(const campo of ['tipo','prioridade']){const e=document.getElementById('perfil-'+modo+'-'+campo);if(e){e.value=valido?p[campo]:'';e.dataset.perfilGastoDisponivel=valido?'true':'false';delete e.dataset.escolhaManual;}}
 }
 function criarCamposPerfilLancamentoGestor(modo){
-  const d=document.createElement('details');d.id='perfil-'+modo;d.className='rounded-xl border border-slate-700 p-3 space-y-3';
-  const titulo=document.createElement('summary');titulo.textContent='Classificação do gasto';titulo.className='text-sm text-slate-200 cursor-pointer';d.append(titulo);
+  const d=document.createElement('details');d.id='perfil-'+modo;d.className=modo==='novo'?'opcoes-novo-gestor':'rounded-xl border border-slate-700 p-3 space-y-3';
+  const titulo=document.createElement('summary');titulo.textContent='Classificação do gasto';if(modo!=='novo')titulo.className='text-sm text-slate-200 cursor-pointer';d.append(titulo);
   const grade=document.createElement('div');grade.className='grid grid-cols-1 sm:grid-cols-2 gap-3';
   for(const [campo,nome,opcoes]of [['tipo','Tipo de gasto',[['fixo','Fixo'],['variavel','Variável']]],['prioridade','Prioridade',[['essencial','Essencial'],['ajustavel','Ajustável']]]]){
     const label=document.createElement('label');label.className='text-xs text-slate-300 min-w-0';label.textContent=nome;const select=document.createElement('select');select.id='perfil-'+modo+'-'+campo;select.dataset.perfilGastoCampo=campo;select.className='block w-full min-w-0 rounded-xl bg-slate-900 border border-slate-600 p-3 text-white mt-1';
     if(modo==='novo')select.add(new Option('Padrão da categoria','padrao'));select.add(new Option('Não classificado',''));opcoes.forEach(o=>select.add(new Option(o[1],o[0])));select.onchange=()=>{select.dataset.escolhaManual='true';if(modo==='novo'&&typeof salvarRascunho==='function')salvarRascunho();};label.append(select);grade.append(label);
   }
-  d.append(grade);const ajuda=document.createElement('p');ajuda.className='text-xs text-slate-300';ajuda.textContent=modo==='novo'?'O padrão da categoria será salvo junto do novo gasto. Você pode escolher uma classificação diferente.':'Altera somente este lançamento. As outras parcelas e os padrões da categoria serão preservados.';d.append(ajuda);return d;
+  d.append(grade);const ajuda=document.createElement('p');ajuda.className=modo==='novo'?'mx-3 mb-3 text-xs text-slate-300':'text-xs text-slate-300';ajuda.textContent=modo==='novo'?'O padrão da categoria será salvo junto do novo gasto. Você pode escolher uma classificação diferente.':'Altera somente este lançamento. As outras parcelas e os padrões da categoria serão preservados.';d.append(ajuda);return d;
 }
 function abrirPerfilHistoricoGestor(campo,valor,mes){
   setAba('lancamentos');filtrosAtuais={termo:'',mes,ano:mes.split('/')[1],forma:'',categoria:'',status:'',tag:'',tipoRapido:'',perfilCampo:campo,perfilValor:valor};
