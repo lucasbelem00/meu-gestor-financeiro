@@ -31,9 +31,21 @@ test('busca espera a pausa na digitação e renderiza somente o termo mais recen
  const tarefas=new Map();let n=0,execucoes=0;const c=vm.createContext({clearTimeout:id=>tarefas.delete(id),setTimeout:(fn,ms)=>{assert.equal(ms,160);tarefas.set(++n,fn);return n;},renderizarPainelEmprestimos:()=>execucoes++});vm.runInContext(trecho(perf,'let buscaEmprestimosPendenteGestor=','function criarCoordenadorLeiturasGestor('),c);c.agendarBuscaEmprestimosGestor();c.agendarBuscaEmprestimosGestor();c.agendarBuscaEmprestimosGestor();assert.equal(tarefas.size,1);[...tarefas.values()][0]();assert.equal(execucoes,1);
 });
 
-test('trocar ferramenta mostra nome e seleção em azul, rolando apenas a barra horizontal',()=>{
- const elementos=new Map(),rolagens=[];for(const id of ['emprestimos','rachadinha','simulador','calculadora','notas']){elementos.set('subview-'+id,{classList:{add(){},remove(){},toggle(){}},setAttribute(){},getAttribute(){}});elementos.set('btn-sub-'+id,{setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k];},offsetWidth:100,getBoundingClientRect:()=>({left:350}),scrollIntoView(){throw Error('não pode deslocar a página para trás do cabeçalho');},parentElement:{scrollLeft:40,clientWidth:340,scrollWidth:700,getBoundingClientRect:()=>({left:16}),scrollTo:o=>rolagens.push(o)}});}elementos.set('subtituloMobileAba',{});
- const c=vm.createContext({document:{getElementById:id=>elementos.get(id)},rodarSimuladorCompra(){}});vm.runInContext(trecho(html,'    function selecionarSubFerramenta(','    function renderizarChipsTags('),c);c.selecionarSubFerramenta('simulador');assert.equal(elementos.get('subtituloMobileAba').textContent,'Simular Compra');assert.equal(elementos.get('btn-sub-simulador')['aria-pressed'],'true');assert.equal(elementos.get('btn-sub-notas')['aria-pressed'],'false');assert.match(elementos.get('btn-sub-simulador').className,/bg-blue-600/);assert.equal(rolagens.length,1);assert.equal(rolagens[0].left,254);assert(!('top' in rolagens[0]));
+test('central abre o destino direto e voltar mostra a lista de ferramentas',()=>{
+ const elementos=new Map();const criar=()=>({hidden:false,classList:{toggle(_,oculto){this.oculto=oculto;}},setAttribute(k,v){this[k]=v;},getAttribute(k){return this[k];},focus(){this.focado=true;}});
+ for(const id of ['inicio','emprestimos','rachadinha','simulador','calculadora','notas','precos']){elementos.set('subview-'+id,criar());elementos.set('btn-sub-'+id,criar());}
+ for(const id of ['subtituloMobileAba','btnVoltarFerramentasGestor','tituloFerramentasGestor'])elementos.set(id,criar());
+ const c=vm.createContext({document:{getElementById:id=>elementos.get(id)},rodarSimuladorCompra(){}});
+ vm.runInContext(trecho(html,'    function selecionarSubFerramenta(','    function renderizarChipsTags('),c);
+ c.selecionarSubFerramenta('simulador');
+ assert.equal(elementos.get('subtituloMobileAba').textContent,'Simular uma compra');
+ assert.equal(elementos.get('subview-inicio').inert,true);
+ assert.equal(elementos.get('subview-simulador').inert,false);
+ assert.equal(elementos.get('btn-sub-simulador')['aria-pressed'],'true');
+ c.selecionarSubFerramenta('inicio');
+ assert.equal(elementos.get('subview-inicio').inert,false);
+ assert.equal(elementos.get('subview-simulador').inert,true);
+ assert(elementos.get('tituloFerramentasGestor').focado);
 });
 
 test('metade restaura o valor original e remove apenas a tag automática',()=>{

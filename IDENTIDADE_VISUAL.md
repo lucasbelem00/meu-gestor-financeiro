@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+27/11/2026 — Ferramentas apresenta cards com nome da tarefa e uma frase de apoio. Os cards ficam em uma coluna no celular e duas quando há espaço. Dentro de cada ferramenta, Todas as ferramentas leva à lista.
+
 27/11/2026 — Empréstimos usa um resumo expansível por pessoa, com nome, quantidade de parcelas, saldo da seleção e avisos de prazo. As parcelas e as ações aparecem ao expandir o resumo. Nome e valores podem quebrar linha no celular.
 
 27/11/2026 — Fatura Mensal destaca o saldo a pagar e o vencimento de cada cartão. Total da fatura, seus gastos e gastos de terceiros aparecem abaixo. Conferir fatura fica ao lado do saldo em aberto e a área do cartão filtra os lançamentos.

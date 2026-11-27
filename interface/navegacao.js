@@ -8,7 +8,7 @@ const nomesAbasTopoGestor={extrato:'Conferir extrato',lancamentos:'Histórico',r
 function sincronizarSelecaoCentralGestor(){
   for(const botao of document.querySelectorAll('#conteudoCentralNavegacao [data-menu-aba]')){
     const ferramenta=botao.dataset.menuFerramenta;
-    const ativo=botao.dataset.menuAba===abaAtivaAtual&&(!ferramenta||document.getElementById('btn-sub-'+ferramenta)?.getAttribute('aria-pressed')==='true');
+    const ativo=botao.dataset.menuAba===abaAtivaAtual&&(!ferramenta||(ferramenta==='inicio'?document.getElementById('subview-inicio')?.getAttribute('aria-hidden')==='false':document.getElementById('btn-sub-'+ferramenta)?.getAttribute('aria-pressed')==='true'));
     if(ativo)botao.setAttribute('aria-current','page');else botao.removeAttribute('aria-current');
   }
 }
