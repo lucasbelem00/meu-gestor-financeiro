@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Fatura Mensal exibe, antes dos gráficos, o saldo a pagar e o vencimento de cada cartão com a ação Conferir fatura. A composição separa total, gastos pessoais e gastos de terceiros. Na troca do mês, os cartões anteriores ficam cobertos até a consulta terminar. A tela usa o relatório mensal e o calendário bancário existentes. Validação na conta real pendente.
+
 Revisão 27/11/2026. Novo Lançamento prioriza descrição, valor, forma e categoria. Data, competência e opções avançadas têm seções recolhíveis com resumo. A prévia de parcelas fica visível para conferência. A validação abre a seção que contém um campo inválido. Validação na conta real pendente.
 
 Revisão 26/11/2026. No Início, o card A receber de terceiros aparece quando o total em aberto de todos os meses é positivo. Quando o card fica oculto, a Fatura do mês preenche a largura do resumo. A interface usa os totais já carregados. Validação na conta real pendente.

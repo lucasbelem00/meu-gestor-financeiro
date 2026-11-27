@@ -456,7 +456,7 @@ let cargaMensalDesempenhoGestor = null;
 const blocosMensaisDesempenhoGestor = [];
 function prepararBlocosMensaisDesempenhoGestor() {
   if (blocosMensaisDesempenhoGestor.length) return;
-  const candidatos = [document.getElementById('rel-aberto')?.closest('.grid'), document.getElementById('chartRelatorio')?.closest('.card-glass')];
+  const candidatos = [document.getElementById('rel-aberto')?.closest('.grid'), document.getElementById('chartRelatorio')?.closest('.card-glass'), document.getElementById('resumoFormasMensalGestor')];
   for (const bloco of candidatos.filter(Boolean)) {
     const envoltorio = document.createElement('div'); envoltorio.className = 'relative min-w-0';
     const status = document.createElement('div'); status.className = 'absolute inset-0 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-6 text-sm text-slate-200 flex flex-col items-center justify-center gap-3'; status.hidden = true; status.style.display = 'none';

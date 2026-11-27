@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+27/11/2026 — Fatura Mensal destaca o saldo a pagar e o vencimento de cada cartão. Total da fatura, seus gastos e gastos de terceiros aparecem abaixo. Conferir fatura fica ao lado do saldo em aberto e a área do cartão filtra os lançamentos.
+
 27/11/2026 — Novo Lançamento mostra descrição, valor, forma e categoria primeiro. Os resumos de Data e fatura e Mais opções mostram o que está preenchido. As seções expandem no próprio formulário. Classificação do gasto usa o mesmo fundo, a mesma borda e o mesmo estilo de título.
 
 26/11/2026 — Histórico usa cabeçalhos por dia, com descrição e valor na primeira linha do card. Em telas estreitas, descrição, metadados, valores e ações podem quebrar linha. Filtros ativos aparecem como botões removíveis, e o painel de filtros rola em telas de pouca altura. Novo, Rachadinha e Empréstimos compartilham os rótulos de gravação e confirmação.

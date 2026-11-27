@@ -14,15 +14,12 @@ test('cartões não usam hover de fundo e filtro usa botão nativo separado de p
   assert(html.includes('@media (hover: hover) and (pointer: fine)'));
   assert(html.includes('[data-filtro-mensal-tipo]:focus-visible'));
   assert(html.includes('type="button" aria-pressed="false" data-filtro-mensal-tipo="forma"'));
-  assert(html.includes('</span>${btnQuitar}</div><span class="text-right whitespace-nowrap shrink-0">'));
+  assert(html.includes('${btnQuitar}'));
 });
 
-test('conferir pagamento fica no grupo à esquerda e saldo parcial tem cor e rótulo próprios',()=>{
- const linha=html.slice(html.indexOf('          htmlFormas += `<div data-forma='),html.indexOf("document.getElementById('rel-formas-usadas')"));
- assert(linha.indexOf('${btnQuitar}')<linha.indexOf('text-right whitespace-nowrap'));
+test('saldo parcial nos lançamentos tem cor e rótulo próprios',()=>{
  assert(html.includes('text-emerald-300">Pago ao banco: ${formatBRL(l[17])}'));
  assert(html.includes('${situacao.cor} font-bold">Falta pagar: ${formatBRL(l[18])}'));
- assert(linha.includes('grid-cols-[minmax(0,1fr)_auto]'));
 });
 
 test('área inteira filtra sem executar pagamento; conferir pagamento não alterna o filtro',()=>{
@@ -30,11 +27,16 @@ test('área inteira filtra sem executar pagamento; conferir pagamento não alter
   class Element{constructor(dataset,parent=null){this.dataset=dataset;this.parent=parent;this.tagName='BUTTON';}closest(){return this.dataset?.gestorAcao?this:this.parent;}}
   const c=vm.createContext({Element,ACOES_RENDERIZADAS:new Set(['aplicarFiltroInternoMensal','quitarFaturaCartaoMes']),
     document:{addEventListener:(tipo,fn)=>{if(tipo==='click')clicar=fn;},getElementById:()=>({set innerHTML(v){markup=v;}})},
-    escaparHTML:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),formatBRL:n=>'R$ '+n.toFixed(2),formaEhCartaoGestor:()=>true,
-    res:{totalRaw:100,formas:[{nome:'PicPay',total:0,totalBanco:208,terceiros:208}]},mesFiltro:'10/2026',
+    escaparHTML:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),formatBRL:n=>'R$ '+n.toFixed(2),formaEhCartaoGestor:()=>true,formaSituacaoVisualGestor:()=>({vencimento:20}),vencimentoFaturaBancarioGestor:()=>({data:'20/10/2026'}),
+    res:{totalRaw:100,formas:[{nome:'PicPay',total:0,totalBanco:208,abertoBanco:75,terceiros:208}]},mesFiltro:'10/2026',
     aplicarFiltroInternoMensal:(...args)=>chamadas.push(['filtro',...args]),quitarFaturaCartaoMes:(...args)=>chamadas.push(['pagamento',...args])});c.window=c;
   vm.runInContext(html.slice(html.indexOf('    function acaoHTML('),html.indexOf('    function selecionarCartaoSimulador(')),c);
   const inicio=html.indexOf("        let htmlFormas = '';");vm.runInContext(html.slice(inicio,html.indexOf("        const boxTags =",inicio)),c);
+  assert.match(markup,/Falta pagar ao banco[\s\S]*R\$ 75.00/);
+  assert.match(markup,/Vencimento em 20\/10\/2026/);
+  assert.match(markup,/Total da fatura[\s\S]*R\$ 208.00/);
+  assert.match(markup,/Seus gastos[\s\S]*R\$ 0.00/);
+  assert.match(markup,/Gastos de terceiros[\s\S]*R\$ 208.00/);
   const botoes=[...markup.matchAll(/<button\b([^>]*)>([\s\S]*?)<\/button>/g)];assert.equal(botoes.length,2);assert(botoes.every(b=>!b[2].includes('<button')));
   const botao=b=>new Element({gestorAcao:/data-gestor-acao="([^"]+)"/.exec(b[1])[1],gestorArgumentos:/data-gestor-argumentos="([^"]+)"/.exec(b[1])[1].replace(/&quot;/g,'"').replace(/&amp;/g,'&')});
   assert.match(botoes[0][1],/absolute inset-0 w-full h-full/);assert.match(botoes[1][1],/pointer-events-auto/);
