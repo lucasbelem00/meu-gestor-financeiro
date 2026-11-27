@@ -326,3 +326,7 @@ Agenda: segundo toque/clique no mesmo dia remove seleção e mostra mês inteiro
 16/11/2026 — v217 local: rodapés de edição pessoal e empréstimo usam a mesma linha superior `border-slate-700`, separando Cancelar/Atualizar das funções opcionais. Entre funções expansíveis permanece gap de 8px sem linhas internas.
 
 No resumo do Início, a Fatura do mês ocupa toda a largura quando o saldo a receber de terceiros está zerado. Com saldo positivo, o card de terceiros volta à grade. Em telas de até 359 px, os dois cards visíveis ficam empilhados.
+
+### Comparação no Balanço Anual
+
+A comparação vem antes dos indicadores do ano. Os dois totais aparecem empilhados em telas estreitas e lado a lado a partir do breakpoint de tablet. As categorias com aumento usam botões de largura total, com texto que quebra linha e valor destacado em rosa. Todo destaque abre o Histórico.

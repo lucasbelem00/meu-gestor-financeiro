@@ -14,3 +14,20 @@ test('PDF automático anual usa a mesma comparação e muda revisão se a base a
  const a=ambiente([personal('Atual',80,'1/1','12/2025'),personal('Base',100,'1/1','12/2024')]),dados=()=>a.ctx.dadosPeriodoPDFGestor_(a.ctx.registrosResumoNativoGestor_(a.db),'2025');const d=dados();assert.equal(JSON.stringify(d.comparacaoAnterior),JSON.stringify(a.ctx.obterRelatorioAnual(2025).comparacaoAnterior));assert.match(a.ctx.htmlRelatorioPDFGestor_(d,'hoje'),/Comparação com o ano anterior/);
  const r=a.db.sheets['Lançamentos'].rows.find(r=>r[1]==='Base');r[7]=200;r[16]=a.ctx.hashRegistroGestor_(r);assert.notEqual(dados().hash,d.hash);assert.equal(dados().comparacaoAnterior.variacao,-60);
 });
+
+test('categorias do comparativo e Histórico usam o mesmo recorte e excluem canceladas',()=>{
+ const a=ambiente([
+  personal('Atual',150,'1/1','11/2026'),personal('Futura',800,'1/1','12/2026'),
+  personal('Base',100,'1/1','11/2025'),personal('Base futura',900,'1/1','12/2025'),
+  personal('Cancelada',500,'∞/∞','11/2026','Ocorrência Pulada')
+ ]);
+ const d=a.ctx.obterRelatorioAnual(2026),[categoria]=d.aumentosCategorias;
+ assert.equal(d.aumentosCategorias.length,1);
+ assert.equal(categoria.atual,150);
+ assert.equal(categoria.anterior,100);
+ assert.equal(categoria.aumento,50);
+ const h=a.ctx.filtrarLancamentosWeb({ano:'2026',categoria:categoria.nome,mesLimiteAnual:d.comparacaoAnterior.mesLimite},0,20);
+ assert.equal(h.itens.length,1);
+ assert.equal(a.ctx.obterRelatorioAnual(2025).aumentosCategorias.length,0);
+ assert.equal(a.ctx.obterRelatorioAnual(2027).aumentosCategorias.length,0);
+});

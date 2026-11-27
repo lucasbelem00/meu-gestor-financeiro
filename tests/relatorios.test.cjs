@@ -33,11 +33,16 @@ function contextoRelatorio() {
 test('detalhar categoria do Anual mantém o ano até a consulta do Histórico', () => {
   const ctx = contextoRelatorio();
   const campos = Object.fromEntries(['inpBusca', 'filtAno', 'filtMes', 'filtForma', 'filtCat', 'filtTag', 'filtStatus', 'filtPerfilHistorico', 'selFiltroAnoSimples'].map(id => [id, { value: id === 'selFiltroAnoSimples' ? '2026' : '' }]));
+  campos.filtCat.options = [];
+  campos.filtCat.add = o => campos.filtCat.options.push(o);
   let filtro;
-  const front = vm.createContext({ document: { getElementById: id => campos[id] }, setAba() {}, filtrosAtuais: {}, atualizarEstiloChipsRapidosHist() {}, aplicarFiltros() { filtro = { ano: campos.filtAno.value, mes: campos.filtMes.value, categoria: campos.filtCat.value }; } });
+  const front = vm.createContext({ document: { getElementById: id => campos[id] }, setAba() {}, getCategoriaExibicao: String, Option: function(text, value) { this.value = value; }, filtrosAtuais: {}, atualizarEstiloChipsRapidosHist() {}, aplicarFiltros() { filtro = { ano: campos.filtAno.value, mes: campos.filtMes.value, categoria: campos.filtCat.value, mesLimiteAnual: front.filtrosAtuais.mesLimiteAnual }; } });
   vm.runInContext(html.slice(html.indexOf('    function auditarItemAnual('), html.indexOf('    function atualizarEstiloChipsRapidosHist(')), front);
   front.auditarItemAnual('categoria', 'Alimentação');
   assert.equal(filtro.ano, '2026');
+  assert.equal(campos.filtCat.options[0].value, 'Alimentação');
+  front.auditarItemAnual('categoria', 'Alimentação', 10, 2026);
+  assert.equal(filtro.mesLimiteAnual, 10);
   assert.equal(ctx.obterRelatorioAnual(2026).totalRaw, 30);
   const historico = ctx.filtrarLancamentosWeb(filtro, 0, 50);
   assert.equal(historico.somaTotal, 'R$ 30,00'); assert.equal(historico.qtdTotal, 1);

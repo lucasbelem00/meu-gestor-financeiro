@@ -3594,6 +3594,26 @@ function obterRelatorioMes(mesFiltro) {
 // RELATÓRIO ANUAL
 // ============================================================================
 
+function aumentosCategoriasAnualGestor_(linhas, ano, mesLimite) {
+  const categorias = new Map();
+  for (const l of linhas) {
+    const {a, m} = l.infoMes;
+    if ((a !== ano && a !== ano - 1) || m < 1 || m > mesLimite) continue;
+    const chave = normalizarTexto(l.catRes);
+    const categoria = categorias.get(chave) || {nome: l.catRes, atual: 0, anterior: 0};
+    if (a === ano) {
+      categoria.nome = l.catRes;
+      categoria.atual += centavosGestor_(l.valor);
+    } else categoria.anterior += centavosGestor_(l.valor);
+    categorias.set(chave, categoria);
+  }
+  return [...categorias.values()]
+    .filter(c => c.atual > c.anterior)
+    .sort((a, b) => (b.atual - b.anterior) - (a.atual - a.anterior) || a.nome.localeCompare(b.nome, 'pt-BR'))
+    .slice(0, 5)
+    .map(c => ({nome: c.nome, atual: c.atual / 100, anterior: c.anterior / 100, aumento: (c.atual - c.anterior) / 100}));
+}
+
 function obterRelatorioAnual(ano) {
   const anoNum = Number(ano);
   if(!anoCompetenciaValidoGestor_(anoNum))throw Error('Ano inválido. Informe um ano entre '+ANO_MIN_COMPETENCIA_GESTOR_+' e '+ANO_MAX_COMPETENCIA_GESTOR_+'.');
@@ -3619,6 +3639,12 @@ function obterRelatorioAnual(ano) {
     }
   });
 
+  const comparaveis = todas.filter(l => !isStatusCancelado(l.status) && l.valor > 0);
+  const comparacaoAnterior = compararAnosGastosGestor_(comparaveis.map(l => ({
+    ano: l.infoMes.a, mes: l.infoMes.m, total: centavosGestor_(l.valor)
+  })), anoNum);
+  const aumentosCategorias = comparacaoAnterior.anteriorRaw > 0 && anoNum <= getHojeSeguro().getFullYear()
+    ? aumentosCategoriasAnualGestor_(comparaveis, anoNum, comparacaoAnterior.mesLimite) : [];
   const comp = composicaoAVistaRigido(doAno);
   return {
     total: formatBRL(total),
@@ -3627,7 +3653,8 @@ function obterRelatorioAnual(ano) {
     maiorMes: idxMaior >= 0 ? NOMES_MESES_PT[idxMaior] + ' • ' + formatBRL(grafico[idxMaior]) : '-',
     menorMes: idxMenor >= 0 ? NOMES_MESES_PT[idxMenor] + ' • ' + formatBRL(grafico[idxMenor]) : '-',
     qtdTransacoes: doAno.length,
-    comparacaoAnterior:compararAnosGastosGestor_(todas.filter(l=>!isStatusCancelado(l.status)&&l.valor>0).map(l=>({ano:l.infoMes.a,mes:l.infoMes.m,total:centavosGestor_(l.valor)})),anoNum),
+    comparacaoAnterior,
+    aumentosCategorias,
     perfilGastos:resumoPerfilGastosGestor_(doAno.map(l=>l.r),String(anoNum)),
     composicao: { aVistaValor: comp.aVistaValor, aVistaPct: comp.aVistaPct, rigidoValor: comp.rigidoValor, rigidoPct: comp.rigidoPct },
     graficoMeses: grafico.map(arred2),
@@ -3667,13 +3694,16 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
 
   const formaFiltro=f.forma?chaveFormaGestor_(nomeFormaLeituraGestor_(f.forma)):'';
   const categoriaFiltro=f.categoria?normalizarTexto(f.categoria):'';
+  const mesLimiteAnual = Number(f.mesLimiteAnual);
+  const periodoAnual = Boolean(f.ano && Number.isInteger(mesLimiteAnual) && mesLimiteAnual >= 1 && mesLimiteAnual <= 12);
 
   const filtrados = medirEtapaConsultaGestor_('filtroSelecaoMs',()=>todas.filter(function (l) {
     if (!correspondePerfilGastoGestor_(l.r,f)) return false;
     if (f.mes && l.mes !== f.mes) return false;
     if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
     if (f.forma && chaveFormaGestor_(l.forma) !== formaFiltro) return false;
-    if (f.categoria && normalizarTexto(l.cat) !== categoriaFiltro && normalizarTexto(l.catRes) !== categoriaFiltro) return false;
+    if (periodoAnual && (l.infoMes.m < 1 || l.infoMes.m > mesLimiteAnual || isStatusCancelado(l.status) || l.valor <= 0)) return false;
+    if (f.categoria && normalizarTexto(l.catRes) !== categoriaFiltro && (periodoAnual || normalizarTexto(l.cat) !== categoriaFiltro)) return false;
 
     if (f.status) {
       if (f.status === 'Pago') { if (!isStatusPago(l.status)) return false; }
