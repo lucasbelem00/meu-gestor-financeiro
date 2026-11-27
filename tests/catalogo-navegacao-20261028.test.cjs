@@ -42,6 +42,20 @@ for(const acao of ['prepararExportacaoBackupWeb','iniciarImportacaoBackupWeb','e
 test('alteração financeira continua protegida se a resposta se perder',async()=>{
   const a=rede();await assert.rejects(a.c.apiCall('salvarLancamentoWeb',{descricao:'Almoço fictício',valorTotal:25,requestId:'financeiro-ficticio-001'},3),e=>e.resultadoIncerto===true);
   assert.equal(a.chamadas.length,1);assert.equal([...a.local.m.keys()].filter(k=>k.startsWith('gestorMutacaoV3:')).length,1);assert.equal(a.avisos.length,1);
+  a.c.integridadeServidorGestor={pendencias:[],series:[]};
+  vm.runInContext(trecho('function listarPendenciasAtividadeGestor(','function abrirAtividadeGestor('),a.c);
+  const aviso=a.c.document.getElementById('avisoEnviosConferenciaGestor');
+  a.c.atualizarBadgeAtividadeGestor();assert.equal(aviso.hidden,false);
+  a.local.removeItem('gestorMutacaoV3:financeiro-ficticio-001');
+  a.local.setItem('gestorFilaItemV2:fila-ficticia-001',JSON.stringify({descricao:'Fila offline',requestId:'fila-ficticia-001'}));
+  a.c.atualizarBadgeAtividadeGestor();assert.equal(aviso.hidden,true);
+  const id='emprestimo-ficticio-001',chave='gestorMutacaoV3:'+id;
+  a.local.setItem('gestorEmprestimoPendenteV3:'+id,JSON.stringify({payload:{requestId:id,pessoa:'Ana',descricao:'Compra'}}));
+  a.local.setItem(chave,JSON.stringify({requestId:id,action:'salvarEmprestimoWeb',estado:'pendente'}));
+  a.c.atualizarBadgeAtividadeGestor();assert.equal(aviso.hidden,true);
+  a.local.setItem(chave,JSON.stringify({requestId:id,action:'salvarEmprestimoWeb',estado:'incerto'}));
+  a.c.atualizarBadgeAtividadeGestor();assert.equal(aviso.hidden,false);
+
 });
 
 test('consulta preserva diagnóstico explícito de gravação pendente no servidor, sem inventar um envio local',async()=>{

@@ -253,6 +253,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   .emprestimos-pessoa-gestor>summary:focus-visible{outline:2px solid #fbbf24;outline-offset:2px}
   .emprestimos-pessoa-gestor>summary::marker{color:#fbbf24}
 </style>
+<style>
+  #toastNotificacao[data-tipo="sincronizado"]{padding:.65rem .85rem;gap:.6rem;background:#14251f;border-color:#3e6b57;box-shadow:0 4px 12px #0004}
+  #toastNotificacao[data-tipo="sincronizado"] #toastIconeGestor{width:1.75rem;height:1.75rem;border-radius:.5rem}
+  #toastNotificacao[data-tipo="sincronizado"] #toastTitulo{text-transform:none;letter-spacing:normal}
+  main:has(#view-atividade:not(.hidden)) #avisoEnviosConferenciaGestor{display:none}
+</style>
 <style id="gestor-inicio-navegacao">
   .gestor-resumo-inicio { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
   .gestor-cartao-inicio { min-width:0; min-height:7rem; padding:1rem; text-align:left; display:flex; flex-direction:column; justify-content:space-between; gap:.45rem; border:1px solid #3c5778; border-radius:1.25rem; background:#172437; color:#e2e8f0; }
@@ -279,7 +285,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
   <!-- TOAST FLUTUANTE CENTRALIZADO -->
   <div id="toastNotificacao" role="status" aria-atomic="true" class="fixed top-20 left-1/2 z-[500] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 max-w-sm w-[90%] transition-all duration-300 opacity-0 pointer-events-none -translate-x-1/2 -translate-y-4">
-    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
+    <div id="toastIconeGestor" aria-hidden="true" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
     <div>
       <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
       <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
@@ -541,6 +547,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </header>
 
   <main class="main-content flex-1 px-4 sm:px-6 pt-3.5 sm:pt-6 max-w-7xl w-full mx-auto">
+    <aside id="avisoEnviosConferenciaGestor" hidden class="no-print mb-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 sm:p-4 text-amber-100">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div role="status"><p class="font-bold">Envio em conferência</p><p class="mt-1 text-xs">Consulte a confirmação antes de registrar novamente.</p></div>
+        <button type="button" onclick="abrirAtividadeGestor()" class="min-h-[44px] rounded-xl border border-amber-400/50 px-3 py-2 text-sm font-bold hover:bg-amber-500/15">Abrir Atividade</button>
+      </div>
+    </aside>
 
     <!-- ABA 1: NOVO LANÇAMENTO PESSOAL -->
     <div id="view-novo" class="hidden max-w-xl mx-auto">
@@ -679,7 +691,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
               <p class="mt-1 text-xs text-amber-100/90">Consulte a confirmação pelo identificador do envio. Se ainda houver pendência, o app mantém os mesmos dados e a proteção contra duplicação.</p>
               <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button type="button" id="btnIncertoEncontrado" class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white">🔎 Consultar confirmação do envio</button>
-                <button type="button" id="btnIncertoNaoEncontrado" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">Abrir central de pendências</button>
+                <button type="button" id="btnIncertoNaoEncontrado" class="rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">Abrir Atividade</button>
               </div>
             </div>
             <button type="submit" id="btnSalvar" onclick="vibrar()" class="w-full h-[54px] bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm shadow-[0_4px_15px_rgba(16,185,129,0.3)] transition active:scale-95 flex justify-center items-center gap-2">💾 Lançar Despesa</button>
@@ -2307,6 +2319,10 @@ const DICIONARIO_ACENTOS_PT = {
    function mostrarAviso(titulo, mensagem) {
       const toast = document.getElementById('toastNotificacao');
       if(!toast) return;
+      const confirmado = titulo === 'Sincronizado';
+      toast.dataset.tipo = confirmado ? 'sincronizado' : 'aviso';
+      const icone = document.getElementById('toastIconeGestor');
+      if (icone) icone.textContent = confirmado ? '✓' : '✨';
       document.getElementById('toastTitulo').textContent = titulo;
       document.getElementById('toastMensagem').textContent = mensagem;
       if (toast._timerAviso) clearTimeout(toast._timerAviso);
@@ -2315,7 +2331,7 @@ const DICIONARIO_ACENTOS_PT = {
       toast.classList.add('opacity-100', 'translate-y-0');
 
       const tamanhoTexto = String(titulo || '').length + String(mensagem || '').length;
-      const duracao = Math.min(9000, Math.max(3000, 3000 + Math.ceil(tamanhoTexto / 70) * 1000));
+      const duracao = Math.min(9000, 3000 + Math.ceil(tamanhoTexto / 70) * 1000);
       toast._timerAviso = setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', '-translate-y-4');
@@ -2757,6 +2773,7 @@ const DICIONARIO_ACENTOS_PT = {
         elemento.type = 'button'; elemento.className = 'mr-2 rounded-lg border border-amber-300/40 px-3 py-2 text-xs font-bold';
         elemento.textContent = rotulo; elemento.onclick = acao; painel.appendChild(elemento);
       }
+      botao('Abrir Atividade', () => abrirAtividadeGestor());
       botao('Atualizar lista', () => carregarDados());
       botao('Repetir envio protegido', () => gravarEmprestimoSeguroGestor(pendente.payload));
       botao('Consultar confirmação', async () => {
@@ -5595,6 +5612,8 @@ function abrirRegistroRachadinhaGestor(){
   document.getElementById('formRegistroRacha').onchange=e=>{
     if(e.target.id==='rachaRegistroMinhaParte'||e.target.dataset.rachaRecebido!==undefined)renderizarResumoAplicacaoRachaGestor(atual);
   };
+  const aviso = document.getElementById('avisoResultadoIncertoRacha');
+  if (aviso) aviso.hidden = true;
   modal.classList.remove('hidden');
   modal.firstElementChild?.scrollTo(0,0);
   forma.focus({preventScroll:true});
@@ -5640,6 +5659,8 @@ async function conferirRegistroRachadinhaGestor(){
       catch(e){
         const pendente = e.resultadoIncerto || localStorage.getItem('gestorMutacaoV3:'+payload.requestId);
         if(!pendente)rachaEnvioGuardado=null;
+        const aviso = document.getElementById('avisoResultadoIncertoRacha');
+        if (pendente && aviso) aviso.hidden = false;
         guardarRascunhoRachaGestor();
         mostrarAviso(pendente?'Envio em conferência':'Confira a divisão',pendente?'Consulte a confirmação em Atividade e sincronização antes de registrar outra divisão.':e.message);
         return;
@@ -5716,7 +5737,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   detalhe.querySelector('#rachaEtapaPagamento').append(acoes,comprovante);
   document.getElementById('btnCadaPessoaPagouRacha').addEventListener('click',cadaPessoaPagouSuaParteRachaGestor);
   const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
-  modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85dvh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Forma de pagamento</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select required id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><div class="text-xs text-slate-300">Data da compra<input id="rachaRegistroData" aria-label="Data da compra" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><div class="text-xs text-slate-300">Mês da fatura ou recebimento<input id="rachaRegistroMes" aria-label="Mês da fatura ou recebimento" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><section aria-labelledby="tituloResumoAplicacaoRacha" class="rounded-xl bg-slate-900 border border-slate-600 p-3"><h3 id="tituloResumoAplicacaoRacha" class="mb-2 text-sm font-bold text-white">O que será registrado</h3><ul id="resumoAplicacaoRacha" class="space-y-1.5 text-sm text-slate-200"></ul></section><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">Conferir e continuar</button></form></div>';
+  modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85dvh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Forma de pagamento</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select required id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><div class="text-xs text-slate-300">Data da compra<input id="rachaRegistroData" aria-label="Data da compra" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><div class="text-xs text-slate-300">Mês da fatura ou recebimento<input id="rachaRegistroMes" aria-label="Mês da fatura ou recebimento" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><section aria-labelledby="tituloResumoAplicacaoRacha" class="rounded-xl bg-slate-900 border border-slate-600 p-3"><h3 id="tituloResumoAplicacaoRacha" class="mb-2 text-sm font-bold text-white">O que será registrado</h3><ul id="resumoAplicacaoRacha" class="space-y-1.5 text-sm text-slate-200"></ul></section><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">Conferir e continuar</button><section id="avisoResultadoIncertoRacha" hidden class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-100"><p role="status" class="font-bold">Envio em conferência</p><p class="mt-1 text-xs">Consulte a confirmação da divisão em Atividade.</p><button type="button" onclick="fecharRegistroRachaGestor(); abrirAtividadeGestor()" class="mt-2 min-h-[44px] rounded-lg border border-amber-400/50 px-3 py-2 font-bold">Abrir Atividade</button></section></form></div>';
   document.body.append(modal);document.getElementById('fecharRegistroRacha').addEventListener('click',fecharRegistroRachaGestor);document.getElementById('formRegistroRacha').addEventListener('submit',e=>{e.preventDefault();conferirRegistroRachadinhaGestor();});document.getElementById('rachaRegistroForma').addEventListener('change',atualizarParcelasRegistroRachaGestor);
   dividirCampoCalendarioGestor('rachaRegistroData',true);
   dividirCampoCalendarioGestor('rachaRegistroMes');
@@ -8076,7 +8097,7 @@ try {
   seguro('avisoResultadoIncerto', function () {
     var sim = pxEl('btnIncertoEncontrado'), nao = pxEl('btnIncertoNaoEncontrado');
     if (sim) sim.onclick = function () { pxResolverResultadoIncerto(true); };
-    if (nao) nao.onclick = function () { pxResolverResultadoIncerto(false); };
+    if (nao) nao.onclick = function () { abrirAtividadeGestor(); };
     setTimeout(pxRestaurarEstadoIncerto, 0);
   });
   function pxDataTriplaValida(contexto) {
@@ -8750,9 +8771,9 @@ function listarPendenciasAtividadeGestor() {
     if (p.action === 'salvarNotasWeb') return;
     let payload = p.payload; try { if (!payload && p.assinatura) payload = JSON.parse(p.assinatura); } catch (_) {}
     if (payload) payload = { ...payload, requestId: p.requestId };
-    mapa.set(p.requestId, { id: p.requestId, tipo: 'mutacao', action: p.action, payload, estado: 'Aguardando confirmação — confira antes de reenviar', descricao: payload?.descricao || payload?.descOriginal || payload?.pessoa || '' });
+    mapa.set(p.requestId, { id: p.requestId, tipo: 'mutacao', action: p.action, payload, precisaConferencia: p.estado === 'incerto' && ['salvarLancamentoWeb','salvarEmprestimoWeb','registrarRachadinhaWeb'].includes(p.action), estado: 'Aguardando confirmação — confira antes de reenviar', descricao: payload?.descricao || payload?.descOriginal || payload?.pessoa || '' });
   });
-  lerEntradasLocaisGestor('gestorEmprestimoPendenteV3:').forEach(({ valor: p }) => { if (p.payload?.requestId) mapa.set(p.payload.requestId, { id: p.payload.requestId, tipo: 'emprestimo', action: 'salvarEmprestimoWeb', payload: p.payload, estado: 'Precisa de conferência', descricao: p.payload.pessoa + ' • ' + p.payload.descricao }); });
+  lerEntradasLocaisGestor('gestorEmprestimoPendenteV3:').forEach(({ valor: p }) => { if (p.payload?.requestId) mapa.set(p.payload.requestId, { id: p.payload.requestId, tipo: 'emprestimo', action: 'salvarEmprestimoWeb', payload: p.payload, precisaConferencia: mapa.get(p.payload.requestId)?.precisaConferencia === true, estado: 'Precisa de conferência', descricao: p.payload.pessoa + ' • ' + p.payload.descricao }); });
   if(typeof revisoesFilaGestor==='function')revisoesFilaGestor().forEach(({chave,valor:p})=>mapa.set(p.requestId,{id:p.requestId,tipo:'fila-revisao',action:'salvarLancamentoWeb',payload:p.payload,chaveRevisao:chave,estado:'Dados precisam de revisão',descricao:String(p.payload?.descricao||'Lançamento offline'),motivo:p.motivo}));
   lerEntradasLocaisGestor('gestorCancelamentoV1:').forEach(({valor:p}) => {
     const item=mapa.get(p.requestId) || {id:p.requestId,action:p.action,tipo:'cancelamento',descricao:''};
@@ -8780,7 +8801,11 @@ function agendarBadgeAtividadeGestor(){
 }
 function atualizarBadgeAtividadeGestor() {
   try {
-    const n = listarPendenciasAtividadeGestor().length;
+    const pendencias = listarPendenciasAtividadeGestor();
+    const n = pendencias.length;
+    const aviso = document.getElementById('avisoEnviosConferenciaGestor');
+    const ocultar = !pendencias.some(p => p.precisaConferencia === true);
+    if (aviso && aviso.hidden !== ocultar) aviso.hidden = ocultar;
     let badge = document.getElementById('badgeAtividadeGestor');
     if (!badge) { const titulo = document.querySelector('header h1'); if (titulo) { badge = botaoAtividadeGestor('', abrirAtividadeGestor); badge.id = 'badgeAtividadeGestor'; badge.className = 'ml-2 rounded-md border border-amber-400/40 bg-amber-500/15 text-amber-200 px-2 py-1 text-[10px] font-bold'; titulo.appendChild(badge); } }
     if (badge) { const texto=n + (n === 1 ? ' pendência' : ' pendências');if(badge.textContent!==texto)badge.textContent=texto;if(!badge.classList.contains||badge.classList.contains('hidden')!==!n)badge.classList.toggle('hidden', !n); }

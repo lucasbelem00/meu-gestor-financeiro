@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. A confirmação Sincronizado usa um aviso flutuante compacto. Envios incertos de Novo Lançamento, Empréstimos e Rachadinha mostram acesso direto à Atividade. O aviso geral usa o diário existente e desaparece quando não há mais envios em conferência. A fila offline mantém o indicador próprio. Validação na conta real pendente.
+
 Revisão 27/11/2026. Ferramentas volta às abas no topo para trocar de tarefa com um toque. Menu e abas seguem a mesma ordem, começando por Empréstimos, Dividir uma conta e Simular uma compra. Planejamento permanece no menu. Validação na conta real pendente.
 
 Revisão 27/11/2026. Empréstimos mostra os saldos da seleção por pessoa. As parcelas, datas combinadas e ações ficam na seção expansível da pessoa, com a seleção preservada durante a recarga e abertura automática ao escolher uma pessoa no filtro. Receber itens filtrados inclui apenas parcelas em aberto editáveis. Validação na conta real pendente.
