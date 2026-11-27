@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v250. Desfazer financeiro passa a usar o resumo em segundo plano quando a base já tem a rotina e passa nos mesmos controles de fórmula e intenção durável. A procura textual da Atividade evita a busca isolada por reversões porque já lê todos os eventos. Desfazer resolve categorias com uma leitura por operação. Planejamento repete consulta se a planilha estiver ocupada e a tela ainda estiver ativa. Novo ganho real aguarda medição na cópia de testes.
+
 Revisão 27/11/2026 · v249. Início mostra um atalho por envio em conferência. A Atividade foca o cartão e informa o desfecho em uma região de status. A ação de consulta não reenvia nem conclui um pedido de cancelamento. Atualizações automáticas da Atividade passam a compartilhar uma leitura de pendências com o selo e o Início. Impacto real de latência aguarda novo diagnóstico.
 
 Revisão 27/11/2026 · v248. Vencimentos do Início abrem Conferir fatura com cartão e mês preenchidos. Alertas de devolução rotulam o destino no cartão e destacam a parcela focada em Empréstimos. Pix agendado abre seu lançamento.

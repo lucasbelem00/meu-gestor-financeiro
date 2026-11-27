@@ -75,7 +75,7 @@ test('empréstimo interrompido continua PRONTO, worker espera e recuperação n�
 
 test('restauração e manutenção não passam a adiar resumo com a ampliação para terceiros',()=>{
  const a=ambiente();a.ctx.ativarResumoEmSegundoPlanoGestor();a.ctx.rotinaResumoPlanilhaGestor();
- for(const acao of ['restaurarBackupDadosWeb','manutencao','desfazerAtividadeWeb'])assert.equal(a.ctx.solicitarResumoAssincronoGestor_(acao,{ss:{abas:{}}}),false);
+ for(const acao of ['restaurarBackupDadosWeb','manutencao'])assert.equal(a.ctx.solicitarResumoAssincronoGestor_(acao,{ss:{abas:{}}}),false);
  assert.equal(estado(a).pendente,false);
 });
 
@@ -191,3 +191,26 @@ for(const forma of ['Cartao','Pix'])test('exclusão '+forma+' confirma antes do 
 test('exclusão conserva resumo imediato com fórmula ou falha ao guardar intenção',()=>{for(const motivo of ['formula','intencao']){const {a,p,id}=prepararExclusaoResumo(),gerar=a.ctx.atualizarResumoNativoGestor_;let chamadas=0;a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};if(motivo==='formula')a.db.sheets['Dashboard & Resumo'].getRange(17,4).setValue('=500');else{const obter=a.ctx.PropertiesService.getScriptProperties;let falhar=true;a.ctx.PropertiesService.getScriptProperties=()=>{const props=obter(),set=props.setProperty;props.setProperty=(k,v)=>{if(k==='GESTOR_RESUMO_ASSINCRONO_V1'&&falhar){falhar=false;throw Error('quota simulada');}return set(k,v);};return props;};}api(a,'excluirLancamentoWeb',p);assert.equal(chamadas,1);assert.equal(estado(a).pendente,false);assert(!a.db.sheets['Lançamentos'].rows.some(r=>r[11]===id));}});
 test('exclusão interrompida permanece protegida e worker espera a recuperação',()=>{const {a,p,id}=prepararExclusaoResumo(),aplicar=a.ctx.aplicarPlanoGestor_;a.ctx.aplicarPlanoGestor_=()=>{throw Error('exclusão interrompida');};assert.throws(()=>api(a,'excluirLancamentoWeb',p),/interrompida/);assert.equal(estado(a).pendente,true);assert.equal(a.ctx.rotinaResumoPlanilhaGestor().aguardandoConferencia,true);assert(a.db.sheets['Lançamentos'].rows.some(r=>r[11]===id));a.ctx.aplicarPlanoGestor_=aplicar;api(a,'excluirLancamentoWeb',p);assert(!a.db.sheets['Lançamentos'].rows.some(r=>r[11]===id));assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);assert.equal(estado(a).pendente,false);});
 test('cartão pago segue bloqueado sem agendar resumo por uma exclusão recusada',()=>{const {a,p,id}=prepararExclusaoResumo('Cartao','Pago');assert.throws(()=>api(a,'excluirLancamentoWeb',p),/pagamento registrado/);assert.equal(estado(a).pendente,false);assert(a.db.sheets['Lançamentos'].rows.some(r=>r[11]===id));});
+
+test('desfazer financeiro confirma antes do resumo e conserva fallback com fórmula',()=>{
+ for(const comFormula of [false,true]){
+  const a=ambiente();
+  salvar(a,'criar-para-desfazer');
+  a.ctx.ativarResumoEmSegundoPlanoGestor();
+  a.ctx.rotinaResumoPlanilhaGestor();
+  if(comFormula)a.db.sheets['Dashboard & Resumo'].getRange(17,4).setValue('=500');
+  const gerar=a.ctx.atualizarResumoNativoGestor_;
+  let chamadas=0;
+  a.ctx.atualizarResumoNativoGestor_=(...args)=>{chamadas++;return gerar(...args);};
+  const p={eventoId:'salvarLancamentoWeb:criar-para-desfazer',requestId:'desfazer-com-resumo'};
+  assert.equal(api(a,'desfazerAtividadeWeb',p).sucesso,true);
+  assert.equal(api(a,'desfazerAtividadeWeb',p).sucesso,true);
+  assert.equal(chamadas,comFormula?1:0);
+  assert.equal(estado(a).pendente,!comFormula);
+  assert.equal(a.db.sheets['Lançamentos'].rows.some(r=>r[1]===launch.descricao),false);
+  if(!comFormula){
+   assert.equal(a.ctx.rotinaResumoPlanilhaGestor().sucesso,true);
+   assert.equal(estado(a).pendente,false);
+  }
+ }
+});

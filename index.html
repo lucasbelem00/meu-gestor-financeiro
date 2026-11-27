@@ -11060,7 +11060,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
   const leituras = opcoes.leituras || new Set();
   const cacheaveis = new Set(opcoes.cacheaveis || []);
   const leiturasDeTela=new Set(['filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb']);
-  const retentaveisOcupado=new Set(['getDadosCompletos','filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb','obterRelatorioMes','obterRelatorioAnual']);
+  const retentaveisOcupado=new Set(['obterPlanejamentoWeb','getDadosCompletos','filtrarLancamentosWeb','obterAtividadeWeb','obterRecorrenciasWeb','obterRelatorioMes','obterRelatorioAnual']);
   const esperar=opcoes.esperar||((ms)=>new Promise(resolve=>setTimeout(resolve,ms)));
   const cache = new Map(), consultas = new Map();
   const cargasCompletas = new Set();
@@ -11324,7 +11324,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v249', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v250', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -11337,14 +11337,14 @@ const leiturasDesempenhoGestor = new Set(acoesDoTipoGestor('leitura'));
 const apiAntesCoordenacaoDesempenhoGestor = window.apiCall;
 function consultaOcupadaAindaVisivelGestor(acao){
   if(document.visibilityState==='hidden')return false;
-  const abas={filtrarLancamentosWeb:'lancamentos',obterAtividadeWeb:'atividade',obterRecorrenciasWeb:'assinaturas',obterRelatorioMes:'relatorio',obterRelatorioAnual:'anual'};
+  const abas={filtrarLancamentosWeb:'lancamentos',obterAtividadeWeb:'atividade',obterRecorrenciasWeb:'assinaturas',obterRelatorioMes:'relatorio',obterRelatorioAnual:'anual',obterPlanejamentoWeb:'planejamento'};
   if(typeof abaAtivaAtual!=='undefined'&&abas[acao]&&abaAtivaAtual!==abas[acao])return false;
   return acao!=='obterAtividadeWeb'||typeof painelAtividadeGestor==='undefined'||painelAtividadeGestor==='historico';
 }
 function avisarEsperaConsultaGestor(acao){
   const texto='Aguardando outra operação na planilha… A consulta será repetida automaticamente.';
   if(acao==='filtrarLancamentosWeb'&&typeof informarEstadoConsultaHistoricoGestor==='function')informarEstadoConsultaHistoricoGestor(texto);
-  const id={obterAtividadeWeb:'estadoHistoricoAtividade',obterRecorrenciasWeb:'estadoModelosRecorrenciaGestor'}[acao];
+  const id={obterAtividadeWeb:'estadoHistoricoAtividade',obterRecorrenciasWeb:'estadoModelosRecorrenciaGestor',obterPlanejamentoWeb:'estadoPlanejamentoGestor'}[acao];
   const e=id&&document.getElementById?.(id);if(e)e.textContent=texto;
 }
 let esperaVisibilidadeConsultaGestor=null,liberarVisibilidadeConsultaGestor=null;

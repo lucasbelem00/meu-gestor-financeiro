@@ -5213,12 +5213,12 @@ function obterAtividadeWeb(param) {
   let mapa=null;
   const termo = normalizarTexto(String(p.termo || '').slice(0, 200)), tipo = String(p.tipo || '');
   const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
-  const cabecalhos=new Set(indice.linhas),linhasReversoes=indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,'desfazerAtividadeWeb').filter(function(l){return cabecalhos.has(l);}) : [];
   let pagina,total,reversoes;
   if(termo) {
     const eventos=medirEtapaConsultaGestor_('atividadeEventosMs',()=>lerEventosAtividadeGestor_(undefined,indice)),filtrados=eventos.slice().reverse().filter(function(e){return (!tipo||e.acao===tipo)&&normalizarTexto([e.titulo,JSON.stringify(e.resumo || {})].join(' ')).indexOf(termo)>=0;});
     total=filtrados.length;pagina=filtrados.slice(offset,offset+limite);reversoes=eventos.filter(function(e){return e.reverte;});
   }else {
+    const cabecalhos=new Set(indice.linhas),linhasReversoes=indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,'desfazerAtividadeWeb').filter(function(l){return cabecalhos.has(l);}) : [];
     const linhas=tipo ? (indice.sh ? localizarLinhasTecnicasGestor_(indice.sh,3,tipo).filter(function(l){return cabecalhos.has(l);}).sort(function(a,b){return b-a;}) : []) : indice.linhas.slice().reverse();
     total=linhas.length;
     const linhasPagina=linhas.slice(offset,offset+limite),selecionadas=Array.from(new Set(linhasPagina.concat(linhasReversoes))).sort((a,b)=>a-b);
@@ -5249,6 +5249,7 @@ function desfazerAtividadeWeb(param) {
     const mapa = mapaRegistrosAtividadeGestor_(), revertidos = new Set(eventos.filter(function (e) { return e.reverte; }).map(function (e) { return e.reverte; }));
     const motivo = motivoBloqueioDesfazerGestor_(evento, mapa, revertidos); if (motivo) throw new Error(motivo);
     const ss = obterPlanilhaGestor_(), grupos=Object.create(null);
+    let categorias;
     evento.alteracoes.forEach(function (a) {
       let grupo=grupos[a.aba];
       if(!grupo) {
@@ -5263,7 +5264,10 @@ function desfazerAtividadeWeb(param) {
       // base ativa usada para conferir pagamentos de fatura.
       const indiceForma=a.aba==='Empréstimos'?3:2;
       r[indiceForma]=nomeFormaLeituraGestor_(r[indiceForma],ss);
-      if(a.aba==='Lançamentos')r[3]=resolverCategoria(r[3],listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo')));
+      if(a.aba==='Lançamentos'){
+        categorias ??= listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
+        r[3]=resolverCategoria(r[3],categorias);
+      }
       r[13] = Math.max(Number(a.antes[13] || 1), Number(a.depois && a.depois[13] || 0)) + 1;
       if(atual) grupo.valores[atual.linha-1]=r;
       else {
@@ -6989,7 +6993,7 @@ function entradasCalculadasResumoGestor_(ctx){
   return false;
 }
 function solicitarResumoAssincronoGestor_(acao,ctx){
-  if(!['registrarPagamentoFaturaWeb','confirmarMesRecorrenciaWeb','processarModelosRecorrenciaGestor','salvarLancamentoWeb','editarLancamentoLinhaWeb','excluirLancamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao))return false;
+  if(!['desfazerAtividadeWeb','registrarPagamentoFaturaWeb','confirmarMesRecorrenciaWeb','processarModelosRecorrenciaGestor','salvarLancamentoWeb','editarLancamentoLinhaWeb','excluirLancamentoWeb','salvarEmprestimoWeb','editarEmprestimoLinhaWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','excluirEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao))return false;
   try{
     const s=lerResumoAssincronoGestor_();if(!s?.ativo)return false;
     if(entradasCalculadasResumoGestor_(ctx))return false;
