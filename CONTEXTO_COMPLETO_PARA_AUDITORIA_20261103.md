@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Duas confirmações reais no diagnóstico v5 levaram 20,311 s à vista e 17,743 s parcelado. O resumo imediato consumiu 5,260 s e 2,967 s, respectivamente. A rotina agora lê as fórmulas do Dashboard uma vez quando não há migração pendente. Quando há migração, a rotina relê antes de escrever para preservar edições manuais. A opção de resumo em segundo plano já existe e requer ativação no Apps Script da base pelo proprietário. A comparação de latência após implantação segue pendente.
+
 Revisão 27/11/2026. Avisos usam estilos de confirmação, informação, atenção, pendência ou erro. Modais compartilham rolagem interna e regras de teclado, com fechamento pelo método de cada tela. Voltar e Escape agem na camada superior. Validação na conta real pendente. Na amostra fornecida do diagnóstico v4, dois salvamentos registrados no cliente duraram 19,873 s e 27,275 s. As três amostras de servidor para salvar lançamento ficaram entre 16,480 s e 23,574 s, com 9,750 s a 15,520 s em gravação. A amostra v4 não mede o tempo completo até a confirmação visível.
 
 Revisão 27/11/2026. Atividade exporta até 30 amostras recentes de Novo Lançamento em temposLancamento, com tipo, resultado e tempos de preparação, API e retorno. A oportunidade de exibição de Sincronizado é medida em quadro de navegador com a página visível. Offline, falhas e conferência conservam resultado próprio. Descrição, valor e identificadores da compra ficam fora das amostras. Validação com operações reais pendente.

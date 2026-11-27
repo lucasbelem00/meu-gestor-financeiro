@@ -225,13 +225,14 @@ function atualizarResumoNativoGestor_(ss,tempos,verificarPrioridade){
   const leituraLocal={tempos:tempos,verificarPrioridade},registros=registrosResumoNativoGestor_(ss,leituraLocal);medir('resumoLeituraMs');
   verificarPrioridade?.();
   const grupos=agruparResumoNativoGestor_(registros),hash=hashGestor_(registros),dash=ss.getSheetByName('Dashboard & Resumo'),migracoes=meta.migracoes.slice();medir('resumoCalculoMs');
-  const valoresDashboard=[],linhasDashboard=dash?Math.max(1,Math.min(41,dash.getLastRow())):0;
+  const valoresDashboard=[],migracoesPendentes=[],linhasDashboard=dash?Math.max(1,Math.min(41,dash.getLastRow())):0;
   if(dash&&linhasDashboard>=17){const categorias=leituraLocal.ss===ss&&leituraLocal.categorias?leituraLocal.categorias.slice(0,linhasDashboard-16):dash.getRange(17,2,linhasDashboard-16,1).getValues();categorias.forEach((r,i)=>{valoresDashboard[16+i]=['',r[0]];});}
   if(dash){const formulas=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(let i=0;i<formulas.length;i++)for(let j=0;j<formulas[i].length;j++)if(formulas[i][j]){
     const anterior=migracoes.find(m=>m.linha===i+1&&m.coluna===j+1),reconhecida=reconhecerFormulaPadraoResumoGestor_(formulas[i][j],i+1,j+1,ss,valoresDashboard);
     if(!reconhecida&&(!anterior||formulas[i][j]!==anterior.gerada&&!(anterior.aceitas||[]).includes(formulas[i][j])))continue;
     const m=reconhecida||Object.assign({},anterior),categoria=m.linha>=17?String(valoresDashboard[m.linha-1]?.[1]||''):m.categoria,gerada=formulaGerenciadaResumoGestor_(m.linha,m.coluna,m.mes,categoria);if(!gerada)continue;
     Object.assign(m,{categoria:categoria,gerada:gerada,aceitas:Array.from(new Set([formulas[i][j],gerada]))});const pos=migracoes.findIndex(x=>x.linha===m.linha&&x.coluna===m.coluna);if(pos<0)migracoes.push(m);else migracoes[pos]=m;
+    if(formulas[i][j]!==gerada)migracoesPendentes.push(m);
   }}
   medir('resumoDashboardMs');
   verificarPrioridade?.(); // Último ponto de cessão; nenhuma escrita foi iniciada.
@@ -242,7 +243,7 @@ function atualizarResumoNativoGestor_(ss,tempos,verificarPrioridade){
   medir('resumoEscritaMs');
   // A marca é persistida primeiro: interrupção após uma célula pode retomar
   // apenas as fórmulas reconhecidas. Fórmulas particulares nunca são apagadas.
-  if(dash){const atuais=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(const m of migracoes){const atual=atuais[m.linha-1]?.[m.coluna-1]||'';if(atual!==m.gerada&&((m.aceitas||[]).includes(atual)||reconhecerFormulaPadraoResumoGestor_(atual,m.linha,m.coluna,ss,valoresDashboard)))dash.getRange(m.linha,m.coluna).setValue(m.gerada);}}
+  if(migracoesPendentes.length){const atuais=dash.getRange(1,1,linhasDashboard,8).getFormulas();for(const m of migracoesPendentes){const atual=atuais[m.linha-1]?.[m.coluna-1]||'';if(atual!==m.gerada&&((m.aceitas||[]).includes(atual)||reconhecerFormulaPadraoResumoGestor_(atual,m.linha,m.coluna,ss,valoresDashboard)))dash.getRange(m.linha,m.coluna).setValue(m.gerada);}}
   medir('resumoFormulasMs');
   // Todas as entradas chamam sob a trava do projeto. Se a marca não puder
   // ser concluída, permanece pendente para repetir a materialização idempotente.

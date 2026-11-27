@@ -82,12 +82,26 @@ test('resumo lê fórmulas em lote e não regrava fórmulas já atualizadas',()=
  const getRange=dash.getRange;let escritas=0,leiturasIndividuais=0;const alteradas=[];
  dash.getRange=function(...args){const r=getRange.apply(this,args),set=r.setValue,formulas=r.getFormulas;r.setValue=function(...v){escritas++;alteradas.push({args,v});return set.apply(this,v);};r.getFormulas=function(){leiturasIndividuais++;return formulas.apply(this,arguments);};return r;};
  a.ctx.atualizarResumoNativoGestor_(a.db);
- // O mock implementa getDataRange via getRange: duas leituras de matriz,
- // independentemente de quantas fórmulas já foram migradas.
- assert.equal(escritas,0,JSON.stringify(alteradas));assert.equal(leiturasIndividuais,2);
+ assert.equal(escritas,0,JSON.stringify(alteradas));assert.equal(leiturasIndividuais,1);
  dash.getRange=getRange;
  dash.getRange('C17').setValue('=1+2');a.ctx.atualizarResumoNativoGestor_(a.db);
  assert.equal(dash.getRange('C17').getFormulas()[0][0],'=1+2');
+});
+test('resumo relê fórmulas a migrar e preserva edição feita após a primeira leitura',()=>{
+ const a=ambiente(fixture([personal()])),dash=a.db.sheets['Dashboard & Resumo'],getRange=dash.getRange;
+ formulaIndicador(a,'C17',"=SUMIFS('Lançamentos'!H:H;'Lançamentos'!D:D;B17;'Lançamentos'!I:I;TEXT(TODAY();\"mm/yyyy\");'Lançamentos'!J:J;\"<>Assinatura Cancelada\")");
+ let leituras=0;
+ dash.getRange=function(...args){
+  const faixa=getRange.apply(this,args),ler=faixa.getFormulas;
+  faixa.getFormulas=function(){
+   if(++leituras===2)getRange.call(dash,'C17').setValue('=1+2');
+   return ler.call(this);
+  };
+  return faixa;
+ };
+ a.ctx.atualizarResumoNativoGestor_(a.db);
+ assert.equal(leituras,2);
+ assert.equal(getRange.call(dash,'C17').getFormulas()[0][0],'=1+2');
 });
 test('classificação gera nova revisão mensal e anual sem substituir PDFs anteriores',()=>{
  const a=ambiente(fixture([personal('Antiga',100,'1/1','12/2025','Pago')]));assert.equal(a.ctx.gerarRelatoriosPDFProgramadosGestor_(a.db,a.pasta,2).gerados.length,2);const ids=pdfs(a).map(f=>f.id);
