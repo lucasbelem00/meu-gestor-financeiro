@@ -16,3 +16,19 @@ test('frequência conta compras distintas, não as doze parcelas de uma compra',
  const dados=api('getDadosCompletos'),itens=ordenar(dados.autofill),tv=Object.values(dados.autofill).find(i=>i.original==='Televisão');assert.equal(itens[0].original,'Café');assert.equal(itens[0].frequencia,3);assert.equal(itens[0].ultimoValor,75);assert.equal(itens[1].original,'Mercado');assert.equal(tv.frequencia,1);assert.equal(tv.ultimaCompraEm,new Date(2026,9,16).getTime());
  assert.equal(a.db.sheets['Lançamentos'].rows.filter(r=>r[1]==='Televisão').length,12);
 });
+
+test('sugestão de categoria reutiliza padrões e respeita seleção manual',()=>{
+ const de=html.indexOf('    const mapaPalavrasChaveCategorias'),ate=html.indexOf('    function aplicarTagsFrequentes(',de);
+ const entrada={value:'zxy'},cat={value:'',dataset:{},options:[{value:'Mercado'},{value:'Transporte'}]};
+ let compilacoes=0,normalizacoes=0,metas=0;
+ const c=vm.createContext({RegExp:function(...args){compilacoes++;return new RegExp(...args);},document:{getElementById:id=>({inpDesc:entrada,selCat:cat})[id]},
+  normalizarTexto:v=>{normalizacoes++;return String(v).toLowerCase();},dicionarioAutofill:{},dicionarioPrefixosAutofill:{},
+  podeSugerirCampoGestor:campo=>campo.dataset.escolhaManual!=='true',atualizarVisorMetaCategoria:()=>metas++});
+ vm.runInContext(html.slice(de,ate),c);
+ const iniciais=compilacoes;
+ c.checarAutopreenchimento();assert.equal(normalizacoes,1);
+ entrada.value='Mercado';c.checarAutopreenchimento();c.checarAutopreenchimento();
+ assert.equal(cat.value,'Mercado');assert.equal(metas,1);assert.equal(compilacoes,iniciais);
+ cat.dataset.escolhaManual='true';entrada.value='Uber';c.checarAutopreenchimento();
+ assert.equal(cat.value,'Mercado');assert.equal(metas,1);
+});

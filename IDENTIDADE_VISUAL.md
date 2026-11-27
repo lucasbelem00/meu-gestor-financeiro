@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+27/11/2026 — Novo Lançamento mostra atalhos Mais usadas abaixo da descrição vazia. Os botões quebram linha e levam o foco ao valor. O valor da última compra fica como sugestão separada.
+
 27/11/2026 — Agenda destaca Hoje e próximos 7 dias antes do calendário mensal. A pagar, A receber e Recorrências previstas ficam em seções próprias, com data, valor e ação.
 
 27/11/2026 — Fatura Mensal usa rótulos de situação com as cores do Início. Vencida usa coral, Vence hoje amarelo, A vencer e Sem vencimento cadastrado usam âmbar e Quitada usa verde.
