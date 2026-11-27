@@ -1,6 +1,6 @@
 # Identidade visual do webapp
 
-27/11/2026 — Ferramentas apresenta cards com nome da tarefa e uma frase de apoio. Os cards ficam em uma coluna no celular e duas quando há espaço. Dentro de cada ferramenta, Todas as ferramentas leva à lista.
+27/11/2026 — Ferramentas usa abas no topo com rolagem horizontal quando necessário. O menu mantém os atalhos diretos. Empréstimos, Dividir uma conta, Simular uma compra, Calculadora, Comparar preços e Notas aparecem na mesma ordem. Dividir uma conta usa 🍽️ nos dois acessos.
 
 27/11/2026 — Empréstimos usa um resumo expansível por pessoa, com nome, quantidade de parcelas, saldo da seleção e avisos de prazo. As parcelas e as ações aparecem ao expandir o resumo. Nome e valores podem quebrar linha no celular.
 

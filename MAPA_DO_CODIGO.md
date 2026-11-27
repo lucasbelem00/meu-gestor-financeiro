@@ -557,4 +557,4 @@ v212 local (15/11/2026): atualizar retrato completo após empréstimos e confirm
 
 v213 local (16/11/2026): excluirEmprestimoWebInterno_ admite opt-in restrito de exclusão de pagamento imediato único ainda sem recebimento, com conferências completas e desfazer. excluirItemEmprestimo informa ausência de estorno na confirmação. Catálogo torna obterPlanejamentoWeb cacheável no coordenador por 15s; consultar novamente invalida explicitamente. Nenhuma mudança no formato de Planejamento ou no controle de versão ao salvar.
 
-27/11/2026 — index.html define a lista de tarefas de Ferramentas e abre cada destino pelo fluxo existente. interface/navegacao.js distingue a lista do destino específico na seleção da Central.
+27/11/2026 — index.html organiza as abas e os atalhos do menu de Ferramentas na mesma ordem. interface/navegacao.js mantém a seleção da ferramenta e o retorno ao topo da tela.
