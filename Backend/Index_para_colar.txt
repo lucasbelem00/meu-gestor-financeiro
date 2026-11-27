@@ -2357,6 +2357,7 @@ const DICIONARIO_ACENTOS_PT = {
         toast.classList.add('opacity-0', '-translate-y-4');
         toast._timerAviso = null;
       }, duracao);
+      return toast;
     }
 
     // ============================================================================
@@ -8458,6 +8459,7 @@ try {
 
     window.enviarGasto = async function (e) {
       e.preventDefault();
+      const medicao = typeof iniciarMedicaoLancamentoGestor === 'function' ? iniciarMedicaoLancamentoGestor() : null;
       if (salvandoGastoTrava) return;
       try { if (sessionStorage.getItem(PX_CHAVE_RESULTADO_INCERTO) === 'true') { pxRestaurarEstadoIncerto(); return; } } catch (e) {}
 
@@ -8487,6 +8489,7 @@ try {
       var qtdParc = (isAssinatura || !permiteParcelamentoFormaGestor(formaVal,document.getElementById('chkPixParcelado')?.checked)) ? 1 : (parseInt(pxEl('inpParc').value, 10) || 1);
       var iniParc = (qtdParc <= 1) ? 1 : (parseInt(pxEl('inpParcIni').value, 10) || 1);
       if (iniParc > qtdParc) iniParc = 1;
+      medicao?.classificar(isAssinatura ? 'recorrente' : qtdParc > 1 ? 'parcelado' : 'avista');
 
       var payload = {
         incluirAtualizacaoDados: true,atualizacaoFinanceiraEnxuta:true,
@@ -8509,18 +8512,21 @@ try {
       let preparoRascunho;
       try {
         preparoRascunho=await prepararEnvioRascunhoFinanceiroGestor('novo',payload);
-        if(preparoRascunho.jaEnviado){btn.textContent=rotulo;btn.disabled=false;salvandoGastoTrava=false;return;}
+        if(preparoRascunho.jaEnviado){medicao?.concluir('ja_enviado');btn.textContent=rotulo;btn.disabled=false;salvandoGastoTrava=false;return;}
         payload=preparoRascunho.payload;
-      }catch(erro){mostrarAviso('Confira o rascunho',erro.message);btn.textContent=rotulo;btn.disabled=false;salvandoGastoTrava=false;return;}
+      }catch(erro){medicao?.concluir('falha_preparacao');mostrarAviso('Confira o rascunho',erro.message);btn.textContent=rotulo;btn.disabled=false;salvandoGastoTrava=false;return;}
 
       if (!navigator.onLine) {
+        medicao?.preparado();
         try { enfileirarGastoOfflineGestor(payload); }
         catch (erroLocal) {
+          medicao?.concluir('falha_local');
           mostrarAviso('Gasto ainda não guardado', 'Não foi possível salvar neste aparelho. Mantenha os campos preenchidos e tente novamente quando houver rede.');
           btn.textContent = rotulo; btn.disabled = false; salvandoGastoTrava = false;
           return;
         }
         marcarEnvioRascunhoFinanceiroGestor(preparoRascunho,'fila');
+        medicao?.concluir('fila_offline');
         mostrarAviso('Salvo no aparelho', 'O lançamento aguarda sincronização. Quando a internet voltar, toque em Sincronizar.');
         concluirFormularioEnviadoGestor(false);
         atualizarIndicadorOffline();
@@ -8529,14 +8535,19 @@ try {
       }
 
       const formularioDoEnvio = capturarFormularioMutacaoGestor('salvarLancamentoWeb');
+      medicao?.enviar();
       return apiCall('salvarLancamentoWeb', payload).then(function () {
+        medicao?.responder();
         marcarEnvioRascunhoFinanceiroGestor(preparoRascunho,'confirmado');
         const mesmoFormulario = JSON.stringify(formularioDoEnvio) === JSON.stringify(capturarFormularioMutacaoGestor('salvarLancamentoWeb'));
         if (mesmoFormulario) concluirFormularioEnviadoGestor(false,formularioDoEnvio);
-        mostrarAviso('Sincronizado', mesmoFormulario ? 'O lançamento foi confirmado no Histórico.' : 'O lançamento foi confirmado. O novo rascunho continua preenchido.');
+        const avisoConfirmado = mostrarAviso('Sincronizado', mesmoFormulario ? 'O lançamento foi confirmado no Histórico.' : 'O lançamento foi confirmado. O novo rascunho continua preenchido.');
+        medicao?.concluir('confirmado', avisoConfirmado);
         btn.textContent = rotulo; btn.disabled = false; salvandoGastoTrava = false;
         carregarDados();
       }).catch(function (err) {
+        medicao?.responder();
+        medicao?.concluir(err?.resultadoIncerto ? 'em_conferencia' : 'falha_envio');
         if (err && err.resultadoIncerto) {
           pxRestaurarEstadoIncerto();
           pxDefinirEstadoIncerto(true, true);
@@ -9130,10 +9141,69 @@ function registrarDiagnosticoAtividadeGestor(action, erro, duracaoMs, resposta) 
     if (!erro && action === 'getDadosCompletos' && !resposta?.integridade?.bloqueada) gravarArmazenamentoGestor('gestorUltimaAtualizacaoV1', JSON.stringify(Date.now()));
   } catch (_) { /* Diagnóstico não participa da gravação financeira. */ }
 }
+const chaveTemposLancamentoGestor = 'gestorTemposLancamentoV1';
+function lerTemposLancamentoGestor() {
+  try {
+    const lista = lerJSONLocalGestor(chaveTemposLancamentoGestor, []);
+    if (!Array.isArray(lista)) return [];
+    return lista.slice(-30).flatMap(item => {
+      if (!item || !['avista','parcelado','recorrente'].includes(item.tipo) ||
+          !['confirmado','em_conferencia','fila_offline','falha_preparacao','falha_envio','falha_local','ja_enviado'].includes(item.resultado) ||
+          typeof item.data !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(item.data)) return [];
+      const amostra = {tipo:item.tipo, resultado:item.resultado, data:item.data};
+      for (const campo of ['preparacaoMs','apiMs','ateRetornoMs','ateConfirmacaoVisivelMs']) {
+        const valor = item[campo];
+        if (Number.isFinite(valor) && valor >= 0 && valor <= 3600000 &&
+            (campo !== 'ateConfirmacaoVisivelMs' || item.resultado === 'confirmado')) amostra[campo] = Math.round(valor);
+      }
+      return [amostra];
+    });
+  } catch (_) { return []; }
+}
+function iniciarMedicaoLancamentoGestor() {
+  const agora = () => typeof performance !== 'undefined' ? performance.now() : Date.now();
+  const inicio = agora();
+  const tempo = (de, ate = agora()) => Math.max(0, Math.round(ate-de));
+  let tipo, preparadoEm, enviadoEm, respostaEm, concluida = false;
+  return {
+    classificar(valor) { tipo = valor; },
+    preparado() { preparadoEm = agora(); },
+    enviar() { preparadoEm = enviadoEm = agora(); },
+    responder() { if (respostaEm === undefined) respostaEm = agora(); },
+    concluir(resultado, toast) {
+      if (concluida || !tipo) return;
+      concluida = true;
+      const fim = agora();
+      const item = {tipo, resultado, data:new Date().toISOString(), preparacaoMs:tempo(inicio, preparadoEm ?? fim), ateRetornoMs:tempo(inicio,fim)};
+      if (enviadoEm !== undefined && respostaEm !== undefined) item.apiMs = tempo(enviadoEm,respostaEm);
+      let gravado = false;
+      const guardar = () => {
+        if (gravado) return;
+        gravado = true;
+        try { gravarArmazenamentoGestor(chaveTemposLancamentoGestor, JSON.stringify(lerTemposLancamentoGestor().concat(item).slice(-30)), {opcional:true}); } catch (_) {}
+      };
+      const aviso = toast?._timerAviso;
+      if (resultado !== 'confirmado' || aviso == null || document.visibilityState !== 'visible' || typeof requestAnimationFrame !== 'function') {
+        guardar();
+        return;
+      }
+      // O primeiro quadro permite a pintura do aviso; o segundo registra a oportunidade de exibição.
+      const espera = setTimeout(guardar,1000);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (gravado) return;
+        clearTimeout(espera);
+        if (document.visibilityState === 'visible' && toast._timerAviso === aviso && toast.classList.contains('opacity-100')) {
+          item.ateConfirmacaoVisivelMs = tempo(inicio);
+        }
+        guardar();
+      }));
+    }
+  };
+}
 function montarDiagnosticoGestor() {
   let pendentes = []; try { pendentes = listarPendenciasAtividadeGestor(); } catch (_) {}
   const transportes=lerTransportesDiagnosticoGestor(),entradasServidor=lerEntradasServidorDiagnosticoGestor();
-  return { formato: 'gestor-diagnostico-v1', medicao:{versao:4,paginaAtual:paginaRastroDiagnosticoGestor,limiteEntrada:'Mede do início do doPost até preparar a resposta. Inicialização anterior ao doPost e entrega HTTP continuam fora dessa medição.',concorrencia:'Indicativa: executor financeiro, resumo e proteção/backup; cache pode expirar e outras rotinas podem não estar identificadas.',transportes:'Até 30 respostas HTTP; sem cabeçalhos técnicos do proxy não é possível atribuir a falha ao Google.'}, resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), transportes, entradasServidor, correlacaoTempos:typeof correlacionarTemposDiagnosticoGestor==='function'?correlacionarTemposDiagnosticoGestor(transportes,entradasServidor,paginaRastroDiagnosticoGestor):undefined, geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
+  return { formato: 'gestor-diagnostico-v1', medicao:{versao:5,paginaAtual:paginaRastroDiagnosticoGestor,limiteEntrada:'Mede do início do doPost até preparar a resposta. Inicialização anterior ao doPost e entrega HTTP continuam fora dessa medição.',concorrencia:'Indicativa: executor financeiro, resumo e proteção/backup; cache pode expirar e outras rotinas podem não estar identificadas.',transportes:'Até 30 respostas HTTP; sem cabeçalhos técnicos do proxy não é possível atribuir a falha ao Google.'}, resumoPlanilha:typeof estadoResumoPlanilhaUIgestor==='undefined'?null:estadoResumoPlanilhaUIgestor, temposServidor: lerTemposServidorGestor(), temposLancamento: lerTemposLancamentoGestor(), transportes, entradasServidor, correlacaoTempos:typeof correlacionarTemposDiagnosticoGestor==='function'?correlacionarTemposDiagnosticoGestor(transportes,entradasServidor,paginaRastroDiagnosticoGestor):undefined, geradoEm: new Date().toISOString(), online: navigator.onLine, ultimaAtualizacao: lerJSONLocalGestor('gestorUltimaAtualizacaoV1', null), historicoTecnico: lerJSONLocalGestor('gestorTamanhoHistoricoV1', null), relogio:typeof diagnosticoRelogioCivilGestor==='function'?diagnosticoRelogioCivilGestor():undefined, armazenamento: typeof diagnosticoArmazenamentoGestor==='function'?diagnosticoArmazenamentoGestor():undefined, desempenhoConsultas:typeof obterMetricasDesempenhoGestor==='function'?obterMetricasDesempenhoGestor():undefined, pendencias: { total: pendentes.length, lancamentos: pendentes.filter(p => p.tipo === 'fila').length, emRevisao:pendentes.filter(p=>p.tipo==='fila-revisao').length, enviosSemConfirmacao:pendentes.filter(p=>p.tipo==='mutacao'||p.tipo==='emprestimo').length, bloqueioServidor:integridadeServidorGestor.bloqueada, notas: operacoesNotasPendentesGestor().length }, eventos: lerJSONLocalGestor('gestorDiagnosticoV1', []).map(e => ({ data: e.data, acao: e.acao, resultado: e.resultado, codigo:e.codigo, http:e.http, estadoOperacao:e.estadoOperacao, duracaoMs: Number(e.duracaoMs)||0 })) };
 }
 async function copiarDiagnosticoGestor() {
   const resumo=montarDiagnosticoGestor();

@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Atividade exporta até 30 amostras recentes de Novo Lançamento em temposLancamento, com tipo, resultado e tempos de preparação, API e retorno. A oportunidade de exibição de Sincronizado é medida em quadro de navegador com a página visível. Offline, falhas e conferência conservam resultado próprio. Descrição, valor e identificadores da compra ficam fora das amostras. Validação com operações reais pendente.
+
 Revisão 27/11/2026. Novo Lançamento oferece até três descrições mais usadas quando o campo está vazio, ordenadas pela frequência já disponível. Ao escolher uma, reutiliza as sugestões de forma e categoria e leva o foco ao valor. A busca por categorias reaproveita padrões preparados uma vez e evita atualizar metas se a categoria continua igual. Medição local isolada da sugestão, com 5.250 entradas simuladas por rodada e 60 categorias: 1.627 ms antes e 302 ms depois. Validação na conta real pendente.
 
 Revisão 27/11/2026. Agenda abre com Hoje e próximos 7 dias, atravessa o mês e separa valores a pagar, devoluções e projeções dos modelos ativos de recorrência. O calendário mensal continua disponível. O resumo usa os compromissos carregados e a consulta existente de Recorrências. O atalho da devolução abre a parcela em Empréstimos. Validação na conta real pendente.
