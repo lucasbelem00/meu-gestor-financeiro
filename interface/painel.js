@@ -2,7 +2,7 @@
 let dadosRotinaPainelGestor=null;
 let limitePessoalEmEdicaoGestor=false;
 function abrirDevolucaoPainelGestor(item){
-  abrirResumoEmprestimos();
+  abrirResumoEmprestimos(item.registroId);
   for(const [id,valor] of [['selFiltroMesEmp',item.mesFatura],['selFiltroPessoaEmp',item.pessoa],['selFiltroStatusEmp',item.status==='Recebido'?'Recebido':'A Receber'],['selFiltroFormaEmp',''],['inpBuscaEmp','']]){const campo=document.getElementById(id);if(campo)campo.value=valor||'';}
   renderizarPainelEmprestimos();
 }

@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+27/11/2026 — interface/agenda.js compõe a visão de sete dias com os compromissos da carga geral e os modelos retornados pela consulta de Recorrências. interface/painel.js passa a identidade da parcela para o atalho de Empréstimos.
+
 v242 — `index.html` define os cartões de Início e a navegação principal. `interface/painel.js` atualiza os cartões com valores já presentes na carga. `interface/rachadinha.js` monta a revisão local da divisão e os atalhos pós-confirmação. O calendário reutiliza `dividirCampoCalendarioGestor` de `interface/rotina.js`. O Histórico reutiliza a rotina de reinício com texto opcional para encontrar o gasto registrado. Integrações de navegação, cadastros, Empréstimos, Histórico e Mensal, sem alteração do Apps Script.
 
 v228 — módulos 2/3/4, integrações 5/8: index.html mantém prévias/início/competência coerentes nos dois cadastros; helpers de calendário/início permanecem junto ao bloco de datas. interface/rotina.js divide mês/data combinada em partes visuais, mantendo IDs originais para rascunho/envio e sincronização programática pelo setter de value; validação é aplicada aos campos visíveis. Consulta de empréstimos tem limpeza global permanente no topo. interface/recorrencias.js sincroniza tipo de gasto somente por escolha explícita; interface/perfil.js mantém contexto de Histórico informativo, com uma única limpeza global. Diagnóstico e service worker v228; backend/protocolo inalterados.

@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+27/11/2026 — Agenda destaca Hoje e próximos 7 dias antes do calendário mensal. A pagar, A receber e Recorrências previstas ficam em seções próprias, com data, valor e ação.
+
 27/11/2026 — Fatura Mensal usa rótulos de situação com as cores do Início. Vencida usa coral, Vence hoje amarelo, A vencer e Sem vencimento cadastrado usam âmbar e Quitada usa verde.
 
 27/11/2026 — Sincronizado aparece em um aviso compacto com marca de confirmação. Envios em conferência mantêm aviso âmbar com o botão Abrir Atividade.

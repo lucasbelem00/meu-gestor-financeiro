@@ -47,10 +47,16 @@ test('cartão Pix exibe futuro só se há desembolso futuro, com rótulo separad
  pix.futuroPessoalRaw=0;pix.totalFuturo='R$ 0,00';c.renderListaFormas();assert(!markup.includes('A pagar nos próximos meses'));
 });
 test('atalho do resumo não desloca outra navegação; termômetro só mostra gasto com meta',()=>{
- const i=html.indexOf('    function abrirResumoEmprestimos()'),fim=html.indexOf('    function selecionarSubFerramenta(',i),a=navegacao();let agendado,rolagens=0;
+ const i=html.indexOf('    function abrirResumoEmprestimos('),fim=html.indexOf('    function selecionarSubFerramenta(',i),a=navegacao();let agendado,rolagens=0;
  a.el('tituloResumoPessoasEmp').closest=()=>null;a.el('tituloResumoPessoasEmp').scrollIntoView=()=>rolagens++;a.c.setTimeout=fn=>agendado=fn;a.c.abrirFerramenta=()=>a.c.setAba('ferramentas');vm.runInContext(html.slice(i,fim),a.c);
  a.c.abrirResumoEmprestimos();a.flush();agendado();assert.equal(rolagens,1);
  a.c.abrirResumoEmprestimos();a.c.setAba('anual');a.flush();agendado();assert.equal(rolagens,1);
+ const grupo={open:false}, parcela=a.el('parcela-alvo');parcela.dataset={registroParcelaEmp:'parcela-123'};
+ parcela.closest=seletor=>seletor==='details'?grupo:null;parcela.scrollIntoView=()=>rolagens++;
+ a.c.document.querySelectorAll=()=>[parcela];
+ a.c.abrirResumoEmprestimos('parcela-123');a.flush();agendado();
+ assert.equal(grupo.open,true);assert.equal(parcela.focado,true);assert.equal(rolagens,2);
+
  const c=vm.createContext({});const ini=html.indexOf('    function categoriasTermometroMensalGestor(');vm.runInContext(html.slice(ini,html.indexOf('    function sincronizarEstadoFiltrosMensalGestor(',ini)),c);
  const res={categorias:[{nome:'Saúde',meta:300,total:50},{nome:'Zero',meta:100,total:0},{nome:'Sem meta',meta:0,total:20}],metasCategorias:[{nome:'Sem consumo',meta:200,total:0}]};assert.deepEqual(Array.from(c.categoriasTermometroMensalGestor(res),x=>x.nome),['Saúde']);
 });

@@ -2,6 +2,7 @@
 // Entrada: getDadosCompletos. Saída: eventos com dia UTC para comparação de datas.
 // A cache é descartada em renderizarDados; nenhuma ação aqui confirma pagamentos.
 let dadosAgendaGestor=null,diaAgendaGestor=null,eventosAgendaGestor=null;
+let recorrenciasSemanaAgendaGestor=null,estadoRecorrenciasSemanaAgendaGestor='aguardando';
 function compromissosPixAgendadosGestor(dados,hoje){
  const atual=hojeSituacaoVisualGestor(hoje),vistos=new Set();
  return (dados?.pixAgendados||[]).filter(i=>{const dia=diaSituacaoVisualGestor(i.data);if(!i.registroId||vistos.has(i.registroId)||i.status!=='Agendado'||dia===null||!Number.isFinite(i.valorRaw)||i.valorRaw<=0)return false;vistos.add(i.registroId);return true;}).map(i=>{const dia=diaSituacaoVisualGestor(i.data);return {...i,id:'pix:'+i.registroId,tipo:'pix',dia,valor:i.valorRaw,situacao:estiloSituacaoVisualGestor(dia<atual?'vencido':dia===atual?'hoje':'pendente',dia<atual?'Pix agendado sem confirmação':dia===atual?'Pix agendado para hoje':'Pix agendado')};});
@@ -30,6 +31,81 @@ function compromissosAgendaGestor(dados,hoje=(typeof hojeCivilGestor==='function
  return eventos.sort((a,b)=>a.dia-b.dia||a.tipo.localeCompare(b.tipo)||String(a.descricao||'').localeCompare(String(b.descricao||'')));
 }
 function criarElementoAgendaGestor(tag,texto,classe){const e=document.createElement(tag);if(texto!==null)e.textContent=texto;if(classe)e.className=classe;return e;}
+function separarSemanaAgendaGestor(eventos, modelos, hoje){
+  const noPeriodo = dia => Number.isFinite(dia) && dia >= hoje && dia <= hoje + 7;
+  const saidas = [], entradas = [], previsoes = [];
+  for (const item of eventos) {
+    if (!noPeriodo(item.dia)) continue;
+    if (item.tipo === 'pix' || (item.tipo === 'cartao' && item.saldo > 0.004)) saidas.push(item);
+    else if (item.tipo === 'devolucao' && item.status === 'A Receber' && !item.semData) entradas.push(item);
+  }
+  for (const modelo of modelos || []) {
+    if (!modelo.ativo || !Number.isSafeInteger(modelo.valorCentavos) || modelo.valorCentavos <= 0 ||
+        !Number.isInteger(modelo.dia) || modelo.dia < 1 || modelo.dia > 31) continue;
+    const data = dataProximaRecorrenciaVisualGestor(modelo);
+    const dia = diaSituacaoVisualGestor(data);
+    if (noPeriodo(dia)) previsoes.push({tipo:'recorrencia',data,dia,valor:modelo.valorCentavos/100,descricao:modelo.descricao});
+  }
+  return {saidas, entradas, previsoes:previsoes.sort((a,b)=>a.dia-b.dia)};
+}
+function renderizarSemanaAgendaGestor(eventos = eventosAgendaGestor || [], hoje = hojeSituacaoVisualGestor()){
+  const periodo = document.getElementById('periodoSemanaAgendaGestor');
+  if (!periodo) return;
+  periodo.textContent = dataDiaBancarioGestor(hoje) + ' a ' + dataDiaBancarioGestor(hoje + 7);
+  const semana = separarSemanaAgendaGestor(eventos, recorrenciasSemanaAgendaGestor, hoje);
+  const acoes = {
+    cartao: ['Conferir fatura', i => abrirConferenciaFaturaGestor(i.forma,i.mesFatura)],
+    pix: ['Revisar Pix agendado', abrirPixAgendadoGestor],
+    devolucao: ['Ver parcela em Empréstimos', i => abrirDevolucaoPainelGestor(i)],
+    recorrencia: ['Ver recorrências', () => setAba('assinaturas')]
+  };
+  for (const [id,itens,vazio] of [
+    ['saidasSemanaAgendaGestor',semana.saidas,'Nenhum pagamento com data nesse período.'],
+    ['entradasSemanaAgendaGestor',semana.entradas,'Nenhum recebimento combinado nesse período.'],
+    ['previsoesSemanaAgendaGestor',semana.previsoes,'Nenhuma recorrência prevista nesse período.']
+  ]) {
+    const caixa = document.getElementById(id);
+    caixa.replaceChildren();
+    if (id === 'previsoesSemanaAgendaGestor' && estadoRecorrenciasSemanaAgendaGestor !== 'ok') {
+      const falhou = estadoRecorrenciasSemanaAgendaGestor === 'erro';
+      caixa.append(criarElementoAgendaGestor('p',falhou ? 'Não foi possível consultar as recorrências.' : 'Consultando recorrências…','text-xs text-slate-300'));
+      if (falhou) {
+        const tentar = criarElementoAgendaGestor('button','Tentar novamente','min-h-[44px] rounded-lg border border-slate-600 px-3 text-xs font-bold text-white');
+        tentar.type = 'button';tentar.onclick = carregarRecorrenciasSemanaAgendaGestor;caixa.append(tentar);
+      }
+      continue;
+    }
+    const dadosDisponiveis = id === 'saidasSemanaAgendaGestor' ? Boolean(dadosAgendaGestor?.faturas?.horizonte) :
+      id === 'entradasSemanaAgendaGestor' ? Array.isArray(dadosAgendaGestor?.emprestimos?.itens) : true;
+    if (!itens.length) caixa.append(criarElementoAgendaGestor('p',dadosDisponiveis ? vazio : 'Aguardando os dados da conta.','text-xs text-slate-300'));
+    for (const i of itens) {
+      const [rotulo,acao] = acoes[i.tipo];
+      const b = criarElementoAgendaGestor('button',null,'w-full min-h-[44px] break-words rounded-xl border p-3 text-left space-y-1 '+(i.situacao?.fundo || 'border-violet-400/30 bg-violet-500/10 text-violet-100'));
+      b.type = 'button';
+      b.append(criarElementoAgendaGestor('strong',i.tipo === 'devolucao' ? i.pessoa + ' · ' + i.descricao : i.descricao,'block text-sm font-bold'),
+        criarElementoAgendaGestor('span',(i.dia === hoje ? 'Hoje · ' : '')+i.data+' · '+formatBRL(i.valor),'block text-sm'),
+        criarElementoAgendaGestor('span',rotulo+' →','block text-xs font-semibold'));
+      b.onclick = () => acao(i);
+      caixa.append(b);
+    }
+  }
+}
+async function carregarRecorrenciasSemanaAgendaGestor(){
+  if (estadoRecorrenciasSemanaAgendaGestor === 'carregando') return;
+  estadoRecorrenciasSemanaAgendaGestor = 'carregando';
+  recorrenciasSemanaAgendaGestor = null;
+  renderizarSemanaAgendaGestor();
+  const epoca = typeof epocaModeloRecorrenciaGestor === 'function' ? epocaModeloRecorrenciaGestor() : null;
+  try {
+    const resposta = await apiCall('obterRecorrenciasWeb',{},1);
+    if (!Array.isArray(resposta?.itens) || (epoca !== null && epoca !== epocaModeloRecorrenciaGestor())) throw Error('Consulta desatualizada');
+    recorrenciasSemanaAgendaGestor = resposta.itens;
+    estadoRecorrenciasSemanaAgendaGestor = 'ok';
+  } catch (_) {
+    estadoRecorrenciasSemanaAgendaGestor = 'erro';
+  }
+  if (typeof abaAtivaAtual !== 'undefined' && abaAtivaAtual === 'agenda') renderizarSemanaAgendaGestor();
+}
 function moverMesAgendaGestor(passo){
   const campo=document.getElementById('mesAgendaGestor');if(!mesAgendaValidoGestor(campo.value))return;
   const [a,m]=campo.value.split('-').map(Number),d=new Date(Date.UTC(a,m-1+passo,1));if(!anoCompetenciaValidoGestor_(d.getUTCFullYear()))return;
@@ -38,11 +114,12 @@ function moverMesAgendaGestor(passo){
 function mostrarMesCompletoAgendaGestor(){diaAgendaGestor=null;renderizarAgendaGestor();}
 function renderizarAgendaGestor(){
   const campo=document.getElementById('mesAgendaGestor'),grade=document.getElementById('calendarioAgendaGestor'),lista=document.getElementById('listaAgendaGestor');if(!campo||!grade||!lista)return;
+  eventosAgendaGestor=compromissosAgendaGestor(dadosAgendaGestor);
+  renderizarSemanaAgendaGestor(eventosAgendaGestor);
   if(!campo.value){const h=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date());campo.value=h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0');}
   if(!mesAgendaValidoGestor(campo.value)){grade.replaceChildren();lista.replaceChildren();diaAgendaGestor=null;document.getElementById('verMesAgendaGestor').hidden=true;document.getElementById('agendaAnteriorGestor').disabled=true;document.getElementById('agendaProximoGestor').disabled=true;document.getElementById('estadoAgendaGestor').textContent='Escolha um mês entre 1900 e 2200.';return;}
   const [ano,mes]=campo.value.split('-').map(Number),inicio=Date.UTC(ano,mes-1,1)/86400000,fim=Date.UTC(ano,mes,1)/86400000,tipo=document.getElementById('tipoAgendaGestor').value;
   if(diaAgendaGestor!==null&&(diaAgendaGestor<inicio||diaAgendaGestor>=fim))diaAgendaGestor=null;
-  eventosAgendaGestor=compromissosAgendaGestor(dadosAgendaGestor);
   const filtroSituacao=document.getElementById('situacaoAgendaGestor')?.value||'';
   const eventos=eventosAgendaGestor.filter(i=>i.dia>=inicio&&i.dia<fim&&(!tipo||i.tipo===tipo)&&(!filtroSituacao||(filtroSituacao==='pendentes'?i.situacao.prioridade>=2:i.situacao.prioridade===1)));
   document.getElementById('agendaAnteriorGestor').disabled=ano===ANO_MIN_COMPETENCIA_GESTOR_&&mes===1;document.getElementById('agendaProximoGestor').disabled=ano===ANO_MAX_COMPETENCIA_GESTOR_&&mes===12;
@@ -69,7 +146,7 @@ function renderizarAgendaGestor(){
 const dadosAntesAgendaGestor=window.renderizarDados;
 window.renderizarDados=function(dados,origemCache){const r=dadosAntesAgendaGestor(dados,origemCache);dadosAgendaGestor=dados;eventosAgendaGestor=null;if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='agenda')renderizarAgendaGestor();return r;};
 const abaAntesAgendaGestor=window.setAba;
-window.setAba=function(aba,...args){const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda')renderizarAgendaGestor();return r;};
+window.setAba=function(aba,...args){const entrando=aba==='agenda'&&(typeof abaAtivaAtual==='undefined'||abaAtivaAtual!=='agenda');const r=abaAntesAgendaGestor(aba,...args);if(aba==='agenda'){renderizarAgendaGestor();if(entrando)carregarRecorrenciasSemanaAgendaGestor();}return r;};
 
 // Recalcula os avisos com a mesma data usada no calendário, inclusive virada de mês/ano.
 function alertasBancariosGestor(dados,hoje=(typeof hojeCivilGestor==='function'?hojeCivilGestor():new Date())){

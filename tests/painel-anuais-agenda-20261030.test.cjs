@@ -43,3 +43,18 @@ test('competência inválida na Agenda remove compromissos antigos e desativa na
 test('fixo programado omite repetição; mudanças futuras de categoria e valor ficam explícitas',()=>{
  const c=vm.createContext({document:{addEventListener(){}}});vm.runInContext(fs.readFileSync('interface/usabilidade.js','utf8'),c);const p={mes:'11/2026',valor:'R$ 139,90',descricao:'Total Pass',forma:'Cartao',categoria:'Saúde'};assert.equal(c.textosProgramacoesFixasGestor({vigente:null,programadas:[p]})[0],'A partir da fatura 11/2026');const t=c.textosProgramacoesFixasGestor({vigente:p,programadas:[{...p,mes:'12/2026',valor:'R$ 149,90',categoria:'Outros'}]})[0];assert.match(t,/Novo valor: R\$ 149,90/);assert.match(t,/Categoria: Outros/);assert(!t.includes('Total Pass'));
 });
+
+test('visão de sete dias atravessa o mês, exclui concluídos e separa estimativas',()=>{
+ const c=agenda(),fonte=fs.readFileSync('interface/recorrencias.js','utf8');
+ vm.runInContext(fonte.split(/\r?\n/).find(l=>l.startsWith('function dataProximaRecorrenciaVisualGestor(')),c);
+ const hoje=c.diaSituacaoVisualGestor('27/11/2026');
+ const evento=(tipo,data,campos={})=>({tipo,dia:c.diaSituacaoVisualGestor(data),data,...campos});
+ const eventos=[evento('cartao','27/11/2026',{saldo:80}),evento('cartao','28/11/2026',{saldo:0}),evento('pix','04/12/2026'),
+  evento('cartao','05/12/2026',{saldo:100}),evento('devolucao','01/12/2026',{status:'A Receber'}),evento('devolucao','02/12/2026',{status:'Recebido'}),
+  evento('devolucao','30/11/2026',{status:'A Receber',semData:true}),evento('cartao','26/11/2026',{saldo:50})];
+ const modelos=[{ativo:true,dia:31,proximoMes:'11/2026',valorCentavos:1890,descricao:'Projeção'},{ativo:false,dia:1,proximoMes:'12/2026',valorCentavos:200}];
+ const semana=c.separarSemanaAgendaGestor(eventos,modelos,hoje);
+ assert.deepEqual(Array.from(semana.saidas,e=>e.data),['27/11/2026','04/12/2026']);
+ assert.deepEqual(Array.from(semana.entradas,e=>e.data),['01/12/2026']);
+ assert.deepEqual(Array.from(semana.previsoes,e=>[e.data,e.valor]),[['30/11/2026',18.9]]);
+});
