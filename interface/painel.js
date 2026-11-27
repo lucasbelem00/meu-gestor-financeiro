@@ -50,7 +50,9 @@ function renderizarCartoesInicioGestor(dados){
   titulo.textContent=mes?'Fatura do mês · '+mes:'Fatura do mês';
   document.getElementById('inicioValorFaturaGestor').textContent=mes&&totais
     ?formatBRL(Object.values(totais).reduce((soma,forma)=>soma+(Number(forma?.[mes])||0),0)):'—';
-  document.getElementById('inicioReceberGestor').textContent=dados.emprestimos?.kpis?.totalAReceberGeral??'—';
+  const totalAReceber=dados.emprestimos?.kpis?.totalAReceberGeral;
+  document.getElementById('inicioReceberGestor').textContent=totalAReceber??'—';
+  document.getElementById('inicioCartaoReceberGestor').hidden=!(lerValorMoeda(totalAReceber)>0);
 }
 function renderizarRotinaPainelGestor(){
   const dados=dadosRotinaPainelGestor;if(!dados){const resumo=document.getElementById('resumoLimitePessoalGestor');if(resumo)resumo.textContent='Aguardando os gastos do mês. Você pode guardar seu limite agora; o resultado aparece quando a consulta estiver disponível.';return;}

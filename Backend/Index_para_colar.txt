@@ -245,6 +245,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 <style id="gestor-inicio-navegacao">
   .gestor-resumo-inicio { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
   .gestor-cartao-inicio { min-width:0; min-height:7rem; padding:1rem; text-align:left; display:flex; flex-direction:column; justify-content:space-between; gap:.45rem; border:1px solid #3c5778; border-radius:1.25rem; background:#172437; color:#e2e8f0; }
+  .gestor-cartao-inicio[hidden] { display:none; }
+  .gestor-resumo-inicio:has(> .gestor-cartao-inicio[hidden]) { grid-template-columns:1fr; }
   .gestor-cartao-inicio:first-child { background:linear-gradient(120deg,#17365a,#162438); }
   .gestor-cartao-inicio strong { font-size:clamp(1rem,4.5vw,1.6rem); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; color:#fff; }
   .gestor-cartao-inicio span { font-size:.8125rem; line-height:1.35; }
@@ -922,7 +924,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <strong id="inicioValorFaturaGestor">—</strong>
             <span>Ver fatura →</span>
           </button>
-          <button type="button" class="gestor-cartao-inicio" onclick="abrirResumoEmprestimos()">
+          <button type="button" id="inicioCartaoReceberGestor" class="gestor-cartao-inicio" onclick="abrirResumoEmprestimos()" hidden>
             <span>A receber de terceiros · todos os meses</span>
             <strong id="inicioReceberGestor">—</strong>
             <span>Ver empréstimos →</span>
@@ -9216,7 +9218,9 @@ function renderizarCartoesInicioGestor(dados){
   titulo.textContent=mes?'Fatura do mês · '+mes:'Fatura do mês';
   document.getElementById('inicioValorFaturaGestor').textContent=mes&&totais
     ?formatBRL(Object.values(totais).reduce((soma,forma)=>soma+(Number(forma?.[mes])||0),0)):'—';
-  document.getElementById('inicioReceberGestor').textContent=dados.emprestimos?.kpis?.totalAReceberGeral??'—';
+  const totalAReceber=dados.emprestimos?.kpis?.totalAReceberGeral;
+  document.getElementById('inicioReceberGestor').textContent=totalAReceber??'—';
+  document.getElementById('inicioCartaoReceberGestor').hidden=!(lerValorMoeda(totalAReceber)>0);
 }
 function renderizarRotinaPainelGestor(){
   const dados=dadosRotinaPainelGestor;if(!dados){const resumo=document.getElementById('resumoLimitePessoalGestor');if(resumo)resumo.textContent='Aguardando os gastos do mês. Você pode guardar seu limite agora; o resultado aparece quando a consulta estiver disponível.';return;}
