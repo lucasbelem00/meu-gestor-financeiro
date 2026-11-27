@@ -67,12 +67,35 @@ function renderizarRotinaPainelGestor(){
   }
   atualizarAvisosVaziosPainelGestor();
 }
+function renderizarEnviosConferenciaInicioGestor(pendencias){
+  const lista=document.getElementById('enviosConferenciaInicioGestor');
+  if(!lista)return;
+  const chave=JSON.stringify(pendencias.map(p=>[p.id,p.action,p.descricao]));
+  if(lista.dataset.chave===chave)return;
+  lista.dataset.chave=chave;
+  lista.hidden=!pendencias.length;
+  lista.replaceChildren(...pendencias.map(p=>{
+    const botao=document.createElement('button');
+    botao.type='button';
+    botao.className='w-full rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-left text-xs text-amber-100 focus-visible:ring-2 focus-visible:ring-amber-300';
+    const titulo=document.createElement('strong'), detalhe=document.createElement('span');
+    titulo.className='block break-words';
+    titulo.textContent=p.descricao || rotuloAcaoAtividadeGestor(p.action);
+    detalhe.className='block mt-1';
+    detalhe.textContent='Envio em conferência · Ver envio →';
+    botao.append(titulo,detalhe);
+    botao.onclick=()=>abrirEnvioEmConferenciaGestor(p.id);
+    return botao;
+  }));
+  atualizarAvisosVaziosPainelGestor();
+}
 function atualizarAvisosVaziosPainelGestor(){
   const vazio=document.getElementById('semAvisosPainelGestor');
   if(!vazio)return;
   vazio.hidden=!(dadosRotinaPainelGestor
     && document.getElementById('bannerVencimentoFatura')?.classList?.contains('hidden')
     && document.getElementById('devolucoesPainelGestor')?.hidden
+    && document.getElementById('enviosConferenciaInicioGestor')?.hidden
     && document.getElementById('alertaProtecaoPainelGestor')?.hidden);
 }
 function renderizarLimitePessoalPainelGestor(dados){
@@ -115,6 +138,7 @@ function organizarPainelDiarioGestor(){
   agenda.type='button';agenda.onclick=()=>setAba('agenda');
   cabecalho.append(tituloAtencao,agenda);atencao.append(cabecalho);
   for(const id of ['bannerVencimentoFatura','devolucoesPainelGestor']){const e=document.getElementById(id);if(e)atencao.append(e);}
+  const envios=criar('div',null,'space-y-2');envios.id='enviosConferenciaInicioGestor';envios.hidden=true;atencao.append(envios);
   const alertaProtecao=criar('div',null,'hidden');alertaProtecao.id='alertaProtecaoPainelGestor';alertaProtecao.hidden=true;atencao.append(alertaProtecao);
   const vazio=criar('p','Tudo em dia por aqui.','text-xs text-slate-300');vazio.id='semAvisosPainelGestor';vazio.hidden=true;atencao.append(vazio);
   // O total a receber aparece no cartão de Início.

@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v249. Início mostra um atalho por envio em conferência. A Atividade foca o cartão e informa o desfecho em uma região de status. A ação de consulta não reenvia nem conclui um pedido de cancelamento. Atualizações automáticas da Atividade passam a compartilhar uma leitura de pendências com o selo e o Início. Impacto real de latência aguarda novo diagnóstico.
+
 Revisão 27/11/2026 · v248. Vencimentos do Início abrem Conferir fatura com cartão e mês preenchidos. Alertas de devolução rotulam o destino no cartão e destacam a parcela focada em Empréstimos. Pix agendado abre seu lançamento.
 
 Revisão 27/11/2026 · v246. Balanço Anual exibe a comparação quando há base válida e expande o gráfico de evolução ao lado do ranking em telas largas.
