@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026. Avisos usam estilos de confirmação, informação, atenção, pendência ou erro. Modais compartilham rolagem interna e regras de teclado, com fechamento pelo método de cada tela. Voltar e Escape agem na camada superior. Validação na conta real pendente. Na amostra fornecida do diagnóstico v4, dois salvamentos registrados no cliente duraram 19,873 s e 27,275 s. As três amostras de servidor para salvar lançamento ficaram entre 16,480 s e 23,574 s, com 9,750 s a 15,520 s em gravação. A amostra v4 não mede o tempo completo até a confirmação visível.
+
 Revisão 27/11/2026. Atividade exporta até 30 amostras recentes de Novo Lançamento em temposLancamento, com tipo, resultado e tempos de preparação, API e retorno. A oportunidade de exibição de Sincronizado é medida em quadro de navegador com a página visível. Offline, falhas e conferência conservam resultado próprio. Descrição, valor e identificadores da compra ficam fora das amostras. Validação com operações reais pendente.
 
 Revisão 27/11/2026. Novo Lançamento oferece até três descrições mais usadas quando o campo está vazio, ordenadas pela frequência já disponível. Ao escolher uma, reutiliza as sugestões de forma e categoria e leva o foco ao valor. A busca por categorias reaproveita padrões preparados uma vez e evita atualizar metas se a categoria continua igual. Medição local isolada da sugestão, com 5.250 entradas simuladas por rodada e 60 categorias: 1.627 ms antes e 302 ms depois. Validação na conta real pendente.

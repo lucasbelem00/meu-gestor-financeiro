@@ -259,6 +259,19 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   #toastNotificacao[data-tipo="sincronizado"] #toastTitulo{text-transform:none;letter-spacing:normal}
   main:has(#view-atividade:not(.hidden)) #avisoEnviosConferenciaGestor{display:none}
 </style>
+<style>
+  #toastNotificacao{--aviso-borda:#53647b;--aviso-texto:#dbeafe;--aviso-icone:#24344c;z-index:1200;border-color:var(--aviso-borda);overflow-wrap:anywhere}
+  #toastNotificacao :is(#toastTitulo,#toastIconeGestor){color:var(--aviso-texto)}
+  #toastNotificacao #toastIconeGestor{background:var(--aviso-icone);border-color:var(--aviso-borda)}
+  #toastNotificacao:is([data-tipo="sucesso"],[data-tipo="sincronizado"]){--aviso-borda:#49816a;--aviso-texto:#b6f1d6;--aviso-icone:#234438}
+  #toastNotificacao:is([data-tipo="atencao"],[data-tipo="pendencia"]){--aviso-borda:#947232;--aviso-texto:#fde6ab;--aviso-icone:#473719}
+  #toastNotificacao[data-tipo="erro"]{--aviso-borda:#a75b61;--aviso-texto:#ffd2d7;--aviso-icone:#502832}
+  [data-modal-gestor]:not(#modalMenuMobile){padding:max(.75rem,env(safe-area-inset-top)) max(.75rem,env(safe-area-inset-right)) max(.75rem,env(safe-area-inset-bottom)) max(.75rem,env(safe-area-inset-left))}
+  [data-modal-gestor]:not(#modalMenuMobile)>:first-child{max-height:100%;min-width:0;overflow-y:auto;overscroll-behavior:contain;overflow-wrap:anywhere}
+  [data-modal-gestor] :is(button[type="submit"],button[aria-label^="Fechar"],button[onclick^="fechar"],button[onclick^="cancelarFiltros"],#confBtnSim,#confBtnNao,#pxBtnCopiar,#pxBtnFechar){min-height:44px}
+  [data-modal-gestor] :is(button,input,select,textarea,summary):focus-visible{outline:2px solid #93c5fd;outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){#toastNotificacao{transition:none}}
+</style>
 <style id="gestor-inicio-navegacao">
   .gestor-resumo-inicio { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
   .gestor-cartao-inicio { min-width:0; min-height:7rem; padding:1rem; text-align:left; display:flex; flex-direction:column; justify-content:space-between; gap:.45rem; border:1px solid #3c5778; border-radius:1.25rem; background:#172437; color:#e2e8f0; }
@@ -287,13 +300,13 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   <div id="toastNotificacao" role="status" aria-atomic="true" class="fixed top-20 left-1/2 z-[500] bg-slate-900 border border-emerald-500/50 text-white px-5 py-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex items-center gap-3.5 max-w-sm w-[90%] transition-all duration-300 opacity-0 pointer-events-none -translate-x-1/2 -translate-y-4">
     <div id="toastIconeGestor" aria-hidden="true" class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-base shrink-0 border border-emerald-500/30 shadow-sm">✨</div>
     <div>
-      <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Sucesso</h4>
-      <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium">Ação concluída com sucesso!</p>
+      <h4 id="toastTitulo" class="text-xs font-bold text-emerald-400 uppercase tracking-wider"></h4>
+      <p id="toastMensagem" class="text-xs text-slate-200 mt-0.5 leading-tight font-medium"></p>
     </div>
   </div>
 
   <!-- MODAL DE CONFIRMAÇÃO PERSONALIZADA (COM OPÇÃO DE LOTE PARA PARCELADOS) -->
-  <div id="modalConfirmacao" role="dialog" aria-modal="true" aria-labelledby="confTitle" aria-describedby="confMensagem" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[710] hidden px-4">
+  <div id="modalConfirmacao" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="confTitle" aria-describedby="confMensagem" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[710] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm p-6 rounded-2xl shadow-2xl text-center">
       <div class="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xl mx-auto mb-3 border border-rose-500/30">⚠️</div>
       <h3 id="confTitle" class="text-base font-bold text-white mb-2">Confirmação</h3>
@@ -313,7 +326,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     </div>
   </div>
 
-  <div id="modalPixCobranca" role="dialog" aria-modal="true" aria-labelledby="tituloModalPixCobranca" class="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center z-[610] hidden px-4" onclick="if(event.target === this) fecharModalPixCobranca()">
+  <div id="modalPixCobranca" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloModalPixCobranca" class="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center z-[610] hidden px-4" onclick="if(event.target === this) fecharModalPixCobranca()">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6 rounded-2xl shadow-2xl space-y-3">
       <div class="flex items-center justify-between gap-3">
         <h3 id="tituloModalPixCobranca" class="text-sm font-bold text-white">📲 Prévia para WhatsApp</h3>
@@ -342,7 +355,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </div>
 
   <!-- MENU UNIFICADO (MOBILE E DESKTOP) COM FERRAMENTAS, EMPRÉSTIMOS, RELATÓRIOS E GESTÃO -->
-  <div id="modalMenuMobile" role="dialog" aria-modal="true" aria-labelledby="tituloCentralNavegacao" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
+  <div id="modalMenuMobile" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloCentralNavegacao" onclick="if(event.target === this) fecharMenuMobile()" class="fixed inset-0 bg-black/75 z-[150] hidden flex-col justify-end sm:justify-center sm:items-center sm:p-4">
     <div id="painelCentralNavegacao" class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto space-y-5 shadow-2xl">
       <div id="cabecalhoCentralNavegacao" class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2 min-w-0">
@@ -487,7 +500,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     </div>
   </div>
 
-  <div id="modalExportarDados" role="dialog" aria-modal="true" aria-labelledby="tituloExportarDados" onkeydown="conterFocoExportacao(event)" onclick="if(event.target === this) fecharExportacaoDados()" class="hidden fixed inset-0 z-[160] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+  <div id="modalExportarDados" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloExportarDados" onkeydown="conterFocoExportacao(event)" onclick="if(event.target === this) fecharExportacaoDados()" class="hidden fixed inset-0 z-[160] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700 rounded-2xl p-5 space-y-4 shadow-2xl">
       <div class="flex items-center justify-between gap-3">
         <h3 id="tituloExportarDados" class="text-base font-bold text-white">💾 Exportar dados</h3>
@@ -1550,9 +1563,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 </div>
 
     <!-- MODAL EDIÇÃO DE EMPRÉSTIMO -->
-  <div id="modalEdicaoEmp" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
+  <div id="modalEdicaoEmp" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloModalEdicaoEmpGestor" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto">
-      <h3 class="text-lg font-bold text-amber-300 mb-4">✏️ Editar Empréstimo</h3>
+      <h3 id="tituloModalEdicaoEmpGestor" class="text-lg font-bold text-amber-300 mb-4">✏️ Editar Empréstimo</h3>
       <form onsubmit="salvarEdicaoEmp(event)" class="space-y-3.5">
         <input type="hidden" id="inpEdEmpLinha">
         <input type="hidden" id="inpEdEmpParcelaStr">
@@ -1694,7 +1707,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
     </section>
   </main>
 
-  <div id="modalPagamentoFaturaGestor" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloPagamentoFaturaGestor">
+  <div id="modalPagamentoFaturaGestor" data-modal-gestor class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="tituloPagamentoFaturaGestor">
     <div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-lg max-h-[85vh] overflow-y-auto space-y-4">
       <div class="flex justify-between gap-3 items-center"><h2 id="tituloPagamentoFaturaGestor" class="font-bold text-white">📃 Conferir fatura</h2><button type="button" onclick="fecharPagamentoFaturaGestor()" aria-label="Fechar conferência" class="p-2 text-slate-200">✕</button></div>
       <p class="text-xs text-slate-300">Registre somente o que você pagou ao banco. O recebimento de terceiros continua separado.</p>
@@ -1715,9 +1728,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   <nav id="barraNavegacaoMobile" aria-label="Navegação principal" class="sm:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 pb-2.5 pt-2 px-2 grid grid-cols-5 gap-1.5 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.5)] no-print"></nav>
 
   <!-- MODAL: FILTRO AVANÇADO -->
-  <div id="modalFiltros" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+  <div id="modalFiltros" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltrosGestor" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 rounded-2xl shadow-2xl">
-      <h3 class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
+      <h3 id="tituloModalFiltrosGestor" class="text-lg font-bold text-white mb-5 flex items-center gap-2">🎛️ Filtros Avançados</h3>
       <div class="space-y-3">
         <div><label for="filtAno" class="block text-xs font-bold text-slate-400 mb-1">Ano da fatura</label><input id="filtAno" type="number" min="1900" max="2200" step="1" placeholder="Todos os anos" class="min-h-11 w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"></div>
         <div><label for="filtMes" class="block text-xs font-bold text-slate-400 mb-1">Mês Fatura</label><select id="filtMes" class="min-h-11 w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-white text-sm"><option value="">Todos</option></select></div>
@@ -1755,7 +1768,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </div>
 
   <!-- MODAL: EDITAR CARTÃO/PIX -->
-  <div id="modalForma" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+  <div id="modalForma" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="modalFormaTitle" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl">
       <h3 id="modalFormaTitle" class="text-lg font-bold text-white mb-5">✏️ Editar forma de pagamento</h3>
       <form onsubmit="salvarForma(event)" class="space-y-4">
@@ -1779,9 +1792,9 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </div>
 
   <!-- MODAL EDIÇÃO DE LANÇAMENTO (COM ANTECIPAÇÃO NUBANK E CONVERSOR P/ EMPRÉSTIMOS) -->
-  <div id="modalEdicaoLanc" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
+  <div id="modalEdicaoLanc" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloModalEdicaoLancGestor" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4 overflow-y-auto py-6">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md p-6 rounded-2xl shadow-2xl my-auto">
-      <h3 class="text-lg font-bold text-blue-300 mb-4">✏️ Editar Lançamento</h3>
+      <h3 id="tituloModalEdicaoLancGestor" class="text-lg font-bold text-blue-300 mb-4">✏️ Editar Lançamento</h3>
       <form onsubmit="salvarEdicaoLanc(event)" class="space-y-3.5">
         <input type="hidden" id="inpEdLinha">
         <input type="hidden" id="inpEdParcelaStr">
@@ -1919,7 +1932,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
   </div>
 
   <!-- MODAL EDIÇÃO DE ASSINATURA -->
-  <div id="modalEdicaoAss" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
+  <div id="modalEdicaoAss" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloEdicaoAssGestor" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-md max-h-[90dvh] overflow-y-auto p-6 rounded-2xl shadow-2xl">
       <h3 id="tituloEdicaoAssGestor" class="text-lg font-bold text-white mb-2">✏️ Editar recorrência</h3>
       <p id="ajudaEdicaoAssGestor" class="text-xs text-slate-400 mb-5">Altera o mês atual e futuros. O histórico de meses passados fica protegido.</p>
@@ -2336,13 +2349,22 @@ const DICIONARIO_ACENTOS_PT = {
       if (somenteConfiguracao) campoPix.focus();
     }
 
-   function mostrarAviso(titulo, mensagem) {
+   function tipoAvisoGestor(titulo) {
+      const texto = String(titulo || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      if (texto === 'sincronizado') return 'sincronizado';
+      if (/^(envio em conferencia|confirmacao pendente|conferencia pendente|conferindo confirmacao|sincronizacao pendente|salvo no aparelho|guardado no aparelho)/.test(texto)) return 'pendencia';
+      if (/^(erro|falha|nao foi possivel|indisponivel|acesso negado|nao autorizado)/.test(texto)) return 'erro';
+      if (/^(atencao|confira|informe|corrija|sem conexao|sem internet|.* invalida?o?\b)/.test(texto)) return 'atencao';
+      if (/^(sucesso|copiado|recebido|salvo|enviado|confirmado|envio confirmado|excluido|atualizado|.* (salva|salvo|confirmado|confirmada|atualizada|atualizado)\b)/.test(texto)) return 'sucesso';
+      return 'informacao';
+    }
+   function mostrarAviso(titulo, mensagem, tipo = tipoAvisoGestor(titulo)) {
       const toast = document.getElementById('toastNotificacao');
       if(!toast) return;
-      const confirmado = titulo === 'Sincronizado';
-      toast.dataset.tipo = confirmado ? 'sincronizado' : 'aviso';
+      const icones = {sincronizado:'✓',sucesso:'✓',pendencia:'◷',atencao:'!',erro:'×',informacao:'i'};
+      toast.dataset.tipo = Object.hasOwn(icones,tipo) ? tipo : 'informacao';
       const icone = document.getElementById('toastIconeGestor');
-      if (icone) icone.textContent = confirmado ? '✓' : '✨';
+      if (icone) icone.textContent = icones[toast.dataset.tipo];
       document.getElementById('toastTitulo').textContent = titulo;
       document.getElementById('toastMensagem').textContent = mensagem;
       if (toast._timerAviso) clearTimeout(toast._timerAviso);
@@ -2351,7 +2373,7 @@ const DICIONARIO_ACENTOS_PT = {
       toast.classList.add('opacity-100', 'translate-y-0');
 
       const tamanhoTexto = String(titulo || '').length + String(mensagem || '').length;
-      const duracao = Math.min(9000, 3000 + Math.ceil(tamanhoTexto / 70) * 1000);
+      const duracao = Math.min(12000, (tipo === 'erro' || tipo === 'pendencia' ? 5500 : 3000) + Math.ceil(tamanhoTexto / 70) * 1000);
       toast._timerAviso = setTimeout(() => {
         toast.classList.remove('opacity-100', 'translate-y-0');
         toast.classList.add('opacity-0', '-translate-y-4');
@@ -5801,7 +5823,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   comprovante.querySelector('[data-racha-emprestimos]').onclick=()=>abrirResumoEmprestimos();
   detalhe.querySelector('#rachaEtapaPagamento').append(acoes,comprovante);
   document.getElementById('btnCadaPessoaPagouRacha').addEventListener('click',cadaPessoaPagouSuaParteRachaGestor);
-  const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
+  const modal=document.createElement('div');modal.id='modalRegistroRachaGestor';modal.setAttribute('data-modal-gestor','');modal.className='hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','tituloRegistroRacha');
   modal.innerHTML='<div class="bg-slate-800 border border-slate-600 rounded-2xl p-5 w-full max-w-xl max-h-[85dvh] overflow-y-auto space-y-4"><div class="flex justify-between gap-3"><h2 id="tituloRegistroRacha" class="text-white font-bold">Forma de pagamento</h2><button type="button" id="fecharRegistroRacha" aria-label="Fechar registro da divisão" class="p-2 text-white">✕</button></div><p id="rachaRegistroEstado" class="text-sm text-slate-200"></p><form id="formRegistroRacha" class="space-y-3"><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs text-slate-300">Como paguei<select required id="rachaRegistroForma" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><div class="text-xs text-slate-300">Data da compra<input id="rachaRegistroData" aria-label="Data da compra" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><div class="text-xs text-slate-300">Mês da fatura ou recebimento<input id="rachaRegistroMes" aria-label="Mês da fatura ou recebimento" required class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></div><label id="rachaRegistroBoxParcelas" class="text-xs text-slate-300">Parcelas do cartão<input id="rachaRegistroParcelas" type="number" min="1" max="600" step="1" value="1" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></label></div><label class="text-xs text-slate-200 flex items-center gap-2"><input id="rachaRegistroMinhaParte" type="checkbox" checked>Registrar também minha parte como gasto pessoal</label><label class="text-xs text-slate-300 block">Categoria da minha parte<select id="rachaRegistroCategoria" class="w-full mt-1 p-3 rounded-xl bg-slate-900 border border-slate-600 text-white"></select></label><fieldset class="border border-slate-600 rounded-xl p-3"><legend class="text-xs text-slate-200 px-1">Devoluções que já recebi</legend><div id="rachaRegistroRecebidos"></div><p class="text-xs text-slate-300">Marque apenas quem já devolveu o valor para você. Isso não quita o cartão.</p></fieldset><section aria-labelledby="tituloResumoAplicacaoRacha" class="rounded-xl bg-slate-900 border border-slate-600 p-3"><h3 id="tituloResumoAplicacaoRacha" class="mb-2 text-sm font-bold text-white">O que será registrado</h3><ul id="resumoAplicacaoRacha" class="space-y-1.5 text-sm text-slate-200"></ul></section><button type="submit" id="btnPreviaRegistroRacha" class="w-full rounded-xl bg-amber-500 text-slate-950 px-3 py-3 font-bold text-sm disabled:opacity-50">Conferir e continuar</button><section id="avisoResultadoIncertoRacha" hidden class="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-100"><p role="status" class="font-bold">Envio em conferência</p><p class="mt-1 text-xs">Consulte a confirmação da divisão em Atividade.</p><button type="button" onclick="fecharRegistroRachaGestor(); abrirAtividadeGestor()" class="mt-2 min-h-[44px] rounded-lg border border-amber-400/50 px-3 py-2 font-bold">Abrir Atividade</button></section></form></div>';
   document.body.append(modal);document.getElementById('fecharRegistroRacha').addEventListener('click',fecharRegistroRachaGestor);document.getElementById('formRegistroRacha').addEventListener('submit',e=>{e.preventDefault();conferirRegistroRachadinhaGestor();});document.getElementById('rachaRegistroForma').addEventListener('change',atualizarParcelasRegistroRachaGestor);
   dividirCampoCalendarioGestor('rachaRegistroData',true);
@@ -8395,10 +8417,14 @@ try {
     var antigo = pxEl('pxOverlayCopiar'); if (antigo) antigo.remove();
     var ov = document.createElement('div');
     ov.id = 'pxOverlayCopiar';
+    ov.setAttribute('data-modal-gestor','');
+    ov.setAttribute('role','dialog');
+    ov.setAttribute('aria-modal','true');
+    ov.setAttribute('aria-labelledby','tituloPxOverlayCopiarGestor');
     ov.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[600] px-4';
     ov.innerHTML = '<div class="bg-slate-800 border border-slate-600 w-full max-w-md p-5 rounded-2xl shadow-2xl space-y-3">' +
-      '<h3 class="text-sm font-bold text-white">📋 Copie o texto abaixo</h3>' +
-      '<textarea id="pxTextoCopiar" rows="10" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-xs"></textarea>' +
+      '<h3 class="text-sm font-bold text-white" id="tituloPxOverlayCopiarGestor">Copiar texto</h3>' +
+      '<textarea id="pxTextoCopiar" aria-label="Texto para copiar" rows="10" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white text-xs"></textarea>' +
       '<div class="flex gap-2">' +
       '<button type="button" id="pxBtnCopiar" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs">📋 Copiar</button>' +
       '<button type="button" id="pxBtnFechar" class="flex-1 bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs">✕ Fechar</button>' +
@@ -10240,8 +10266,8 @@ ACOES_RENDERIZADAS.add('mostrarRecebidosEmpGestor');ACOES_RENDERIZADAS.add('limp
 function reativarFormaRotinaGestor(nome){const f=buscarFormaPagamentoGestor(nome);if(!f)return;const versaoConfiguracao=versoesConfigGestor.formas;mostrarConfirmacao('Reativar '+nome+'?','A forma voltará a aparecer nos novos lançamentos. O histórico será preservado.',()=>apiCall('salvarFormaPagamentoWeb',{nomeOriginal:nome,nome,banco:f.banco,limite:lerValorMoeda(f.limiteTotal),fechamento:f.fechamento,vencimento:f.vencimento,tipo:f.tipo,reativar:true,versaoConfiguracao}).then(()=>carregarDados()).catch(e=>mostrarAviso('Não reativado',e.message)),false,'Reativar','neutral');}
 
 function escolherValorColadoRotinaGestor(opcoes,aplicar){
-  const foco=document.activeElement,modal=document.createElement('div');modal.id='modalEscolherValorColado';modal.className='fixed inset-0 z-[250] bg-black/80 flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Escolha o valor da transferência');
-  const caixa=document.createElement('div');caixa.className='w-full max-w-md rounded-2xl bg-slate-800 border border-slate-600 p-4 space-y-3';const titulo=document.createElement('p');titulo.className='font-bold text-white';titulo.textContent='O texto contém mais de um valor. Qual deseja usar?';caixa.append(titulo);const fechar=()=>{modal.remove();foco?.focus({preventScroll:true});};
+  const foco=document.activeElement,modal=document.createElement('div');modal.id='modalEscolherValorColado';modal.setAttribute('data-modal-gestor','');modal.className='fixed inset-0 z-[250] bg-black/80 flex items-center justify-center p-4';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Escolha o valor da transferência');
+  const caixa=document.createElement('div');caixa.className='w-full max-w-md rounded-2xl bg-slate-800 border border-slate-600 p-4 space-y-3';const titulo=document.createElement('p');titulo.className='font-bold text-white';titulo.textContent='O texto contém mais de um valor. Qual deseja usar?';caixa.append(titulo);const fechar=()=>{modal.remove();foco?.focus({preventScroll:true});};modal._fecharModalGestor=fechar;
   opcoes.forEach(o=>{const b=document.createElement('button');b.type='button';b.className='block w-full rounded-xl border border-sky-500 p-3 text-left text-sky-100';b.textContent=formatBRL(o.valor)+' · '+o.contexto;b.onclick=()=>{fechar();aplicar(o.valor);};caixa.append(b);});const cancelar=document.createElement('button');cancelar.type='button';cancelar.textContent='Cancelar';cancelar.className='w-full rounded-xl bg-slate-700 p-3 text-white';cancelar.onclick=fechar;caixa.append(cancelar);modal.append(caixa);document.body.append(modal);caixa.querySelector('button').focus();modal.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();fechar();}if(e.key==='Tab'){const bs=Array.from(caixa.querySelectorAll('button')),i=bs.indexOf(document.activeElement);e.preventDefault();bs[(i+(e.shiftKey?-1:1)+bs.length)%bs.length].focus();}};
 }
 const colarPixAnteriorRotinaGestor=extrairValorPixAoColar;
@@ -11927,17 +11953,68 @@ function iniciarHistoricoModaisGestor(){
   modalExportarDados:()=>window.fecharExportacaoDados(),
   modalPixCobranca:()=>window.fecharModalPixCobranca(),
   modalConfirmacao:()=>{const m=document.getElementById('modalConfirmacao');if(m?._fecharConfirmacaoGestor)m._fecharConfirmacaoGestor();else m?.classList.add('hidden');},
+  modalRegistroRachaGestor:()=>window.fecharRegistroRachaGestor(),
+  modalEscolherValorColado:()=>document.getElementById('modalEscolherValorColado')?._fecharModalGestor?.(),
   pxOverlayCopiar:()=>document.getElementById('pxOverlayCopiar')?.remove()
  };
  const ids=Object.keys(fechamentos);
- const visiveis=()=>ids.filter(id=>{const e=document.getElementById(id);return e&&!e.hidden&&!e.classList.contains('hidden')&&e.style.display!=='none';});
+ const visiveis=()=>ids.map(id=>document.getElementById(id))
+  .filter(e=>e&&!e.hidden&&!e.classList.contains('hidden')&&e.style.display!=='none')
+  .sort((a,b)=>{
+    const nivel=e=>typeof getComputedStyle==='function' ? Number(getComputedStyle(e).zIndex)||0 : 0;
+    return nivel(a)-nivel(b);
+  }).map(e=>e.id);
+ const topo=()=>{const id=visiveis().at(-1);return id ? document.getElementById(id) : null;};
  const controle=criarHistoricoModaisGestor({historico:window.history,visiveis,fechar:id=>fechamentos[id]?.(),podeReabrir:id=>id==='modalMenuMobile',abrir:()=>window.abrirMenuMobile()});
- window.addEventListener('popstate',controle.voltar);
+ const podeFocar=e=>e?.isConnected&&!e.disabled&&e.getClientRects().length&&!e.closest('[hidden],.hidden,[inert]');
+ const focaveis=m=>Array.from(m?.querySelectorAll?.('button,input,select,textarea,a[href],summary,[tabindex]')||[])
+   .filter(e=>e.tabIndex>=0&&podeFocar(e));
+ const origens=new WeakMap();
+ let modalAtual=null,ultimoFoco=document.activeElement;
+ function focarModal(modal) {
+   const primeiro=focaveis(modal)[0];
+   if (primeiro) primeiro.focus({preventScroll:true});
+   else { modal.setAttribute?.('tabindex','-1');modal.focus?.({preventScroll:true}); }
+ }
+ function sincronizarFoco(){
+   const modal=topo();
+   if(modal===modalAtual)return;
+   const anterior=modalAtual,origem=anterior&&origens.get(anterior);
+   if(anterior&&!visiveis().includes(anterior.id)){
+     origens.delete(anterior);
+     if((!modal || modal.contains?.(origem))&&podeFocar(origem)&&
+         (document.activeElement===document.body||!podeFocar(document.activeElement)||anterior.contains?.(document.activeElement))) origem.focus({preventScroll:true});
+   }
+   modalAtual=modal || null;
+   if(!modal)return;
+   if(!origens.has(modal))origens.set(modal,ultimoFoco);
+   if(!modal.contains?.(document.activeElement))focarModal(modal);
+ }
+ document.addEventListener('focusin',event=>{
+   const modal=topo();
+   if(!modal || (modal===modalAtual && modal.contains?.(event.target)))ultimoFoco=event.target;
+ });
+ document.addEventListener('keydown',event=>{
+   if(event.key!=='Escape'&&event.key!=='Tab')return;
+   const modal=topo();if(!modal)return;
+   if(event.key==='Escape'){
+     event.preventDefault();event.stopImmediatePropagation();
+     fechamentos[modal.id]?.();
+     return;
+   }
+   const controles=focaveis(modal),indice=controles.indexOf(document.activeElement);
+   if(!controles.length || indice<0 || (event.shiftKey?indice===0:indice===controles.length-1)){
+     event.preventDefault();event.stopImmediatePropagation();
+     const destino=event.shiftKey?controles.at(-1):controles[0];
+     if(destino)destino.focus({preventScroll:true});else focarModal(modal);
+   }
+ },true);
+ window.addEventListener('popstate',()=>{controle.voltar();sincronizarFoco();});
  const observador=new MutationObserver(registros=>{
-  if(registros.some(r=>r.type==='attributes'?ids.includes(r.target.id):[...r.addedNodes,...r.removedNodes].some(n=>ids.includes(n.id))))controle.sincronizar();
+  if(registros.some(r=>r.type==='attributes'?ids.includes(r.target.id):[...r.addedNodes,...r.removedNodes].some(n=>ids.includes(n.id)))){controle.sincronizar();sincronizarFoco();}
  });
  observador.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','hidden','style']});
- controle.sincronizar();
+ controle.sincronizar();sincronizarFoco();
 }
 document.addEventListener('DOMContentLoaded',iniciarHistoricoModaisGestor);
 // FIM INTERFACE MODAIS GERADA
