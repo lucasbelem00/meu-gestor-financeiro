@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v251. Empréstimos mostra até seis devoluções prioritárias no topo, das atrasadas às previstas nos próximos sete dias, com acesso à parcela. Fatura e Anual reaproveitam uma única leitura conferida de cada planilha anual para gastos pessoais e terceiros. Histórico e Recorrências mantêm a leitura direcionada dos anos abertos.
+
 Revisão 27/11/2026 · v250. Desfazer financeiro passa a usar o resumo em segundo plano quando a base já tem a rotina e passa nos mesmos controles de fórmula e intenção durável. A procura textual da Atividade evita a busca isolada por reversões porque já lê todos os eventos. Desfazer resolve categorias com uma leitura por operação. Planejamento repete consulta se a planilha estiver ocupada e a tela ainda estiver ativa. Novo ganho real aguarda medição na cópia de testes.
 
 Revisão 27/11/2026 · v249. Início mostra um atalho por envio em conferência. A Atividade foca o cartão e informa o desfecho em uma região de status. A ação de consulta não reenvia nem conclui um pedido de cancelamento. Atualizações automáticas da Atividade passam a compartilhar uma leitura de pendências com o selo e o Início. Impacto real de latência aguarda novo diagnóstico.

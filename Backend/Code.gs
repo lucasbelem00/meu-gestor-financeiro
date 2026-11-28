@@ -3966,7 +3966,7 @@ function criarPlanilhaVirtualGestor_(ss, contexto) {
     // As duas abas financeiras pertencem à mesma fotografia inicial sob lock.
     // A aplicação do plano continua conferindo os destinos reais novamente.
     if(ehAbaRegistrosGestor_(nome)&&!leituraFinanceira&&ativoAnualGestor_(ss)){
-      leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map(),somenteAba:nome==='Lançamentos'&&['obterRelatorioMes','obterRelatorioAnual','filtrarLancamentosWeb','obterRecorrenciasWeb'].includes(contexto.action)?'Lançamentos':null};
+      leituraFinanceira={ss:ss,catalogo:catalogoAnosGestor_(ss),ajustes:ajustesAnuaisGestor_(ss),anos:new Map(),somenteAba:nome==='Lançamentos'&&['filtrarLancamentosWeb','obterRecorrenciasWeb'].includes(contexto.action)?'Lançamentos':null};
       contexto.leituraFinanceiraInicial=leituraFinanceira;
     }
     const real = contexto.detalhesGravacao?medirEtapaGravacaoGestor_(contexto.detalhesGravacao,'abrirAbaMs',()=>folhaLeituraAnualGestor_(ss,nome,leituraFinanceira)):folhaLeituraAnualGestor_(ss,nome,leituraFinanceira);

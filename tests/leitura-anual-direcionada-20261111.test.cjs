@@ -5,3 +5,16 @@ test('leitura direcionada mantém recusa de fórmula na outra aba e de identidad
 test('ano fechado nunca admite leitura parcial; leitura integral continua detectando alteração',()=>{const a=ambiente(),d=a.ctx.dadosAnoGestor_(a.e),fechado={...a.e,estado:'FECHADO',hash:a.ctx.hashGestor_(d)};assert.throws(()=>a.ctx.dadosAnoGestor_(fechado,'Lançamentos'),/ano aberto/);a.ctx.dadosAnoGestor_(fechado);a.ss.sheets['Empréstimos'].rows[0][0]='Alterado';assert.throws(()=>a.ctx.dadosAnoGestor_(fechado),/fechado.*alterado/);});
 
 test('executor exporta contagens direcionadas e descarta referência de medição no fim',()=>{const a=ambiente(),{launch}=require('./fixtures/gestor-mocks.cjs'),vm=require('node:vm');a.ctx.executarAcaoApi_('salvarLancamentoWeb',{...launch,numParcelas:1,requestId:'anual-direcionada-metrica-001'});const d=vm.runInContext('TEMPOS_RESPOSTA_GESTOR_.detalhesGravacao',a.ctx);assert(d.anoValoresEvitadas>=1);assert(d.anoLeiturasDirecionadas>=1);for(const k of ['anoAbrirMs','anoMetadadosMs','anoIdentidadeMs','anoFormulasMs','anoValoresMs'])assert(Number.isFinite(d[k]),k);assert.equal(vm.runInContext('HASHES_EXECUCAO_GESTOR_',a.ctx),null);});
+
+test('Mensal e Anual compartilham a conferência de cada ano entre gastos e terceiros',()=>{
+ const a=ambiente();
+ for(const [acao,periodo] of [['obterRelatorioMes','10/2026'],['obterRelatorioAnual',2026]]){
+  const abrir=a.ctx.dadosAnoGestor_,consultas=[];
+  a.ctx.dadosAnoGestor_=(e,projecao)=>{consultas.push([e.ano,projecao]);return abrir(e,projecao);};
+  try{
+   const r=a.ctx.executarAcaoApi_(acao,periodo);
+   assert(r.totalRaw>0);
+   assert.deepEqual(consultas.filter(([ano])=>ano===2026),[[2026,undefined]]);
+  }finally{a.ctx.dadosAnoGestor_=abrir;}
+ }
+});

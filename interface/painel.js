@@ -10,6 +10,33 @@ function listarDevolucoesPainelGestor(itens,hoje=(typeof hojeCivilGestor==='func
  const atual=hojeSituacaoVisualGestor(hoje);
  return (itens||[]).filter(i=>i.status==='A Receber'&&!i.arquivado).map(i=>{const situacao=situacaoRecebimentoVisualGestor(i,hoje),dia=diaSituacaoVisualGestor(i.dataCombinada)??(situacao.codigo==='mesEncerrado'?fimMesSituacaoVisualGestor(i.mesFatura):null);return {...i,situacao,dias:dia===null?null:dia-atual};}).filter(i=>i.dias!==null&&i.dias<=7).sort((a,b)=>a.dias-b.dias||String(a.pessoa).localeCompare(String(b.pessoa),'pt-BR'));
 }
+function renderizarPrioridadesReceberEmpGestor(itens){
+  const secao=document.getElementById('prioridadesReceberEmpGestor'),lista=document.getElementById('listaPrioridadesReceberEmp');
+  if(!secao||!lista)return;
+  const prioridades=listarDevolucoesPainelGestor(itens);
+  secao.hidden=!prioridades.length;
+  lista.replaceChildren(...prioridades.slice(0,6).map(i=>{
+    const botao=document.createElement('button');
+    botao.type='button';
+    botao.className='w-full min-w-0 rounded-xl border p-3 text-left text-sm focus-visible:ring-2 focus-visible:ring-sky-300 '+i.situacao.fundo;
+    const titulo=document.createElement('strong'),prazo=document.createElement('span'),acao=document.createElement('span');
+    titulo.className='block break-words';
+    titulo.textContent=i.pessoa+' · '+formatBRL(i.valorRaw);
+    prazo.className='mt-1 block break-words text-xs';
+    prazo.textContent=[i.dataCombinada||'Fatura '+i.mesFatura,i.situacao.texto,i.descricao].filter(Boolean).join(' · ');
+    acao.className='mt-2 block text-xs font-semibold text-sky-200';
+    acao.textContent=i.registroId?'Ver parcela →':'Ver empréstimos da pessoa →';
+    botao.append(titulo,prazo,acao);
+    botao.onclick=()=>abrirDevolucaoPainelGestor(i);
+    return botao;
+  }));
+  if(prioridades.length>6){
+    const aviso=document.createElement('p');
+    aviso.className='text-xs text-slate-300 sm:col-span-2';
+    aviso.textContent='As demais parcelas estão em Empréstimos por pessoa.';
+    lista.append(aviso);
+  }
+}
 function normalizarConfigLimitePessoalGestor(config){
   return {centavos:Number.isSafeInteger(config?.centavos)&&config.centavos>0?config.centavos:0,incluirPrevistos:config?.incluirPrevistos===true};
 }

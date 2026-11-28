@@ -334,3 +334,5 @@ Quando há base comparável, a comparação vem antes dos indicadores do ano. Em
 ### Retorno de ações e prioridade no Histórico
 
 Os avisos flutuantes e os retornos de Atualizar dados no Diagnóstico usam cor de fundo, borda e texto para distinguir informação, sucesso, atenção e falha. Os filtros de forma, categoria e prioridade nos cartões do Histórico são separados pelo espaçamento. Essencial e Ajustável mantêm seu ponto colorido e indicam seleção pelo fundo e pelo estado aria-pressed.
+
+Em Empréstimos, A receber primeiro reúne devoluções atrasadas e previstas nos próximos sete dias acima dos indicadores. Cada linha usa a cor da situação e abre a parcela em Empréstimos por pessoa.
