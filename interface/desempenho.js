@@ -307,7 +307,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v262', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v263', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -385,7 +385,7 @@ window.apiCall = function apiCoordenadaDesempenhoGestor(acao, param, ...extras) 
   if(['editarLancamentoLinhaWeb','excluirLancamentoWeb','editarEmprestimoLinhaWeb','excluirEmprestimoWeb','alternarStatusEmprestimoWeb','dividirParcelaEmprestimoWeb','moverParaEmprestimosWeb','moverParaGastosPessoaisWeb'].includes(acao)&&!controleAtualizacaoRegistrosGestor.permitir()){const e=new Error('Aguarde a atualização da lista antes de alterar este registro.');e.codigo='DADOS_EM_ATUALIZACAO';return Promise.reject(e);}
   const verificacao=conferirProtocoloAntesMutacaoGestor(acao,param);
   if(verificacao)return verificacao.then(()=>apiCoordenadaDesempenhoGestor(acao,param,...extras));
-  const estadoMensal = acao === 'obterRelatorioMes' && cargaMensalDesempenhoGestor?.mes === String(param) ? cargaMensalDesempenhoGestor : null;
+  const estadoMensal = acao === 'obterRelatorioMes' && cargaMensalDesempenhoGestor?.mes === String(param?.mes ?? param) ? cargaMensalDesempenhoGestor : null;
   return coordenadorLeiturasDesempenhoGestor.chamar(acao, param, ...extras).then(resultado => {
     if (estadoMensal) setTimeout(() => concluirVisualMensalDesempenhoGestor(estadoMensal, null), 0);
     return resultado;

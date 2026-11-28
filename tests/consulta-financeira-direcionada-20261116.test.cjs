@@ -18,6 +18,25 @@ test('Histórico mensal preserva parcelas do outro ano, status, totais e pagina�
  assert.deepEqual([...primeira.itens,...segunda.itens],[...depois.itens]);
 });
 function anual(){const a=ambienteProtecao(fixture([personal('Original',40)]));a.ativar();a.ctx.ativarOrganizacaoAnualWeb();return a;}
+test('consulta do cartão preserva o saldo parcial de terceiros e o resumo entre anos',()=>{
+ const {loan}=require('./fixtures/gestor-mocks.cjs');
+ const terceiro=loan('Pessoa de teste','A Receber',70,'Cartao');
+ terceiro[8]='01/2027';
+ const a=ambienteProtecao(fixture([personal('Pix externo',12,'1/1','01/2027','Pago','Pix')],[terceiro]));
+ a.ativar();a.ctx.ativarOrganizacaoAnualWeb();
+ api(a,'salvarLancamentoWeb',{...launch,numParcelas:3,mesPrimeiraFatura:'12/2026',requestId:'cartao-especifico-cruza-ano'});
+ const fatura=api(a,'obterFaturaPagamentoWeb',{forma:'Cartao',mesFatura:'01/2027'});
+ api(a,'registrarPagamentoFaturaWeb',{...fatura,valor:20,requestId:'cartao-especifico-pago-parcial'});
+ const mes=api(a,'obterRelatorioMes','01/2027');
+ const cartao=api(a,'obterRelatorioMes',{mes:'01/2027',cartao:'Cartao'});
+ const forma=mes.formas.find(f=>f.nome===cartao.cartaoConsulta);
+ assert(forma.terceiros>0&&forma.pagoBanco===20&&forma.abertoBanco>0);
+ assert.equal(JSON.stringify(cartao.formas),JSON.stringify([forma]));
+ assert.equal(JSON.stringify(cartao.lancamentos),JSON.stringify(mes.lancamentos.filter(l=>l[2]===forma.nome)));
+ assert.equal(cartao.lancamentos[0][12].fimMes,'02/27');
+ assert(cartao.lancamentos.length<mes.lancamentos.length);
+ assert(Buffer.byteLength(JSON.stringify(cartao))<Buffer.byteLength(JSON.stringify(mes)));
+});
 test('Mensal reduz o preparo sem mudar pagamentos, comparação ou parcelas entre anos',()=>{
  const a=anual();
  api(a,'salvarLancamentoWeb',{...launch,descricao:'Entre anos',numParcelas:3,mesPrimeiraFatura:'12/2026',requestId:'mensal-preparo-cruza-anos'});

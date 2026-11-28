@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+A fatura aberta pelo alerta tem uma visão por cartão com resumo, lançamentos e Ver fatura completa no cabeçalho.
+
 Na Fatura aberta pelo alerta, a prévia de cartão, mês e saldo fica no cabeçalho até a lista carregar. Em caso de falha, a prévia indica a origem do saldo e oferece nova tentativa.
 
 Ao abrir a Fatura por um alerta de cartão do Início, o foco vai para o resumo junto da lista. O botão Conferir pagamento aparece quando há saldo no cartão.

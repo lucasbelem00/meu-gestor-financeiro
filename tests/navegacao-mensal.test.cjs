@@ -3,7 +3,7 @@ const html=fs.readFileSync(require('node:path').join(__dirname,'../index.html'),
 function ambiente(){
   let instante=new Date(2026,9,28,12).getTime();class Relogio extends Date{constructor(...args){super(...(args.length?args:[instante]));}static now(){return instante;}}
   const select=()=>({options:[],value:'',set innerHTML(v){this.options=[];this.value='';},add(o){this.options.push(o);if(!this.value)this.value=o.value;}});
-  const els={selFiltroRelPeriodo:{value:''},selFiltroAnoSimples:select(),btnMesPrev:{},btnMesNext:{},btnAnoPrev:{},btnAnoNext:{}};
+  const els={selFiltroRelPeriodo:{value:''},selFiltroAnoSimples:select(),btnMesPrev:{},btnMesNext:{},btnAnoPrev:{},btnAnoNext:{},btnVerFaturaCompletaGestor:{},tituloFaturaMensalGestor:{}};
   let buscas=[];
   const ctx=vm.createContext({document:{getElementById:id=>els[id],addEventListener(){}},Option:function(text,value){this.text=text;this.value=value;},Date:Relogio,abasConfig:[{id:'relatorio',tituloD:'Fatura Mensal',cor:''}],abaAtivaAtual:'dashboard',dadosCarregadosIniciais:true,fecharMenuMobile(){},salvarCacheLeituraGestor(){},arvoreMesesAno:{'2025':['12/2025'],'2026':['01/2026','10/2026','11/2026']},dispararBuscaRelatorioMensal(){ctx.atualizarEstadoSetasMensal();buscas.push(ctx.periodoMensalSelecionadoGestor()?.valor);}});
   vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../interface/usabilidade.js'),'utf8'),ctx);
@@ -12,6 +12,15 @@ function ambiente(){
   vm.runInContext(html.slice(html.indexOf('    function irParaFaturaMensal('),html.indexOf('    let compararHorizonteCompleto')),ctx);
   return {ctx,els,buscas,virar:data=>{instante=data.getTime();}};
 }
+test('atalho de cartão e volta à fatura completa mantêm a competência',()=>{
+ const {ctx,els,buscas}=ambiente();
+ ctx.abrirCartaoNaFaturaMensalGestor('Cartão','01/2026','R$ 50,00');
+ assert.equal(els.tituloFaturaMensalGestor.textContent,'Fatura do cartão');
+ assert.equal(els.btnVerFaturaCompletaGestor.hidden,false);
+ ctx.irParaFaturaMensal('01/2026');
+ assert.equal(els.btnVerFaturaCompletaGestor.hidden,true);
+ assert.deepEqual(buscas,['01/2026','01/2026']);
+});
 test('setas mensais avançam, voltam, atravessam o ano e respeitam os limites',()=>{
   const {ctx,els,buscas}=ambiente();ctx.preencherSeletoresInteligentes('2026','10',false);
   ctx.mudarMesRelatorio(1);assert.equal(els.selFiltroRelPeriodo.value.split('-')[1],'11');assert.equal(els.btnMesNext.disabled,true);

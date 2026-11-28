@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 28/11/2026 · v263. O alerta do Início abre a consulta da fatura por cartão. obterRelatorioMes aceita mês como texto para a fatura completa ou objeto com mês e cartão para o recorte. Mantém conferência dos anos e usa os mesmos cálculos de pagamento ao banco e terceiros. O cache distingue os dois pedidos. Validar a versão do Apps Script antes do preview.
+
 Revisão 28/11/2026 · v262. O atalho da Fatura apresenta os dados do alerta imediatamente, indica atualização e mantém a referência com nova tentativa em caso de falha. O proxy da leitura mensal segue o redirecionamento de conteúdo Google via GET sem enviar token ou corpo e mede as duas etapas com o mesmo prazo. Demais chamadas preservam o comportamento. O primeiro tempo inclui execução do Apps Script.
 
 Revisão 28/11/2026 · v261. O alerta de cartão do Início abre a Fatura mensal com o cartão selecionado e leva ao resumo da lista. Conferir pagamento abre o fluxo existente para o cartão e mês. O alerta de Pix mantém seu destino. O diagnóstico correlaciona as chamadas por página e tentativa; tempo fora do doPost abrange inicialização e transporte.

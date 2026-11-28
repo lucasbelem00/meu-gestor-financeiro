@@ -3336,7 +3336,7 @@ function unificarCategoriasNaPlanilhaInterno_() {
 // AUXILIARES DE RELATÓRIO
 // ============================================================================
 
-function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesAlvo,mesComparacao) {
+function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesAlvo,mesComparacao,formaAlvo) {
   const ss = obterPlanilhaGestor_();
   const lido = lerRegistrosConsultaProtecaoGestor_('Lançamentos',anosArquivo);
   const nomesCfg = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
@@ -3347,12 +3347,14 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesAlvo
   const competencias=mesAlvo?lido.raw.map((r,i)=>limparApostrofo(r[8] instanceof Date?formatarCelulaRegistroGestor_(r[8],'MM/yyyy'):lido.disp[i][8])):null;
   const comprasDoMes=new Set();
   if(competencias) lido.raw.forEach((r,i)=>{
-    if(competencias[i]!==mesAlvo || !r[12]&&!r[11]) return;
+    if(competencias[i]!==mesAlvo || !r[12]&&!r[11] || formaAlvo && chaveFormaGestor_(lido.disp[i][2])!==formaAlvo) return;
     comprasDoMes.add(String(r[12]||r[11]));
   });
   lido.raw.forEach(function (r, i) {
     if(compraId && String(r[12] || r[11]) !== compraId) return;
-    if(competencias && competencias[i]!==mesAlvo && competencias[i]!==mesComparacao && !comprasDoMes.has(String(r[12]||r[11]))) return;
+    if(competencias && !comprasDoMes.has(String(r[12]||r[11])) &&
+       !(competencias[i]===mesAlvo && (!formaAlvo || chaveFormaGestor_(lido.disp[i][2])===formaAlvo)) &&
+       competencias[i]!==mesComparacao) return;
     if(Array.isArray(anosPreparacao)){const ano=parseMesFat(r[8]).a;if(!anosPreparacao.includes(ano)){const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.relatorioRegistrosNaoPreparados=(d.relatorioRegistrosNaoPreparados||0)+1;return;}}
     const d = lido.disp[i].slice();
     // Datas do Sheets podem estar com máscaras diferentes. O período e a
@@ -3440,12 +3442,13 @@ function lerMetasCategorias() {
   return mapa;
 }
 
-function lerEmprestimosRelatorio_(periodo) {
+function lerEmprestimosRelatorio_(periodo,formaAlvo) {
   const ss = obterPlanilhaGestor_();
   const itens = [];
   const ano=String(periodo).includes('/')?Number(String(periodo).split('/')[1]):Number(periodo);
   const lido = lerRegistrosConsultaProtecaoGestor_('Empréstimos',[ano]);
   lido.raw.forEach(function (r, i) {
+    if(formaAlvo && chaveFormaGestor_(lido.disp[i][3])!==formaAlvo) return;
     const d = lido.disp[i].slice();
     [[0,'dd/MM/yyyy'],[6,'d/M'],[8,'MM/yyyy']].forEach(function (campo) {
       if (r[campo[0]] instanceof Date) d[campo[0]] = formatarCelulaRegistroGestor_(r[campo[0]],campo[1]);
@@ -3468,9 +3471,9 @@ function resumirTerceirosRelatorio_(itens) {
   return { totalRaw: arred2(total), recebidoRaw: arred2(recebido), aReceberRaw: arred2(total - recebido), itens: itens };
 }
 
-function lerTerceirosDoMes(mes) {
+function lerTerceirosDoMes(mes,formaAlvo) {
   const mapa = Object.create(null);
-  lerEmprestimosRelatorio_(mes).forEach(function (item) {
+  lerEmprestimosRelatorio_(mes,formaAlvo).forEach(function (item) {
     const k = chaveFormaGestor_(item.forma);
     if (!mapa[k]) mapa[k] = { nome: item.forma, total: 0, pagoBanco: 0, itens: [] };
     mapa[k].total += item.valorRaw;
@@ -3518,21 +3521,24 @@ function composicaoAVistaRigido(linhas) {
 // ============================================================================
 
 function obterRelatorioMes(mesFiltro) {
-  const mes = validarMesFaturaWeb_(limparApostrofo(mesFiltro));
+  const pedidoCartao = mesFiltro && typeof mesFiltro === 'object';
+  const mes = validarMesFaturaWeb_(limparApostrofo(pedidoCartao ? mesFiltro.mes : mesFiltro));
+  const forma = pedidoCartao ? chaveFormaGestor_(mesFiltro.cartao) : '';
+  if (pedidoCartao && (!forma || tipoFormaGestor_(mesFiltro.cartao)!=='cartao')) throw new Error('Selecione um cartão válido.');
   const info = parseMesFat(mes);
   if (!info.m) throw new Error('Mês inválido: ' + mes);
 
   const dtAnt = new Date(info.a, info.m - 2, 1);
   const mesAnt = pad2(dtAnt.getMonth() + 1) + '/' + dtAnt.getFullYear();
-  const todas = medirEtapaConsultaGestor_('mensalLancamentosMs',()=>lerLancamentosParaRelatorio([info.a,dtAnt.getFullYear()],undefined,undefined,mes,mesAnt));
-  const metas = medirEtapaConsultaGestor_('mensalMetasMs',lerMetasCategorias);
-  const terceiros = medirEtapaConsultaGestor_('mensalTerceirosMs',()=>lerTerceirosDoMes(mes));
-  return medirEtapaConsultaGestor_('mensalCalculosMs',()=>montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros));
+  const todas = medirEtapaConsultaGestor_('mensalLancamentosMs',()=>lerLancamentosParaRelatorio([info.a,dtAnt.getFullYear()],undefined,undefined,mes,pedidoCartao?null:mesAnt,forma));
+  const metas = pedidoCartao ? {} : medirEtapaConsultaGestor_('mensalMetasMs',lerMetasCategorias);
+  const terceiros = medirEtapaConsultaGestor_('mensalTerceirosMs',()=>lerTerceirosDoMes(mes,forma));
+  return medirEtapaConsultaGestor_('mensalCalculosMs',()=>montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros,forma));
 }
 
-function montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros) {
+function montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros,forma) {
   const resumo = calcularResumoParcelas(todas);
-  const doMes = todas.filter(function (l) { return l.mes === mes && !isStatusCancelado(l.status); });
+  const doMes = todas.filter(function (l) { return l.mes === mes && !isStatusCancelado(l.status) && (!forma || chaveFormaGestor_(l.forma)===forma); });
 
   const totalAnt = todas
     .filter(function (l) { return l.mes === mesAnt && !isStatusCancelado(l.status); })
@@ -3578,6 +3584,13 @@ function montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros) {
     f.abertoBanco = arred2(f.totalBanco - f.pagoBanco);
     return f;
   }).sort(function (a, b) { return b.total - a.total; });
+
+  if (forma) return {
+    cartaoConsulta: formas[0]?.nome || nomeFormaLeituraGestor_(forma),
+    formas: formas,
+    categorias: categorias,
+    lancamentos: doMes.map(function (l) { return itemLancamento(l,resumo,'relatorio'); })
+  };
 
   return {
     kpis: { aberto: formatBRL(aberto), pago: formatBRL(pago), total: formatBRL(total) },
