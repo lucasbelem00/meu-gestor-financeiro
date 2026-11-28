@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+v258 — index.html coordena o atalho de parcela entre Histórico e Mensal. interface/desempenho.js decide se o retorno pode reutilizar a lista ou precisa revalidar. interface/protecao.js evita repetir a revalidação automática nesse retorno dedicado.
+
 27/11/2026 — interface/modais.js coordena a camada superior, retorno do histórico, foco e teclado. index.html define estilos comuns de modal e a apresentação dos avisos.
 
 27/11/2026 — interface/agenda.js compõe a visão de sete dias com os compromissos da carga geral e os modelos retornados pela consulta de Recorrências. interface/painel.js passa a identidade da parcela para o atalho de Empréstimos.

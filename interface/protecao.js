@@ -48,7 +48,7 @@ window.renderizarDados=function(dados,origemCache){
   arquivosAnuaisUIProtecaoGestor=novo;const r=renderDadosAntesProtecaoGestor(dados,origemCache);renderizarAlertaProtecaoPainelGestor(dados.alertaProtecao);return r;
 };
 const setAbaAntesArquivosProtecaoGestor=window.setAba;
-window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length){if(typeof atualizarHistoricoAoEntrarGestor==='function')atualizarHistoricoAoEntrarGestor();else chamarFiltroBackend(false,true);}return r;};
+window.setAba=function(...args){const r=setAbaAntesArquivosProtecaoGestor(...args);if(args[0]==='lancamentos'&&arquivosAnuaisUIProtecaoGestor.length&&!args[3]?.retornoDaFatura){if(typeof atualizarHistoricoAoEntrarGestor==='function')atualizarHistoricoAoEntrarGestor();else chamarFiltroBackend(false,true);}return r;};
 function linkSeguroProtecaoGestor(url){return /^https:\/\/(?:drive\.google\.com|docs\.google\.com)\//.test(String(url||''))?url:'';}
 function abaCompletaCSVProtecaoGestor(dados,nome){
   const origem=dados.abas.find(a=>a.nome===nome);if(!origem)return null;

@@ -304,7 +304,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v257', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v258', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -403,12 +403,13 @@ function consumirHistoricoAtualizacaoGestor(param){return coordenadorLeiturasDes
 let consultaHistoricoAplicadaGestor=null;
 function chaveFiltrosHistoricoEntradaGestor(f){const c={...f};delete c.versaoConsulta;return JSON.stringify(c);}
 function registrarConsultaHistoricoAplicadaGestor(f){consultaHistoricoAplicadaGestor={chave:chaveFiltrosHistoricoEntradaGestor(f),geracao:typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor,instante:Date.now()};}
-function atualizarHistoricoAoEntrarGestor(){
-  if(typeof retomarFiltroHistoricoGestor!=='undefined')retomarFiltroHistoricoGestor=false;
+function atualizarHistoricoAoEntrarGestor(posicaoRetorno){
+  const requerNovaConsulta=retomarFiltroHistoricoGestor;
   if(typeof estadoIntegracaoInterfaceGestor!=='undefined'&&estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento)return;
   const c=consultaHistoricoAplicadaGestor,lista=document.getElementById('lista-lancamentos'),idade=c?Date.now()-c.instante:-1;
-  if(c&&idade>=0&&idade<60000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
-  chamarFiltroBackend(false,true);
+  retomarFiltroHistoricoGestor=false;
+  if(!requerNovaConsulta&&c&&idade>=0&&idade<60000&&c.geracao===(typeof geracaoLeituraGestor==='undefined'?0:geracaoLeituraGestor)&&c.chave===chaveFiltrosHistoricoEntradaGestor(filtrosAtuais)&&!lista?.inert)return;
+  chamarFiltroBackend(false,true,posicaoRetorno);
 }
 function consultarHistoricoVisivelGestor(param,continuar){
   if(typeof abaAtivaAtual!=='undefined'&&abaAtivaAtual==='lancamentos')retomarFiltroHistoricoGestor=false;

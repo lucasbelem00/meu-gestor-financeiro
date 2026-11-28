@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+Na fatura aberta por uma parcela, o cartão selecionado recebe borda azul, rótulo de contexto e ação para voltar ao Histórico. A área de lançamentos oferece retorno caso o cartão não esteja disponível.
+
 27/11/2026 — Avisos distinguem confirmação (verde), pendência e atenção (âmbar), erro (rosa) e informação (azul). Os modais respeitam a altura disponível, usam rolagem interna e mostram foco visível no teclado.
 
 27/11/2026 — Novo Lançamento mostra atalhos Mais usadas abaixo da descrição vazia. Os botões quebram linha e levam o foco ao valor. O valor da última compra fica como sugestão separada.

@@ -14,7 +14,7 @@ function ambiente(){
  const c=vm.createContext({normalizarTexto:norm,escaparHTML:esc,formatBRL:moeda,lerValorMoeda:v=>Number(String(v).replace(/[^\d,.-]/g,'').replace(',','.')),
   tipoFormaPagamentoGestor:f=>typeof f==='object'?f.tipo:f==='Conta renomeada'?'pix':f==='Dinheiro'?'avista':'cartao',formaEhImediataGestor:()=>false,isCategoriaOutros:n=>norm(n).replace(/[^a-z]/g,'')==='outros',
   categoriasGlobaisEdit:[{nome:'Outros 📦'},{nome:'Saúde 💊'},{nome:'Mercado 🛒'}],document:{activeElement:null,getElementById:el,querySelectorAll:()=>controles},
-  ultimoRelatorioMensalCache:{lancamentos:itens,categorias:[{nome:'Saúde 💊',total:200,meta:300},{nome:'Outros',total:100,meta:0}]},filtroInternoMensalAtivo:{},
+  ultimoRelatorioMensalCache:{periodoReferencia:'10/2026',lancamentos:itens,categorias:[{nome:'Saúde 💊',total:200,meta:300},{nome:'Outros',total:100,meta:0}]},filtroInternoMensalAtivo:{},origemParcelaNaFaturaGestor:null,
   referenciaLinhaSegura:()=>'',acaoHTML:()=>'',detalheFechamentoAnualGestor:()=>'',modoEdicaoLancamentos:false,itensFiltradosAtualCache:[]});
  vm.runInContext(fs.readFileSync('interface/compartilhamento.js','utf8'),c);
  vm.runInContext(fs.readFileSync('interface/situacoes.js','utf8'),c);
@@ -24,6 +24,18 @@ function ambiente(){
  vm.runInContext(trecho('    function filtrosMensaisVaziosGestor(','    function carregarRelatorioMesUnico('),c);
  return {c,el,controles,itens};
 }
+
+test('Fatura destaca somente o ID selecionado na competência de origem',()=>{
+ const {c,el,itens}=ambiente();
+ itens[0][1]=itens[1][1];
+ c.origemParcelaNaFaturaGestor={registro:itens[1][13],mes:'10/2026'};
+ c.renderizarListaItensFaturaMensal();
+ assert.equal((el('lista-relatorio').innerHTML.match(/id="parcelaLocalizadaNaFaturaGestor"/g)||[]).length,1);
+ assert.match(el('lista-relatorio').innerHTML,/parcelaLocalizadaNaFaturaGestor[\s\S]*Falta pagar/);
+ c.origemParcelaNaFaturaGestor.mes='11/2026';
+ c.renderizarListaItensFaturaMensal();
+ assert.doesNotMatch(el('lista-relatorio').innerHTML,/parcelaLocalizadaNaFaturaGestor/);
+});
 
 test('atalhos agregados marcam situações e permitem refinar sem manter filtro oculto',()=>{
  const {c,controles}=ambiente();c.aplicarFiltroInternoMensal('status','aberto');assert.deepEqual(Array.from(c.filtroInternoMensalAtivo.status),['naopago','parcial']);assert.deepEqual(controles.slice(0,5).map(b=>b['aria-pressed']),['true','false','true','true','false']);

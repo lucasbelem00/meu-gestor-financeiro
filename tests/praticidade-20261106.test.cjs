@@ -10,14 +10,17 @@ test('levar simulação ao planejamento exige confirmação e recusa dados alter
 });
 test('Histórico reaproveita lista recente somente com mesmos filtros e geração, sem impedir atualização vencida',()=>{
  const s=fs.readFileSync('interface/desempenho.js','utf8');let agora=1000,consultas=0;const lista={inert:false};
- const c=vm.createContext({Date:{now:()=>agora},document:{getElementById:()=>lista},geracaoLeituraGestor:1,filtrosAtuais:{termo:'x'},retomarFiltroHistoricoGestor:true,estadoIntegracaoInterfaceGestor:{pxPaginaHistoricoEmAndamento:false},chamarFiltroBackend:(append,preservar)=>{assert.equal(append,false);assert.equal(preservar,true);consultas++;}});
+ let posicao;
+ const c=vm.createContext({Date:{now:()=>agora},document:{getElementById:()=>lista},geracaoLeituraGestor:1,filtrosAtuais:{termo:'x'},retomarFiltroHistoricoGestor:false,estadoIntegracaoInterfaceGestor:{pxPaginaHistoricoEmAndamento:false},chamarFiltroBackend:(append,preservar,topo)=>{assert.equal(append,false);assert.equal(preservar,true);posicao=topo;consultas++;}});
  vm.runInContext(s.slice(s.indexOf('let consultaHistoricoAplicadaGestor'),s.indexOf('function consultarHistoricoVisivelGestor')),c);
  c.registrarConsultaHistoricoAplicadaGestor({termo:'x',versaoConsulta:'v1'});c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,0);assert.equal(c.retomarFiltroHistoricoGestor,false);
- c.geracaoLeituraGestor++;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,1);
+ c.geracaoLeituraGestor++;c.atualizarHistoricoAoEntrarGestor(840);assert.equal(consultas,1);assert.equal(posicao,840);
  c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);agora+=15001;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,1);agora+=45000;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,2);
  c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);c.filtrosAtuais.termo='y';c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,3);
  c.registrarConsultaHistoricoAplicadaGestor(c.filtrosAtuais);lista.inert=true;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,4);
  c.estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento=true;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,4);
+ c.estadoIntegracaoInterfaceGestor.pxPaginaHistoricoEmAndamento=false;lista.inert=false;
+ c.retomarFiltroHistoricoGestor=true;c.atualizarHistoricoAoEntrarGestor();assert.equal(consultas,5);
 });
 test('parcelas do simulador mostram À vista sem alterar o valor numérico',()=>{
  const s=fs.readFileSync('interface/usabilidade.js','utf8'),campo={value:'1',style:{}},rotulo={hidden:false,classList:{toggle(){}}};
