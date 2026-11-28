@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+Ao abrir a Fatura por um alerta de cartão do Início, o foco vai para o resumo junto da lista. O botão Conferir pagamento aparece quando há saldo no cartão.
+
 Na Fatura mensal filtrada por um cartão, um resumo acompanha a lista com competência, valor pago e saldo integral do cartão. Os totais da seleção continuam no painel de filtros.
 
 Na abertura da Fatura pela parcela, mês, forma de pagamento e Voltar ao Histórico ficam no cabeçalho durante a consulta. Ao concluir, o lançamento recebe foco.

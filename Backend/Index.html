@@ -878,9 +878,10 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <p id="resumoFiltroMensal" role="status" class="text-xs text-sky-200 leading-relaxed"></p>
             <p class="text-[10px] text-slate-300">Os indicadores acima são do mês completo. Dentro de cada grupo, as opções se somam; entre grupos, os filtros são combinados.</p>
           </section>
-          <aside id="contextoCartaoMensalGestor" aria-label="Resumo da fatura do cartão" hidden class="sticky top-20 z-20 rounded-xl border border-sky-700 bg-slate-900 p-3 text-xs shadow-md">
+          <aside id="contextoCartaoMensalGestor" aria-label="Resumo da fatura do cartão" tabindex="-1" hidden class="sticky top-20 z-20 scroll-mt-24 rounded-xl border border-sky-700 bg-slate-900 p-3 text-xs shadow-md">
             <p id="nomeContextoCartaoMensalGestor" class="break-words font-bold text-sky-100"></p>
             <p id="saldoContextoCartaoMensalGestor" class="mt-1 break-words text-slate-200"></p>
+            <button id="btnConferirPagamentoCartaoMensalGestor" type="button" hidden class="mt-2 min-h-11 rounded-lg border border-emerald-500/40 px-3 font-bold text-emerald-200 no-print">Conferir pagamento</button>
           </aside>
           <div id="lista-relatorio" class="grid grid-cols-1 gap-3"></div>
         </div>
@@ -3229,8 +3230,10 @@ const DICIONARIO_ACENTOS_PT = {
       if (navMobile) { navMobile.inert = !emTelaPequena; navMobile.setAttribute('aria-hidden', String(!emTelaPequena)); }
     }
 
-    function setAba(aba, salvar = true, periodoMensalExplicito = null) {
+    function setAba(aba, salvar = true, periodoMensalExplicito = null, opcoes = null) {
       fecharMenuMobile();
+      cartaoSolicitadoMensalGestor = aba === 'relatorio' && opcoes?.cartao
+        ? {forma:opcoes.cartao, mes:periodoMensalExplicito} : null;
       if (aba !== 'relatorio' && origemParcelaNaFaturaGestor) limparOrigemParcelaNaFaturaGestor();
       if (aba === 'relatorio' && (salvar || abaAtivaAtual !== 'relatorio')) aoEntrarMensalGestor(periodoMensalExplicito);
       abaAtivaAtual = aba;
@@ -7128,6 +7131,12 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     }
 
     var origemParcelaNaFaturaGestor = null;
+    var cartaoSolicitadoMensalGestor = null;
+
+    function abrirCartaoNaFaturaMensalGestor(forma, mes) {
+      if (!forma || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(mes || ''))) return;
+      setAba('relatorio', true, mes, {cartao:forma});
+    }
 
     function abrirParcelaNaFaturaGestor(registro, mes, forma, foco) {
       origemParcelaNaFaturaGestor = {registro, mes, forma, foco, posicao:window.scrollY, pendente:true};
@@ -7353,6 +7362,9 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       if (!cartao) return;
       document.getElementById('nomeContextoCartaoMensalGestor').textContent = cartao.nome + ' · Fatura de ' + relatorio.periodoReferencia;
       document.getElementById('saldoContextoCartaoMensalGestor').textContent = 'Pago ' + formatBRL(cartao.pagoBanco) + ' · A pagar ' + formatBRL(cartao.abertoBanco);
+      const conferir = document.getElementById('btnConferirPagamentoCartaoMensalGestor');
+      conferir.hidden = !(Number(cartao.abertoBanco) > 0);
+      conferir.onclick = () => abrirConferenciaFaturaGestor(cartao.nome, relatorio.periodoReferencia);
     }
 
     function renderizarListaItensFaturaMensal() {
@@ -7387,6 +7399,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       const mesmoPeriodo = periodoAnterior === mesFiltro;
       const origem = origemParcelaNaFaturaGestor;
       const avisoParcela = document.getElementById('estadoParcelaNaFaturaGestor');
+      const cartaoPedido = cartaoSolicitadoMensalGestor;
       if (origem?.pendente && origem.mes === mesFiltro) {
         avisoParcela.hidden = false;
         avisoParcela.textContent = [mesFiltro, origem.forma, 'Localizando a parcela…'].filter(Boolean).join(' · ');
@@ -7409,6 +7422,12 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
           const parcela = res.lancamentos?.find(l=>l[13]===origem.registro);
           filtroInternoMensalAtivo = filtrosMensaisVaziosGestor();
           if (parcela?.[2]) filtroInternoMensalAtivo.forma = [parcela[2]];
+        }
+        const abrirCartao = cartaoPedido && cartaoSolicitadoMensalGestor === cartaoPedido && cartaoPedido.mes === mesFiltro && abaAtivaAtual === 'relatorio';
+        if (abrirCartao) {
+          cartaoSolicitadoMensalGestor = null;
+          filtroInternoMensalAtivo = filtrosMensaisVaziosGestor();
+          filtroInternoMensalAtivo.forma = [cartaoPedido.forma];
         }
         const posicaoAntesRender = window.scrollY;
         const geracaoAntesRender = window.geracaoNavegacaoGestor || 0;
@@ -7514,6 +7533,16 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         renderizarListaItensFaturaMensal();
         sincronizarEstadoFiltrosMensalGestor();
         if (mesmoPeriodo && abaAtivaAtual === 'relatorio') requestAnimationFrame(()=>{if(requisicao === requisicaoRelatorioMensal && abaAtivaAtual === 'relatorio' && (window.geracaoNavegacaoGestor || 0)===geracaoAntesRender) window.scrollTo({top:posicaoAntesRender,behavior:'instant'});});
+        if (abrirCartao) {
+          cancelarRolagemTopoAgendadaGestor();
+          requestAnimationFrame(() => {
+            if (requisicao !== requisicaoRelatorioMensal || abaAtivaAtual !== 'relatorio' || (window.geracaoNavegacaoGestor || 0) !== geracaoAntesRender) return;
+            const resumo = document.getElementById('contextoCartaoMensalGestor');
+            const destino = resumo.hidden ? document.getElementById('tituloListaFaturaMensal') : resumo;
+            destino.focus({preventScroll:true});
+            destino.scrollIntoView({block:'start',behavior:'instant'});
+          });
+        }
         if (localizar) {
           origem.pendente = false;
           const destaque = document.getElementById('parcelaLocalizadaNaFaturaGestor');
@@ -7872,7 +7901,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         btn.append(titulo, detalhe, acao);
         btn.onclick = () => alerta.tipo === 'pix'
           ? abrirPixAgendadoGestor(alerta.registro)
-          : abrirConferenciaFaturaGestor(alerta.forma, alerta.mes);
+          : abrirCartaoNaFaturaMensalGestor(alerta.forma, alerta.mes);
         lista.appendChild(btn);
       });
       if (ordenados.length > 3) {
@@ -11565,7 +11594,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v260', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v261', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

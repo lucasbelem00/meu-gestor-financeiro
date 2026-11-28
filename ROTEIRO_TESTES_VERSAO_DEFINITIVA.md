@@ -1,5 +1,7 @@
 # Roteiro para liberar o Gestor de Gastos definitivo
 
+Reteste v261 — Em tela móvel, abra o alerta de cartão do Início, confira cartão, mês, total pago, saldo e foco no resumo. Use Conferir pagamento e valide a prévia sem registrar pagamento. Repita a primeira abertura na mesma competência e compare a correlação de tempos.
+
 Reteste v260 — Filtre a Fatura mensal por um cartão e role a lista no celular. Compare pago e saldo com a seção de formas. Combine situação e categoria e confira que o resumo integral não muda. Confira janeiro e dezembro em compras parceladas, pagamento parcial e comparação com mês anterior. Registre várias primeiras aberturas pelo diagnóstico.
 
 Reteste v259 — Abra uma fatura pelo Histórico e confira mês, forma e retorno no cabeçalho antes de chegar a resposta. Reabra a mesma fatura dentro de um minuto e confira no diagnóstico que não houve novo envio. Após editar um registro de teste, reabra e compare valores; deve haver uma nova consulta. Na abertura por rede, verificar leitura anual, preparação, cálculos e renderização.

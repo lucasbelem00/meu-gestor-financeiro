@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 28/11/2026 · v261. O alerta de cartão do Início abre a Fatura mensal com o cartão selecionado e leva ao resumo da lista. Conferir pagamento abre o fluxo existente para o cartão e mês. O alerta de Pix mantém seu destino. O diagnóstico correlaciona as chamadas por página e tentativa; tempo fora do doPost abrange inicialização e transporte.
+
 Revisão 28/11/2026 · v260. O resumo fixo junto da lista filtrada mostra mês, pago e saldo integral do cartão. Mensal prepara as linhas do mês, do mês anterior e das mesmas compras para preservar as parcelas. A leitura e conferência anuais permanecem. Comparar várias primeiras aberturas equivalentes pelo diagnóstico.
 
 Revisão 28/11/2026 · v259. No atalho da parcela, o cabeçalho mostra mês e forma enquanto carrega e permite voltar ao Histórico. O cache transitório do Mensal passa de 15 para 60 segundos, por mês, com os mesmos limites e invalidações. O diagnóstico separa preparação de lançamentos, metas, terceiros e cálculo; cruzar com leitura anual e renderizarMensal, sem somar etapas aninhadas. A conferência anual permanece. Validação em preview após publicação.

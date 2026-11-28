@@ -39,12 +39,21 @@ test('Fatura destaca somente o ID selecionado na competência de origem',()=>{
 
 test('resumo da fatura usa o saldo integral do cartão mesmo com filtros de lançamentos',()=>{
  const {c,el}=ambiente();
+ const conferencias=[];
+ c.abrirConferenciaFaturaGestor=(...args)=>conferencias.push(args);
  c.ultimoRelatorioMensalCache.formas=[{nome:'Cartão fictício',tipo:'cartao',pagoBanco:75,abertoBanco:195}];
  c.filtroInternoMensalAtivo={forma:['Cartão fictício'],status:['parcial']};
  c.renderizarListaItensFaturaMensal();
  assert.equal(el('contextoCartaoMensalGestor').hidden,false);
  assert.match(el('nomeContextoCartaoMensalGestor').textContent,/10\/2026/);
  assert.equal(el('saldoContextoCartaoMensalGestor').textContent,'Pago R$ 75,00 · A pagar R$ 195,00');
+ const conferir=el('btnConferirPagamentoCartaoMensalGestor');
+ assert.equal(conferir.hidden,false);
+ conferir.onclick();
+ assert.deepEqual(conferencias,[['Cartão fictício','10/2026']]);
+ c.ultimoRelatorioMensalCache.formas[0].abertoBanco=0;
+ c.renderizarListaItensFaturaMensal();
+ assert.equal(conferir.hidden,true);
  c.aplicarFiltroInternoMensal('todos','');
  assert.equal(el('contextoCartaoMensalGestor').hidden,true);
 });
