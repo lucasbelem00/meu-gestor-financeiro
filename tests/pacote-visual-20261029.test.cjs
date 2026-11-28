@@ -37,6 +37,18 @@ test('Fatura destaca somente o ID selecionado na competência de origem',()=>{
  assert.doesNotMatch(el('lista-relatorio').innerHTML,/parcelaLocalizadaNaFaturaGestor/);
 });
 
+test('resumo da fatura usa o saldo integral do cartão mesmo com filtros de lançamentos',()=>{
+ const {c,el}=ambiente();
+ c.ultimoRelatorioMensalCache.formas=[{nome:'Cartão fictício',tipo:'cartao',pagoBanco:75,abertoBanco:195}];
+ c.filtroInternoMensalAtivo={forma:['Cartão fictício'],status:['parcial']};
+ c.renderizarListaItensFaturaMensal();
+ assert.equal(el('contextoCartaoMensalGestor').hidden,false);
+ assert.match(el('nomeContextoCartaoMensalGestor').textContent,/10\/2026/);
+ assert.equal(el('saldoContextoCartaoMensalGestor').textContent,'Pago R$ 75,00 · A pagar R$ 195,00');
+ c.aplicarFiltroInternoMensal('todos','');
+ assert.equal(el('contextoCartaoMensalGestor').hidden,true);
+});
+
 test('atalhos agregados marcam situações e permitem refinar sem manter filtro oculto',()=>{
  const {c,controles}=ambiente();c.aplicarFiltroInternoMensal('status','aberto');assert.deepEqual(Array.from(c.filtroInternoMensalAtivo.status),['naopago','parcial']);assert.deepEqual(controles.slice(0,5).map(b=>b['aria-pressed']),['true','false','true','true','false']);
  c.aplicarFiltroInternoMensal('status','naopago');assert.deepEqual(Array.from(c.filtroInternoMensalAtivo.status),['parcial']);assert.equal(controles[0]['aria-pressed'],'false');

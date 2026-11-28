@@ -18,6 +18,25 @@ test('Histórico mensal preserva parcelas do outro ano, status, totais e pagina�
  assert.deepEqual([...primeira.itens,...segunda.itens],[...depois.itens]);
 });
 function anual(){const a=ambienteProtecao(fixture([personal('Original',40)]));a.ativar();a.ctx.ativarOrganizacaoAnualWeb();return a;}
+test('Mensal reduz o preparo sem mudar pagamentos, comparação ou parcelas entre anos',()=>{
+ const a=anual();
+ api(a,'salvarLancamentoWeb',{...launch,descricao:'Entre anos',numParcelas:3,mesPrimeiraFatura:'12/2026',requestId:'mensal-preparo-cruza-anos'});
+ const ler=a.ctx.lerLancamentosParaRelatorio;
+ const tamanhos=[];
+ a.ctx.lerLancamentosParaRelatorio=(anos,preparo,compraId,mes,anterior)=>{
+   const completo=ler(anos,preparo,compraId);
+   const selecionado=ler(anos,preparo,compraId,mes,anterior);
+   tamanhos.push([completo.length,selecionado.length]);
+   return completo;
+ };
+ const antes=api(a,'obterRelatorioMes','01/2027');
+ a.ctx.lerLancamentosParaRelatorio=ler;
+ const depois=api(a,'obterRelatorioMes','01/2027');
+ assert.equal(JSON.stringify(depois),JSON.stringify(antes));
+ assert(tamanhos[0][0]>tamanhos[0][1]);
+ assert.equal(depois.lancamentos.find(l=>l[6]==='2/3')[12].fimMes,'02/27');
+ assert.notEqual(depois.estatisticas.ritmoVariacao,null);
+});
 for(const [acao,param]of [['filtrarLancamentosWeb',{filtros:{},offset:0,limite:50}],['obterRecorrenciasWeb',null]])test(acao+' preserva resultado e usa projeção somente em anos abertos',()=>{const a=anual(),matriz=a.ctx.matrizFinanceiraAnualGestor_,ler=a.ctx.dadosAnoGestor_;a.ctx.matrizFinanceiraAnualGestor_=(ss,n,l)=>{if(l)l.somenteAba=null;return matriz(ss,n,l);};const completo=JSON.stringify(api(a,acao,param));a.ctx.matrizFinanceiraAnualGestor_=matriz;const chamadas=[];a.ctx.dadosAnoGestor_=(e,n)=>{chamadas.push({estado:e.estado,n});return ler(e,n);};assert.equal(JSON.stringify(api(a,acao,param)),completo);assert(chamadas.some(x=>x.estado==='ABERTO'&&x.n==='Lançamentos'));assert(!chamadas.some(x=>x.estado==='FECHADO'&&x.n));});
 test('retrato financeiro dispensa notas/estatísticas e preserva todos os campos financeiros',()=>{const a=boot(fixture());api(a,'getDadosCompletos');let notas=0,stats=0;const n=a.ctx.lerNotasGestor_,t=a.ctx.estatisticasHistoricoTecnicoGestor_;a.ctx.lerNotasGestor_=(...p)=>{notas++;return n(...p);};a.ctx.estatisticasHistoricoTecnicoGestor_=(...p)=>{stats++;return t(...p);};const r=api(a,'salvarLancamentoWeb',{...launch,numParcelas:1,requestId:'snapshot-enxuto-001',incluirAtualizacaoDados:true,atualizacaoFinanceiraEnxuta:true});const d=r.atualizacaoDados?.dados;assert(d);assert.equal(notas,0);assert.equal(stats,0);assert.equal(d.atualizacaoFinanceiraEnxuta,true);assert.equal(d.anotacoes,undefined);const atual=api(a,'getDadosCompletos');for(const k of Object.keys(atual).filter(k=>!['historicoTecnico','anotacoes','notasRevision','erroNotas','atualizacaoFinanceiraEnxuta'].includes(k)))assert.equal(JSON.stringify(d[k]),JSON.stringify(atual[k]),k);assert.equal(notas,1);assert.equal(stats,1);assert(!JSON.stringify(a.db.sheets['_Gestor_Operacoes'].rows).includes('atualizacaoDados'));});
 

@@ -3336,7 +3336,7 @@ function unificarCategoriasNaPlanilhaInterno_() {
 // AUXILIARES DE RELATÓRIO
 // ============================================================================
 
-function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesHistorico) {
+function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesAlvo,mesComparacao) {
   const ss = obterPlanilhaGestor_();
   const lido = lerRegistrosConsultaProtecaoGestor_('Lançamentos',anosArquivo);
   const nomesCfg = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
@@ -3344,15 +3344,15 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId,mesHist
   const datasOrdenacao=new Map();
   const formasRelatorio=new Map();
   const categoriasRelatorio=new Map();
-  const competencias=mesHistorico?lido.raw.map((r,i)=>limparApostrofo(r[8] instanceof Date?formatarCelulaRegistroGestor_(r[8],'MM/yyyy'):lido.disp[i][8])):null;
+  const competencias=mesAlvo?lido.raw.map((r,i)=>limparApostrofo(r[8] instanceof Date?formatarCelulaRegistroGestor_(r[8],'MM/yyyy'):lido.disp[i][8])):null;
   const comprasDoMes=new Set();
   if(competencias) lido.raw.forEach((r,i)=>{
-    if(competencias[i]!==mesHistorico || !r[12]&&!r[11]) return;
+    if(competencias[i]!==mesAlvo || !r[12]&&!r[11]) return;
     comprasDoMes.add(String(r[12]||r[11]));
   });
   lido.raw.forEach(function (r, i) {
     if(compraId && String(r[12] || r[11]) !== compraId) return;
-    if(competencias && competencias[i]!==mesHistorico && !comprasDoMes.has(String(r[12]||r[11]))) return;
+    if(competencias && competencias[i]!==mesAlvo && competencias[i]!==mesComparacao && !comprasDoMes.has(String(r[12]||r[11]))) return;
     if(Array.isArray(anosPreparacao)){const ano=parseMesFat(r[8]).a;if(!anosPreparacao.includes(ano)){const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.relatorioRegistrosNaoPreparados=(d.relatorioRegistrosNaoPreparados||0)+1;return;}}
     const d = lido.disp[i].slice();
     // Datas do Sheets podem estar com máscaras diferentes. O período e a
@@ -3522,18 +3522,18 @@ function obterRelatorioMes(mesFiltro) {
   const info = parseMesFat(mes);
   if (!info.m) throw new Error('Mês inválido: ' + mes);
 
-  const todas = medirEtapaConsultaGestor_('mensalLancamentosMs',()=>lerLancamentosParaRelatorio([info.a,info.m===1?info.a-1:info.a]));
+  const dtAnt = new Date(info.a, info.m - 2, 1);
+  const mesAnt = pad2(dtAnt.getMonth() + 1) + '/' + dtAnt.getFullYear();
+  const todas = medirEtapaConsultaGestor_('mensalLancamentosMs',()=>lerLancamentosParaRelatorio([info.a,dtAnt.getFullYear()],undefined,undefined,mes,mesAnt));
   const metas = medirEtapaConsultaGestor_('mensalMetasMs',lerMetasCategorias);
   const terceiros = medirEtapaConsultaGestor_('mensalTerceirosMs',()=>lerTerceirosDoMes(mes));
-  return medirEtapaConsultaGestor_('mensalCalculosMs',()=>montarRelatorioMesGestor_(mes,info,todas,metas,terceiros));
+  return medirEtapaConsultaGestor_('mensalCalculosMs',()=>montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros));
 }
 
-function montarRelatorioMesGestor_(mes,info,todas,metas,terceiros) {
+function montarRelatorioMesGestor_(mes,mesAnt,todas,metas,terceiros) {
   const resumo = calcularResumoParcelas(todas);
   const doMes = todas.filter(function (l) { return l.mes === mes && !isStatusCancelado(l.status); });
 
-  const dtAnt = new Date(info.a, info.m - 2, 1);
-  const mesAnt = pad2(dtAnt.getMonth() + 1) + '/' + dtAnt.getFullYear();
   const totalAnt = todas
     .filter(function (l) { return l.mes === mesAnt && !isStatusCancelado(l.status); })
     .reduce(function (acc, l) { return acc + l.valor; }, 0);

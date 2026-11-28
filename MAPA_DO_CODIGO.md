@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+v260 — index.html apresenta o resumo do cartão junto dos lançamentos filtrados. Backend/Code.gs aplica o recorte de competências ao preparar o relatório, depois da conferência dos anos.
+
 v259 — interface/desempenho.js preserva o cache mensal por até um minuto. Backend/Code.gs registra as etapas da Fatura Mensal e shared/metricas-diagnostico.cjs mantém a lista de métricas compartilhada com o exportador.
 
 v258 — index.html coordena o atalho de parcela entre Histórico e Mensal. interface/desempenho.js decide se o retorno pode reutilizar a lista ou precisa revalidar. interface/protecao.js evita repetir a revalidação automática nesse retorno dedicado.

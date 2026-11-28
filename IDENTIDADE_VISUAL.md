@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+Na Fatura mensal filtrada por um cartão, um resumo acompanha a lista com competência, valor pago e saldo integral do cartão. Os totais da seleção continuam no painel de filtros.
+
 Na abertura da Fatura pela parcela, mês, forma de pagamento e Voltar ao Histórico ficam no cabeçalho durante a consulta. Ao concluir, o lançamento recebe foco.
 
 Na fatura aberta por uma parcela, o cartão selecionado recebe borda azul, rótulo de contexto e ação para voltar ao Histórico. A área de lançamentos oferece retorno caso o cartão não esteja disponível.
