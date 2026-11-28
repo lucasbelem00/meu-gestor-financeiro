@@ -5181,12 +5181,34 @@ function decodificarEventosAtividadeGestor_(linhas) {
   return eventos;
 }
 
-function mapaRegistrosAtividadeGestor_() {
-  const mapa = new Map(), ss = obterPlanilhaGestor_();
-  ['Lançamentos', 'Empréstimos'].forEach(function (nome) {
-    const sh = obterAbaExecucaoGestor_(ss,nome); if (!sh || sh.getLastRow() < 2) return;
-    sh.getRange(2, 1, sh.getLastRow() - 1, COLUNAS_GESTOR_).getValues().forEach(function (r, i) { if (r[11]) { if (mapa.has(String(r[11]))) throw new Error('Há registros com identificação repetida. Confira a planilha.'); mapa.set(String(r[11]), { aba: nome, linha: i + 2, registro: r }); } });
-  }); return mapa;
+function mapaRegistrosAtividadeGestor_(ids) {
+  const mapa = new Map(), vistos = new Set(), ss = obterPlanilhaGestor_();
+  for (const nome of ['Lançamentos', 'Empréstimos']) {
+    const sh = obterAbaExecucaoGestor_(ss,nome), ultimo = sh ? sh.getLastRow() : 0;
+    if (ultimo < 2) continue;
+    const linhas = ids ? sh.getRange(2,12,ultimo-1,1).getValues() : sh.getRange(2,1,ultimo-1,COLUNAS_GESTOR_).getValues();
+    const intervalos = [];
+    linhas.forEach(function(r,i) {
+      const id = String(r[ids ? 0 : 11] || '');
+      if (!id) return;
+      if (vistos.has(id)) throw new Error('Há registros com identificação repetida. Confira a planilha.');
+      vistos.add(id);
+      if (!ids) { mapa.set(id,{aba:nome,linha:i+2,registro:r}); return; }
+      if (!ids.has(id)) return;
+      const linha = i+2, anterior = intervalos[intervalos.length-1];
+      if (anterior && anterior.fim+1===linha) anterior.fim=linha;
+      else intervalos.push({inicio:linha,fim:linha});
+    });
+    // Se a página estiver muito espalhada, uma leitura em lote custa menos.
+    if (intervalos.length>4) intervalos.splice(0,intervalos.length,{inicio:2,fim:ultimo});
+    for (const {inicio,fim} of intervalos) {
+      sh.getRange(inicio,1,fim-inicio+1,COLUNAS_GESTOR_).getValues().forEach(function(r,i) {
+        const id=String(r[11]||'');
+        if (ids.has(id)) mapa.set(id,{aba:nome,linha:inicio+i,registro:r});
+      });
+    }
+  }
+  return mapa;
 }
 
 function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
@@ -5210,7 +5232,6 @@ function motivoBloqueioDesfazerGestor_(evento, mapa, revertidos) {
 
 function obterAtividadeWeb(param) {
   const p = param || {}, indice=medirEtapaConsultaGestor_('atividadeIndiceMs',()=>indiceEventosAtividadeGestor_());
-  let mapa=null;
   const termo = normalizarTexto(String(p.termo || '').slice(0, 200)), tipo = String(p.tipo || '');
   const offset = Math.max(0, parseInt(p.offset, 10) || 0), limite = Math.min(50, Math.max(1, parseInt(p.limite, 10) || 20));
   let pagina,total,reversoes;
@@ -5228,9 +5249,11 @@ function obterAtividadeWeb(param) {
     pagina=linhasPagina.map(linha=>porLinha.get(linha));reversoes=linhasReversoes.map(linha=>porLinha.get(linha));
   }
   const revertidos=new Set(reversoes.filter(function(e){return e.reverte;}).map(function(e){return e.reverte;}));
+  const alteracoes = pagina.filter(e=>e.reversivel&&!e.recorrenciaIntegrada&&!revertidos.has(e.id)).flatMap(e=>e.alteracoes);
+  // Restaurar uma ocorrência fixa exige verificar outras linhas da série.
+  const buscaSerie = alteracoes.some(a=>!a.depois&&a.antes&&a.aba==='Lançamentos'&&limparApostrofo(a.antes[6])==='∞/∞');
+  const mapa = alteracoes.length ? medirEtapaConsultaGestor_('atividadeMapaMs',()=>mapaRegistrosAtividadeGestor_(buscaSerie?null:new Set(alteracoes.map(a=>String(a.id))))) : null;
   return { total: total, temMais: offset + limite < total, itens: pagina.map(function (e) {
-    // Ações não reversíveis/desfeitas não precisam consultar os registros financeiros.
-    if(e.reversivel&&!e.recorrenciaIntegrada&&!revertidos.has(e.id)&&!mapa)mapa=medirEtapaConsultaGestor_('atividadeMapaMs',()=>mapaRegistrosAtividadeGestor_());
     const motivo = medirEtapaConsultaGestor_('atividadeDisponibilidadeMs',()=>motivoBloqueioDesfazerGestor_(e,mapa,revertidos));
     const principal=e.alteracoes.find(function(a){return a.depois || a.antes;});
     const resumoExibido=principal?resumirRegistroAtividade_(principal.depois || principal.antes,principal.aba):copiarGestor_(e.resumo);
@@ -7732,7 +7755,7 @@ function completarSeriesRecorrenciasGestor_(listaAssinaturas,linhasSeriesProjeca
     Object.values(listaAssinaturas).forEach(function(ass){
       const serie=(linhasSeriesProjecao.get(String(ass.compraId))||[]).slice().sort(function(a,b){return parseMesFat(formatarCelulaRegistroGestor_(a[8],'MM/yyyy')).time-parseMesFat(formatarCelulaRegistroGestor_(b[8],'MM/yyyy')).time;});
       if(!ass.controleInvalido && serie.length)Object.assign(ass,dadosRetomadaSerieGestor_(serie));
-      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
+      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',data:formatarCelulaRegistroGestor_(r[0],'dd/MM/yyyy'),mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
       const atual=referenciaRecorrenteNoMesGestor_(serie,mesAtualStr);ass.vigente=atual?apresentar(atual):null;ass.programadas=[];
       const condicao=function(r){return hashGestor_([r[1],r[2],r[3],extractNum(r[7])]);};let anterior=atual;
       serie.filter(function(r){return parseMesFat(formatarCelulaRegistroGestor_(r[8],'MM/yyyy')).time>timeMesAtual;}).forEach(function(r){if(!anterior||condicao(r)!==condicao(anterior))ass.programadas.push(apresentar(r));anterior=r;});

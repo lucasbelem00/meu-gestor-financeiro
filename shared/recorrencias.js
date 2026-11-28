@@ -133,7 +133,7 @@ function completarSeriesRecorrenciasGestor_(listaAssinaturas,linhasSeriesProjeca
     Object.values(listaAssinaturas).forEach(function(ass){
       const serie=(linhasSeriesProjecao.get(String(ass.compraId))||[]).slice().sort(function(a,b){return parseMesFat(formatarCelulaRegistroGestor_(a[8],'MM/yyyy')).time-parseMesFat(formatarCelulaRegistroGestor_(b[8],'MM/yyyy')).time;});
       if(!ass.controleInvalido && serie.length)Object.assign(ass,dadosRetomadaSerieGestor_(serie));
-      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
+      const apresentar=function(r){return {registroId:r[11],compraId:r[12],versao:Number(r[13]),descricao:limparApostrofo(r[1]),forma:limparApostrofo(r[2]),categoria:limparApostrofo(r[3]),valor:formatBRL(extractNum(r[7])),valorRaw:extractNum(r[7]),status:r[9],pulada:r[9]==='Ocorrência Pulada',data:formatarCelulaRegistroGestor_(r[0],'dd/MM/yyyy'),mes:formatarCelulaRegistroGestor_(r[8],'MM/yyyy')};};
       const atual=referenciaRecorrenteNoMesGestor_(serie,mesAtualStr);ass.vigente=atual?apresentar(atual):null;ass.programadas=[];
       const condicao=function(r){return hashGestor_([r[1],r[2],r[3],extractNum(r[7])]);};let anterior=atual;
       serie.filter(function(r){return parseMesFat(formatarCelulaRegistroGestor_(r[8],'MM/yyyy')).time>timeMesAtual;}).forEach(function(r){if(!anterior||condicao(r)!==condicao(anterior))ass.programadas.push(apresentar(r));anterior=r;});

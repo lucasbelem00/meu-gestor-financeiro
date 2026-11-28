@@ -23,3 +23,15 @@ test('página e reversões compartilham leitura sem repetir evento nem liberar d
 
 
 test('evento com recorrência integrada não consulta mapa financeiro para uma ação já não reversível',()=>{const {ctx,sh}=ambiente(),row=sh.rows[sh.rows.length-1],e=JSON.parse(JSON.parse(row[5]));e.reversivel=true;e.recorrenciaIntegrada=true;row[5]=JSON.stringify(JSON.stringify(e));ctx.mapaRegistrosAtividadeGestor_=()=>{throw Error('Não consultar mapa para ação integrada');};const p=ctx.executarAcaoApi_('obterAtividadeWeb',{});assert.equal(p.itens[0].podeDesfazer,false);assert.match(p.itens[0].motivo,/criados juntos/);});
+
+test('mapa limitado da página materializa só a identificação pedida e o completo mantém todos os registros',()=>{
+ const {personal}=require('./fixtures/gestor-mocks.cjs');
+ const {ctx,db}=boot(fixture([personal('Uma',10),personal('Outra',20)]));
+ ctx.console={log(){}};
+ ctx.executarAcaoApi_('getDadosCompletos',null);
+ const linhas=db.sheets['Lançamentos'].rows.slice(1).filter(r=>r[11]);
+ assert.equal(linhas.length,2);
+ const id=linhas[0][11],limitado=ctx.mapaRegistrosAtividadeGestor_(new Set([id]));
+ assert.deepEqual([...limitado.keys()],[id]);
+ assert.equal(ctx.mapaRegistrosAtividadeGestor_().size,2);
+});
