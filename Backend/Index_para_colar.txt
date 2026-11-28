@@ -1822,6 +1822,20 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <input type="hidden" id="inpEdParcelaStr">
         <input type="hidden" id="inpEdDescOrig">
         <input type="hidden" id="inpEdMesOrig">
+        <div>
+          <label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label>
+          <input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" onchange="aoMudarFormaEdicao()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+          <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
+        </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label>
+            <input type="text" id="inpEdValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this); marcarPropagacaoValorSeParcelado()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-sm focus:border-blue-500 outline-none">
+          </div>
+        <details id="detalhesDataStatusEdLanc" class="rounded-xl border border-slate-700 p-3 space-y-3">
+          <summary class="cursor-pointer font-semibold text-sm text-sky-200">Data, fatura e situação</summary>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-400 mb-1">Data</label>
@@ -1851,19 +1865,6 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </div>
           <div><div class="flex items-start justify-between gap-2 mb-1"><label for="inpEdMesFat" class="text-xs font-bold text-slate-400">Mês Fatura</label><details class="relative"><summary class="text-xs text-sky-300 cursor-pointer" aria-label="Ajuda sobre o mês da fatura">Ajuda</summary><p class="absolute right-0 top-full z-20 mt-1 w-56 max-w-[70vw] rounded-lg border border-slate-600 bg-slate-900 p-3 text-xs font-normal text-slate-200 shadow-lg">Define em qual mês o gasto aparece na Mensal. Alterar a data da compra não muda este campo; ajuste o mês da fatura separadamente.</p></details></div><input type="text" id="inpEdMesFat" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none"></div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-400 mb-1">Descrição</label>
-          <input type="text" id="inpEdDesc" autocapitalize="words" onblur="this.value = formatarTituloInteligente(this.value)" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:border-blue-500 outline-none">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Pagamento</label><select id="selEdForma" onchange="aoMudarFormaEdicao()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
-          <div><label class="block text-xs font-bold text-slate-400 mb-1">Categoria</label><select id="selEdCat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm"></select></div>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-400 mb-1">Valor Parcela</label>
-            <input type="text" id="inpEdValor" inputmode="numeric" oninput="mascaraMoedaTeclado(this); marcarPropagacaoValorSeParcelado()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-emerald-400 font-bold text-sm focus:border-blue-500 outline-none">
-          </div>
           <div>
             <div class="flex items-start justify-between gap-2 mb-1"><label for="selEdStatus" class="text-xs font-bold text-slate-400">Status</label><details class="relative"><summary class="text-xs text-sky-300 cursor-pointer" aria-label="Ajuda sobre o status">Ajuda</summary><p id="selEdStatusAjuda" class="absolute right-0 top-full z-20 mt-1 w-56 max-w-[70vw] rounded-lg border border-slate-600 bg-slate-900 p-3 text-xs font-normal text-slate-200 shadow-lg">Pagamentos: use Conferir fatura. Para desfazer, consulte Atividade.</p></details></div>
             <select id="selEdStatus" disabled aria-describedby="selEdStatusAjuda" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-3 text-white text-sm font-semibold">
@@ -1877,10 +1878,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             </select>
 
           </div>
-        </div>
-
+        </details>
         <div id="boxEdPagamentoImediato" hidden class="p-2.5 rounded-xl border border-emerald-500/30 bg-emerald-900/10"><label class="flex items-center gap-2 text-xs text-emerald-200"><input type="checkbox" id="chkEdPagamentoImediato" class="w-4 h-4">Este Pix/pagamento à vista já foi realizado</label><p class="text-xs text-slate-300 mt-1">Confirme somente se o dinheiro já saiu. Você revisará o pagamento antes de salvar.</p></div>
-        <div id="boxPropagarValorParc" class="hidden p-2.5 rounded-xl bg-slate-900/70 border border-slate-700">
+        <div id="boxPropagarValorParc" class="hidden p-2.5 rounded-xl bg-slate-900/70 border border-slate-700 space-y-2">
+          <p id="escopoEdicaoLancGestor" class="text-xs text-slate-200"></p>
+          <p class="text-xs text-slate-300">Descrição, categoria, forma de pagamento, data da compra e tags passam para toda a compra. A classificação fica nesta parcela. Mudar a fatura também desloca as próximas parcelas em aberto.</p>
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" id="chkPropagarValorParc" class="w-4 h-4 rounded text-blue-600 bg-slate-800 border-slate-600">
             <span class="text-[11px] text-slate-300 font-medium">Aplicar novo valor também às outras parcelas <strong>em aberto</strong> desta compra</span>
@@ -4442,6 +4444,8 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       }
 
       document.getElementById('modalEdicaoLanc')._dadosOriginaisEdicao = { dataCompra: data, descricao: desc, formaPagto: forma, categoria: cat, valorParcela: lerValorMoeda('inpEdValor'), mesFatura: mes, status, tags: tag || '' };
+      const escopo = document.getElementById('escopoEdicaoLancGestor');
+      if (escopo) escopo.textContent = 'Parcela selecionada: ' + (parcela || '—') + ' · Fatura ' + mes + '. O novo valor vale para esta parcela, salvo se você marcar a opção abaixo.';
       const mPagamento=document.getElementById('modalEdicaoLanc');delete mPagamento._dataPagamentoRevisada;
       const checkPagamento=document.getElementById('chkEdPagamentoImediato');if(checkPagamento)checkPagamento.checked=false;
       atualizarConfirmacaoPagamentoImediatoEdicaoGestor();
@@ -4479,7 +4483,12 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       if (marcaRecebimento) avisos.push('O registro será marcado como ' + dados.status + '.');
       if (desmarcaRecebimento) avisos.push('O registro deixará de estar quitado ou recebido. Confira o pagamento antes de confirmar.');
       if (mudaValorPago) avisos.push('Alterar o total não aumenta o pagamento já registrado. A diferença continuará em aberto; um valor já recebido da pessoa exige desfazer o recebimento antes da correção.');
-      if (afetaParcelas) avisos.push('Esta alteração pode atualizar outras parcelas da mesma compra, conforme as regras do parcelamento.');
+      if (afetaParcelas && modalId === 'modalEdicaoLanc') {
+        avisos.push('Parcela selecionada: '+dados.parcelaOriginal+' · Fatura '+dados.mesOriginal+'.');
+        if (['dataCompra','descricao','formaPagto','categoria','tags'].some(campo=>normalizar(dados[campo])!==normalizar(original[campo]))) avisos.push('Os dados em comum serão atualizados em todas as parcelas desta compra.');
+        if (normalizar(dados.mesFatura)!==normalizar(original.mesFatura)) avisos.push('A fatura muda nesta parcela e nas próximas que ainda estão em aberto.');
+        if (dados.propagarValorParcelas) avisos.push('O valor também será aplicado às outras parcelas em aberto.');
+      } else if (afetaParcelas) avisos.push('Esta alteração pode atualizar outras parcelas da mesma compra, conforme as regras do parcelamento.');
       if(dados.previaValoresTexto)avisos.push(dados.previaValoresTexto+' Parcelas anteriores e já recebidas preservam seus valores.');
       if(dados.previaDatasTexto)avisos.push(dados.previaDatasTexto+' Somente datas combinadas: não altera vencimentos bancários nem registra recebimentos.');
       if(dados.previaPixTexto)avisos.push(dados.previaPixTexto+' Confirme somente se o pagamento via Pix já foi realizado. Isso não registra a devolução da pessoa.');
@@ -11421,7 +11430,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v253', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v254', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
