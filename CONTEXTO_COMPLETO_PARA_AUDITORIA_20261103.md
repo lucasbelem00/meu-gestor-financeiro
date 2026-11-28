@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 28/11/2026 · v259. No atalho da parcela, o cabeçalho mostra mês e forma enquanto carrega e permite voltar ao Histórico. O cache transitório do Mensal passa de 15 para 60 segundos, por mês, com os mesmos limites e invalidações. O diagnóstico separa preparação de lançamentos, metas, terceiros e cálculo; cruzar com leitura anual e renderizarMensal, sem somar etapas aninhadas. A conferência anual permanece. Validação em preview após publicação.
+
 Revisão 28/11/2026 · v258. Ver na fatura abre a competência da parcela, filtra pela forma e destaca o registro por ID. O retorno preserva filtros, páginas e posição. Reaproveita a lista por até 60 segundos se os filtros e a geração coincidirem e se não houver atualização pendente. Backend e protocolo preservados. Publicação e validação no preview devem ser conferidas após o build.
 
 Revisão 28/11/2026 · a janela de parcelas mostra quantas estão no Histórico e mantém o cabeçalho visível ao rolar até a selecionada. O filtro mensal prepara apenas linhas do mês e de compras nele encontradas, preservando o resumo de parcelas entre anos. A leitura anual e suas conferências continuam integrais. A versão de paginação passa a refletir os registros preparados para a competência. A redução da abertura física de planilhas anuais e a medição de tempo no preview continuam pendentes.

@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+v259 — interface/desempenho.js preserva o cache mensal por até um minuto. Backend/Code.gs registra as etapas da Fatura Mensal e shared/metricas-diagnostico.cjs mantém a lista de métricas compartilhada com o exportador.
+
 v258 — index.html coordena o atalho de parcela entre Histórico e Mensal. interface/desempenho.js decide se o retorno pode reutilizar a lista ou precisa revalidar. interface/protecao.js evita repetir a revalidação automática nesse retorno dedicado.
 
 27/11/2026 — interface/modais.js coordena a camada superior, retorno do histórico, foco e teclado. index.html define estilos comuns de modal e a apresentação dos avisos.

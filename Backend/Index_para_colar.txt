@@ -771,6 +771,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div class="flex flex-wrap items-center gap-2.5">
             <h2 class="text-sm font-bold text-white flex items-center gap-2">Fatura mensal</h2>
+            <button id="btnVoltarHistoricoDaFaturaGestor" type="button" hidden onclick="voltarHistoricoDaFaturaGestor()" class="min-h-11 rounded-lg border border-sky-500/40 px-3 text-xs font-bold text-sky-200 no-print">← Voltar ao Histórico</button>
             <span id="rel-badge-ritmo" class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">...</span>
           </div>
           <div class="barra-periodo-gestor barra-periodo-mensal-gestor w-full sm:w-auto no-print">
@@ -784,6 +785,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
             <button onclick="gerarPDFExecutivo('mensal')" class="controle-periodo-pdf bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition gap-1">📄 PDF Executivo</button>
           </div>
         </div>
+        <p id="estadoParcelaNaFaturaGestor" role="status" hidden class="mt-3 break-words text-sm text-sky-200 no-print"></p>
       </div>
 
       <section id="resumoFormasMensalGestor" class="space-y-3" aria-labelledby="tituloFormasMensalGestor">
@@ -864,9 +866,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
         <div class="lg:col-span-2 space-y-3">
           <div class="flex flex-wrap justify-between items-center gap-2 px-1">
             <h2 id="tituloListaFaturaMensal" tabindex="-1" class="text-sm font-bold text-white outline-none">Lançamentos da Fatura</h2>
-            <button id="btnVoltarHistoricoDaFaturaGestor" type="button" hidden onclick="voltarHistoricoDaFaturaGestor()" class="min-h-11 rounded-lg border border-sky-500/40 px-3 text-xs font-bold text-sky-200 no-print">← Voltar ao Histórico</button>
           </div>
-          <p id="estadoParcelaNaFaturaGestor" role="status" hidden class="text-sm text-slate-300"></p>
           <section class="rounded-2xl bg-slate-800/50 border border-slate-700 p-3 space-y-3" aria-label="Filtros combinados da fatura">
             <div id="bannerFiltroMensal" class="hidden items-center gap-2 w-fit ml-auto min-w-0 max-w-full bg-blue-500/20 border border-blue-500/40 text-blue-300 pl-3 pr-1 py-1 rounded-xl">
               <span id="txtBannerFiltroMensal" class="min-w-0 break-words text-xs font-bold leading-relaxed">Filtro ativo</span>
@@ -4137,7 +4137,7 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
             ver.className = 'mt-1 min-h-11 rounded-lg px-2 text-xs font-bold text-sky-200 hover:bg-sky-500/10';
             ver.textContent = 'Ver na fatura';
             ver.setAttribute('aria-label', 'Ver na fatura a parcela ' + l[6]);
-            ver.addEventListener('click', () => abrirParcelaNaFaturaGestor(l[13], l[8], origem));
+            ver.addEventListener('click', () => abrirParcelaNaFaturaGestor(l[13], l[8], l[2], origem));
             item.append(ver);
           }
           if (l[13]===registroId) { item.setAttribute('aria-current','true'); item.classList.add('bg-sky-950'); selecionada=item; }
@@ -7125,13 +7125,10 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
 
     var origemParcelaNaFaturaGestor = null;
 
-    function abrirParcelaNaFaturaGestor(registro, mes, foco) {
-      origemParcelaNaFaturaGestor = {registro, mes, foco, posicao:window.scrollY, pendente:true};
+    function abrirParcelaNaFaturaGestor(registro, mes, forma, foco) {
+      origemParcelaNaFaturaGestor = {registro, mes, forma, foco, posicao:window.scrollY, pendente:true};
       document.getElementById('modalParcelasHistoricoGestor').close();
       document.getElementById('btnVoltarHistoricoDaFaturaGestor').hidden = false;
-      const aviso = document.getElementById('estadoParcelaNaFaturaGestor');
-      aviso.hidden = false;
-      aviso.textContent = 'Localizando a parcela na fatura…';
       irParaFaturaMensal(mes);
     }
 
@@ -7373,6 +7370,12 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       const periodoAnterior = ultimoRelatorioMensalCache?.periodoReferencia;
       const filtroAnterior = {...filtroInternoMensalAtivo};
       const mesmoPeriodo = periodoAnterior === mesFiltro;
+      const origem = origemParcelaNaFaturaGestor;
+      const avisoParcela = document.getElementById('estadoParcelaNaFaturaGestor');
+      if (origem?.pendente && origem.mes === mesFiltro) {
+        avisoParcela.hidden = false;
+        avisoParcela.textContent = [mesFiltro, origem.forma, 'Localizando a parcela…'].filter(Boolean).join(' · ');
+      }
       ultimoRelatorioMensalCache = null;
       document.getElementById('rel-badge-ritmo').textContent = 'Carregando ' + mesFiltro + '…';
       document.getElementById('lista-relatorio').setAttribute('aria-busy', 'true');
@@ -7385,8 +7388,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         res.geracaoConsultaGestor = geracaoConsulta;
         ultimoRelatorioMensalCache = res;
         filtroInternoMensalAtivo = escolherFiltroAposRecargaMensalGestor(filtroAnterior, periodoAnterior, mesFiltro, res);
-        const origem = origemParcelaNaFaturaGestor;
-        const localizar = origem?.pendente && origem.mes === mesFiltro && abaAtivaAtual === 'relatorio';
+        const localizar = origem?.pendente && origem === origemParcelaNaFaturaGestor && origem.mes === mesFiltro && abaAtivaAtual === 'relatorio';
         if (localizar) {
           const parcela = res.lancamentos?.find(l=>l[13]===origem.registro);
           filtroInternoMensalAtivo = filtrosMensaisVaziosGestor();
@@ -7518,7 +7520,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         document.getElementById('lista-relatorio').setAttribute('aria-busy', 'false');
         document.getElementById('lista-relatorio').textContent = 'Não foi possível carregar este mês. Selecione o mês novamente para tentar.';
         document.getElementById('rel-badge-ritmo').textContent = 'Não atualizado';
-        if (origemParcelaNaFaturaGestor?.mes === mesFiltro) document.getElementById('estadoParcelaNaFaturaGestor').hidden = true;
+        if (origem?.pendente && origem === origemParcelaNaFaturaGestor && origem.mes === mesFiltro) avisoParcela.textContent = 'Não foi possível localizar a parcela. Tente carregar a fatura novamente.';
         mostrarAviso('Erro', 'Erro no relatório: ' + err.message);
       });
     }
@@ -9368,7 +9370,7 @@ function normalizarTemposServidorGestor(action, meta) {
   }
   if(meta.detalhesGravacao&&typeof meta.detalhesGravacao==='object'){
     const detalhes={};
-    for(const campo of ["resumoPrioridadeMs","resumoCedeuUso","atualizacaoAcessoriosDispensados","diarioDimensaoBuscaMs","anexoDimensaoMs","anexoConferenciaMs","anexoCapacidadeMs","anexoEscritaMs","anexoApresentacaoMs","anexoFlushMs","aplicarCapacidadeMs","aplicarCapacidadeConsultas","aplicarCapacidadeConsultasEvitadas","atividadeComparacaoMs","atividadeAbaMs","atividadeDimensaoMs","atividadeCabecalhoMs","planoAnualCopiasEvitadas","painelFormasDimensaoMs","painelFormasValoresMs","painelPessoalDimensaoMs","painelPessoalValoresMs","painelPessoalExibicaoMs","painelTerceirosDimensaoMs","painelTerceirosValoresMs","painelTerceirosExibicaoMs","diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"]){
+    for(const campo of ["resumoPrioridadeMs","resumoCedeuUso","atualizacaoAcessoriosDispensados","diarioDimensaoBuscaMs","anexoDimensaoMs","anexoConferenciaMs","anexoCapacidadeMs","anexoEscritaMs","anexoApresentacaoMs","anexoFlushMs","aplicarCapacidadeMs","aplicarCapacidadeConsultas","aplicarCapacidadeConsultasEvitadas","atividadeComparacaoMs","atividadeAbaMs","atividadeDimensaoMs","atividadeCabecalhoMs","planoAnualCopiasEvitadas","painelFormasDimensaoMs","painelFormasValoresMs","painelPessoalDimensaoMs","painelPessoalValoresMs","painelPessoalExibicaoMs","painelTerceirosDimensaoMs","painelTerceirosValoresMs","painelTerceirosExibicaoMs","diarioMs","aplicacaoMs","confirmacaoMs","resumoMs","manutencaoMs","resumoComparacaoMs","resumoGravacaoMs","resumoFlushMs","resumoControleMs","resumoCadastrosMs","resumoCatalogosMs","resumoRegistrosMs","resumoLegadosMs","resumoLeituraMs","resumoCalculoMs","resumoDashboardMs","resumoEscritaMs","resumoFormulasMs","atualizacaoMs","prepararBaseMs","prepararManutencaoMs","prepararDiarioMs","aplicarDestinosMs","aplicarLeituraMs","aplicarEscritaMs","aplicarFormatosMs","aplicarFlushMs","aplicarConferenciaMs","prepararCancelamentoMs","prepararPendenciasMs","prepararRecuperacaoMs","prepararReenvioMs","planoMudancasMs","planoAnualMs","atualizacaoPrepararMs","atualizacaoRecorrenciasMs","atualizacaoDadosMs","atualizacaoConferenciaMs","abasPlano","blocosEscritos","celulasEscritas","linhasFormatadas","linhasValidacaoStatus","abrirAbaMs","leituraAnosMs","anosLidos","linhasReordenadas","parcelasIncluidas","filtroLeituraMs","mensalLancamentosMs","mensalMetasMs","mensalTerceirosMs","mensalCalculosMs","filtroVersaoMs","filtroResumoMs","filtroSelecaoMs","filtroPaginaMs","atividadeIndiceMs","atividadeEventosMs","atividadeMapaMs","atividadeDisponibilidadeMs","planilhasAbertas","planilhasReutilizadas","abrirPlanilhaMs","configProtecaoLeituras","configProtecaoReusos","abasConsultadas","abasReutilizadas","diarioCaracteresPlano","diarioPartes","anexosAgrupados","aplicarFlushes","anoAbrirMs","anoMetadadosMs","anoIdentidadeMs","anoFormulasMs","anoValoresMs","anoHashMs","anoValoresLeituras","anoValoresEvitadas","anoLeiturasDirecionadas","hashesCalculados","hashesReutilizados","hashesGrandesReutilizados","bytesHashesGrandes","abasValoresMs","abasFormulasMs","abasLinhasLidas","abasCelulasLidas","anoCelulasValores","anoCelulasFormulas","observacaoMs","controleAnualConsultasEvitadas","estadoIntervaloMs","estadoValoresMs","estadoFormulasMs","estadoLeituras","estadoDimensoesEvitadas","estadoCelulasLidas","diarioEscritaMs","diarioFlushInicialMs","diarioAgendamentoMs","diarioProntoMs","diarioFlushProntoMs","aplicarConferenciaAnexosMs","aplicarConferenciaFinanceiraMs","anoMetadadosReutilizados","atualizacaoOrigemPrepararMs","atualizacaoOrigemAplicarMs","catalogoAnosLeituraMs","anoIntervaloMs","acaoPrincipalMs","atividadeRegistroMs","abasIntervaloMs","abasDimensoesEvitadas","anoIntervaloAplicacaoMs","anoIntervaloConsultaMs","anoIntervalosLidos","anoCopiasIntermediariasEvitadas","ajustesAnuaisLeituraMs","ordenacaoLeituraMs","ordenacaoPrepararMs","ordenacaoSortMs","ordenacaoRegistros","relatorioRegistrosPreparados","relatorioRegistrosNaoPreparados","atualizacaoRecorrenciasRecusada","atualizacaoListaRecorrenciasMs"]){
       const valor=meta.detalhesGravacao[campo];
       if(typeof valor==='number'&&Number.isFinite(valor)&&valor>=0&&valor<=3600000)detalhes[campo]=Math.round(valor);
     }
@@ -11404,7 +11406,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
-    if (item && agora() - item.instante >= 0 && agora() - item.instante < ttl) {
+    const validade = acao === 'obterRelatorioMes' ? opcoes.ttlMensalMs ?? ttl : ttl;
+    if (item && agora() - item.instante >= 0 && agora() - item.instante < validade) {
       cache.delete(chave); cache.set(chave, item); metricas.cache++;
       return Promise.resolve(resultado(item.valor, item.instante, 'cache', acao));
     }
@@ -11546,7 +11549,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v258', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v259', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -11599,6 +11602,7 @@ const serializadorPaginasGestor=criarSerializadorPaginasGestor({
  executar:(...args)=>apiAntesCoordenacaoDesempenhoGestor(...args)
 });
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
+  ttlMensalMs: 60000,
   aguardarVisibilidade:aguardarVisibilidadeConsultaGestor,
   podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
   executar: (...args) => serializadorPaginasGestor.executar(...args),

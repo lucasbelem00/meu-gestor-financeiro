@@ -183,7 +183,7 @@ test('diagnóstico informa build e motivos limitados sem conteúdo financeiro',a
  const a=ambiente(async()=>({total:10}));
  a.eventos.blur();a.eventos.focus();a.eventos.storage({key:'gestorMutacaoV3:id-privado'});
  await a.ctx.apiCall('salvarCategoriasWeb',{descricao:'conteúdo privado'});
- const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v258');
+ const c=a.ctx.obterMetricasDesempenhoGestor();assert.equal(c.versaoInterface,'v259');
  assert.equal(c.invalidacoesPorMotivo.foco,1);assert.equal(c.invalidacoesPorMotivo.armazenamento,1);assert.equal(c.invalidacoesPorMotivo.mutacao_inicio,1);assert.equal(c.invalidacoesPorMotivo.mutacao_fim,1);
  assert(!JSON.stringify(c).includes('id-privado'));assert(!JSON.stringify(c).includes('conteúdo privado'));
  c.ultimasInvalidacoes[0].motivo='adulterado';assert.notEqual(a.ctx.obterMetricasDesempenhoGestor().ultimasInvalidacoes[0].motivo,'adulterado');
@@ -273,6 +273,26 @@ test('cache mantém a idade real da consulta, expira e é limitado por quantidad
   instante=21001;await c.chamar('obterRelatorioMes','10/2026');assert.equal(chamadas,5);
   const grande=coordenador({executar:async()=>({texto:'x'.repeat(1000)}),limiteBytes:20});
   await grande.chamar('obterRelatorioAnual','2026');assert.equal(grande.metricas().entradas,0);
+});
+
+test('Fatura recente conserva o mesmo mês por um minuto e consulta de novo após edição',async()=>{
+  let agora=1000,total=10,leiturasMensais=0;
+  const c=coordenador({agora:()=>agora,ttlMensalMs:60000,executar:async(acao,param)=>{
+    if(acao==='editarLancamentoLinhaWeb'){total=param.total;return {sucesso:true};}
+    if(acao==='obterRelatorioMes')leiturasMensais++;
+    return {mes:param,total};
+  }});
+  await c.chamar('obterRelatorioMes','01/2027');
+  agora+=30000;
+  const recente=await c.chamar('obterRelatorioMes','01/2027');
+  assert.equal(recente.origemLeituraDesempenho,'cache');
+  assert.equal(leiturasMensais,1);
+  await c.chamar('editarLancamentoLinhaWeb',{total:25});
+  assert.equal((await c.chamar('obterRelatorioMes','01/2027')).total,25);
+  assert.equal(leiturasMensais,2);
+  agora+=60000;
+  await c.chamar('obterRelatorioMes','01/2027');
+  assert.equal(leiturasMensais,3);
 });
 
 test('pagamento invalida antes e depois, e resposta atravessada por gravação não chega à tela', async () => {

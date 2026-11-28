@@ -162,7 +162,8 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     }
     const podeCache = cacheaveis.has(acao);
     const item = podeCache && cache.get(chave);
-    if (item && agora() - item.instante >= 0 && agora() - item.instante < ttl) {
+    const validade = acao === 'obterRelatorioMes' ? opcoes.ttlMensalMs ?? ttl : ttl;
+    if (item && agora() - item.instante >= 0 && agora() - item.instante < validade) {
       cache.delete(chave); cache.set(chave, item); metricas.cache++;
       return Promise.resolve(resultado(item.valor, item.instante, 'cache', acao));
     }
@@ -304,7 +305,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v258', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v259', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
@@ -357,6 +358,7 @@ const serializadorPaginasGestor=criarSerializadorPaginasGestor({
  executar:(...args)=>apiAntesCoordenacaoDesempenhoGestor(...args)
 });
 const coordenadorLeiturasDesempenhoGestor = criarCoordenadorLeiturasGestor({
+  ttlMensalMs: 60000,
   aguardarVisibilidade:aguardarVisibilidadeConsultaGestor,
   podeRetomar:consultaOcupadaAindaVisivelGestor,aoOcupado:avisarEsperaConsultaGestor,
   executar: (...args) => serializadorPaginasGestor.executar(...args),

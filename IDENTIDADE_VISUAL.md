@@ -1,5 +1,7 @@
 # Identidade visual do webapp
 
+Na abertura da Fatura pela parcela, mês, forma de pagamento e Voltar ao Histórico ficam no cabeçalho durante a consulta. Ao concluir, o lançamento recebe foco.
+
 Na fatura aberta por uma parcela, o cartão selecionado recebe borda azul, rótulo de contexto e ação para voltar ao Histórico. A área de lançamentos oferece retorno caso o cartão não esteja disponível.
 
 27/11/2026 — Avisos distinguem confirmação (verde), pendência e atenção (âmbar), erro (rosa) e informação (azul). Os modais respeitam a altura disponível, usam rolagem interna e mostram foco visível no teclado.
