@@ -340,3 +340,5 @@ Em Empréstimos, A receber primeiro reúne devoluções atrasadas e previstas no
 Em Recorrências, Próximas cobranças mostra data, valor e forma de pagamento, em ordem de data, com foco no cartão de destino ao abrir.
 
 No Planejamento, O que vem primeiro destaca itens abertos com prazo. Os cartões mostram o valor que falta guardar ou a estimativa da compra e levam ao editor do item.
+
+O menu do gasto parcelado abre um diálogo com as parcelas por ordem, mês, valor e situação. A parcela selecionada fica destacada.

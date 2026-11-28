@@ -3336,7 +3336,7 @@ function unificarCategoriasNaPlanilhaInterno_() {
 // AUXILIARES DE RELATÓRIO
 // ============================================================================
 
-function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao) {
+function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao,compraId) {
   const ss = obterPlanilhaGestor_();
   const lido = lerRegistrosConsultaProtecaoGestor_('Lançamentos',anosArquivo);
   const nomesCfg = listarNomesCategoriasConfig(obterAbaExecucaoGestor_(ss,'Dashboard & Resumo'));
@@ -3345,6 +3345,7 @@ function lerLancamentosParaRelatorio(anosArquivo,anosPreparacao) {
   const formasRelatorio=new Map();
   const categoriasRelatorio=new Map();
   lido.raw.forEach(function (r, i) {
+    if(compraId && String(r[12] || r[11]) !== compraId) return;
     if(Array.isArray(anosPreparacao)){const ano=parseMesFat(r[8]).a;if(!anosPreparacao.includes(ano)){const d=CONTEXTO_GESTOR_?.detalhesGravacao;if(d)d.relatorioRegistrosNaoPreparados=(d.relatorioRegistrosNaoPreparados||0)+1;return;}}
     const d = lido.disp[i].slice();
     // Datas do Sheets podem estar com máscaras diferentes. O período e a
@@ -3674,7 +3675,8 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
   const off = Math.max(0, parseInt(offset, 10) || 0);
   const lim = Math.min(500, Math.max(1, parseInt(limite, 10) || 50));
 
-  const todas = medirEtapaConsultaGestor_('filtroLeituraMs',()=>lerLancamentosParaRelatorio(f.ano?[Number(f.ano)]:f.mes?[Number(String(f.mes).split('/')[1])]:undefined));
+  const compraId = typeof f.compraId === 'string' ? f.compraId : '';
+  const todas = medirEtapaConsultaGestor_('filtroLeituraMs',()=>lerLancamentosParaRelatorio(f.ano?[Number(f.ano)]:f.mes?[Number(String(f.mes).split('/')[1])]:undefined,undefined,compraId));
   const filtrosBase = Object.keys(f).filter(function(k) { return k !== 'versaoConsulta'; }).sort().map(function(k) { return [k,f[k]]; });
   const versaoConsulta = medirEtapaConsultaGestor_('filtroVersaoMs',()=>hashGestor_([filtrosBase,todas.map(l=>l.r)]));
   if (off > 0 && f.versaoConsulta !== versaoConsulta) {
