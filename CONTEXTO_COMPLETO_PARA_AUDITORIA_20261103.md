@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v253. Planejamento destaca até quatro itens abertos com prazo, na ordem do mais próximo. Histórico acumula o total durante a seleção e prepara a lista de parcelados na mesma varredura usada para filtrar, reduzindo o trabalho do resumo das parcelas. A leitura e a conferência dos anos continuam no caminho existente.
+
 Revisão 27/11/2026 · v252. Recorrências destaca as próximas cobranças com data disponível e leva ao cartão da ocorrência. A Atividade confere a identificação global, mas materializa só as linhas da página, com leitura integral para restauração de série fixa. A operação Desfazer mantém a conferência integral.
 
 Revisão 27/11/2026 · v251. Empréstimos mostra até seis devoluções prioritárias no topo, das atrasadas às previstas nos próximos sete dias, com acesso à parcela. Fatura e Anual reaproveitam uma única leitura conferida de cada planilha anual para gastos pessoais e terceiros. Histórico e Recorrências mantêm a leitura direcionada dos anos abertos.

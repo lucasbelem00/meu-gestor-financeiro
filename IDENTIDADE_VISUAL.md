@@ -338,3 +338,5 @@ Os avisos flutuantes e os retornos de Atualizar dados no Diagnóstico usam cor d
 Em Empréstimos, A receber primeiro reúne devoluções atrasadas e previstas nos próximos sete dias acima dos indicadores. Cada linha usa a cor da situação e abre a parcela em Empréstimos por pessoa.
 
 Em Recorrências, Próximas cobranças mostra data, valor e forma de pagamento, em ordem de data, com foco no cartão de destino ao abrir.
+
+No Planejamento, O que vem primeiro destaca itens abertos com prazo. Os cartões mostram o valor que falta guardar ou a estimativa da compra e levam ao editor do item.

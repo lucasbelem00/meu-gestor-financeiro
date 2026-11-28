@@ -3697,8 +3697,11 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
   const mesLimiteAnual = Number(f.mesLimiteAnual);
   const periodoAnual = Boolean(f.ano && Number.isInteger(mesLimiteAnual) && mesLimiteAnual >= 1 && mesLimiteAnual <= 12);
 
+  let soma = 0;
+  const parcelados = [];
   const filtrados = medirEtapaConsultaGestor_('filtroSelecaoMs',()=>todas.filter(function (l) {
-    if (!correspondePerfilGastoGestor_(l.r,f)) return false;
+    if (l.infoParc.total>1 && l.parc!=='∞/∞') parcelados.push(l);
+    if (f.perfilCampo && !correspondePerfilGastoGestor_(l.r,f)) return false;
     if (f.mes && l.mes !== f.mes) return false;
     if (f.ano && String(l.infoMes.a) !== String(f.ano)) return false;
     if (f.forma && chaveFormaGestor_(l.forma) !== formaFiltro) return false;
@@ -3729,14 +3732,13 @@ function filtrarLancamentosWeb(filtros, offset, limite) {
       const palheiro = normalizarTexto([l.desc, l.forma, l.cat, l.tags, l.status].join(' '));
       if (!grupos.some(function (g) { return g.every(function (p) { return palheiro.indexOf(p) >= 0; }); })) return false;
     }
+    if (!isStatusCancelado(l.status)) soma += l.valor;
     return true;
   }));
-
-  const soma = filtrados.reduce(function (acc, l) { return acc + (isStatusCancelado(l.status) ? 0 : l.valor); }, 0);
   const fim=Math.max(0,filtrados.length-off);
   const pagina=filtrados.slice(Math.max(0,fim-lim),fim).reverse();
   const chaves=new Set(pagina.map(l=>l.chave));
-  const resumo=medirEtapaConsultaGestor_('filtroResumoMs',()=>chaves.size?calcularResumoParcelas(todas,chaves):Object.create(null));
+  const resumo=medirEtapaConsultaGestor_('filtroResumoMs',()=>chaves.size&&parcelados.length?calcularResumoParcelas(parcelados,chaves):Object.create(null));
 
   return {
     versaoConsulta: versaoConsulta,
