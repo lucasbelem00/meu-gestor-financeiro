@@ -1,5 +1,7 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
+Revisão 27/11/2026 · v255. Histórico usa ações por gasto através de um menu, incluindo repetir e as ações permitidas para o registro. A consulta anual ainda monta a matriz financeira necessária à conferência e ao resumo de parcelas que podem atravessar anos.
+
 Revisão 27/11/2026 · v254. Editor de gastos apresenta descrição, pagamento, categoria e valor antes dos detalhes de data e situação. Compras parceladas explicam o alcance da edição acima da opção de alterar outras parcelas. A leitura anual virtual formata a matriz já lida, mantendo a conferência dos anos e as regras de paginação.
 
 Revisão 27/11/2026 · v253. Planejamento destaca até quatro itens abertos com prazo, na ordem do mais próximo. Histórico acumula o total durante a seleção e prepara a lista de parcelados na mesma varredura usada para filtrar, reduzindo o trabalho do resumo das parcelas. A leitura e a conferência dos anos continuam no caminho existente.

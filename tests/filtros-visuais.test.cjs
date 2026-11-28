@@ -24,7 +24,7 @@ test('saldo parcial nos lançamentos tem cor e rótulo próprios',()=>{
 
 test('área inteira filtra sem executar pagamento; conferir pagamento não alterna o filtro',()=>{
   let clicar,markup='';const chamadas=[];
-  class Element{constructor(dataset,parent=null){this.dataset=dataset;this.parent=parent;this.tagName='BUTTON';}closest(){return this.dataset?.gestorAcao?this:this.parent;}}
+  class Element{constructor(dataset,parent=null){this.dataset=dataset;this.parent=parent;this.tagName='BUTTON';}closest(seletor){return seletor==='[data-gestor-acao]'?(this.dataset?.gestorAcao?this:this.parent):null;}}
   const c=vm.createContext({Element,ACOES_RENDERIZADAS:new Set(['aplicarFiltroInternoMensal','quitarFaturaCartaoMes']),
     document:{addEventListener:(tipo,fn)=>{if(tipo==='click')clicar=fn;},getElementById:()=>({set innerHTML(v){markup=v;}})},
     escaparHTML:s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),formatBRL:n=>'R$ '+n.toFixed(2),formaEhCartaoGestor:()=>true,hojeSituacaoVisualGestor:()=>19,estiloSituacaoVisualGestor:(codigo,texto)=>({texto,cor:codigo,fundo:codigo}),formaSituacaoVisualGestor:()=>({vencimento:20}),vencimentoFaturaBancarioGestor:()=>({data:'20/10/2026'}),
