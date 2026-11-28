@@ -786,6 +786,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
           </div>
         </div>
         <p id="estadoParcelaNaFaturaGestor" role="status" hidden class="mt-3 break-words text-sm text-sky-200 no-print"></p>
+        <aside id="previaCartaoMensalGestor" hidden class="mt-3 rounded-xl border border-sky-700 bg-slate-900 p-3 text-sm no-print">
+          <p id="dadosPreviaCartaoMensalGestor" class="break-words font-bold text-sky-100"></p>
+          <p id="estadoPreviaCartaoMensalGestor" role="status" class="mt-1 text-xs text-slate-300"></p>
+          <button id="repetirPreviaCartaoMensalGestor" type="button" hidden onclick="dispararBuscaRelatorioMensal()" class="mt-2 min-h-11 rounded-lg border border-slate-600 px-3 text-xs font-bold">Tentar novamente</button>
+        </aside>
       </div>
 
       <section id="resumoFormasMensalGestor" class="space-y-3" aria-labelledby="tituloFormasMensalGestor">
@@ -3233,7 +3238,8 @@ const DICIONARIO_ACENTOS_PT = {
     function setAba(aba, salvar = true, periodoMensalExplicito = null, opcoes = null) {
       fecharMenuMobile();
       cartaoSolicitadoMensalGestor = aba === 'relatorio' && opcoes?.cartao
-        ? {forma:opcoes.cartao, mes:periodoMensalExplicito} : null;
+        ? {forma:opcoes.cartao, mes:periodoMensalExplicito, saldo:opcoes.saldo, inicio:opcoes.inicio} : null;
+      if (typeof renderizarPreviaCartaoMensalGestor === 'function') renderizarPreviaCartaoMensalGestor(cartaoSolicitadoMensalGestor);
       if (aba !== 'relatorio' && origemParcelaNaFaturaGestor) limparOrigemParcelaNaFaturaGestor();
       if (aba === 'relatorio' && (salvar || abaAtivaAtual !== 'relatorio')) aoEntrarMensalGestor(periodoMensalExplicito);
       abaAtivaAtual = aba;
@@ -7133,9 +7139,23 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
     var origemParcelaNaFaturaGestor = null;
     var cartaoSolicitadoMensalGestor = null;
 
-    function abrirCartaoNaFaturaMensalGestor(forma, mes) {
+    function renderizarPreviaCartaoMensalGestor(pedido, falhou = false) {
+      const previa = document.getElementById('previaCartaoMensalGestor');
+      if (!previa) return;
+      previa.hidden = !pedido;
+      if (!pedido) return;
+      document.getElementById('dadosPreviaCartaoMensalGestor').textContent = [pedido.forma, pedido.mes, pedido.saldo && 'A pagar ' + pedido.saldo].filter(Boolean).join(' · ');
+      document.getElementById('estadoPreviaCartaoMensalGestor').textContent = falhou
+        ? 'Saldo da última atualização. Não foi possível carregar os lançamentos.'
+        : 'Atualizando lançamentos…';
+      document.getElementById('repetirPreviaCartaoMensalGestor').hidden = !falhou;
+    }
+
+    function abrirCartaoNaFaturaMensalGestor(forma, mes, saldo) {
       if (!forma || !/^(0[1-9]|1[0-2])\/\d{4}$/.test(String(mes || ''))) return;
-      setAba('relatorio', true, mes, {cartao:forma});
+      const inicio = Date.now();
+      setAba('relatorio', true, mes, {cartao:forma,saldo,inicio});
+      if (typeof registrarDiagnosticoAtividadeGestor === 'function') registrarDiagnosticoAtividadeGestor('mostrarPreviaCartaoMensal',null,Date.now()-inicio);
     }
 
     function abrirParcelaNaFaturaGestor(registro, mes, forma, foco) {
@@ -7250,6 +7270,10 @@ document.addEventListener('DOMContentLoaded',inicializarUsabilidadeGestor);
       const campo=document.getElementById('selFiltroRelPeriodo'),periodo=periodoMensalSelecionadoGestor();
       if(!periodo){if(campo?._ultimoPeriodoValido)campo.value=campo._ultimoPeriodoValido;atualizarEstadoSetasMensal();mostrarAviso('Escolha o período','Selecione um mês e ano entre 1900 e 2200.');return;}
       if (origemParcelaNaFaturaGestor && origemParcelaNaFaturaGestor.mes !== periodo.valor) document.getElementById('estadoParcelaNaFaturaGestor').hidden = true;
+      if (cartaoSolicitadoMensalGestor && cartaoSolicitadoMensalGestor.mes !== periodo.valor) {
+        cartaoSolicitadoMensalGestor = null;
+        renderizarPreviaCartaoMensalGestor(null);
+      }
       campo._ultimoPeriodoValido=campo.value;atualizarEstadoSetasMensal();relatorioMensalPendente=false;carregarRelatorioMesUnico(periodo.valor);
     }
 
@@ -7400,6 +7424,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       const origem = origemParcelaNaFaturaGestor;
       const avisoParcela = document.getElementById('estadoParcelaNaFaturaGestor');
       const cartaoPedido = cartaoSolicitadoMensalGestor;
+      if (cartaoPedido?.mes === mesFiltro) renderizarPreviaCartaoMensalGestor(cartaoPedido);
       if (origem?.pendente && origem.mes === mesFiltro) {
         avisoParcela.hidden = false;
         avisoParcela.textContent = [mesFiltro, origem.forma, 'Localizando a parcela…'].filter(Boolean).join(' · ');
@@ -7408,7 +7433,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
       renderizarContextoCartaoMensalGestor([]);
       document.getElementById('rel-badge-ritmo').textContent = 'Carregando ' + mesFiltro + '…';
       document.getElementById('lista-relatorio').setAttribute('aria-busy', 'true');
-      if (!mesmoPeriodo) document.getElementById('lista-relatorio').innerHTML = '<div role="status" class="py-4 text-center text-slate-300">Buscando dados de ' + escaparHTML(mesFiltro) + '…</div>';
+      if (!mesmoPeriodo || cartaoPedido) document.getElementById('lista-relatorio').innerHTML = '<div role="status" class="py-4 text-center text-slate-300">Buscando dados de ' + escaparHTML(mesFiltro) + '…</div>';
       apiCall('obterRelatorioMes', mesFiltro).then(res => {
         if (!res || requisicao !== requisicaoRelatorioMensal) return;
         const inicioRenderMensal = Date.now();
@@ -7425,7 +7450,6 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         }
         const abrirCartao = cartaoPedido && cartaoSolicitadoMensalGestor === cartaoPedido && cartaoPedido.mes === mesFiltro && abaAtivaAtual === 'relatorio';
         if (abrirCartao) {
-          cartaoSolicitadoMensalGestor = null;
           filtroInternoMensalAtivo = filtrosMensaisVaziosGestor();
           filtroInternoMensalAtivo.forma = [cartaoPedido.forma];
         }
@@ -7532,6 +7556,11 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
 
         renderizarListaItensFaturaMensal();
         sincronizarEstadoFiltrosMensalGestor();
+        if (abrirCartao) {
+          cartaoSolicitadoMensalGestor = null;
+          renderizarPreviaCartaoMensalGestor(null);
+          if (typeof registrarDiagnosticoAtividadeGestor === 'function') registrarDiagnosticoAtividadeGestor('abrirListaCartaoMensal',null,Date.now()-cartaoPedido.inicio);
+        }
         if (mesmoPeriodo && abaAtivaAtual === 'relatorio') requestAnimationFrame(()=>{if(requisicao === requisicaoRelatorioMensal && abaAtivaAtual === 'relatorio' && (window.geracaoNavegacaoGestor || 0)===geracaoAntesRender) window.scrollTo({top:posicaoAntesRender,behavior:'instant'});});
         if (abrirCartao) {
           cancelarRolagemTopoAgendadaGestor();
@@ -7565,6 +7594,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         document.getElementById('lista-relatorio').setAttribute('aria-busy', 'false');
         document.getElementById('lista-relatorio').textContent = 'Não foi possível carregar este mês. Selecione o mês novamente para tentar.';
         document.getElementById('rel-badge-ritmo').textContent = 'Não atualizado';
+        if (cartaoPedido && cartaoSolicitadoMensalGestor === cartaoPedido && cartaoPedido.mes === mesFiltro) renderizarPreviaCartaoMensalGestor(cartaoPedido,true);
         if (origem?.pendente && origem === origemParcelaNaFaturaGestor && origem.mes === mesFiltro) avisoParcela.textContent = 'Não foi possível localizar a parcela. Tente carregar a fatura novamente.';
         mostrarAviso('Erro', 'Erro no relatório: ' + err.message);
       });
@@ -7901,7 +7931,7 @@ ${l[19]===true?'<span class="ml-auto text-xs text-slate-300">Arquivo anual · so
         btn.append(titulo, detalhe, acao);
         btn.onclick = () => alerta.tipo === 'pix'
           ? abrirPixAgendadoGestor(alerta.registro)
-          : abrirCartaoNaFaturaMensalGestor(alerta.forma, alerta.mes);
+          : abrirCartaoNaFaturaMensalGestor(alerta.forma, alerta.mes, alerta.valor);
         lista.appendChild(btn);
       });
       if (ordenados.length > 3) {
@@ -9465,7 +9495,7 @@ function lerTransportesDiagnosticoGestor(){
  try{return (lerJSONLocalGestor('gestorTransportesV1',[])||[]).slice(-30).flatMap(e=>{
   if(!e||!/^[A-Za-z]{1,80}$/.test(e.acao)||typeof e.data!=='string'||!/^\d{4}-\d\d-\d\dT[\d:.]+Z$/.test(e.data))return [];
   const r={data:e.data,acao:e.acao};if(/^[a-f0-9]{32}$/.test(e.chamada)&&/^[a-f0-9]{32}$/.test(e.pagina)){r.chamada=e.chamada;r.pagina=e.pagina;}if(typeof e.proxyInstrumentado==='boolean')r.proxyInstrumentado=e.proxyInstrumentado;
-  for(const k of ['http','googleHttp','totalMs','lerCorpoMs','proxyCabecalhosMs','proxyCorpoMs','bytesResposta'])if(typeof e[k]==='number'&&Number.isFinite(e[k])&&e[k]>=0&&e[k]<=(k==='bytesResposta'?10485760:k==='http'||k==='googleHttp'?599:3600000))r[k]=Math.round(e[k]);
+  for(const k of ['http','googleHttp','totalMs','lerCorpoMs','proxyCabecalhosMs','proxyCorpoMs','proxyPrimeiraRespostaMs','proxyDestinoRedirecionadoMs','bytesResposta'])if(typeof e[k]==='number'&&Number.isFinite(e[k])&&e[k]>=0&&e[k]<=(k==='bytesResposta'?10485760:k==='http'||k==='googleHttp'?599:3600000))r[k]=Math.round(e[k]);
   if(['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(e.codigoProxy))r.codigoProxy=e.codigoProxy;return [r];
  });}catch(_){return [];}
 }
@@ -9475,6 +9505,8 @@ function registrarTransporteConsultaGestor(acao,resposta,inicio,lerCorpoMs=0,ras
   const numero=(v,max)=>{const n=Number(v);return v!==null&&v!==''&&Number.isFinite(n)&&n>=0&&n<=max?Math.round(n):undefined;};
   const cab=resposta.headers,tempos=JSON.parse(cab.get('X-Gestor-Tempos')||'{}'),codigo=cab.get('X-Gestor-Proxy-Codigo');
   const item={data:new Date().toISOString(),acao,proxyInstrumentado:cab.get('X-Gestor-Tempos')!==null||['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo),http:numero(resposta.status,599),googleHttp:numero(cab.get('X-Gestor-Upstream-Status'),599),codigoProxy:['RESPOSTA_INVALIDA','HTTP_GOOGLE','TIMEOUT_PROXY','FALHA_CONEXAO'].includes(codigo)?codigo:undefined,totalMs:Math.max(0,Date.now()-inicio),lerCorpoMs:numero(lerCorpoMs,3600000),proxyCabecalhosMs:numero(tempos.cabecalhosMs,3600000),proxyCorpoMs:numero(tempos.corpoMs,3600000),bytesResposta:numero(cab.get('X-Gestor-Response-Bytes'),10485760)};
+  item.proxyPrimeiraRespostaMs=numero(tempos.primeiraRespostaMs,3600000);
+  item.proxyDestinoRedirecionadoMs=numero(tempos.destinoRedirecionadoMs,3600000);
   const chamada=cab.get('X-Gestor-Chamada')||rastro?.chamada,pagina=cab.get('X-Gestor-Pagina')||rastro?.pagina;if(/^[a-f0-9]{32}$/.test(chamada)&&/^[a-f0-9]{32}$/.test(pagina)){item.chamada=chamada;item.pagina=pagina;}
   const anteriores=lerTransportesDiagnosticoGestor();gravarArmazenamentoGestor('gestorTransportesV1',JSON.stringify((Array.isArray(anteriores)?anteriores:[]).concat(item).slice(-30)));
  }catch(_){}
@@ -11317,6 +11349,8 @@ function correlacionarTemposDiagnosticoGestor(transportes,entradas,pagina){
     if(!valido(t.totalMs)||!valido(e.totalMedidoMs)||e.totalMedidoMs>t.totalMs){resultado.inconsistentes++;continue;}
     const r={acao:t.acao,totalClienteMs:Math.round(t.totalMs),totalDoPostMs:Math.round(e.totalMedidoMs),foraDoPostMs:Math.round(t.totalMs-e.totalMedidoMs)};
     if(t.proxyInstrumentado===true&&valido(t.proxyCabecalhosMs))r.esperaCabecalhosProxyMs=Math.round(t.proxyCabecalhosMs);
+    if(valido(t.proxyPrimeiraRespostaMs))r.primeiraRespostaProxyMs=Math.round(t.proxyPrimeiraRespostaMs);
+    if(valido(t.proxyDestinoRedirecionadoMs))r.destinoRedirecionadoProxyMs=Math.round(t.proxyDestinoRedirecionadoMs);
     resultado.amostras.push(r);
   }
   return resultado;
@@ -11594,7 +11628,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v261', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v262', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

@@ -28,6 +28,8 @@ function correlacionarTemposDiagnosticoGestor(transportes,entradas,pagina){
     if(!valido(t.totalMs)||!valido(e.totalMedidoMs)||e.totalMedidoMs>t.totalMs){resultado.inconsistentes++;continue;}
     const r={acao:t.acao,totalClienteMs:Math.round(t.totalMs),totalDoPostMs:Math.round(e.totalMedidoMs),foraDoPostMs:Math.round(t.totalMs-e.totalMedidoMs)};
     if(t.proxyInstrumentado===true&&valido(t.proxyCabecalhosMs))r.esperaCabecalhosProxyMs=Math.round(t.proxyCabecalhosMs);
+    if(valido(t.proxyPrimeiraRespostaMs))r.primeiraRespostaProxyMs=Math.round(t.proxyPrimeiraRespostaMs);
+    if(valido(t.proxyDestinoRedirecionadoMs))r.destinoRedirecionadoProxyMs=Math.round(t.proxyDestinoRedirecionadoMs);
     resultado.amostras.push(r);
   }
   return resultado;
@@ -305,7 +307,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v261', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v262', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 

@@ -40,19 +40,34 @@ module.exports = async function gestor(req, res) {
     const r=payload.diagnostico;
     const diagnostico=r?.versao===1&&typeof r.chamada==='string'&&typeof r.pagina==='string'&&/^[a-f0-9]{32}$/.test(r.chamada)&&/^[a-f0-9]{32}$/.test(r.pagina)?{versao:1,chamada:r.chamada,pagina:r.pagina}:undefined;
     if(diagnostico){res.setHeader('X-Gestor-Chamada',diagnostico.chamada);res.setHeader('X-Gestor-Pagina',diagnostico.pagina);}
-    const resposta = await fetch(url, {
+    const medirRedirecionamento = payload.action === 'obterRelatorioMes';
+    const signal = AbortSignal.timeout(55000);
+    let resposta = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: payload.action, param: payload.param ?? null, apiToken: token, ...(diagnostico?{diagnostico}:{}) }),
-      redirect: 'follow',
-      signal: AbortSignal.timeout(55000)
+      redirect: medirRedirecionamento ? 'manual' : 'follow',
+      signal
     });
+    let primeiraRespostaMs, destinoRedirecionadoMs;
+    if (medirRedirecionamento) {
+      primeiraRespostaMs = Math.max(0, Date.now() - inicio);
+      if ([301, 302, 303].includes(resposta.status)) {
+        const local = resposta.headers.get('Location');
+        const destinoConteudo = local && new URL(local, url);
+        if (!destinoConteudo || destinoConteudo.origin !== 'https://script.googleusercontent.com' || destinoConteudo.username || destinoConteudo.password || destinoConteudo.pathname !== '/macros/echo') throw new Error('Redirecionamento inesperado.');
+        await resposta.body?.cancel();
+        const inicioRedirecionamento = Date.now();
+        resposta = await fetch(destinoConteudo, {redirect:'manual',signal});
+        destinoRedirecionadoMs = Math.max(0, Date.now()-inicioRedirecionamento);
+      }
+    }
     const cabecalhosMs=Math.max(0,Date.now()-inicio),inicioCorpo=Date.now();
     const texto = await resposta.text();
     const corpoMs=Math.max(0,Date.now()-inicioCorpo);
     if(Number.isInteger(resposta.status))res.setHeader('X-Gestor-Upstream-Status',String(resposta.status));
     res.setHeader('X-Gestor-Response-Bytes',String(Buffer.byteLength(texto,'utf8')));
-    res.setHeader('X-Gestor-Tempos',JSON.stringify({cabecalhosMs,corpoMs}));
+    res.setHeader('X-Gestor-Tempos',JSON.stringify({cabecalhosMs,corpoMs,primeiraRespostaMs,destinoRedirecionadoMs}));
     res.setHeader('Server-Timing', 'upstream;dur=' + Math.max(0,Date.now()-inicio));
     let dados;
     try { dados = JSON.parse(texto); } catch (_) {

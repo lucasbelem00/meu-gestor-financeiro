@@ -7,7 +7,7 @@ async function chamar({ body = { action: 'getDadosCompletos' }, method = 'POST',
   const anteriores = { ...process.env }, fetchAnterior = global.fetch;
   const chamadas = [];
   Object.assign(process.env, { VERCEL_ENV: 'preview', GESTOR_API_URL: 'https://script.google.com/macros/s/FAKE_TEST/exec', GESTOR_API_TOKEN: 'token-ficticio', ...env });
-  global.fetch = async (url, opcoes) => { chamadas.push({ url: String(url), ...opcoes }); if(upstream instanceof Error)throw upstream; return upstream || { ok: true, text: async () => JSON.stringify({ sucesso: true, dados: { exemplo: 1 } }) }; };
+  global.fetch = async (url, opcoes) => { chamadas.push({ url: String(url), ...opcoes }); if(upstream instanceof Error)throw upstream; return (typeof upstream==='function'?upstream(chamadas.length):upstream) || { ok: true, text: async () => JSON.stringify({ sucesso: true, dados: { exemplo: 1 } }) }; };
   const resposta = { headers: {}, statusCode: 200, setHeader(k, v) { this.headers[k] = v; }, status(n) { this.statusCode = n; return this; }, json(v) { this.body = v; return this; } };
   try { await gestor({ method, body }, resposta); return { ...resposta, chamadas }; }
   finally { global.fetch = fetchAnterior; for (const k of Object.keys(process.env)) if (!(k in anteriores)) delete process.env[k]; Object.assign(process.env, anteriores); }
@@ -57,6 +57,24 @@ test('falha HTTP no backend é sinalizada ao app', async () => {
 });
 
 test('proxy informa duração técnica sem expor destino ou token',async()=>{const r=await chamar();assert.match(r.headers['Server-Timing'],/^upstream;dur=\d+$/);assert(!r.headers['Server-Timing'].includes('token'));});
+
+test('Mensal mede o redirecionamento Google com uma única leitura autenticada',async()=>{
+ const destino='https://script.googleusercontent.com/macros/echo?user_content_key=ficticio';
+ const r=await chamar({body:{action:'obterRelatorioMes',param:'11/2026'},upstream:n=>n===1
+   ?{status:302,headers:new Headers({Location:destino})}:null});
+ assert.equal(r.statusCode,200);
+ assert.equal(r.chamadas.length,2);
+ assert.equal(r.chamadas[0].redirect,'manual');
+ assert.equal(r.chamadas[1].url,destino);
+ assert.equal(r.chamadas[1].body,undefined);
+ assert.equal(r.chamadas[1].signal,r.chamadas[0].signal);
+ const t=JSON.parse(r.headers['X-Gestor-Tempos']);
+ assert(t.primeiraRespostaMs>=0&&t.destinoRedirecionadoMs>=0);
+ assert(!JSON.stringify(r.headers).includes('user_content_key'));
+ const recusado=await chamar({body:{action:'obterRelatorioMes'},upstream:{status:302,headers:new Headers({Location:'https://example.invalid/macros/echo'})}});
+ assert.equal(recusado.statusCode,502);
+ assert.equal(recusado.chamadas.length,1);
+});
 
 test('timeout do serviço recebe código próprio em vez de erro genérico',async()=>{const e=Error('timeout');e.name='TimeoutError';const r=await chamar({upstream:e});assert.equal(r.statusCode,504);assert.equal(r.body.sucesso,false);});
 

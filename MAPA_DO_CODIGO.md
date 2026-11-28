@@ -1,5 +1,7 @@
 # Mapa do código do Gestor de Gastos
 
+v262 — index.html apresenta a prévia do alerta e registra a abertura da lista. api/gestor.js mede as duas etapas da leitura mensal. interface/desempenho.js inclui esses tempos na correlação de diagnóstico.
+
 v261 — index.html encaminha o alerta de cartão para o filtro do Mensal e oferece o fluxo existente de conferência no resumo junto da lista.
 
 v260 — index.html apresenta o resumo do cartão junto dos lançamentos filtrados. Backend/Code.gs aplica o recorte de competências ao preparar o relatório, depois da conferência dos anos.
