@@ -342,3 +342,4 @@ Em Recorrências, Próximas cobranças mostra data, valor e forma de pagamento, 
 No Planejamento, O que vem primeiro destaca itens abertos com prazo. Os cartões mostram o valor que falta guardar ou a estimativa da compra e levam ao editor do item.
 
 O menu do gasto parcelado abre um diálogo com as parcelas por ordem, mês, valor e situação. A parcela selecionada fica destacada.
+Na janela de parcelas do Histórico, título, contagem e botão Fechar continuam visíveis durante a rolagem. Ao abrir, a parcela selecionada ganha destaque e aparece dentro da área visível.

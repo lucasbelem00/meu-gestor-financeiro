@@ -1,6 +1,6 @@
 # Gestor de Gastos — contexto completo para continuidade e auditoria
 
-Revisão 28/11/2026 · v256. Histórico abre as parcelas da compra por identificador, preservando filtros. A consulta de detalhe prepara só os registros da compra após a leitura, com conferência integral dos anos.
+Revisão 28/11/2026 · a janela de parcelas mostra quantas estão no Histórico e mantém o cabeçalho visível ao rolar até a selecionada. O filtro mensal prepara apenas linhas do mês e de compras nele encontradas, preservando o resumo de parcelas entre anos. A leitura anual e suas conferências continuam integrais. A versão de paginação passa a refletir os registros preparados para a competência. A redução da abertura física de planilhas anuais e a medição de tempo no preview continuam pendentes.
 
 Revisão 27/11/2026 · v255. Histórico usa ações por gasto através de um menu, incluindo repetir e as ações permitidas para o registro. A consulta anual ainda monta a matriz financeira necessária à conferência e ao resumo de parcelas que podem atravessar anos.
 

@@ -1750,12 +1750,14 @@ if (typeof module !== 'undefined' && module.exports) module.exports = { CATALOGO
 
   <!-- MODAL: FILTRO AVANÇADO -->
   <dialog id="modalParcelasHistoricoGestor" aria-labelledby="tituloParcelasHistoricoGestor" class="m-auto max-h-[85dvh] w-[92%] max-w-lg overflow-y-auto rounded-2xl border border-slate-600 bg-slate-900 p-4 text-slate-100 backdrop:bg-black/80 sm:p-6">
-    <header class="flex items-start justify-between gap-3">
-      <div class="min-w-0"><h2 id="tituloParcelasHistoricoGestor" class="text-base font-bold">Parcelas da compra</h2><p id="compraParcelasHistoricoGestor" class="break-words text-sm text-slate-300"></p></div>
-      <form method="dialog"><button type="submit" class="min-h-11 rounded-lg border border-slate-600 px-3 text-sm">Fechar</button></form>
-    </header>
-    <p id="estadoParcelasHistoricoGestor" role="status" class="mt-3 text-sm text-sky-200"></p>
-    <ol id="listaParcelasHistoricoGestor" class="mt-3 space-y-2"></ol>
+    <div class="sticky top-0 z-10 bg-slate-900 pb-2">
+      <header class="flex items-start justify-between gap-3">
+        <div class="min-w-0"><h2 id="tituloParcelasHistoricoGestor" class="text-base font-bold">Parcelas da compra</h2><p id="compraParcelasHistoricoGestor" class="break-words text-sm text-slate-300"></p></div>
+        <form method="dialog"><button type="submit" class="min-h-11 rounded-lg border border-slate-600 px-3 text-sm">Fechar</button></form>
+      </header>
+      <p id="estadoParcelasHistoricoGestor" role="status" class="mt-3 text-sm text-sky-200"></p>
+    </div>
+    <ol id="listaParcelasHistoricoGestor" class="space-y-2"></ol>
   </dialog>
   <div id="modalFiltros" data-modal-gestor role="dialog" aria-modal="true" aria-labelledby="tituloModalFiltrosGestor" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] hidden px-4">
     <div class="bg-slate-800 border border-slate-600 w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto p-4 sm:p-6 rounded-2xl shadow-2xl">
@@ -4108,11 +4110,15 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
       lista.replaceChildren();
       estado.textContent = 'Consultando parcelas…';
       if (!modal.open) modal.showModal();
+      modal.scrollTop = 0;
       try {
         const dados = await apiCall('filtrarLancamentosWeb', {filtros:{compraId},offset:0,limite:500});
         if (!modal.open || modal._consulta !== consulta) return;
         const parcelas = dados.itens.filter(l=>l[14]===compraId).sort((a,b)=>parseInt(a[6],10)-parseInt(b[6],10));
-        estado.textContent = parcelas.length ? parcelas.length + (parcelas.length===1?' parcela encontrada.':' parcelas encontradas.') : 'Nenhuma parcela encontrada.';
+        const total = Math.max(parcelas.length, ...parcelas.map(l=>Number(String(l[6]).split('/')[1])||0));
+        estado.textContent = parcelas.length
+          ? parcelas.length + ' de ' + total + ' parcelas no Histórico'
+          : 'Nenhuma parcela encontrada.';
         let selecionada;
         lista.replaceChildren(...parcelas.map(l=>{
           const item = document.createElement('li'), titulo = document.createElement('strong'), detalhe = document.createElement('p');
@@ -4124,7 +4130,11 @@ ${l[17]===true?'<span class="text-xs text-slate-300 py-2">Arquivo anual · somen
           if (l[13]===registroId) { item.setAttribute('aria-current','true'); item.classList.add('bg-sky-950'); selecionada=item; }
           return item;
         }));
-        selecionada?.scrollIntoView({block:'nearest'});
+        if (selecionada) {
+          const topo = estado.getBoundingClientRect().bottom;
+          const item = selecionada.getBoundingClientRect();
+          if (item.top < topo || item.bottom > modal.getBoundingClientRect().bottom) modal.scrollTop += item.top - topo;
+        }
       } catch (_) {
         if (modal.open && modal._consulta === consulta) estado.textContent = 'Não foi possível consultar as parcelas. Feche e tente novamente.';
       }
@@ -11464,7 +11474,7 @@ function criarCoordenadorLeiturasGestor(opcoes) {
     aguardarCargasCompletas: () => cargasCompletas.size ? Promise.all(Array.from(cargasCompletas)) : null,
     aguardarMutacoes: () => mutacoesPendentes.size ? Promise.allSettled(Array.from(mutacoesPendentes)) : null,
     geracao: () => geracao,
-    metricas: () => ({ ...metricas, versaoInterface:'v256', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
+    metricas: () => ({ ...metricas, versaoInterface:'v257', resumoExecucoes:resumirExecucoesDiagnosticoGestor(execucoesDiagnostico),janelaExecucoes:30, motivosAtualizacaoConfirmada:{...motivosAtualizacaoConfirmada},ultimasAtualizacoesConfirmadas:copiar(ultimasAtualizacoesConfirmadas), preparandoAtualizacao, esperaAtualizacaoMs, consultasSuspensasAtualizacao, picoExecucoes, execucoes:copiar(execucoesDiagnostico), emVooPorAcao:Array.from(emVooDiagnostico.values()).reduce((r,a)=>(r[a]=(r[a]||0)+1,r),{}), esperasConsultas:copiar(esperasConsultas), invalidacoesPorMotivo:{...invalidacoesPorMotivo}, ultimasInvalidacoes:copiar(ultimasInvalidacoes), ultimosDescartes:copiar(ultimosDescartes), entradas: cache.size, bytes, pendentes: consultas.size })
   };
 }
 
